@@ -58,7 +58,7 @@ const mockCategories: Category[] = [
   }
 ]
 
-export default function CategoriesPage() {
+export default function CategoriesPage({ params }: { params: { locale: string } }) {
   const [categories, setCategories] = useState<Category[]>(mockCategories)
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -187,13 +187,13 @@ export default function CategoriesPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/contacto"
+              href={`/${params.locale}/contacto`}
               className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-primary bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors"
             >
               Contactar Soporte
             </Link>
             <Link
-              href="/catalogo"
+              href={`/${params.locale}/catalogo`}
               className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors"
             >
               Ver Todos los Productos

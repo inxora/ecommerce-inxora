@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+
 import { Star, ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { getProductBySlug, Producto } from '@/lib/supabase'
@@ -15,8 +15,7 @@ interface Review {
   date: string
 }
 
-export default function ProductPage() {
-  const params = useParams()
+export default function ProductPage({ params }: { params: { locale: string, slug: string } }) {
   const [product, setProduct] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
@@ -72,7 +71,7 @@ export default function ProductPage() {
               El producto que buscas no existe o no está disponible.
             </p>
             <Link 
-              href="/catalogo"
+              href={`/${params.locale}/catalogo`}
               className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90"
             >
               Volver al catálogo
@@ -114,11 +113,11 @@ export default function ProductPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-8">
-          <Link href="/" className="hover:text-primary">
+          <Link href={`/${params.locale}`} className="hover:text-primary">
             Inicio
           </Link>
           <span>/</span>
-          <Link href="/catalogo" className="hover:text-primary">
+          <Link href={`/${params.locale}/catalogo`} className="hover:text-primary">
             Catálogo
           </Link>
           <span>/</span>

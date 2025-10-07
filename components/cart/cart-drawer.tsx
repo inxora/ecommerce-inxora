@@ -3,6 +3,7 @@
 import { useState, ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -21,6 +22,8 @@ export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
   const totalItems = getItemsCount()
   const total = getTotalPrice()
   const isEmpty = items.length === 0
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')?.[1] || 'es')
 
   // Si no se pasan props, usar como trigger independiente
   if (open === undefined && onOpenChange === undefined) {
@@ -83,7 +86,7 @@ export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
                 </p>
               </div>
               <Button asChild>
-                <Link href="/catalogo">Explorar productos</Link>
+                <Link href={`/${locale}/catalogo`}>Explorar productos</Link>
               </Button>
             </div>
           ) : (
@@ -184,10 +187,10 @@ export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <Button asChild className="w-full">
-                    <Link href="/carrito">Ver carrito</Link>
+                    <Link href={`/${locale}/carrito`}>Ver carrito</Link>
                   </Button>
                   <Button asChild variant="outline" className="w-full">
-                    <Link href="/checkout">Finalizar compra</Link>
+                    <Link href={`/${locale}/checkout`}>Finalizar compra</Link>
                   </Button>
                 </div>
               </div>

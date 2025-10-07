@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -43,6 +43,8 @@ const checkoutSchema = z.object({
 type CheckoutFormData = z.infer<typeof checkoutSchema>
 
 export function CheckoutForm() {
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')?.[1] || 'es')
   const t = useTranslations()
   const router = useRouter()
   const { toast } = useToast()
@@ -139,7 +141,7 @@ export function CheckoutForm() {
               Agrega algunos productos antes de proceder al checkout.
             </p>
             <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-              <a href="/catalogo">Explorar Productos</a>
+              <a href={`/${locale}/catalogo`}>Explorar Productos</a>
             </Button>
           </div>
         </div>

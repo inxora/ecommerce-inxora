@@ -25,7 +25,7 @@ function getOrder(id: string) {
   return orders.find((order: any) => order.id === id)
 }
 
-function OrderContent({ orderId }: { orderId: string }) {
+function OrderContent({ orderId, locale }: { orderId: string, locale: string }) {
   const t = useTranslations()
   
   // En un entorno real, esto sería una llamada a la API
@@ -250,7 +250,7 @@ function OrderContent({ orderId }: { orderId: string }) {
               {/* Acciones */}
               <div className="space-y-2 pt-4">
                 <Button asChild className="w-full">
-                  <Link href="/catalogo">
+                  <Link href={`/${locale}/catalogo`}>
                     {t('order.actions.continueShopping')}
                   </Link>
                 </Button>
@@ -269,7 +269,7 @@ function OrderContent({ orderId }: { orderId: string }) {
 export default function OrderPage({ params }: OrderPageProps) {
   return (
     <Suspense fallback={<div>Cargando...</div>}>
-      <OrderContent orderId={params.id} />
+      <OrderContent orderId={params.id} locale={params.locale} />
     </Suspense>
   )
 }

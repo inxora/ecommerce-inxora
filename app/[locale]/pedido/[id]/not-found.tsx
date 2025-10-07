@@ -1,11 +1,15 @@
+"use client"
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { AlertCircle, Home, ShoppingBag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 export default function OrderNotFound() {
   const t = useTranslations()
+  const pathname = usePathname()
+  const locale = (pathname?.split('/')?.[1] || 'es')
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -26,14 +30,14 @@ export default function OrderNotFound() {
             
             <div className="space-y-3">
               <Button asChild className="w-full">
-                <Link href="/catalogo">
+                <Link href={`/${locale}/catalogo`}>
                   <ShoppingBag className="w-4 h-4 mr-2" />
                   {t('order.notFound.viewCatalog')}
                 </Link>
               </Button>
               
               <Button variant="outline" asChild className="w-full">
-                <Link href="/">
+                <Link href={`/${locale}`}>
                   <Home className="w-4 h-4 mr-2" />
                   {t('order.notFound.backHome')}
                 </Link>
