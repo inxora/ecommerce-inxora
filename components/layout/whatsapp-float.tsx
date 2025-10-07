@@ -26,7 +26,7 @@ export function WhatsAppFloat({ productName, productUrl }: WhatsAppFloatProps) {
   }
 
   const generateWhatsAppUrl = (message: string) => {
-    const phoneNumber = '+51999999999' // Número de WhatsApp de INXORA
+    const phoneNumber = '+51946885531' // Número de WhatsApp de INXORA actualizado
     const encodedMessage = encodeURIComponent(message)
     return `https://wa.me/${phoneNumber.replace('+', '')}?text=${encodedMessage}`
   }

@@ -5,7 +5,7 @@ export default function NosotrosPage({ params }: { params: { locale: string } })
 
   return (
     <div className="bg-background-light dark:bg-background-dark">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Nosotros</h1>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
@@ -14,7 +14,7 @@ export default function NosotrosPage({ params }: { params: { locale: string } })
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Nuestra propuesta</h2>
             <p className="mt-3 text-gray-600 dark:text-gray-400">
               Eliminamos intermediarios, reducimos tiempos de cotización y brindamos asesoría técnica especializada para cada industria. Con precios directos de fábrica y despacho consolidado a nivel nacional, ayudamos a las empresas a comprar mejor y más rápido.
@@ -28,7 +28,7 @@ export default function NosotrosPage({ params }: { params: { locale: string } })
             </ul>
           </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Cómo funciona</h2>
             <p className="mt-3 text-gray-600 dark:text-gray-400">
               Un proceso simple: cotiza al instante, confirma por WhatsApp y recibe atención 24/7. Trabajamos con proveedores aliados para garantizar calidad certificada y seguridad en cada transacción.
@@ -44,7 +44,7 @@ export default function NosotrosPage({ params }: { params: { locale: string } })
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Reconocimientos y Alianzas</h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
             INXORA ha sido reconocida por su innovación y compromiso con la industria. Seguimos construyendo alianzas con los mejores fabricantes para ofrecer productos certificados y soporte técnico confiable.

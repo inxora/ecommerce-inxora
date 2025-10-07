@@ -45,8 +45,9 @@ export default function ContactoPage({ params }: { params: { locale: string } })
               Puedes cotizar al instante, responder por WhatsApp y confirmar despachos. Nuestro equipo brinda atención 24/7.
             </p>
             <div className="mt-4 space-y-2 text-gray-700 dark:text-gray-300">
-              <p><strong>Teléfono:</strong> +51 999 999 999</p>
-              <p><strong>Email:</strong> info@inxora.pe</p>
+              <p><strong>Dirección:</strong> Av. Óscar R. Benavides 3046, Lima 15081, Perú</p>
+              <p><strong>Teléfono:</strong> +51 946 885 531</p>
+              <p><strong>Email:</strong> contacto@inxora.com</p>
               <p><strong>WhatsApp:</strong> Atención inmediata</p>
             </div>
             <div className="mt-6 flex gap-3">

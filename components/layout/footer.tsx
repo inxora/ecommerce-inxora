@@ -1,27 +1,31 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
 
 export function Footer() {
+  const pathname = usePathname()
+  const locale = pathname?.split('/')?.[1] || 'es'
+
   const footerLinks = {
     company: [
-      { name: 'Nosotros', href: '/nosotros' },
-      { name: 'Contacto', href: '/contacto' },
-      { name: 'FAQ', href: '/faq' },
-      { name: 'Cotizaciones', href: '/cotizaciones' },
+      { name: 'Nosotros', href: `/${locale}/nosotros` },
+      { name: 'Contacto', href: `/${locale}/contacto` },
+      { name: 'FAQ', href: `/${locale}/faq` },
+      { name: 'Cotizaciones', href: `/${locale}/cotizaciones` },
     ],
     legal: [
-      { name: 'Términos', href: '/terminos' },
-      { name: 'Privacidad', href: '/privacidad' },
-      { name: 'Envíos', href: '/envios' },
-      { name: 'Devoluciones', href: '/devoluciones' },
+      { name: 'Términos', href: `/${locale}/terminos` },
+      { name: 'Privacidad', href: `/${locale}/privacidad` },
+      { name: 'Envíos', href: `/${locale}/envios` },
+      { name: 'Devoluciones', href: `/${locale}/devoluciones` },
     ],
     categories: [
-      { name: 'Catálogo', href: '/catalogo' },
-      { name: 'Suministros', href: '/catalogo?categoria=suministros-industriales' },
-      { name: 'Seguridad', href: '/catalogo?categoria=equipos-seguridad' },
-      { name: 'Herramientas', href: '/catalogo?categoria=herramientas' },
+      { name: 'Catálogo', href: `/${locale}/catalogo` },
+      { name: 'Suministros', href: `/${locale}/catalogo?categoria=suministros-industriales` },
+      { name: 'Seguridad', href: `/${locale}/catalogo?categoria=equipos-seguridad` },
+      { name: 'Herramientas', href: `/${locale}/catalogo?categoria=herramientas` },
     ]
   }
 
@@ -62,15 +66,15 @@ export function Footer() {
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <MapPin className="h-3 w-3 text-inxora-cyan" />
-                <span className="text-xs text-blue-100">Lima, Perú</span>
+                <span className="text-xs text-blue-100">Av. Óscar R. Benavides 3046, Lima 15081, Perú</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-3 w-3 text-inxora-cyan" />
-                <span className="text-xs text-blue-100">+51 999 999 999</span>
+                <span className="text-xs text-blue-100">+51 946 885 531</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-3 w-3 text-inxora-cyan" />
-                <span className="text-xs text-blue-100">info@inxora.pe</span>
+                <span className="text-xs text-blue-100">contacto@inxora.com</span>
               </div>
             </div>
 
