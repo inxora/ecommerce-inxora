@@ -50,13 +50,13 @@ export function Header() {
               Catálogo
             </a>
             <a
-              href={`/${locale}/about`}
+              href={`/${locale}/nosotros`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Nosotros
             </a>
             <a
-              href={`/${locale}/contact`}
+              href={`/${locale}/contacto`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Contacto
