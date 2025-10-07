@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Industrial Supplies Co.</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0579c7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1b23",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
+<div class="flex flex-col min-h-screen">
+<header class="bg-white dark:bg-background-dark shadow-sm sticky top-0 z-50">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<div class="flex items-center gap-8">
+<a class="flex items-center gap-2 text-primary" href="#">
+<span class="material-symbols-outlined text-3xl">build_circle</span>
+<span class="text-xl font-bold text-gray-900 dark:text-white">Industrial Supplies Co.</span>
+</a>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Home</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Categories</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Brands</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Deals</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+<span class="material-symbols-outlined pl-3 text-gray-500 dark:text-gray-400">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 py-2 px-2 w-48" placeholder="Search" type="text"/>
+</div>
+<button class="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+<span class="material-symbols-outlined text-gray-600 dark:text-gray-300">shopping_cart</span>
+<span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">3</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto">
+<div class="mb-8">
+<div class="relative">
+<input class="w-full pl-12 pr-10 py-3 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-primary focus:border-primary" placeholder="Search for products, brands, and more" type="search"/>
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+<aside class="lg:col-span-1">
+<div class="space-y-6">
+<div>
+<h3 class="font-bold text-lg mb-4 text-gray-900 dark:text-white">Filters</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="category">Category</label>
+<select class="form-select w-1/2 text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50" id="category">
+<option>All</option>
+<option>Power Tools</option>
+<option>Hand Tools</option>
+<option>Safety Gear</option>
+</select>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-sm font-medium text-gray-700 dark:text-gray-300" for="brand">Brand</label>
+<select class="form-select w-1/2 text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50" id="brand">
+<option>All</option>
+<option>DeWalt</option>
+<option>Makita</option>
+<option>3M</option>
+</select>
+</div>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-lg mb-4 text-gray-900 dark:text-white">Price Range</h3>
+<input class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary" max="500" min="0" type="range"/>
+<div class="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-2">
+<span>$0</span>
+<span>$500+</span>
+</div>
+</div>
+</div>
+</aside>
+<div class="lg:col-span-3">
+<div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+<p class="text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-0">Showing 1-8 of 128 results</p>
+<div class="flex items-center gap-2">
+<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</span>
+<select class="form-select text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">
+<option>Relevance</option>
+<option>Price: Low to High</option>
+<option>Price: High to Low</option>
+<option>Newest</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden group">
+<a class="block" href="#">
+<div class="w-full h-48 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBh9AObbJeqJrkXZG0mrEwP0raOJKyWVdA0m1nZwo_D020_WtEcweVGLoLq2jxZe1JNmb8Hj2_3ORFYj-EZOXyyuWBesiXprS3HSSP7z7zXqfdyGM9N2lNwdZeN-YVmJ1eGbpOf1C4z0L3VJVmwOh25vizhcZnd4D3AqmPZh4s5aOZCPC3RgMfqwsZVfCgZmxglnorcuLicbPNKb1Kgiu6OC4fIujqIzS0bcbEiCIDjGrPXAqBi17fmqYqL3sC2G-XkZD0jz0AqDLo");'></div>
+<div class="p-4">
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-primary transition-colors">Heavy Duty Drill</h4>
+<p class="text-lg font-bold text-primary">$129.99</p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Power Tools</p>
+</div>
+</a>
+</div>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden group">
+<a class="block" href="#">
+<div class="w-full h-48 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCgFBZxOELAlijuHHQFFLzKAvWikrzJnER4RuZS6SbtJXEcE9TvADYF8RYg62W2yyDskCVBRgsWY0hGsTUMtnUJEdtxgyPNXaLgM0uZc2EwOy1nWwfIAkHztluSdXsB1dixOuwSu744q7aPQknifVT4_kx5in4ytSyhxz79K9ZBh8Nj56sqRciSy1CzwGKNjKQj6_bwgtg-bk2F-jCUwRSLs_aeU9HppM4kBp-d2bHUI8hW4DT4ZFMGVEcWGmnqdUg-7fqBvILy-Bc");'></div>
+<div class="p-4">
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-primary transition-colors">Safety Gloves</h4>
+<p class="text-lg font-bold text-primary">$19.99</p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Safety Gear</p>
+</div>
+</a>
+</div>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden group">
+<a class="block" href="#">
+<div class="w-full h-48 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSLhN_5yrOIIUR_q0iV7DVQ2G0JscPEln-xmjhfo58XcZX-DR8eO3z3FhIslSgvSiizQo_qxI_ujhcSexc626P2zSA4YNfrbr8J5smPgcRcPIHbVrG_sIuSQwQ4lvbm9BwtTZfHOKaabPXriyZ3lr61NwVphoaZ1xg5vQyP_JJBkeDbAbpBwid3DoqZTaMYKLkATrFBofWI7kyUVXQPp1Bi_tgSBQwtSQ_SfLrJknJCw9dZUXfczwx1rSnE3dJhNQb92fMnuIm6WQ");'></div>
+<div class="p-4">
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-primary transition-colors">Industrial Screwdriver Set</h4>
+<p class="text-lg font-bold text-primary">$49.99</p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Hand Tools</p>
+</div>
+</a>
+</div>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden group">
+<a class="block" href="#">
+<div class="w-full h-48 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA5SyG6luJQ0i03qfXHeY47yXy8wlS2JIla2xRNoovkrTui5_5mDuaoNvYHnBNuNze1-9elog8XeqGOGlN1v2uUbbPlq2Cn5WdJQvqBR7nGx5UG-pUJKuIPNi59SS0IR8NAfPBjUc4fKPWagnNk2wKn_Zph_T7zoYaxbmo6DZckIgCCa8Dsn9H4oLkmWyfEo-XlzVFLDzyzcC3sAng1Lt51vVzFE9Qqhsc40MQ1paIScwDHWIkaKVWFg5we-37W-MAMjA_HFMvASSo");'></div>
+<div class="p-4">
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-primary transition-colors">Protective Eyewear</h4>
+<p class="text-lg font-bold text-primary">$24.99</p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Safety Gear</p>
+</div>
+</a>
+</div>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden group">
+<a class="block" href="#">
+<div class="w-full h-48 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBlkySeIrIRdtskESVGSdUR2JKDGUTfLTmXNzHiAkCGu2n52HXFEfTF2M-ZXc2OyBtLbb4OKaWOkqoBGnWzmlAIicrzWfByMPOrdBuerc-QzzvSIOuuq4MMb61tsDDyNmdhpDDK9og6lWr0X3dpmEzg031RPXX3H0P8ikDWYgm45fyVmDIPp4jDAmzOzgBj7XkVce0XkYtWdgSgoyhQq66Uzk9nyRhA86ZOhQ6DLFWTDvzFBNs03muhdd4Rm92ydguSWhS-T6e0zag");'></div>
+<div class="p-4">
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-primary transition-colors">Welding Helmet</h4>
+<p class="text-lg font-bold text-primary">$79.99</p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Safety Gear</p>
+</div>
+</a>
+</div>
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden group">
+<a class="block" href="#">
+<div class="w-full h-48 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuACCJER1Bbr8810UscXCn_Kp_z7zBnw3HmPBBAxNhC5yFvvQpmEenjex55KGHcUEHYhKCXoVOEA3NemsPxqETDZ6bALpj1fcC97nHv-VaVmiP-swdaRtzn4cJBZKJ63iUpaziFffYNCAwa0FJbKsB45M9x8OssUSDRnoMstuKM9saNxE_M83kYoI_6DL9uELtscoD6PoMAwV3HTocnHX4grGCLKDKE5MzGGq9QrSR_U_3tplUVtW-YOW4pOCeUYIg1-QEciZCIhlj4");'></div>
+<div class="p-4">
+<h4 class="text-base font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-primary transition-colors">Steel Toe Boots</h4>
+<p class="text-lg font-bold text-primary">$89.99</p>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Safety Gear</p>
+</div>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

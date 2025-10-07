@@ -1,0 +1,257 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Package, Heart } from 'lucide-react'
+
+interface CartItem {
+  id: string
+  name: string
+  sku: string
+  price: number
+  quantity: number
+  image?: string
+}
+
+export default function CartPage({ params }: { params: { locale: string } }) {
+  const [cartItems, setCartItems] = useState<CartItem[]>([
+    {
+      id: '1',
+      name: 'Guantes de Trabajo Resistentes',
+      sku: 'GLO-HD-01',
+      price: 25.00,
+      quantity: 2,
+    },
+    {
+      id: '2',
+      name: 'Gafas de Seguridad',
+      sku: 'GLA-SF-05',
+      price: 15.00,
+      quantity: 1,
+    },
+    {
+      id: '3',
+      name: 'Botas con Punta de Acero',
+      sku: 'BOO-ST-42',
+      price: 120.00,
+      quantity: 1,
+    },
+  ])
+
+  const updateQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeItem(id)
+      return
+    }
+    setCartItems(items =>
+      items.map(item =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    )
+  }
+
+  const removeItem = (id: string) => {
+    setCartItems(items => items.filter(item => item.id !== id))
+  }
+
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <Link
+                href={`/${params.locale}/catalogo`}
+                className="inline-flex items-center px-4 py-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Continuar Comprando
+              </Link>
+              
+              <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+                <Package className="h-5 w-5" />
+                <span className="text-sm font-medium">{cartItems.length} productos</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <ShoppingCart className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  Carrito de Compras
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  Revisa tus productos antes de continuar
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {cartItems.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
+              <div className="flex items-center space-x-3">
+                <ShoppingCart className="h-8 w-8 text-white" />
+                <h3 className="text-2xl font-bold text-white">Carrito vacío</h3>
+              </div>
+            </div>
+            <div className="p-12">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ShoppingCart className="h-12 w-12 text-gray-500 dark:text-gray-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  Tu carrito está vacío
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg leading-relaxed max-w-md mx-auto">
+                  Agrega algunos productos increíbles para comenzar tu compra.
+                </p>
+                <Link
+                  href={`/${params.locale}/catalogo`}
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                >
+                  <Package className="h-5 w-5 mr-2" />
+                  Explorar Productos
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="lg:col-span-2 space-y-6">
+              {cartItems.map((item) => (
+                <div key={item.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex items-start space-x-4">
+                      {/* Product Image */}
+                      <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Package className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                      </div>
+                      
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                          {item.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                          SKU: {item.sku}
+                        </p>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                            <span className="text-xl font-bold">
+                              ${item.price.toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          {/* Quantity Controls */}
+                          <div className="flex items-center space-x-3">
+                            <button
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                            >
+                              <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                            </button>
+                            <span className="w-8 text-center font-bold text-gray-900 dark:text-white">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                            >
+                              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex flex-col space-y-2">
+                        <button className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <Heart className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Item Total */}
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Total del producto:</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Order Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl sticky top-8">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl">
+                  <h3 className="text-xl font-bold text-white">Resumen del Pedido</h3>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      ${subtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-gray-600 dark:text-gray-400">Envío:</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">
+                      Gratis
+                    </span>
+                  </div>
+                  
+                  <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
+                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                        ${subtotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 pt-4">
+                    <Link
+                      href={`/${params.locale}/checkout`}
+                      className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                    >
+                      Proceder al Checkout
+                    </Link>
+                    
+                    <Link
+                      href={`/${params.locale}/catalogo`}
+                      className="w-full inline-flex items-center justify-center px-6 py-3 border-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold rounded-xl transition-all duration-200"
+                    >
+                      Seguir Comprando
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

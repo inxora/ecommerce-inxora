@@ -1,0 +1,254 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "catalog": "Catálogo",
+    "cart": "Carrito",
+    "contact": "Contacto",
+    "faq": "FAQ",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "shipping": "Envíos"
+  },
+  "common": {
+    "search": "Buscar productos...",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "addToCart": "Añadir al carrito",
+    "viewDetails": "Ver detalles",
+    "price": "Precio",
+    "category": "Categoría",
+    "brand": "Marca",
+    "quantity": "Cantidad",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "continue": "Continuar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "loading": "Cargando...",
+    "noResults": "No se encontraron resultados",
+    "error": "Error",
+    "success": "Éxito"
+  },
+  "product": {
+    "specifications": "Especificaciones técnicas",
+    "applications": "Aplicaciones",
+    "description": "Descripción",
+    "gallery": "Galería",
+    "relatedProducts": "Productos relacionados",
+    "consultWhatsApp": "Consultar por WhatsApp",
+    "inStock": "En stock",
+    "outOfStock": "Agotado"
+  },
+  "cart": {
+    "title": "Carrito de Compras",
+    "empty": {
+      "title": "Tu carrito está vacío",
+      "description": "Agrega algunos productos para comenzar tu compra",
+      "action": "Ir al catálogo"
+    },
+    "item": {
+      "remove": "Eliminar producto",
+      "increase": "Aumentar cantidad",
+      "decrease": "Disminuir cantidad"
+    },
+    "summary": {
+      "title": "Resumen del pedido",
+      "items": "Artículos",
+      "subtotal": "Subtotal",
+      "shipping": "Envío",
+      "total": "Total"
+    },
+    "actions": {
+      "clear": "Vaciar carrito",
+      "checkout": "Proceder al pago",
+      "continueShopping": "Seguir comprando"
+    },
+    "messages": {
+      "itemAdded": "Producto agregado al carrito",
+      "itemRemoved": "Producto eliminado del carrito",
+      "cartCleared": "Carrito vaciado",
+      "quantityUpdated": "Cantidad actualizada"
+    },
+    "quantity": "Cantidad"
+  },
+  "checkout": {
+    "title": "Finalizar Compra",
+    "emptyCart": "Tu carrito está vacío",
+    "continueShopping": "Continuar comprando",
+    "processing": "Procesando pedido...",
+    "placeOrder": "Realizar Pedido",
+    "personalInfo": {
+      "title": "Información Personal",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono"
+    },
+    "shipping": {
+      "title": "Dirección de Envío",
+      "address": "Dirección",
+      "city": "Ciudad",
+      "state": "Estado/Provincia",
+      "zipCode": "Código Postal",
+      "country": "País"
+    },
+    "payment": {
+      "title": "Método de Pago",
+      "card": "Tarjeta de Crédito/Débito",
+      "cardDescription": "Pago seguro con tarjeta",
+      "transfer": "Transferencia Bancaria",
+      "transferDescription": "Pago por transferencia",
+      "cash": "Pago Contra Entrega",
+      "cashDescription": "Pagar al recibir el producto"
+    },
+    "notes": {
+      "title": "Notas Adicionales",
+      "placeholder": "Instrucciones especiales para la entrega..."
+    },
+    "terms": {
+      "accept": "Acepto los",
+      "link": "términos y condiciones"
+    },
+    "newsletter": "Suscribirme al boletín de noticias",
+    "orderSummary": {
+      "title": "Resumen del Pedido",
+      "subtotal": "Subtotal",
+      "shipping": "Envío",
+      "freeShipping": "Gratis",
+      "freeShippingMessage": "¡Envío gratis por compras mayores a $200,000!",
+      "tax": "IVA",
+      "total": "Total",
+      "itemsCount": "{count} artículo(s)",
+      "taxIncluded": "Impuestos incluidos",
+      "processingTime": "Tiempo de procesamiento: 1-2 días hábiles"
+    },
+    "success": {
+      "title": "¡Pedido realizado con éxito!",
+      "description": "Tu pedido #{orderId} ha sido procesado correctamente"
+    },
+    "error": {
+      "title": "Error al procesar el pedido",
+      "description": "Hubo un problema al procesar tu pedido. Inténtalo de nuevo."
+    }
+  },
+  "order": {
+    "confirmation": {
+      "title": "¡Pedido Confirmado!",
+      "description": "Gracias por tu compra. Hemos recibido tu pedido y lo procesaremos pronto.",
+      "orderId": "Número de pedido"
+    },
+    "status": {
+      "title": "Estado del Pedido",
+      "description": "Te notificaremos sobre cualquier actualización",
+      "pending": "Pendiente",
+      "confirmed": "Confirmado",
+      "processing": "En Proceso",
+      "shipped": "Enviado",
+      "delivered": "Entregado",
+      "cancelled": "Cancelado"
+    },
+    "items": {
+      "title": "Productos del Pedido"
+    },
+    "customer": {
+      "title": "Información del Cliente"
+    },
+    "shipping": {
+      "title": "Dirección de Envío"
+    },
+    "summary": {
+      "title": "Resumen del Pedido"
+    },
+    "notes": "Notas del Pedido",
+    "actions": {
+      "continueShopping": "Seguir Comprando",
+      "downloadInvoice": "Descargar Factura"
+    },
+    "notFound": {
+      "title": "Pedido No Encontrado",
+      "description": "El pedido que buscas no existe o ha sido eliminado.",
+      "viewCatalog": "Ver Catálogo",
+      "backHome": "Volver al Inicio"
+    }
+  },
+  "product": {
+    "addToCart": "Agregar al carrito",
+    "quantity": "Cantidad",
+    "description": "Descripción",
+    "specifications": "Especificaciones",
+    "relatedProducts": "Productos relacionados",
+    "features": {
+      "stock": "En stock",
+      "available": "Disponible",
+      "shipping": "Envío rápido",
+      "fast": "24-48 horas",
+      "warranty": "Garantía",
+      "guaranteed": "Garantizado"
+    },
+    "linkCopied": "Enlace copiado",
+    "linkCopiedDescription": "El enlace del producto ha sido copiado al portapapeles"
+  },
+  "catalog": {
+    "title": "Catálogo de Productos",
+    "search": {
+      "placeholder": "Buscar productos...",
+      "clear": "Limpiar búsqueda"
+    },
+    "filters": {
+      "title": "Filtros",
+      "category": "Categoría",
+      "brand": "Marca",
+      "price": "Precio",
+      "priceRange": "Rango de precio",
+      "minPrice": "Precio mínimo",
+      "maxPrice": "Precio máximo",
+      "sortBy": "Ordenar por",
+      "sortOptions": {
+        "name_asc": "Nombre A-Z",
+        "name_desc": "Nombre Z-A",
+        "price_asc": "Precio menor a mayor",
+        "price_desc": "Precio mayor a menor",
+        "newest": "Más recientes"
+      },
+      "activeFilters": "Filtros activos",
+      "clearAll": "Limpiar todo",
+      "apply": "Aplicar filtros",
+      "results": "{count} productos encontrados"
+    },
+    "pagination": {
+      "showing": "Mostrando {start}-{end} de {total} productos",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "noResults": {
+      "title": "No se encontraron productos",
+      "description": "Intenta ajustar los filtros o términos de búsqueda"
+    }
+  },
+  "footer": {
+    "company": {
+      "title": "Empresa",
+      "about": "Acerca de",
+      "contact": "Contacto",
+      "careers": "Carreras",
+      "press": "Prensa"
+    },
+    "legal": {
+      "title": "Legal",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "cookies": "Cookies",
+      "returns": "Devoluciones"
+    },
+    "categories": {
+      "title": "Categorías",
+      "all": "Todas las categorías"
+    },
+    "social": {
+      "title": "Síguenos"
+    },
+    "copyright": "© 2024 INXORA. Todos los derechos reservados.",
+    "description": "Tu tienda de confianza para productos de calidad"
+  }
+}

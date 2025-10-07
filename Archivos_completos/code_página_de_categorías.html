@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0579c7",
+              "background-light": "#f5f7f8",
+              "background-dark": "#0f1b23",
+            },
+            fontFamily: {
+              display: ["Inter"],
+            },
+            borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+          },
+        },
+      };
+    </script>
+<title>Industrial Supplies Co. - Product Categories</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
+<div class="flex min-h-screen w-full flex-col">
+<header class="sticky top-0 z-10 w-full border-b border-gray-200/50 dark:border-gray-800/50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+<div class="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+<div class="flex items-center gap-6">
+<a class="flex items-center gap-3" href="#">
+<svg class="h-8 w-8 text-primary" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.8261 17.4264C16.7203 18.1174 20.2244 18.5217 24 18.5217C27.7756 18.5217 31.2797 18.1174 34.1739 17.4264C36.9144 16.7722 39.9967 15.2331 41.3563 14.1648L24.8486 40.6391C24.4571 41.267 23.5429 41.267 23.1514 40.6391L6.64374 14.1648C8.00331 15.2331 11.0856 16.7722 13.8261 17.4264Z" fill="currentColor"></path>
+<path clip-rule="evenodd" d="M39.998 12.236C39.9944 12.2537 39.9875 12.2845 39.9748 12.3294C39.9436 12.4399 39.8949 12.5741 39.8346 12.7175C39.8168 12.7597 39.7989 12.8007 39.7813 12.8398C38.5103 13.7113 35.9788 14.9393 33.7095 15.4811C30.9875 16.131 27.6413 16.5217 24 16.5217C20.3587 16.5217 17.0125 16.131 14.2905 15.4811C12.0012 14.9346 9.44505 13.6897 8.18538 12.8168C8.17384 12.7925 8.16216 12.767 8.15052 12.7408C8.09919 12.6249 8.05721 12.5114 8.02977 12.411C8.00356 12.3152 8.00039 12.2667 8.00004 12.2612C8.00004 12.261 8 12.2607 8.00004 12.2612C8.00004 12.2359 8.0104 11.9233 8.68485 11.3686C9.34546 10.8254 10.4222 10.2469 11.9291 9.72276C14.9242 8.68098 19.1919 8 24 8C28.8081 8 33.0758 8.68098 36.0709 9.72276C37.5778 10.2469 38.6545 10.8254 39.3151 11.3686C39.9006 11.8501 39.9857 12.1489 39.998 12.236ZM4.95178 15.2312L21.4543 41.6973C22.6288 43.5809 25.3712 43.5809 26.5457 41.6973L43.0534 15.223C43.0709 15.1948 43.0878 15.1662 43.104 15.1371L41.3563 14.1648C43.104 15.1371 43.1038 15.1374 43.104 15.1371L43.1051 15.135L43.1065 15.1325L43.1101 15.1261L43.1199 15.1082C43.1276 15.094 43.1377 15.0754 43.1497 15.0527C43.1738 15.0075 43.2062 14.9455 43.244 14.8701C43.319 14.7208 43.4196 14.511 43.5217 14.2683C43.6901 13.8679 44 13.0689 44 12.2609C44 10.5573 43.003 9.22254 41.8558 8.2791C40.6947 7.32427 39.1354 6.55361 37.385 5.94477C33.8654 4.72057 29.133 4 24 4C18.867 4 14.1346 4.72057 10.615 5.94478C8.86463 6.55361 7.30529 7.32428 6.14419 8.27911C4.99695 9.22255 3.99999 10.5573 3.99999 12.2609C3.99999 13.1275 4.29264 13.9078 4.49321 14.3607C4.60375 14.6102 4.71348 14.8196 4.79687 14.9689C4.83898 15.0444 4.87547 15.1065 4.9035 15.1529C4.91754 15.1762 4.92954 15.1957 4.93916 15.2111L4.94662 15.223L4.95178 15.2312ZM35.9868 18.996L24 38.22L12.0131 18.996C12.4661 19.1391 12.9179 19.2658 13.3617 19.3718C16.4281 20.1039 20.0901 20.5217 24 20.5217C27.9099 20.5217 31.5719 20.1039 34.6383 19.3718C35.082 19.2658 35.5339 19.1391 35.9868 18.996Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+<h1 class="text-xl font-bold text-gray-900 dark:text-white">Industrial Supplies Co.</h1>
+</a>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Home</a>
+<a class="text-sm font-medium text-primary dark:text-primary" href="#">Products</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">About Us</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Contact</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
+<svg fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+</svg>
+</span>
+<input class="form-input w-full rounded border-gray-300 bg-white/50 dark:border-gray-700 dark:bg-background-dark/50 pl-10 text-sm focus:border-primary focus:ring-primary" placeholder="Search" type="search"/>
+</div>
+<button class="relative rounded p-2 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+<svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.79,29.14A16,16,0,0,0,34.05,16H16a8,8,0,0,0,0,16h18L59.56,172.29a24,24,0,0,0,5.33,11.27,28,28,0,1,0,44.4,8.44h45.42A27.75,27.75,0,0,0,152,204a28,28,0,1,0,28-28H83.17a8,8,0,0,1-7.87-6.57L72.13,152h116a24,24,0,0,0,23.61-19.71l12.16-66.86A8,8,0,0,0,222.14,58.87ZM96,204a12,12,0,1,1-12-12A12,12,0,0,1,96,204Zm96,0a12,12,0,1,1-12-12A12,12,0,0,1,192,204Zm4-74.57A8,8,0,0,1,188.1,136H69.22L57.59,72H206.41Z"></path>
+</svg>
+<span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">3</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+<h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Product Categories</h2>
+<p class="mt-2 text-lg text-gray-600 dark:text-gray-400">Explore our wide range of industrial supplies.</p>
+<div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
+<a class="group" href="#">
+<div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800">
+<img alt="Safety Equipment" class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK6Cqe7Koke8R4dhAYOTgTCQPkUHk0xTnhzGWr-jEqeDgr70pskHF0wjOq5q7hWt-IKIOeZ8HSP5FgwhReFVhRk6-rBjV8-kCKz1T4pwe3pWIG5FwyAjaH8eP2f0N7z5b6plsaWz4x_PugmH3pBaVeMuQ0QZbgUqvdJrlxccC1rXRIY5SeGtzbiLsd854Od6aWhiPlFqJ6oO9SDvuhaIeFpWbWprMJHRdSATzfYz0jVpB4jUPxP98qvvSWPc--slJ3WFERtG6GWek"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-800 dark:text-gray-200">Safety Equipment</h3>
+</a>
+<a class="group" href="#">
+<div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800">
+<img alt="Power Tools" class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0Fpl-kNijdsOn7k2nqkumetmKC6iqRXwncUPkf_yYYcPIjsuVd5LSRTFEMZd_RT0T3ry0OoP5yWeeu4kZHRpiQlsAJtXSDucbzSKykDvX8lwaKf2GBXkawu3AUDTU7r4gY5qhFX7vJu6ghMbveHdZEHHyz8uxoOb2hQXV2IGGI3cVF-S0a3LpZuVv9X73wSDYSQQiH6IWj-N35qJ9k6p9v2Y5AQBcmGAJZeVk7chWhAVYQtit3QUBQxWlGeHdeLShwGq6dHtBdDw"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-800 dark:text-gray-200">Power Tools</h3>
+</a>
+<a class="group" href="#">
+<div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800">
+<img alt="Hand Tools" class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqnwZIH1j1wjPPitHdUiCJ_qRtCOO8iCK06cdTOpQgYRC2ccc05JNzSlW3fsUM6kRRTF3zBMgiCcRNOyH4FEpsrl9RefqmvNC7f7mzX5t0nM7N7efgdo6AwTnVsfyEPNjC5FyrRHuifiZW8vEMjINfEsU2iX6Rmt3DvcN7uB2xVK_8PBFvsptJGGT_iLijH8PlBbXRAjbovOwuG9Qu1kzLlZjghSxAD2LG_3MrZLZN7AOOvyRr1U-FOP35hgK6abSRmCpuTAhQmf8"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-800 dark:text-gray-200">Hand Tools</h3>
+</a>
+<a class="group" href="#">
+<div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800">
+<img alt="Electrical Supplies" class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3v5ThMAuLby0C8Zj6oxnjellsNmTNug-6oHqNcQgApqVijUys03ilSeLRcTto8a9pVVIaYgfXmI6VXDB27NZJeWNgIa9a5kM6SNFo8ZA04ilLr9a1qz-2Xb0rAmz7VniHAGFmdwcT3dqalvCG53RgFWiLixxgcDVQ01nCU9eB_fRdYbDD45LLOQ_xSzZ6BBMmo5l1ZwF9bFEQkinxRfF6cOC-UZG-WAy24PI5g2hpuyxCNOTTxO2bv2Gki3NNIihYtPkRoqSW7-U"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-800 dark:text-gray-200">Electrical Supplies</h3>
+</a>
+<a class="group" href="#">
+<div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800">
+<img alt="Plumbing Supplies" class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAImFJN43lLeUAJthKnNB6PgX_6p3DNTibAy_wV5mY9ApPWJYeAA_hNl1m_S8BT__PMqmP98U3E-oy7VvIpk4P3BwpCm9Tv6vVYsPRgK49mMEJtOkzBZgv-5-yO3n6ru5q1anj9PiSJkUv5vchrSDfN4hHuaJD7gYSxLmCvKCF7jNLSGLO4sEiLkGR1Gf5zGE3IRYLC2yRHZD5BZrlRw2J-iM6bHME76_zSXfVgxSRT2JSFD_TJ4GsNbJiXmT4s1Gdn7dwZzg76JNw"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-800 dark:text-gray-200">Plumbing Supplies</h3>
+</a>
+<a class="group" href="#">
+<div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800">
+<img alt="Fasteners" class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5TXJRk9GH4gK-Cwl70DmFPK1TwnFp0hoXlWomQdm5rL_r2F06SsB4wATWsgXzk6yvYoeeftrJYdieJnVVfzFLtG3qRMtUfNDHi4Fxiejze86Cs-rde30SiaE2YE0GrZhsA-CnoEtjeNSK9mNA8UyyeMliSVKuw8hJG2LzDNmFRq4Nf0BDuwsAGL77b6Yl6rjQEO-SzEUWvazbgQhf_Er4iRB0vfQrS0Jyp8-pD6nGaqwu9yPO03zmDZ7FxoNa1twbnQklhN3OvEY"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-800 dark:text-gray-200">Fasteners</h3>
+</a>
+</div>
+</div>
+</main>
+<footer class="bg-background-light dark:bg-background-dark border-t border-gray-200/50 dark:border-gray-800/50">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+<div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+<nav class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary" href="#">Terms of Service</a>
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary" href="#">Privacy Policy</a>
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary" href="#">Contact Us</a>
+</nav>
+<p class="text-sm text-gray-500 dark:text-gray-400">© 2024 Industrial Supplies Co. All rights reserved.</p>
+</div>
+</div>
+</footer>
+</div>
+
+</body></html>

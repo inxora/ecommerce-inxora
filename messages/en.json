@@ -1,0 +1,308 @@
+{
+  "nav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "about": "About Us",
+    "cart": "Cart",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "shipping": "Shipping"
+  },
+  "common": {
+    "search": "Search products...",
+    "filter": "Filter",
+    "sort": "Sort",
+    "addToCart": "Add to cart",
+    "viewDetails": "View details",
+    "price": "Price",
+    "category": "Category",
+    "brand": "Brand",
+    "quantity": "Quantity",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "error": "Error",
+    "success": "Success"
+  },
+  "search": {
+    "placeholder": "Search products..."
+  },
+  "whatsapp": {
+    "contact_us": "Contact us"
+  },
+  "product": {
+    "specifications": "Technical specifications",
+    "applications": "Applications",
+    "description": "Description",
+    "gallery": "Gallery",
+    "relatedProducts": "Related products",
+    "consultWhatsApp": "Consult via WhatsApp",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": {
+      "title": "Your cart is empty",
+      "description": "Add some products to start shopping",
+      "action": "Go to catalog"
+    },
+    "item": {
+      "remove": "Remove product",
+      "increase": "Increase quantity",
+      "decrease": "Decrease quantity"
+    },
+    "summary": {
+      "title": "Order summary",
+      "items": "Items",
+      "subtotal": "Subtotal",
+      "shipping": "Shipping",
+      "total": "Total"
+    },
+    "actions": {
+      "clear": "Clear cart",
+      "checkout": "Proceed to checkout",
+      "continueShopping": "Continue shopping"
+    },
+    "messages": {
+      "itemAdded": "Product added to cart",
+      "itemRemoved": "Product removed from cart",
+      "cartCleared": "Cart cleared",
+      "quantityUpdated": "Quantity updated"
+    },
+    "quantity": "Quantity"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "emptyCart": "Your cart is empty",
+    "continueShopping": "Continue shopping",
+    "processing": "Processing order...",
+    "placeOrder": "Place Order",
+    "personalInfo": {
+      "title": "Personal Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "shipping": {
+      "title": "Shipping Address",
+      "address": "Address",
+      "city": "City",
+      "state": "State/Province",
+      "zipCode": "Zip Code",
+      "country": "Country"
+    },
+    "payment": {
+      "title": "Payment Method",
+      "card": "Credit/Debit Card",
+      "cardDescription": "Secure card payment",
+      "transfer": "Bank Transfer",
+      "transferDescription": "Payment by transfer",
+      "cash": "Cash on Delivery",
+      "cashDescription": "Pay when you receive the product"
+    },
+    "notes": {
+      "title": "Additional Notes",
+      "placeholder": "Special delivery instructions..."
+    },
+    "terms": {
+      "accept": "I accept the",
+      "link": "terms and conditions"
+    },
+    "newsletter": "Subscribe to newsletter",
+    "orderSummary": {
+      "title": "Order Summary",
+      "subtotal": "Subtotal",
+      "shipping": "Shipping",
+      "freeShipping": "Free",
+      "freeShippingMessage": "Free shipping on orders over $200,000!",
+      "tax": "Tax",
+      "total": "Total",
+      "itemsCount": "{count} item(s)",
+      "taxIncluded": "Tax included",
+      "processingTime": "Processing time: 1-2 business days"
+    },
+    "success": {
+      "title": "Order placed successfully!",
+      "description": "Your order #{orderId} has been processed correctly"
+    },
+    "error": {
+      "title": "Error processing order",
+      "description": "There was a problem processing your order. Please try again."
+    }
+  },
+  "order": {
+    "confirmation": {
+      "title": "Order Confirmed!",
+      "description": "Thank you for your purchase. We have received your order and will process it soon.",
+      "orderId": "Order number"
+    },
+    "status": {
+      "title": "Order Status",
+      "description": "We'll notify you about any updates",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "items": {
+      "title": "Order Items"
+    },
+    "customer": {
+      "title": "Customer Information"
+    },
+    "shipping": {
+      "title": "Shipping Address"
+    },
+    "summary": {
+      "title": "Order Summary"
+    },
+    "notes": "Order Notes",
+    "actions": {
+      "continueShopping": "Continue Shopping",
+      "downloadInvoice": "Download Invoice"
+    },
+    "notFound": {
+      "title": "Order Not Found",
+      "description": "The order you're looking for doesn't exist or has been deleted.",
+      "viewCatalog": "View Catalog",
+      "backHome": "Back to Home"
+    }
+  },
+  "confirmation": {
+    "title": "Order confirmed!",
+    "orderNumber": "Order number",
+    "paymentInstructions": "Payment instructions",
+    "sendReceipt": "Send receipt",
+    "thankYou": "Thank you for your order"
+  },
+  "product": {
+    "addToCart": "Add to cart",
+    "add_to_cart": "Add to cart",
+    "view_details": "View details",
+    "view": "View",
+    "quantity": "Quantity",
+    "description": "Description",
+    "specifications": "Specifications",
+    "relatedProducts": "Related products",
+    "features": {
+      "stock": "In stock",
+      "available": "Available",
+      "shipping": "Fast shipping",
+      "fast": "24-48 hours",
+      "warranty": "Warranty",
+      "guaranteed": "Guaranteed"
+    },
+    "linkCopied": "Link copied",
+    "linkCopiedDescription": "Product link has been copied to clipboard"
+  },
+  "catalog": {
+    "title": "Product Catalog",
+    "showingResults": "Showing {start}-{end} of {total} products",
+    "products_found": "{count} products found",
+    "search": {
+      "placeholder": "Search products...",
+      "clear": "Clear search"
+    },
+    "filters": {
+      "title": "Filters",
+      "categories": "Categories",
+      "select_category": "Select category",
+      "all_categories": "All categories",
+      "brands": "Brands",
+      "select_brand": "Select brand",
+      "all_brands": "All brands",
+      "price_range": "Price range",
+      "clear_all": "Clear all",
+      "category": "Category",
+      "brand": "Brand",
+      "price": "Price",
+      "priceRange": "Price range",
+      "minPrice": "Minimum price",
+      "maxPrice": "Maximum price",
+      "sortBy": "Sort by",
+      "sortOptions": {
+        "name_asc": "Name A-Z",
+        "name_desc": "Name Z-A",
+        "price_asc": "Price low to high",
+        "price_desc": "Price high to low",
+        "newest": "Newest"
+      },
+      "activeFilters": "Active filters",
+      "clearAll": "Clear all",
+      "apply": "Apply filters",
+      "results": "{count} products found"
+    },
+    "sort": {
+      "title": "Sort by",
+      "placeholder": "Select sort option",
+      "name_asc": "Name A-Z",
+      "name_desc": "Name Z-A",
+      "price_asc": "Price low to high",
+      "price_desc": "Price high to low",
+      "featured": "Featured"
+    },
+    "price": {
+      "under_100": "Under $100",
+      "100_500": "$100 - $500",
+      "500_1000": "$500 - $1,000",
+      "1000_5000": "$1,000 - $5,000",
+      "over_5000": "Over $5,000"
+    },
+    "pagination": {
+      "showing": "Showing {start}-{end} of {total} products",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "noResults": {
+      "title": "No products found",
+      "description": "Try adjusting your filters or search terms"
+    }
+  },
+  "footer": {
+    "about": "About Us",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "shipping": "Shipping Info",
+    "catalog": "Catalog",
+    "industrial_supplies": "Industrial Supplies",
+    "safety_equipment": "Safety Equipment",
+    "rights_reserved": "All rights reserved.",
+    "powered_by": "Powered by",
+    "company": {
+      "title": "Company",
+      "about": "About",
+      "contact": "Contact",
+      "careers": "Careers",
+      "press": "Press"
+    },
+    "legal": {
+      "title": "Legal",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "cookies": "Cookies",
+      "returns": "Returns"
+    },
+    "categories": {
+      "title": "Categories",
+      "all": "All categories"
+    },
+    "social": {
+      "title": "Follow us"
+    },
+    "copyright": "© 2024 INXORA. All rights reserved.",
+    "description": "Your trusted store for quality products"
+  }
+}

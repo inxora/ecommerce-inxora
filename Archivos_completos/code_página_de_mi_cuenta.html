@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mi Cuenta</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0579c7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1b23",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-white dark:bg-gray-900/50 p-6 flex flex-col">
+<nav class="flex flex-col space-y-2">
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-medium">Resumen</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-medium">Historial de pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">badge</span>
+<span class="font-medium">Información personal</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">pin_drop</span>
+<span class="font-medium">Direcciones de envío</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-medium">Métodos de pago</span>
+</a>
+</nav>
+<div class="mt-auto">
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-medium">Cerrar sesión</span>
+</a>
+</div>
+</aside>
+<main class="flex-1 p-8">
+<div class="max-w-4xl mx-auto">
+<header class="mb-8">
+<h1 class="text-3xl font-bold text-gray-900 dark:text-white">Mi Cuenta</h1>
+</header>
+<section class="mb-10 p-6 bg-white dark:bg-gray-900/50 rounded-xl shadow-sm">
+<h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Resumen de la cuenta</h2>
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBYoH6hWRjTR_ZGIEuIDabA_dla8_5FOvLRPE3Udhx-I9ahgQRs18xg3kWLQQJNcDgpkP8R7g9fW3HOgRQdNFFP_B3FK_97_8hW_tReYReBFPpMBdPerolQJz5u5AmleF_trXr_Xb36m05ZpeUayXRFWk8eCG-JAfdXGgh8fD-8Qmu4ZfsY3T61YWiDZPIulaxVKJvoUyXq3i4brRJ-VuJLG_kuGSuNmEvT6hGX-hVwWA5uIb6h3Gab08D79t_oJKnSZEEScZAhrYU");'></div>
+<div>
+<p class="font-semibold text-lg text-gray-900 dark:text-white">Nombre Apellido</p>
+<p class="text-gray-600 dark:text-gray-400">usuario@email.com</p>
+</div>
+<button class="ml-auto bg-primary/10 dark:bg-primary/20 text-primary font-medium py-2 px-4 rounded-lg hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors">Editar</button>
+</div>
+</section>
+<section>
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-xl font-bold text-gray-900 dark:text-white">Historial de pedidos</h2>
+<button class="bg-primary text-white font-medium py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
+                            Ver todos
+                         </button>
+</div>
+<div class="bg-white dark:bg-gray-900/50 rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-sm text-left">
+<thead class="bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+<tr>
+<th class="px-6 py-3 font-medium" scope="col">Fecha</th>
+<th class="px-6 py-3 font-medium" scope="col">Número de pedido</th>
+<th class="px-6 py-3 font-medium" scope="col">Total</th>
+<th class="px-6 py-3 font-medium" scope="col">Estado</th>
+<th class="px-6 py-3" scope="col">
+<span class="sr-only">Acciones</span>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b dark:border-gray-800">
+<td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">15 de mayo de 2024</td>
+<td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">#123456789</td>
+<td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white font-medium">$250.00</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                                Enviado
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<a class="text-primary hover:underline font-medium" href="#">Ver detalles</a>
+</td>
+</tr>
+<tr class="border-b dark:border-gray-800">
+<td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">20 de abril de 2024</td>
+<td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">#987654321</td>
+<td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white font-medium">$180.50</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                                                Entregado
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<a class="text-primary hover:underline font-medium" href="#">Ver detalles</a>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">5 de marzo de 2024</td>
+<td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">#456789123</td>
+<td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white font-medium">$320.75</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                                                Entregado
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<a class="text-primary hover:underline font-medium" href="#">Ver detalles</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+
+</body></html>

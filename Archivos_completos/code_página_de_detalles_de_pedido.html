@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0579c7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1b23",
+                        "content-light": "#1a2a35",
+                        "content-dark": "#e1e7ec",
+                        "subtle-light": "#6b7f8d",
+                        "subtle-dark": "#8a9faa",
+                        "border-light": "#e1e7ec",
+                        "border-dark": "#2d3e4a",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2a35",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-content-light dark:text-content-dark">
+<div class="flex flex-col min-h-screen">
+<header class="bg-surface-light dark:bg-surface-dark/80 backdrop-blur-sm sticky top-0 z-10 border-b border-border-light dark:border-border-dark">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<div class="flex items-center space-x-8">
+<a class="flex items-center space-x-2" href="#">
+<span class="material-symbols-outlined text-primary text-3xl">construction</span>
+<span class="text-xl font-bold">Industrial Supplies Co.</span>
+</a>
+<nav class="hidden md:flex space-x-8">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Products</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Solutions</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Resources</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">About Us</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-subtle-light dark:text-subtle-dark">search</span>
+<input class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-full py-2 pl-10 pr-4 text-sm w-48 focus:w-64 transition-all focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Search..." type="text"/>
+</div>
+<a class="p-2 rounded-full hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+</a>
+<a class="p-2 rounded-full hover:bg-primary/10 transition-colors" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+</a>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-4xl mx-auto">
+<div class="flex items-center space-x-2 text-sm text-subtle-light dark:text-subtle-dark mb-6">
+<a class="hover:text-primary" href="#">My Account</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<a class="hover:text-primary" href="#">Order History</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span>Order Details</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+<div>
+<h1 class="text-3xl font-bold">Order #1234567890</h1>
+<p class="text-subtle-light dark:text-subtle-dark mt-1">Placed on July 15, 2024</p>
+</div>
+<div class="flex items-center gap-2 mt-4 md:mt-0 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-sm font-medium">
+<span class="material-symbols-outlined text-base">local_shipping</span>
+<span>Delivered</span>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark divide-y divide-border-light dark:divide-border-dark">
+<div class="p-6">
+<h2 class="text-lg font-semibold mb-4">Order Summary</h2>
+<div class="flow-root">
+<div class="-mx-6 -my-4 overflow-x-auto">
+<div class="inline-block min-w-full align-middle">
+<table class="min-w-full">
+<thead class="text-sm text-left text-subtle-light dark:text-subtle-dark">
+<tr>
+<th class="py-3.5 px-6 font-medium" scope="col">Product</th>
+<th class="py-3.5 px-6 font-medium text-center" scope="col">Quantity</th>
+<th class="py-3.5 px-6 font-medium text-right" scope="col">Price</th>
+<th class="py-3.5 px-6 font-medium text-right" scope="col">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark">
+<tr>
+<td class="whitespace-nowrap py-4 px-6 font-medium">Heavy Duty Work Gloves</td>
+<td class="whitespace-nowrap py-4 px-6 text-center text-subtle-light dark:text-subtle-dark">2</td>
+<td class="whitespace-nowrap py-4 px-6 text-right text-subtle-light dark:text-subtle-dark">$25.00</td>
+<td class="whitespace-nowrap py-4 px-6 text-right">$50.00</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap py-4 px-6 font-medium">Safety Glasses</td>
+<td class="whitespace-nowrap py-4 px-6 text-center text-subtle-light dark:text-subtle-dark">1</td>
+<td class="whitespace-nowrap py-4 px-6 text-right text-subtle-light dark:text-subtle-dark">$15.00</td>
+<td class="whitespace-nowrap py-4 px-6 text-right">$15.00</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap py-4 px-6 font-medium">Industrial Strength Cleaner</td>
+<td class="whitespace-nowrap py-4 px-6 text-center text-subtle-light dark:text-subtle-dark">3</td>
+<td class="whitespace-nowrap py-4 px-6 text-right text-subtle-light dark:text-subtle-dark">$10.00</td>
+<td class="whitespace-nowrap py-4 px-6 text-right">$30.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-border-light dark:border-border-dark">
+<div class="max-w-sm ml-auto space-y-2 text-sm">
+<div class="flex justify-between">
+<span class="text-subtle-light dark:text-subtle-dark">Subtotal</span>
+<span>$95.00</span>
+</div>
+<div class="flex justify-between">
+<span class="text-subtle-light dark:text-subtle-dark">Shipping</span>
+<span>$5.00</span>
+</div>
+<div class="flex justify-between">
+<span class="text-subtle-light dark:text-subtle-dark">Tax (8%)</span>
+<span>$7.60</span>
+</div>
+<div class="flex justify-between font-bold text-base border-t border-border-light dark:border-border-dark pt-2 mt-2">
+<span>Total</span>
+<span>$107.60</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid md:grid-cols-2 gap-8 mt-8">
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+<h2 class="text-lg font-semibold mb-4">Shipping Information</h2>
+<dl class="space-y-4 text-sm">
+<div>
+<dt class="font-medium text-subtle-light dark:text-subtle-dark">Shipping Address</dt>
+<dd class="mt-1">123 Main Street, Anytown, CA 91234</dd>
+</div>
+<div>
+<dt class="font-medium text-subtle-light dark:text-subtle-dark">Shipping Method</dt>
+<dd class="mt-1">Standard Shipping</dd>
+</div>
+<div>
+<dt class="font-medium text-subtle-light dark:text-subtle-dark">Tracking Number</dt>
+<dd class="mt-1 flex items-center">
+<span class="font-mono">9876543210</span>
+<a class="ml-auto inline-flex items-center gap-2 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-primary/90 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+<span>Track</span>
+</a>
+</dd>
+</div>
+</dl>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6">
+<h2 class="text-lg font-semibold mb-4">Billing Information</h2>
+<dl class="space-y-4 text-sm">
+<div>
+<dt class="font-medium text-subtle-light dark:text-subtle-dark">Billing Address</dt>
+<dd class="mt-1">123 Main Street, Anytown, CA 91234</dd>
+</div>
+<div>
+<dt class="font-medium text-subtle-light dark:text-subtle-dark">Payment Method</dt>
+<dd class="mt-1 flex items-center">
+<span class="material-symbols-outlined text-xl mr-2">credit_card</span>
+<span>Credit Card ending in 1234</span>
+</dd>
+</div>
+</dl>
+</div>
+</div>
+<div class="mt-8 text-center">
+<p class="mb-4 text-subtle-light dark:text-subtle-dark">Have an issue with your order?</p>
+<button class="inline-flex items-center gap-2 bg-primary/10 text-primary font-semibold px-6 py-2.5 rounded-lg hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Contact Support</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

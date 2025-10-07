@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inxora Industrial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0579c7",
+              "background-light": "#f5f7f8",
+              "background-dark": "#0f1b23",
+            },
+            fontFamily: {
+              display: ["Inter"],
+            },
+            borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+          },
+        },
+      };
+    </script>
+<style>
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
+<div class="flex min-h-screen flex-col">
+<header class="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex h-16 items-center justify-between">
+<div class="flex items-center gap-8">
+<a class="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white" href="#">
+<svg class="h-8 w-8 text-primary" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5zM12 13.5l-10-5 10-5 10 5-10 5z"></path>
+</svg>
+<span>Inxora Industrial</span>
+</a>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Productos</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Categorías</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Ofertas</a>
+<a class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors" href="#">Ayuda</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3">
+<svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+<path clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" fill-rule="evenodd"></path>
+</svg>
+</span>
+<input class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-background-light dark:bg-background-dark py-2 pl-10 pr-4 text-sm focus:border-primary focus:ring-primary" placeholder="Buscar..." type="text"/>
+</div>
+<button class="flex items-center justify-center rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-primary dark:hover:text-primary transition-colors">
+<svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.79,29.14A16,16,0,0,0,34.05,16H16a8,8,0,0,0,0,16h18L59.56,172.29a24,24,0,0,0,5.33,11.27,28,28,0,1,0,44.4,8.44h45.42A27.75,27.75,0,0,0,152,204a28,28,0,1,0,28-28H83.17a8,8,0,0,1-7.87-6.57L72.13,152h116a24,24,0,0,0,23.61-19.71l12.16-66.86A8,8,0,0,0,222.14,58.87ZM96,204a12,12,0,1,1-12-12A12,12,0,0,1,96,204Zm96,0a12,12,0,1,1-12-12A12,12,0,0,1,192,204Zm4-74.57A8,8,0,0,1,188.1,136H69.22L57.59,72H206.41Z"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow">
+<section class="relative flex min-h-[60vh] items-center justify-center bg-cover bg-center py-20" style='background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), url("https://lh3.googleusercontent.com/aida-public/AB6AXuCAT5qJtD6XXPrN__CdqGkOkzd67CPoxEp5nYKsNgoUDYvxAu2dDScthU5PMH1WOXNZ7bQilqRu4UotCKqoT48zwUs-IBOrTtyor6fuHkplDkk3fIjY8dvCrVEDm6GQL16CXBaT728F30KB7sh1wCtgGAQ6rLwInAkbEYseIqQdgLqGPSN1P1lHngi94QNSZ4bAqUr8Vyl6wFF_w_EaryosfzjNrKQOKnLCEaZvcceWrtfwm2BBDKLwxduADgEp2uXQjTV85voktqw");'>
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+<h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">Suministros Industriales de Calidad</h1>
+<p class="mt-6 max-w-2xl mx-auto text-lg leading-8 text-gray-200">
+              Encuentra todo lo que necesitas para tu negocio en un solo lugar. Explora nuestra amplia gama de productos y aprovecha nuestras ofertas exclusivas.
+            </p>
+<div class="mt-10">
+<a class="inline-block rounded-lg bg-primary px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105" href="#">Explorar Catálogo</a>
+</div>
+</div>
+</section>
+<section class="py-16 sm:py-24">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-12 text-center">Productos Destacados</h2>
+<div class="relative">
+<div class="no-scrollbar -mx-4 flex gap-8 overflow-x-auto px-4 pb-8 sm:px-6 lg:px-8">
+<div class="flex-none w-72">
+<div class="group relative block overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+<img alt="Herramientas Industriales" class="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfbr7g696_ppomf7OH1lsTTofxzkqV-3uW6pJx9uokMFrEaxzZYytg2LG3xLtBdnIzsIxJ0UlEO1-yF0OK_KN8oWQ675gnEeMT92IxvFaQfgZadM-FDJO0u_xfZMPQWlNI-euLYNia1RXzdKYEdGqDzouaamzDaIPmPSgQ43TIkjPD34rrGefyyeG07fIgO3qRw1hyTqVI9fTIQRWDBQai1CiC3KYsGn45SXCCnaN1RzD1IPFQRELanQmcjJZPgP07zEUVA5zGwcU"/>
+<div class="p-4">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Herramientas Industriales</h3>
+<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Descubre nuestra selección de herramientas de alta calidad.</p>
+</div>
+</div>
+</div>
+<div class="flex-none w-72">
+<div class="group relative block overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+<img alt="Equipos de Seguridad" class="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSrHDArvmEWRrEG0kO9pecY0Phek89g6ad8Qrq-1L38bdvr0RuB9EOpjVFDDEqysFX9kmtZwduzhBrTI-JN5eIDJnbhsOOwj0d76wxZvoVK4AJJdoOdNGj7ZsZEv0F6u5Q7ew3f49N7PJE7os3jtHHQ6IrlprAyjCraNQ5ZsfPpJEL20fu7OHNHPLx_UZd7tKo3QP3wGrTvAdplVv6b94NCZU5M3hQU7kxd4yeyPCYDf6zZHNU5hi7bh7t5CevUJwT_0urEvwqwG8"/>
+<div class="p-4">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Equipos de Seguridad</h3>
+<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Protege a tu equipo con nuestros equipos de seguridad.</p>
+</div>
+</div>
+</div>
+<div class="flex-none w-72">
+<div class="group relative block overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+<img alt="Herramientas Eléctricas" class="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcYuHQ8rclA4Wj1FlQSbBCtgStN8owjnJzgsOSjOmsbo3dWfHXSSy5Blx0hjwYBMXsXI6ZRyq6ha1SCRT1VbXYEhn4hkBeKsoedK54Nk2Nn5z8HdMLaM1WR_caTPBeHg-zu42gXp3o-VG-e4deqpIRVl73e-nvA8TPSMbYBM7gy8xtGRTK630o0Mr-gyzKlyG-JxE5LPrCn1ynNmuJAd2UqGWo2iP1PKhDyNpRJ4JLhsBYwr1derih4-0WlfSsP0XVhIm4vipoalc"/>
+<div class="p-4">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Herramientas Eléctricas</h3>
+<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Potencia tus proyectos con nuestras herramientas eléctricas.</p>
+</div>
+</div>
+</div>
+<div class="flex-none w-72">
+<div class="group relative block overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+<img alt="Herramientas Manuales" class="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwwWuqWLZk7eC5CZ2orufWKYGykz5iY7MlX9Nlu13VsaNhxZdQXhjDM_fF7IqzV0WVArpYEtYF9w6TWu9D4mvptq5eMrLANzG7lOBEdVwB396xZfpZRpNX2KrwfmUV7umefXsNI-oDW_79R6RVwt2QDzQcDywwe0dPC75p02HGoZWPrU73Ian7xLtMTdJ0ltQE5bnQGa3ZJyBLolHhdiUImyPXzS0Aqw2J7oXtEGGydgG0yqlp4b9mgDH3dlo4Kw6Z4C7VJ1_EWT4"/>
+<div class="p-4">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white">Herramientas Manuales</h3>
+<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Herramientas manuales para cada tarea.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-background-light dark:bg-background-dark py-16 sm:py-24">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-12 text-center">Categorías Principales</h2>
+<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
+<a class="group block text-center" href="#">
+<div class="overflow-hidden rounded-xl">
+<img alt="Herramientas" class="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq3Q9ZZopE0QStHQqu5hACHd-hByecyEGM6CWtRZoc-wKmzt1IVulEm0VygZScgZMiZf8NP_d0_2Esr8c7nl2R_4Q_4hFymhKY6Ec2hMhVf-QhAGnCLCSUj9IuTGUp5e_N-h9s4hIbgUuQBu8AoO5wSR-_BQ74_X30gZycrhFvVGq8MixvoarjlVs0gBVfNFBXjk3cB2_aEX4nxwzhW0QpPPjEM0c40vSZNcL3MJEIQSLGW3HiGAuUj5PyHCaJJLTGjiHlLNirFt8"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Herramientas</h3>
+</a>
+<a class="group block text-center" href="#">
+<div class="overflow-hidden rounded-xl">
+<img alt="Seguridad" class="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyTndwtiVCCoPgNlxgrhcHAC2ywYdqK0Px4DYQQoIbZnXk2GHeUqOgXKTdwBS-73JlS7uFS31Vsd0dJk-uN1eudA8NgdPCmlCyLV3hrtgPTdeUIT7qCTU2MC-Y_e8aikQ9GWLv8NKMPwIFJX2IL_tn9RfkpwxBTpVBo-o7oJFsorxutZOIhH0ub8S8xqLb9cX2UiMsO9ormJ757QctBz6WhqWhBT5tl-MysAINPVLUuhWihzBe3SKksawicGFfnhfVrDwKlBrnORU"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Seguridad</h3>
+</a>
+<a class="group block text-center" href="#">
+<div class="overflow-hidden rounded-xl">
+<img alt="Mantenimiento" class="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeFrVXbaJhl-boubfVopyd1vvDHDPJ6RRt8uEAYZjNBBEi4EbOLoHS5vWjTUz7I8RkK7lVJM86tP2RMAR9fmUoUy1hzzFwPO4KWt4uoiIoyHNoIayZf8QK9SfxRbW8x49az2czEI76NnPuOrd15BfMaFUJdRFc9GMlFdov4dz1glMDVt0hzsTAHhRDNAuN7jFqvw_dhbb-L7texnUDGjZwwQ2JkQWxTeDSZ-TMDSKtotHcH7Zfn6ksSxd5RM3bLQfA03dMVd5cc0Q"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Mantenimiento</h3>
+</a>
+<a class="group block text-center" href="#">
+<div class="overflow-hidden rounded-xl">
+<img alt="Almacenamiento" class="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCm6ajuzSDT9UW8R3GdnuSsgU2pjGPSiAtldZFe_nRUNIFmidznnf-PT-ON9GjbrDKV_ogyL-a847KmEGljSQJrNoEtMNIaviU-CiIDWmRc3UVpRR1JNDqWLKz9l9WvSCVpELb49fghg72zZFCZtIpsR5iwMvI_tRVRPm3-1Haz3YkdsqmBV7dhJYf8gEKokP7sXT3OrkiYhc5ym-WQiCDS1cRLYI3SJuSXQsvmj9mWaLgeqrC9XycYSaLtBquVNTDcP0Qx8yK1Jis"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Almacenamiento</h3>
+</a>
+<a class="group block text-center" href="#">
+<div class="overflow-hidden rounded-xl">
+<img alt="Soldadura" class="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEv9F3-SftwgIELEqGFHG4Geir-8lOHbSokMv2WZMlD-HWDHhAzzziwv-S6voX978HvxgGMMiYOnoCgjosHL8xusKHB6AWfL8MgpWCyKjV1uJ3Fc5obC7CxyLsKi2YXXxh76_CVrRThQOtxsV2SO_ZR9g4xa9Up0tHfnriDdNbtJIwyI8UtAWgSC4K5atKz4OyFlBAz7dhIjJndW2EDuIgR_sfUwBgv63KieJNqMaXZaY8DI5g05Rv5GhxCSm5bW9oSmKZqocIy6o"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Soldadura</h3>
+</a>
+<a class="group block text-center" href="#">
+<div class="overflow-hidden rounded-xl">
+<img alt="Fijación" class="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfk2-2IUQqkIyltA9GI2j8ncJEKA-Dg-ChxRCC9ySi0dlomtq1qfZgPDoEzOfnqCr_QipdIC8GVdhV7EFZ3aw_-gWgBBytimw2V-VedGLaSgM5qh050uST6zzVFlhRYZuKT84JREqSLFpJFuEu_5GB5Z8i8-SQiKhcKQ0Bqt17S06JoND-vQqqIZeGuPHs5oaGDJ-CPtqyjBzp-nSCB_lQPotn-kmxvIb5erZL10Wut7s7SlF7t35tRK1Lu9fpV-2kH5sFeWe2-Ao"/>
+</div>
+<h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Fijación</h3>
+</a>
+</div>
+</div>
+</section>
+<section class="py-16 sm:py-24">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+<h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Explora Nuestro Catálogo Completo</h2>
+<div class="mt-8">
+<a class="inline-block rounded-lg bg-primary px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105" href="#">Ver Todos los Productos</a>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-gray-100 dark:bg-gray-900">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+<div class="flex flex-col items-center gap-8 md:flex-row md:justify-between">
+<div class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+<svg class="h-7 w-7 text-primary" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5zM12 13.5l-10-5 10-5 10 5-10 5z"></path>
+</svg>
+<span>Inxora Industrial</span>
+</div>
+<nav class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary" href="#">Acerca de Nosotros</a>
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary" href="#">Contacto</a>
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary" href="#">Política de Privacidad</a>
+<a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary" href="#">Términos y Condiciones</a>
+</nav>
+</div>
+<div class="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+<p>© 2024 Inxora Industrial. Todos los derechos reservados.</p>
+</div>
+</div>
+</footer>
+</div>
+
+</body></html>
