@@ -14,14 +14,13 @@ interface ProductInfoProps {
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
-  const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
   const { addItem } = useCart()
   const { toast } = useToast()
 
   const handleAddToCart = () => {
-    console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity, 'size:', selectedSize)
-    addItem(product, quantity, selectedSize)
+    console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity)
+    addItem(product, quantity)
     
     // Mostrar notificación de éxito
     toast({
@@ -31,7 +30,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
     })
   }
 
-  const sizes = product.tallas ? product.tallas.split(',').map(s => s.trim()) : []
+  // Producto no incluye tallas actualmente; se omite selección de talla
 
   return (
     <div className="space-y-6">
@@ -48,26 +47,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
       )}
 
       <div className="space-y-4">
-        {sizes.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Talla
-            </label>
-            <Select value={selectedSize} onValueChange={setSelectedSize}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecciona una talla" />
-              </SelectTrigger>
-              <SelectContent>
-                {sizes.map((size) => (
-                  <SelectItem key={size} value={size}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Cantidad

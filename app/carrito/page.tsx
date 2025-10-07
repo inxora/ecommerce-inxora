@@ -6,12 +6,13 @@ import Image from 'next/image'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useCart } from '@/hooks/use-cart'
+// duplicate import removed
 import { formatPrice } from '@/lib/utils'
+import { useCart } from '@/hooks/use-cart'
 
 export default function CartPage() {
   const t = useTranslations()
-  const { items, updateQuantity, removeItem, clearCart, totalPrice, totalItems } = useCart()
+  const { items, updateQuantity, removeItem, clearCart, getTotalPrice, getItemsCount } = useCart()
 
   if (items.length === 0) {
     return (
@@ -68,7 +69,7 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <Card key={item.product.id}>
+            <Card key={item.product.sku}>
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
                   {/* Product Image */}
@@ -94,7 +95,7 @@ export default function CartPage() {
                     </h3>
                     <div className="flex items-center justify-between">
                       <div className="text-lg font-semibold">
-                        {formatPrice(item.product.precio)}
+                        {formatPrice(item.product.precio_venta)}
                       </div>
                       
                       {/* Quantity Controls */}
@@ -103,7 +104,7 @@ export default function CartPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.product.sku, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                             className="h-8 w-8"
                           >
@@ -115,7 +116,7 @@ export default function CartPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.product.sku, item.quantity + 1)}
                             className="h-8 w-8"
                           >
                             <Plus className="h-3 w-3" />
@@ -125,7 +126,7 @@ export default function CartPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeItem(item.product.id)}
+                          onClick={() => removeItem(item.product.sku)}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -139,7 +140,7 @@ export default function CartPage() {
                         {t('cart.subtotal')}: 
                       </span>
                       <span className="ml-2 font-semibold">
-                        {formatPrice(item.product.precio * item.quantity)}
+                        {formatPrice(item.product.precio_venta * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -157,13 +158,13 @@ export default function CartPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span>{t('cart.items', { count: totalItems })}</span>
-                <span>{totalItems}</span>
+                <span>{t('cart.items', { count: getItemsCount() })}</span>
+                <span>{getItemsCount()}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span>{t('cart.subtotal')}</span>
-                <span>{formatPrice(totalPrice)}</span>
+                <span>{formatPrice(getTotalPrice())}</span>
               </div>
               
               <div className="flex justify-between text-sm">
@@ -175,7 +176,7 @@ export default function CartPage() {
               
               <div className="flex justify-between text-lg font-semibold">
                 <span>{t('cart.total')}</span>
-                <span>{formatPrice(totalPrice)}</span>
+                <span>{formatPrice(getTotalPrice())}</span>
               </div>
               
               <Button asChild className="w-full" size="lg">

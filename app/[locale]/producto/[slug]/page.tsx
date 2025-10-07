@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Star, ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { getProductBySlug } from '@/lib/supabase/products'
-import { Producto } from '@/types/product'
+import { getProductBySlug, Producto } from '@/lib/supabase'
 
 interface Review {
   id: string

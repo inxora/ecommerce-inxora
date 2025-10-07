@@ -33,22 +33,30 @@ export function CatalogClient({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const updateURL = (updates: Record<string, string | undefined>) => {
+  const updateURL = (updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
     const params = new URLSearchParams(searchParams.toString())
     
     Object.entries(updates).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
-        params.set(key, value)
+        params.set(key, String(value))
       } else {
         params.delete(key)
       }
     })
     
     // Reset to first page when filters change (except for page updates)
-    if (!updates.page) {
+    if (!('page' in updates)) {
       params.delete('page')
     }
     
+    router.push(`?${params.toString()}`)
+  }
+
+  const clearFilters = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    ;['buscar', 'categoria', 'marca', 'precioMin', 'precioMax', 'ordenar', 'page'].forEach((key) => {
+      params.delete(key)
+    })
     router.push(`?${params.toString()}`)
   }
 
@@ -131,6 +139,8 @@ export function CatalogClient({
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={(page) => updateURL({ page: page.toString() })}
+                    totalItems={total}
+                    itemsPerPage={12}
                   />
                 </div>
               </>
@@ -154,7 +164,7 @@ export function CatalogClient({
                       Intenta ajustar los filtros o buscar otros términos para encontrar lo que necesitas.
                     </p>
                     <button 
-                      onClick={() => updateURL({ buscar: '', categoria: '', marca: '', precioMin: '', precioMax: '', ordenar: '' })}
+                      onClick={clearFilters}
                       className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                     >
                       <Search className="h-5 w-5 mr-2" />

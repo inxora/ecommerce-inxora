@@ -112,7 +112,7 @@ export function ProductFilters({
           <SelectContent>
             <SelectItem value="all">Todas las categorías</SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category.id} value={category.slug}>
+              <SelectItem key={category.id} value={String(category.id)}>
                 {category.nombre}
               </SelectItem>
             ))}
@@ -130,7 +130,7 @@ export function ProductFilters({
           <SelectContent>
             <SelectItem value="all">Todas las marcas</SelectItem>
             {brands.map((brand) => (
-              <SelectItem key={brand.id} value={brand.slug}>
+              <SelectItem key={brand.id} value={String(brand.id)}>
                 {brand.nombre}
               </SelectItem>
             ))}
@@ -222,7 +222,7 @@ export function ProductFilters({
           <div className="flex flex-wrap gap-2 mb-4">
             {filters.categoria && (
               <Badge variant="outline" className="flex items-center gap-1">
-                {categories.find(c => c.slug === filters.categoria)?.nombre}
+                {categories.find(c => String(c.id) === filters.categoria)?.nombre}
                 <X 
                   className="h-3 w-3 cursor-pointer" 
                   onClick={() => clearFilter('categoria')}
@@ -231,7 +231,7 @@ export function ProductFilters({
             )}
             {filters.marca && (
               <Badge variant="outline" className="flex items-center gap-1">
-                {brands.find(b => b.slug === filters.marca)?.nombre}
+                {brands.find(b => String(b.id) === filters.marca)?.nombre}
                 <X 
                   className="h-3 w-3 cursor-pointer" 
                   onClick={() => clearFilter('marca')}

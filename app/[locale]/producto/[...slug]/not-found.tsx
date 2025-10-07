@@ -1,6 +1,14 @@
+"use client"
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useMemo } from 'react'
 
 export default function NotFound() {
+  const pathname = usePathname()
+  const locale = useMemo(() => {
+    const first = pathname?.split('/')?.[1]
+    return first || 'es'
+  }, [pathname])
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -12,7 +20,7 @@ export default function NotFound() {
             El producto que buscas no existe o no está disponible.
           </p>
           <Link
-            href="/es/catalogo"
+            href={`/${locale}/catalogo`}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90"
           >
             Volver al catálogo

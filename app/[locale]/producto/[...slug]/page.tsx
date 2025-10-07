@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Star, ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Shield, Truck, Award } from 'lucide-react'
+import { Star, ChevronLeft, ChevronRight, Shield, Truck } from 'lucide-react'
 import Link from 'next/link'
-import { getProductBySlug, Producto } from '@/lib/supabase'
-import { useCart } from '@/hooks/use-cart'
-import { useToast } from '@/hooks/use-toast'
+import { getProductBySlug, Producto, Product } from '@/lib/supabase'
+import { ProductInfo } from '@/components/product/product-info'
 
 interface Review {
   id: string
@@ -18,22 +17,24 @@ interface Review {
 }
 
 export default function ProductPage() {
-  const params = useParams()
+  const params = useParams() as { slug?: string[] | string; locale?: string }
   const [product, setProduct] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedQuantity, setSelectedQuantity] = useState(1)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const { addItem } = useCart()
-  const { toast } = useToast()
 
   useEffect(() => {
     const fetchProduct = async () => {
       if (params.slug) {
         setLoading(true)
         try {
-          // Join the slug array to create the full slug path
-          const fullSlug = Array.isArray(params.slug) ? params.slug.join('/') : params.slug
-          const productData = await getProductBySlug(fullSlug)
+          // Build slug segments; support brand + product slug path
+          const segments = Array.isArray(params.slug) ? params.slug : [params.slug]
+          const fullSlug = segments.join('/')
+          const lastSegment = segments[segments.length - 1]
+          let productData = await getProductBySlug(fullSlug)
+          if (!productData && segments.length > 1) {
+            productData = await getProductBySlug(lastSegment)
+          }
           setProduct(productData)
         } catch (error) {
           console.error('Error fetching product:', error)
@@ -80,7 +81,7 @@ export default function ProductPage() {
             El producto que buscas no existe o no está disponible en este momento.
           </p>
           <Link
-            href="/es/catalogo"
+            href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}/catalogo`}
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
           >
             Volver al catálogo
@@ -102,11 +103,7 @@ export default function ProductPage() {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
-  const handleAddToCart = () => {
-    if (product) {
-      addItem(product, selectedQuantity)
-    }
-  }
+  // Compra se maneja dentro de ProductInfo
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -115,7 +112,7 @@ export default function ProductPage() {
         <nav className="flex mb-8" aria-label="Breadcrumb">
           <ol className="inline-flex items-center space-x-1 md:space-x-3 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-xl px-4 py-2 shadow-sm">
             <li className="inline-flex items-center">
-              <Link href="/es" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+              <Link href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}`} className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
                 Inicio
               </Link>
             </li>
@@ -124,7 +121,7 @@ export default function ProductPage() {
                 <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
                 </svg>
-                <Link href="/es/catalogo" className="text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                <Link href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}/catalogo`} className="text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
                   Catálogo
                 </Link>
               </div>
@@ -216,41 +213,8 @@ export default function ProductPage() {
 
           {/* Product Info */}
           <div className="space-y-8">
-            {/* Header Section */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">
-                    {product.nombre}
-                  </h1>
-                  {product.marca && (
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Award className="h-5 w-5 text-blue-600" />
-                      <span className="text-lg font-medium text-blue-600 dark:text-blue-400">
-                        {typeof product.marca === 'string' ? product.marca : product.marca.nombre}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-baseline space-x-4 mb-6">
-                <span className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  S/ {product.precio_venta?.toFixed(2)}
-                </span>
-                <span className="text-lg text-gray-500 line-through">
-                  S/ {(product.precio_venta * 1.2)?.toFixed(2)}
-                </span>
-                <span className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  -17% OFF
-                </span>
-              </div>
-
-              {product.sku_producto && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-700 px-3 py-2 rounded-lg inline-block">
-                  <strong>SKU:</strong> {product.sku_producto}
-                </p>
-              )}
+              <ProductInfo product={product as Product} />
             </div>
 
             {/* Trust Badges */}
@@ -272,42 +236,7 @@ export default function ProductPage() {
               </div>
             </div>
 
-            {/* Purchase Section */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <div className="flex items-center space-x-4 mb-6">
-                <label htmlFor="quantity" className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                  Cantidad:
-                </label>
-                <select
-                  id="quantity"
-                  value={selectedQuantity}
-                  onChange={(e) => setSelectedQuantity(parseInt(e.target.value))}
-                  className="border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex space-x-4">
-                <button 
-                  onClick={handleAddToCart}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
-                >
-                  <ShoppingCart className="h-6 w-6 mr-3" />
-                  Agregar al Carrito
-                </button>
-                <button className="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 transition-all duration-200 group">
-                  <Heart className="h-6 w-6 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
-                </button>
-                <button className="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 transition-all duration-200 group">
-                  <Share2 className="h-6 w-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500" />
-                </button>
-              </div>
-            </div>
+            {/* Purchase moved into ProductInfo */}
 
             {/* Category */}
             {product.categoria && (

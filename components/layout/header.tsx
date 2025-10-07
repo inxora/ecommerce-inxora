@@ -6,11 +6,14 @@ import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { useCart } from '@/hooks/use-cart'
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 export function Header() {
   const { getItemsCount, updateTrigger } = useCart()
   const [searchQuery, setSearchQuery] = useState('')
   const [itemsCount, setItemsCount] = useState(0)
+  const pathname = usePathname() || '/es'
+  const locale = (pathname.split('/')[1] || 'es') || 'es'
 
   // Force re-render when updateTrigger changes
   useEffect(() => {
@@ -22,7 +25,7 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      window.location.href = `/es/catalogo?buscar=${encodeURIComponent(searchQuery.trim())}`
+      window.location.href = `/${locale}/catalogo?buscar=${encodeURIComponent(searchQuery.trim())}`
     }
   }
 
@@ -30,30 +33,30 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
         <div className="flex gap-6 md:gap-10">
-          <a href="/es" className="flex items-center space-x-2">
+          <a href={`/${locale}`} className="flex items-center space-x-2">
             <span className="inline-block font-bold text-xl">INXORA</span>
           </a>
           <nav className="hidden md:flex gap-6">
             <a
-              href="/es"
+              href={`/${locale}`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Inicio
             </a>
             <a
-              href="/es/catalogo"
+              href={`/${locale}/catalogo`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Catálogo
             </a>
             <a
-              href="/es/about"
+              href={`/${locale}/about`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Nosotros
             </a>
             <a
-              href="/es/contact"
+              href={`/${locale}/contact`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Contacto

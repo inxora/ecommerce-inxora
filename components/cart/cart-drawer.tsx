@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -13,9 +13,10 @@ import { formatPrice } from '@/lib/utils'
 interface CartDrawerProps {
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  children?: ReactNode
 }
 
-export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
+export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
   const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, clearCart } = useCart()
   const totalItems = getItemsCount()
   const total = getTotalPrice()
@@ -26,17 +27,21 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="relative">
-            <ShoppingCart className="h-4 w-4" />
-            {totalItems > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                {totalItems}
-              </Badge>
-            )}
-          </Button>
+          {children ? (
+            children
+          ) : (
+            <Button variant="outline" size="icon" className="relative">
+              <ShoppingCart className="h-4 w-4" />
+              {totalItems > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {totalItems}
+                </Badge>
+              )}
+            </Button>
+          )}
         </SheetTrigger>
         <SheetContent className="w-full sm:max-w-lg">
           <CartContent />

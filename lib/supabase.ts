@@ -117,11 +117,18 @@ export const getProductos = async (
 export async function getProductBySlug(slug: string): Promise<Producto | null> {
   try {
     console.log('Searching for product with slug:', slug)
+    const normalizeProducto = (data: any): Producto => {
+      const categoria = Array.isArray(data?.categoria) ? data.categoria[0] : data?.categoria
+      const marca = Array.isArray(data?.marca) ? data.marca[0] : data?.marca
+      return { ...data, categoria, marca } as Producto
+    }
     
     // First try to find by exact slug match
-    let { data, error } = await supabase
-      .from('producto')
-      .select(`
+  let { data, error } = await supabase
+    .from('producto')
+    .select(`
+        id_categoria,
+        id_marca,
         sku,
         sku_producto,
         nombre,
@@ -152,16 +159,19 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
       .eq('seo_slug', slug)
       .eq('activo', true)
       .eq('visible_web', true)
-      .single()
 
-    console.log('First query result:', { data: data?.nombre, error: error?.message })
+    console.log('First query result:', { count: Array.isArray(data) ? data.length : (data ? 1 : 0), error: error?.message })
 
-    // If not found, try searching for seo_slug that ends with the slug (for nested paths)
-    if (error && slug.includes('/')) {
-      console.log('Trying fallback search for nested slug')
-      const { data: searchData, error: searchError } = await supabase
+    // If not found, try flexible fallback matching nested paths or segment-only slugs
+    if (error || (Array.isArray(data) && data.length === 0)) {
+      console.log('Trying fallback search for slug:', slug)
+      const hasSlash = slug.includes('/')
+      const pattern = hasSlash ? `%${slug}%` : `%/${slug}`
+      let { data: searchData, error: searchError } = await supabase
         .from('producto')
         .select(`
+          id_categoria,
+          id_marca,
           sku,
           sku_producto,
           nombre,
@@ -189,16 +199,100 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
           categoria:id_categoria(id, nombre),
           marca:id_marca(id, nombre, logo_url)
         `)
-        .like('seo_slug', `%${slug}%`)
+        .ilike('seo_slug', pattern)
         .eq('activo', true)
         .eq('visible_web', true)
+
+      // If search with `%/segment` returned nothing, broaden to `%segment%`
+      if (!hasSlash && (!searchError && (!searchData || searchData.length === 0))) {
+        const { data: searchData2, error: searchError2 } = await supabase
+          .from('producto')
+          .select(`
+            id_categoria,
+            id_marca,
+            sku,
+            sku_producto,
+            nombre,
+            descripcion_corta,
+            descripcion_detallada,
+            especificaciones_tecnicas,
+            aplicaciones,
+            precio_venta,
+            precio_referencia,
+            imagen_principal_url,
+            galeria_imagenes_urls,
+            seo_title,
+            seo_description,
+            seo_keywords,
+            seo_slug,
+            canonical_url,
+            structured_data,
+            tags,
+            es_destacado,
+            es_novedad,
+            activo,
+            visible_web,
+            fecha_creacion,
+            fecha_actualizacion,
+            categoria:id_categoria(id, nombre),
+            marca:id_marca(id, nombre, logo_url)
+          `)
+          .ilike('seo_slug', `%${slug}%`)
+          .eq('activo', true)
+          .eq('visible_web', true)
+        searchData = searchData2
+        searchError = searchError2
+      }
+
+      // Additional pass: if original slug had multiple segments, try last segment exact or like
+      if (hasSlash && (!searchError && (!searchData || searchData.length === 0))) {
+        const parts = slug.split('/').filter(Boolean)
+        const last = parts[parts.length - 1]
+        const { data: searchData3, error: searchError3 } = await supabase
+          .from('producto')
+          .select(`
+            id_categoria,
+            id_marca,
+            sku,
+            sku_producto,
+            nombre,
+            descripcion_corta,
+            descripcion_detallada,
+            especificaciones_tecnicas,
+            aplicaciones,
+            precio_venta,
+            precio_referencia,
+            imagen_principal_url,
+            galeria_imagenes_urls,
+            seo_title,
+            seo_description,
+            seo_keywords,
+            seo_slug,
+            canonical_url,
+            structured_data,
+            tags,
+            es_destacado,
+            es_novedad,
+            activo,
+            visible_web,
+            fecha_creacion,
+            fecha_actualizacion,
+            categoria:id_categoria(id, nombre),
+            marca:id_marca(id, nombre, logo_url)
+          `)
+          .or(`seo_slug.ilike.%/${last},seo_slug.ilike.%${last}%`)
+          .eq('activo', true)
+          .eq('visible_web', true)
+        searchData = searchData3
+        searchError = searchError3
+      }
 
       console.log('Fallback query result:', { count: searchData?.length, error: searchError?.message })
 
       if (!searchError && searchData && searchData.length > 0) {
-        data = searchData[0]
+        data = [searchData[0]]
         error = null
-        console.log('Found product via fallback:', data.nombre)
+        console.log('Found product via fallback:', (data as any)?.nombre)
       }
     }
 
@@ -207,7 +301,8 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
       return null
     }
 
-    return data
+    const first = Array.isArray(data) ? data[0] : data
+    return first ? normalizeProducto(first) : null
   } catch (error) {
     console.error('Error in getProductBySlug:', error)
     return null

@@ -11,6 +11,7 @@ import { formatPrice } from '@/lib/utils'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/hooks/use-cart'
 import { useToast } from '@/hooks/use-toast'
+import { useParams } from 'next/navigation'
 
 interface ProductCardProps {
   product: Product
@@ -20,6 +21,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const { addItem } = useCart()
   const { toast } = useToast()
+  const params = useParams() as { locale?: string }
+  const locale = typeof params?.locale === 'string' ? params.locale : 'es'
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -41,7 +44,14 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsWishlisted(!isWishlisted)
   }
 
-  const productUrl = `/producto/${product.seo_slug}`
+  const brandSegment = product.marca && typeof product.marca !== 'string' 
+    ? product.marca.nombre.toLowerCase().replace(/\s+/g, '-') 
+    : typeof product.marca === 'string' 
+      ? (product.marca as string).toLowerCase().replace(/\s+/g, '-')
+      : undefined
+  const productUrl = brandSegment 
+    ? `/${locale}/producto/${brandSegment}/${product.seo_slug}` 
+    : `/${locale}/producto/${product.seo_slug}`
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-md hover:shadow-xl hover:-translate-y-1">
@@ -75,7 +85,7 @@ export function ProductCard({ product }: ProductCardProps) {
             
             {/* Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {product.destacado && (
+              {product.es_destacado && (
                 <Badge className="text-xs bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-lg">
                   <Star className="h-3 w-3 mr-1" />
                   Destacado
