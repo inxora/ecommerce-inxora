@@ -1,9 +1,10 @@
 'use client'
 
-import { Search, ShoppingCart } from 'lucide-react'
+import { Search, ShoppingCart, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useCart } from '@/hooks/use-cart'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
@@ -76,6 +77,52 @@ export function Header() {
               <Search className="h-4 w-4" />
             </Button>
           </form>
+
+          {/* Mobile menu button (hamburger) visible on small screens */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="md:hidden" aria-label="Abrir menú">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full sm:max-w-sm">
+              <SheetHeader>
+                <SheetTitle>Menú</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-6">
+                <form onSubmit={handleSearch} className="flex items-center space-x-2">
+                  <Input
+                    type="search"
+                    placeholder="Buscar productos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Button type="submit" size="sm" variant="default">
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </form>
+
+                <nav className="grid gap-2">
+                  <a href={`/${locale}`} className="text-sm font-medium hover:text-primary">
+                    Inicio
+                  </a>
+                  <a href={`/${locale}/catalogo`} className="text-sm font-medium hover:text-primary">
+                    Catálogo
+                  </a>
+                  <a href={`/${locale}/categorias`} className="text-sm font-medium hover:text-primary">
+                    Categorías
+                  </a>
+                  <a href={`/${locale}/nosotros`} className="text-sm font-medium hover:text-primary">
+                    Nosotros
+                  </a>
+                  <a href={`/${locale}/contacto`} className="text-sm font-medium hover:text-primary">
+                    Contacto
+                  </a>
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <CartDrawer>
             <Button variant="ghost" size="sm" className="relative">
               <ShoppingCart className="h-5 w-5" />
