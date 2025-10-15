@@ -5,38 +5,127 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Función para construir URL de imagen
+const buildImageUrl = (skuProducto: string, imageName: string) => {
+  if (!skuProducto || !imageName) return null
+  return `https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/${skuProducto}/${imageName}`
+}
+
 // Tipos de datos basados en la estructura de la base de datos
 export interface Producto {
   sku: number
   sku_producto: string
+  cod_producto_marca: string
   nombre: string
   descripcion_corta: string
   descripcion_detallada: string
   especificaciones_tecnicas: string
   aplicaciones: string
+  material: string
+  origen: string
   id_categoria: number
   id_marca: number
-  precio_venta: number
-  precio_referencia?: number
-  stock?: number // Campo opcional con valor por defecto
+  id_unidad: number
+  id_disponibilidad: number
+  peso_kg: number
+  dimensiones: string
+  volumen_m3: number
+  requiere_stock: boolean
+  stock_minimo: number
+  punto_reorden: number
+  codigo_arancelario: string
+  es_importado: boolean
+  tiempo_importacion_dias: number
   imagen_principal_url: string
   galeria_imagenes_urls: string[]
   seo_title: string
   seo_description: string
   seo_keywords: string
   seo_slug: string
+  meta_robots: string
   canonical_url: string
   structured_data: any
+  seo_score: number
+  seo_optimizado: boolean
   tags: string[]
   es_destacado: boolean
   es_novedad: boolean
+  es_promocion: boolean
   activo: boolean
   visible_web: boolean
+  requiere_aprobacion: boolean
   fecha_creacion: string
   fecha_actualizacion: string
+  creado_por: number
+  actualizado_por: number
   // Relaciones
   categoria?: Categoria
   marca?: Marca
+  unidad?: Unidad
+  disponibilidad?: Disponibilidad
+  precios?: ProductoPrecio[]
+  // Precios procesados por moneda
+  precios_por_moneda?: {
+    soles?: {
+      precio_venta: number
+      precio_referencia: number
+      moneda: Moneda
+    } | null
+    dolares?: {
+      precio_venta: number
+      precio_referencia: number
+      moneda: Moneda
+    } | null
+  }
+}
+
+// Nueva interfaz para precios
+export interface ProductoPrecio {
+  id: number
+  sku: number
+  id_moneda: number
+  precio_venta: number
+  margen_aplicado: number
+  fecha_vigencia_desde: string
+  fecha_vigencia_hasta: string
+  activo: boolean
+  fecha_creacion: string
+  fecha_actualizacion: string
+  creado_por: number
+  actualizado_por: number
+  observaciones: string
+  tipo_cambio_usado: number
+  precio_proveedor: number
+  moneda?: Moneda
+}
+
+// Nueva interfaz para moneda
+export interface Moneda {
+  id: number
+  codigo: string
+  nombre: string
+  simbolo: string
+  activo: boolean
+  fecha_creacion: string
+}
+
+// Nueva interfaz para unidad
+export interface Unidad {
+  id: number
+  nombre: string
+  simbolo: string
+  descripcion: string
+  activo: boolean
+  fecha_creacion: string
+}
+
+// Nueva interfaz para disponibilidad
+export interface Disponibilidad {
+  id: number
+  nombre: string
+  descripcion: string
+  activo: boolean
+  fecha_creacion: string
 }
 
 // Alias para compatibilidad
@@ -75,16 +164,32 @@ export const getProductos = async (
     .select(`
       sku,
       sku_producto,
+      cod_producto_marca,
       nombre,
       descripcion_corta,
-      precio_venta,
-      precio_referencia,
       imagen_principal_url,
       seo_slug,
       es_destacado,
       es_novedad,
+      es_promocion,
+      material,
+      origen,
+      peso_kg,
+      dimensiones,
+      tags,
       categoria:id_categoria(id, nombre),
-      marca:id_marca(id, nombre, logo_url)
+      marca:id_marca(id, nombre, logo_url),
+      unidad:id_unidad(id, nombre, simbolo),
+      disponibilidad:id_disponibilidad(id, nombre),
+      precios:producto_precio_moneda(
+        id,
+        precio_venta,
+        margen_aplicado,
+        fecha_vigencia_desde,
+        fecha_vigencia_hasta,
+        activo,
+        moneda:id_moneda(id, codigo, nombre, simbolo)
+      )
     `, { count: 'exact' })
     .eq('activo', true)
     .eq('visible_web', true)
@@ -103,6 +208,7 @@ export const getProductos = async (
 
   const { data, error, count } = await query
     .order('es_destacado', { ascending: false })
+    .order('es_promocion', { ascending: false })
     .order('fecha_creacion', { ascending: false })
     .range(page * limit, (page + 1) * limit - 1)
 
@@ -111,7 +217,69 @@ export const getProductos = async (
     return { data: [], count: 0, error }
   }
 
-  return { data, count, error: null }
+  // Procesar los datos para obtener los precios actuales
+  const processedData = data?.map(producto => {
+    // Filtrar precios activos y vigentes
+    const preciosVigentes = producto.precios?.filter(precio => {
+      if (!precio.activo) return false
+      
+      const hoy = new Date().toISOString().split('T')[0]
+      const fechaDesde = precio.fecha_vigencia_desde
+      const fechaHasta = precio.fecha_vigencia_hasta
+      
+      // Verificar que la fecha de inicio sea menor o igual a hoy
+      if (fechaDesde && fechaDesde > hoy) return false
+      
+      // Verificar que la fecha de fin sea null o mayor o igual a hoy
+      if (fechaHasta && fechaHasta < hoy) return false
+      
+      return true
+    }) || []
+    
+    // Separar precios por moneda
+    const precioSoles = preciosVigentes.find(p => p.moneda?.codigo === 'PEN')
+    const precioDolares = preciosVigentes.find(p => p.moneda?.codigo === 'USD')
+    
+    // Priorizar soles, luego dólares
+    const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
+    
+    // Usar la URL de imagen principal que ya está en la base de datos
+    // Esta URL ya contiene el nombre correcto con timestamp
+    let imagenPrincipalUrl = producto.imagen_principal_url
+    
+    // Para la galería, usar las URLs que ya están en la base de datos
+    // Si no hay galería, usar solo la imagen principal
+    let galeriaImagenesUrls = producto.galeria_imagenes_urls
+    if (!galeriaImagenesUrls || galeriaImagenesUrls.length === 0) {
+      galeriaImagenesUrls = imagenPrincipalUrl ? [imagenPrincipalUrl] : []
+    }
+    
+    return {
+      ...producto,
+      // URLs de imagen procesadas
+      imagen_principal_url: imagenPrincipalUrl,
+      galeria_imagenes_urls: galeriaImagenesUrls,
+      // Precio principal (para compatibilidad)
+      precio_venta: precioPrincipal?.precio_venta || 0,
+      precio_referencia: precioPrincipal?.precio_proveedor || 0,
+      moneda: precioPrincipal?.moneda,
+      // Precios por moneda
+      precios_por_moneda: {
+        soles: precioSoles ? {
+          precio_venta: precioSoles.precio_venta,
+          precio_referencia: precioSoles.precio_proveedor,
+          moneda: precioSoles.moneda
+        } : null,
+        dolares: precioDolares ? {
+          precio_venta: precioDolares.precio_venta,
+          precio_referencia: precioDolares.precio_proveedor,
+          moneda: precioDolares.moneda
+        } : null
+      }
+    }
+  }) || []
+
+  return { data: processedData, count, error: null }
 }
 
 export async function getProductBySlug(slug: string): Promise<Producto | null> {
@@ -120,41 +288,117 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
     const normalizeProducto = (data: any): Producto => {
       const categoria = Array.isArray(data?.categoria) ? data.categoria[0] : data?.categoria
       const marca = Array.isArray(data?.marca) ? data.marca[0] : data?.marca
-      return { ...data, categoria, marca } as Producto
+      const unidad = Array.isArray(data?.unidad) ? data.unidad[0] : data?.unidad
+      const disponibilidad = Array.isArray(data?.disponibilidad) ? data.disponibilidad[0] : data?.disponibilidad
+      
+      // Obtener el precio actual
+      const precioActual = data.precios?.[0]
+      
+      // Procesar precios por moneda
+      const preciosVigentes = data.precios?.filter(precio => {
+        if (!precio.activo) return false
+        
+        const hoy = new Date().toISOString().split('T')[0]
+        const fechaDesde = precio.fecha_vigencia_desde
+        const fechaHasta = precio.fecha_vigencia_hasta
+        
+        if (fechaDesde && fechaDesde > hoy) return false
+        if (fechaHasta && fechaHasta < hoy) return false
+        
+        return true
+      }) || []
+      
+      const precioSoles = preciosVigentes.find(p => p.moneda?.codigo === 'PEN')
+      const precioDolares = preciosVigentes.find(p => p.moneda?.codigo === 'USD')
+      const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
+      
+      return { 
+        ...data, 
+        categoria, 
+        marca, 
+        unidad, 
+        disponibilidad,
+        precio_venta: precioPrincipal?.precio_venta || 0,
+        precio_referencia: precioPrincipal?.precio_proveedor || 0,
+        moneda: precioPrincipal?.moneda,
+        precios_por_moneda: {
+          soles: precioSoles ? {
+            precio_venta: precioSoles.precio_venta,
+            precio_referencia: precioSoles.precio_proveedor,
+            moneda: precioSoles.moneda
+          } : null,
+          dolares: precioDolares ? {
+            precio_venta: precioDolares.precio_venta,
+            precio_referencia: precioDolares.precio_proveedor,
+            moneda: precioDolares.moneda
+          } : null
+        }
+      } as Producto
     }
     
     // First try to find by exact slug match
   let { data, error } = await supabase
     .from('producto')
     .select(`
-        id_categoria,
-        id_marca,
         sku,
         sku_producto,
+        cod_producto_marca,
         nombre,
         descripcion_corta,
         descripcion_detallada,
         especificaciones_tecnicas,
         aplicaciones,
-        precio_venta,
-        precio_referencia,
+        material,
+        origen,
+        id_categoria,
+        id_marca,
+        id_unidad,
+        id_disponibilidad,
+        peso_kg,
+        dimensiones,
+        volumen_m3,
+        requiere_stock,
+        stock_minimo,
+        punto_reorden,
+        codigo_arancelario,
+        es_importado,
+        tiempo_importacion_dias,
         imagen_principal_url,
         galeria_imagenes_urls,
         seo_title,
         seo_description,
         seo_keywords,
         seo_slug,
+        meta_robots,
         canonical_url,
         structured_data,
+        seo_score,
+        seo_optimizado,
         tags,
         es_destacado,
         es_novedad,
+        es_promocion,
         activo,
         visible_web,
+        requiere_aprobacion,
         fecha_creacion,
         fecha_actualizacion,
+        creado_por,
+        actualizado_por,
         categoria:id_categoria(id, nombre),
-        marca:id_marca(id, nombre, logo_url)
+        marca:id_marca(id, nombre, logo_url),
+        unidad:id_unidad(id, nombre, simbolo),
+        disponibilidad:id_disponibilidad(id, nombre),
+        precios:producto_precio_moneda(
+          id,
+          precio_venta,
+          margen_aplicado,
+          fecha_vigencia_desde,
+          fecha_vigencia_hasta,
+          activo,
+          precio_proveedor,
+          moneda:id_moneda(id, codigo, nombre, simbolo)
+        )
       `)
       .eq('seo_slug', slug)
       .eq('activo', true)
@@ -179,8 +423,6 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
           descripcion_detallada,
           especificaciones_tecnicas,
           aplicaciones,
-          precio_venta,
-          precio_referencia,
           imagen_principal_url,
           galeria_imagenes_urls,
           seo_title,
@@ -197,7 +439,19 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
           fecha_creacion,
           fecha_actualizacion,
           categoria:id_categoria(id, nombre),
-          marca:id_marca(id, nombre, logo_url)
+          marca:id_marca(id, nombre, logo_url),
+          unidad:id_unidad(id, nombre, simbolo),
+          disponibilidad:id_disponibilidad(id, nombre),
+          precios:producto_precio_moneda(
+            id,
+            precio_venta,
+            margen_aplicado,
+            fecha_vigencia_desde,
+            fecha_vigencia_hasta,
+            activo,
+            precio_proveedor,
+            moneda:id_moneda(id, codigo, nombre, simbolo)
+          )
         `)
         .ilike('seo_slug', pattern)
         .eq('activo', true)
@@ -217,8 +471,6 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             descripcion_detallada,
             especificaciones_tecnicas,
             aplicaciones,
-            precio_venta,
-            precio_referencia,
             imagen_principal_url,
             galeria_imagenes_urls,
             seo_title,
@@ -235,7 +487,19 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             fecha_creacion,
             fecha_actualizacion,
             categoria:id_categoria(id, nombre),
-            marca:id_marca(id, nombre, logo_url)
+            marca:id_marca(id, nombre, logo_url),
+            unidad:id_unidad(id, nombre, simbolo),
+            disponibilidad:id_disponibilidad(id, nombre),
+            precios:producto_precio_moneda(
+              id,
+              precio_venta,
+              margen_aplicado,
+              fecha_vigencia_desde,
+              fecha_vigencia_hasta,
+              activo,
+              precio_proveedor,
+              moneda:id_moneda(id, codigo, nombre, simbolo)
+            )
           `)
           .ilike('seo_slug', `%${slug}%`)
           .eq('activo', true)
@@ -260,8 +524,6 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             descripcion_detallada,
             especificaciones_tecnicas,
             aplicaciones,
-            precio_venta,
-            precio_referencia,
             imagen_principal_url,
             galeria_imagenes_urls,
             seo_title,
@@ -278,7 +540,19 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             fecha_creacion,
             fecha_actualizacion,
             categoria:id_categoria(id, nombre),
-            marca:id_marca(id, nombre, logo_url)
+            marca:id_marca(id, nombre, logo_url),
+            unidad:id_unidad(id, nombre, simbolo),
+            disponibilidad:id_disponibilidad(id, nombre),
+            precios:producto_precio_moneda(
+              id,
+              precio_venta,
+              margen_aplicado,
+              fecha_vigencia_desde,
+              fecha_vigencia_hasta,
+              activo,
+              precio_proveedor,
+              moneda:id_moneda(id, codigo, nombre, simbolo)
+            )
           `)
           .or(`seo_slug.ilike.%/${last},seo_slug.ilike.%${last}%`)
           .eq('activo', true)
@@ -336,48 +610,81 @@ export async function getProducts({
 }> {
   try {
     let query = supabase
-      .from('productos')
+      .from('producto')
       .select(`
-        *,
-        categoria:categorias(id, nombre, slug),
-        marca:marcas(id, nombre, slug)
+        sku,
+        sku_producto,
+        cod_producto_marca,
+        nombre,
+        descripcion_corta,
+        imagen_principal_url,
+        seo_slug,
+        es_destacado,
+        es_novedad,
+        es_promocion,
+        material,
+        origen,
+        peso_kg,
+        dimensiones,
+        tags,
+        categoria:id_categoria(id, nombre),
+        marca:id_marca(id, nombre, logo_url),
+        unidad:id_unidad(id, nombre, simbolo),
+        disponibilidad:id_disponibilidad(id, nombre),
+        precios:producto_precio_moneda(
+          id,
+          precio_venta,
+          margen_aplicado,
+          fecha_vigencia_desde,
+          fecha_vigencia_hasta,
+          activo,
+          precio_proveedor,
+          moneda:id_moneda(id, codigo, nombre, simbolo)
+        )
       `, { count: 'exact' })
       .eq('activo', true)
+      .eq('visible_web', true)
+      .eq('precios.activo', true)
+      .lte('precios.fecha_vigencia_desde', new Date().toISOString().split('T')[0])
+      .or(`precios.fecha_vigencia_hasta.is.null,precios.fecha_vigencia_hasta.gte.${new Date().toISOString().split('T')[0]}`)
 
     if (categoria) {
-      query = query.eq('categoria.slug', categoria)
+      query = query.eq('id_categoria', parseInt(categoria))
     }
 
     if (marca) {
-      query = query.eq('marca.slug', marca)
+      query = query.eq('id_marca', parseInt(marca))
     }
 
     if (buscar) {
-      query = query.or(`nombre.ilike.%${buscar}%,descripcion.ilike.%${buscar}%`)
+      query = query.or(`nombre.ilike.%${buscar}%,descripcion_corta.ilike.%${buscar}%`)
     }
 
     if (precioMin !== undefined) {
-      query = query.gte('precio', precioMin)
+      query = query.gte('precios.precio_venta', precioMin)
     }
 
     if (precioMax !== undefined) {
-      query = query.lte('precio', precioMax)
+      query = query.lte('precios.precio_venta', precioMax)
     }
 
     if (exclude) {
-      query = query.neq('slug', exclude)
+      query = query.neq('seo_slug', exclude)
     }
 
     // Ordenamiento
     switch (ordenar) {
       case 'precio_asc':
-        query = query.order('precio', { ascending: true })
+        query = query.order('precios.precio_venta', { ascending: true })
         break
       case 'precio_desc':
-        query = query.order('precio', { ascending: false })
+        query = query.order('precios.precio_venta', { ascending: false })
         break
       case 'nombre_desc':
         query = query.order('nombre', { ascending: false })
+        break
+      case 'destacado':
+        query = query.order('es_destacado', { ascending: false })
         break
       default:
         query = query.order('nombre', { ascending: true })
@@ -393,11 +700,19 @@ export async function getProducts({
       return { products: [], total: 0, totalPages: 0 }
     }
 
+    // Procesar los datos para obtener el precio actual
+    const processedData = data?.map(producto => ({
+      ...producto,
+      precio_venta: producto.precios?.[0]?.precio_venta || 0,
+      precio_referencia: producto.precios?.[0]?.precio_proveedor || 0,
+      moneda: producto.precios?.[0]?.moneda
+    })) || []
+
     const total = count || 0
     const totalPages = Math.ceil(total / limit)
 
     return {
-      products: data || [],
+      products: processedData,
       total,
       totalPages
     }
@@ -443,17 +758,38 @@ export const getProductosDestacados = async (limit = 8) => {
     .select(`
       sku,
       sku_producto,
+      cod_producto_marca,
       nombre,
       descripcion_corta,
-      precio_referencia,
       imagen_principal_url,
       seo_slug,
-      categoria:id_categoria(nombre),
-      marca:id_marca(nombre, logo_url)
+      es_destacado,
+      es_novedad,
+      es_promocion,
+      material,
+      origen,
+      tags,
+      categoria:id_categoria(id, nombre),
+      marca:id_marca(id, nombre, logo_url),
+      unidad:id_unidad(id, nombre, simbolo),
+      disponibilidad:id_disponibilidad(id, nombre),
+      precios:producto_precio_moneda!inner(
+        id,
+        precio_venta,
+        margen_aplicado,
+        fecha_vigencia_desde,
+        fecha_vigencia_hasta,
+        activo,
+        precio_proveedor,
+        moneda:id_moneda(id, codigo, nombre, simbolo)
+      )
     `)
     .eq('activo', true)
     .eq('visible_web', true)
     .eq('es_destacado', true)
+    .eq('precios.activo', true)
+    .lte('precios.fecha_vigencia_desde', new Date().toISOString().split('T')[0])
+    .or(`precios.fecha_vigencia_hasta.is.null,precios.fecha_vigencia_hasta.gte.${new Date().toISOString().split('T')[0]}`)
     .order('fecha_creacion', { ascending: false })
     .limit(limit)
 
@@ -462,5 +798,53 @@ export const getProductosDestacados = async (limit = 8) => {
     return { data: [], error }
   }
 
-  return { data, error: null }
+  // Procesar los datos para obtener los precios actuales
+  const processedData = data?.map(producto => {
+    // Filtrar precios activos y vigentes
+    const preciosVigentes = producto.precios?.filter(precio => {
+      if (!precio.activo) return false
+      
+      const hoy = new Date().toISOString().split('T')[0]
+      const fechaDesde = precio.fecha_vigencia_desde
+      const fechaHasta = precio.fecha_vigencia_hasta
+      
+      // Verificar que la fecha de inicio sea menor o igual a hoy
+      if (fechaDesde && fechaDesde > hoy) return false
+      
+      // Verificar que la fecha de fin sea null o mayor o igual a hoy
+      if (fechaHasta && fechaHasta < hoy) return false
+      
+      return true
+    }) || []
+    
+    // Separar precios por moneda
+    const precioSoles = preciosVigentes.find(p => p.moneda?.codigo === 'PEN')
+    const precioDolares = preciosVigentes.find(p => p.moneda?.codigo === 'USD')
+    
+    // Priorizar soles, luego dólares
+    const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
+    
+    return {
+      ...producto,
+      // Precio principal (para compatibilidad)
+      precio_venta: precioPrincipal?.precio_venta || 0,
+      precio_referencia: precioPrincipal?.precio_proveedor || 0,
+      moneda: precioPrincipal?.moneda,
+      // Precios por moneda
+      precios_por_moneda: {
+        soles: precioSoles ? {
+          precio_venta: precioSoles.precio_venta,
+          precio_referencia: precioSoles.precio_proveedor,
+          moneda: precioSoles.moneda
+        } : null,
+        dolares: precioDolares ? {
+          precio_venta: precioDolares.precio_venta,
+          precio_referencia: precioDolares.precio_proveedor,
+          moneda: precioDolares.moneda
+        } : null
+      }
+    }
+  }) || []
+
+  return { data: processedData, error: null }
 }

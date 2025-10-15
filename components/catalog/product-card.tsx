@@ -122,7 +122,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   {typeof product.marca === 'string' ? product.marca : product.marca.nombre}
                 </Badge>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  SKU: {product.sku}
+                  SKU: {product.sku_producto || product.sku}
                 </span>
               </div>
             )}
@@ -135,13 +135,46 @@ export function ProductCard({ product }: ProductCardProps) {
             {/* Price */}
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-primary">
-                  {formatPrice(product.precio_venta)}
-                </span>
-                {product.precio_referencia && product.precio_referencia > product.precio_venta && (
-                  <span className="text-xs text-gray-500 line-through">
-                    {formatPrice(product.precio_referencia)}
-                  </span>
+                {/* Precio en soles */}
+                {product.precios_por_moneda?.soles && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg font-bold text-primary">
+                      {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
+                    </span>
+                    {product.precios_por_moneda.soles.precio_referencia && product.precios_por_moneda.soles.precio_referencia > product.precios_por_moneda.soles.precio_venta && (
+                      <span className="text-xs text-gray-500 line-through">
+                        {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_referencia.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Precio en dólares */}
+                {product.precios_por_moneda?.dolares && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-semibold text-blue-600">
+                      {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
+                    </span>
+                    {product.precios_por_moneda.dolares.precio_referencia && product.precios_por_moneda.dolares.precio_referencia > product.precios_por_moneda.dolares.precio_venta && (
+                      <span className="text-xs text-gray-500 line-through">
+                        {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_referencia.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Fallback al precio principal si no hay precios por moneda */}
+                {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg font-bold text-primary">
+                      {formatPrice(product.precio_venta)}
+                    </span>
+                    {product.precio_referencia && product.precio_referencia > product.precio_venta && (
+                      <span className="text-xs text-gray-500 line-through">
+                        {formatPrice(product.precio_referencia)}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               

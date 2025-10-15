@@ -163,11 +163,37 @@ export default function ProductPage({ params }: { params: { locale: string, slug
               {product.nombre}
             </h1>
             
+            {/* SKU */}
+            <div className="mt-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                SKU: {product.sku_producto || product.sku}
+              </span>
+            </div>
+            
             <div className="mt-3">
               <h2 className="sr-only">Product information</h2>
-              <p className="text-3xl text-gray-900 dark:text-white">
-                ${product.precio_venta?.toFixed(2) || 'Consultar precio'}
-              </p>
+              <div className="space-y-2">
+                {/* Precio en soles */}
+                {product.precios_por_moneda?.soles && (
+                  <p className="text-3xl text-gray-900 dark:text-white">
+                    {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
+                  </p>
+                )}
+                
+                {/* Precio en dólares */}
+                {product.precios_por_moneda?.dolares && (
+                  <p className="text-xl text-blue-600 dark:text-blue-400">
+                    {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
+                  </p>
+                )}
+                
+                {/* Fallback al precio principal */}
+                {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
+                  <p className="text-3xl text-gray-900 dark:text-white">
+                    {product.moneda?.simbolo || '$'} {product.precio_venta?.toFixed(2) || 'Consultar precio'}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="mt-6">
