@@ -25,7 +25,10 @@ export function OrderSummary() {
               <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
             </div>
             <p className="font-medium">
-              {formatPrice(item.product.precio_venta * item.quantity)}
+              {item.product.precios_por_moneda?.soles 
+                ? `${item.product.precios_por_moneda.soles.moneda.simbolo} ${(item.product.precios_por_moneda.soles.precio_venta * item.quantity).toFixed(2)}`
+                : 'Consultar precio'
+              }
             </p>
           </div>
         ))}

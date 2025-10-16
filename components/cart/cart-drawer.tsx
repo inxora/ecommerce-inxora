@@ -109,7 +109,10 @@ export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
                         {item.product.nombre}
                       </h4>
                       <p className="text-sm font-semibold text-inxora-blue mt-1">
-                        {formatPrice(item.product.precio_venta)}
+                        {item.product.precios_por_moneda?.soles 
+                          ? `${item.product.precios_por_moneda.soles.moneda.simbolo} ${item.product.precios_por_moneda.soles.precio_venta.toFixed(2)}`
+                          : 'Consultar precio'
+                        }
                       </p>
                       
                       {/* Quantity Controls */}

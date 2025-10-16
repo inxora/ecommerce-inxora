@@ -108,7 +108,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-xl font-bold text-primary">
-                      {formatPrice(product.precio_venta)}
+                      S/ {product.precio_venta.toFixed(2)}
                     </span>
                     <Button
                       size="sm"

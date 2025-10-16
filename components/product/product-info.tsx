@@ -36,7 +36,26 @@ export function ProductInfo({ product }: ProductInfoProps) {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.nombre}</h1>
-        <p className="text-xl font-semibold text-primary">{formatPrice(product.precio_venta)}</p>
+        <div className="space-y-2">
+          {/* Precio en soles */}
+          {product.precios_por_moneda?.soles && (
+            <p className="text-xl font-semibold text-primary">
+              {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
+            </p>
+          )}
+          
+          {/* Precio en dólares */}
+          {product.precios_por_moneda?.dolares && (
+            <p className="text-lg font-semibold text-blue-600">
+              {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
+            </p>
+          )}
+          
+          {/* Fallback si no hay precios */}
+          {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
+            <p className="text-xl font-semibold text-primary">Consultar precio</p>
+          )}
+        </div>
       </div>
 
       {product.descripcion_corta && (

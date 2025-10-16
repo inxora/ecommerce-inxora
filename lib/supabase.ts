@@ -168,6 +168,7 @@ export const getProductos = async (
       nombre,
       descripcion_corta,
       imagen_principal_url,
+      galeria_imagenes_urls,
       seo_slug,
       es_destacado,
       es_novedad,
@@ -184,6 +185,7 @@ export const getProductos = async (
       precios:producto_precio_moneda(
         id,
         precio_venta,
+        precio_proveedor,
         margen_aplicado,
         fecha_vigencia_desde,
         fecha_vigencia_hasta,
@@ -237,8 +239,8 @@ export const getProductos = async (
     }) || []
     
     // Separar precios por moneda
-    const precioSoles = preciosVigentes.find(p => p.moneda?.codigo === 'PEN')
-    const precioDolares = preciosVigentes.find(p => p.moneda?.codigo === 'USD')
+    const precioSoles = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'PEN')
+    const precioDolares = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'USD')
     
     // Priorizar soles, luego dólares
     const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
@@ -564,7 +566,7 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
       console.log('Fallback query result:', { count: searchData?.length, error: searchError?.message })
 
       if (!searchError && searchData && searchData.length > 0) {
-        data = [searchData[0]]
+        data = [searchData[0] as any]
         error = null
         console.log('Found product via fallback:', (data as any)?.nombre)
       }
@@ -712,7 +714,7 @@ export async function getProducts({
     const totalPages = Math.ceil(total / limit)
 
     return {
-      products: processedData,
+      products: processedData as any,
       total,
       totalPages
     }
@@ -818,8 +820,8 @@ export const getProductosDestacados = async (limit = 8) => {
     }) || []
     
     // Separar precios por moneda
-    const precioSoles = preciosVigentes.find(p => p.moneda?.codigo === 'PEN')
-    const precioDolares = preciosVigentes.find(p => p.moneda?.codigo === 'USD')
+    const precioSoles = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'PEN')
+    const precioDolares = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'USD')
     
     // Priorizar soles, luego dólares
     const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
