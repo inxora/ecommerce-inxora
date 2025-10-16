@@ -167,21 +167,16 @@ export function ProductCard({ product }: ProductCardProps) {
                 {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
                   <div className="flex items-center gap-1">
                     <span className="text-lg font-bold text-primary">
-                      {formatPrice(product.precio_venta)}
+                      Consultar precio
                     </span>
-                    {product.precio_referencia && product.precio_referencia > product.precio_venta && (
-                      <span className="text-xs text-gray-500 line-through">
-                        {formatPrice(product.precio_referencia)}
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
               
               {/* Discount Badge */}
-              {product.precio_referencia && product.precio_referencia > product.precio_venta && (
+              {product.precios_por_moneda?.soles?.precio_referencia && product.precios_por_moneda.soles.precio_referencia > product.precios_por_moneda.soles.precio_venta && (
                 <Badge variant="destructive" className="text-xs">
-                  -{Math.round(((product.precio_referencia - product.precio_venta) / product.precio_referencia) * 100)}%
+                  -{Math.round(((product.precios_por_moneda.soles.precio_referencia - product.precios_por_moneda.soles.precio_venta) / product.precios_por_moneda.soles.precio_referencia) * 100)}%
                 </Badge>
               )}
             </div>

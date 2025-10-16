@@ -190,7 +190,7 @@ export default function ProductPage({ params }: { params: { locale: string, slug
                 {/* Fallback al precio principal */}
                 {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
                   <p className="text-3xl text-gray-900 dark:text-white">
-                    {product.moneda?.simbolo || '$'} {product.precio_venta?.toFixed(2) || 'Consultar precio'}
+                    Consultar precio
                   </p>
                 )}
               </div>
