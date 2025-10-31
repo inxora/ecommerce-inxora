@@ -19,17 +19,10 @@ export interface Producto {
   nombre: string
   descripcion_corta: string
   descripcion_detallada: string
-  especificaciones_tecnicas: string
-  aplicaciones: string
-  material: string
-  origen: string
   id_categoria: number
   id_marca: number
   id_unidad: number
   id_disponibilidad: number
-  peso_kg: number
-  dimensiones: string
-  volumen_m3: number
   requiere_stock: boolean
   stock_minimo: number
   punto_reorden: number
@@ -58,6 +51,10 @@ export interface Producto {
   fecha_actualizacion: string
   creado_por: number
   actualizado_por: number
+  // Precio principal para compatibilidad con carrito
+  precio_venta?: number
+  precio_referencia?: number
+  moneda?: Moneda
   // Relaciones
   categoria?: Categoria
   marca?: Marca
@@ -173,10 +170,6 @@ export const getProductos = async (
       es_destacado,
       es_novedad,
       es_promocion,
-      material,
-      origen,
-      peso_kg,
-      dimensiones,
       tags,
       categoria:id_categoria(id, nombre),
       marca:id_marca(id, nombre, logo_url),
@@ -348,17 +341,10 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
         nombre,
         descripcion_corta,
         descripcion_detallada,
-        especificaciones_tecnicas,
-        aplicaciones,
-        material,
-        origen,
         id_categoria,
         id_marca,
         id_unidad,
         id_disponibilidad,
-        peso_kg,
-        dimensiones,
-        volumen_m3,
         requiere_stock,
         stock_minimo,
         punto_reorden,
@@ -423,8 +409,6 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
           nombre,
           descripcion_corta,
           descripcion_detallada,
-          especificaciones_tecnicas,
-          aplicaciones,
           imagen_principal_url,
           galeria_imagenes_urls,
           seo_title,
@@ -471,8 +455,6 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             nombre,
             descripcion_corta,
             descripcion_detallada,
-            especificaciones_tecnicas,
-            aplicaciones,
             imagen_principal_url,
             galeria_imagenes_urls,
             seo_title,
@@ -524,8 +506,6 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             nombre,
             descripcion_corta,
             descripcion_detallada,
-            especificaciones_tecnicas,
-            aplicaciones,
             imagen_principal_url,
             galeria_imagenes_urls,
             seo_title,
@@ -624,10 +604,6 @@ export async function getProducts({
         es_destacado,
         es_novedad,
         es_promocion,
-        material,
-        origen,
-        peso_kg,
-        dimensiones,
         tags,
         categoria:id_categoria(id, nombre),
         marca:id_marca(id, nombre, logo_url),
@@ -755,7 +731,8 @@ export const getMarcas = async () => {
 }
 
 export const getProductosDestacados = async (limit = 8) => {
-  const { data, error } = await supabase
+  // Primero intentar obtener productos destacados
+  let { data, error } = await supabase
     .from('producto')
     .select(`
       sku,
@@ -768,14 +745,12 @@ export const getProductosDestacados = async (limit = 8) => {
       es_destacado,
       es_novedad,
       es_promocion,
-      material,
-      origen,
       tags,
       categoria:id_categoria(id, nombre),
       marca:id_marca(id, nombre, logo_url),
       unidad:id_unidad(id, nombre, simbolo),
       disponibilidad:id_disponibilidad(id, nombre),
-      precios:producto_precio_moneda!inner(
+      precios:producto_precio_moneda(
         id,
         precio_venta,
         margen_aplicado,
@@ -789,11 +764,54 @@ export const getProductosDestacados = async (limit = 8) => {
     .eq('activo', true)
     .eq('visible_web', true)
     .eq('es_destacado', true)
-    .eq('precios.activo', true)
-    .lte('precios.fecha_vigencia_desde', new Date().toISOString().split('T')[0])
-    .or(`precios.fecha_vigencia_hasta.is.null,precios.fecha_vigencia_hasta.gte.${new Date().toISOString().split('T')[0]}`)
     .order('fecha_creacion', { ascending: false })
     .limit(limit)
+
+  // Si no hay productos destacados o hay un error, obtener los últimos productos activos
+  if (error || !data || data.length === 0) {
+    console.log('No hay productos destacados, obteniendo últimos productos activos')
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('producto')
+      .select(`
+        sku,
+        sku_producto,
+        cod_producto_marca,
+        nombre,
+        descripcion_corta,
+        imagen_principal_url,
+        seo_slug,
+        es_destacado,
+        es_novedad,
+        es_promocion,
+        tags,
+        categoria:id_categoria(id, nombre),
+        marca:id_marca(id, nombre, logo_url),
+        unidad:id_unidad(id, nombre, simbolo),
+        disponibilidad:id_disponibilidad(id, nombre),
+        precios:producto_precio_moneda(
+          id,
+          precio_venta,
+          margen_aplicado,
+          fecha_vigencia_desde,
+          fecha_vigencia_hasta,
+          activo,
+          precio_proveedor,
+          moneda:id_moneda(id, codigo, nombre, simbolo)
+        )
+      `)
+      .eq('activo', true)
+      .eq('visible_web', true)
+      .order('fecha_creacion', { ascending: false })
+      .limit(limit)
+    
+    if (fallbackError) {
+      console.error('Error fetching productos:', fallbackError)
+      return { data: [], error: fallbackError }
+    }
+    
+    data = fallbackData
+    error = null
+  }
 
   if (error) {
     console.error('Error fetching productos destacados:', error)

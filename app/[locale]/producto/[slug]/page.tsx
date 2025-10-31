@@ -216,31 +216,6 @@ export default function ProductPage({ params }: { params: { locale: string, slug
               </div>
             )}
 
-            {/* Technical Specifications */}
-            {product.especificaciones_tecnicas && (
-              <div className="mt-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  Especificaciones Técnicas
-                </h3>
-                <div 
-                  className="text-base text-gray-600 dark:text-gray-300"
-                  dangerouslySetInnerHTML={{ __html: product.especificaciones_tecnicas }}
-                />
-              </div>
-            )}
-
-            {/* Applications */}
-            {product.aplicaciones && (
-              <div className="mt-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  Aplicaciones
-                </h3>
-                <div 
-                  className="text-base text-gray-600 dark:text-gray-300"
-                  dangerouslySetInnerHTML={{ __html: product.aplicaciones }}
-                />
-              </div>
-            )}
 
             {/* Brand and Category */}
             <div className="mt-6">

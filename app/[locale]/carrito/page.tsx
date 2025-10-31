@@ -1,60 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Package, Heart } from 'lucide-react'
-
-interface CartItem {
-  id: string
-  name: string
-  sku: string
-  price: number
-  quantity: number
-  image?: string
-}
+import { useCart } from '@/hooks/use-cart'
+import { formatPrice } from '@/lib/utils'
 
 export default function CartPage({ params }: { params: { locale: string } }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      name: 'Guantes de Trabajo Resistentes',
-      sku: 'GLO-HD-01',
-      price: 25.00,
-      quantity: 2,
-    },
-    {
-      id: '2',
-      name: 'Gafas de Seguridad',
-      sku: 'GLA-SF-05',
-      price: 15.00,
-      quantity: 1,
-    },
-    {
-      id: '3',
-      name: 'Botas con Punta de Acero',
-      sku: 'BOO-ST-42',
-      price: 120.00,
-      quantity: 1,
-    },
-  ])
+  const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, updateTrigger } = useCart()
+  
+  // Forzar re-render cuando cambie el carrito
+  useEffect(() => {
+    // El updateTrigger ya maneja el re-render, pero lo incluimos en las dependencias
+  }, [updateTrigger, items])
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeItem(id)
-      return
-    }
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    )
-  }
-
-  const removeItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id))
-  }
-
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const subtotal = getTotalPrice()
+  const itemCount = getItemsCount()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -73,7 +35,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
               
               <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
                 <Package className="h-5 w-5" />
-                <span className="text-sm font-medium">{cartItems.length} productos</span>
+                <span className="text-sm font-medium">{itemCount} {itemCount === 1 ? 'producto' : 'productos'}</span>
               </div>
             </div>
             
@@ -93,7 +55,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
           </div>
         </div>
         
-        {cartItems.length === 0 ? (
+        {items.length === 0 ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
               <div className="flex items-center space-x-3">
@@ -126,35 +88,43 @@ export default function CartPage({ params }: { params: { locale: string } }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {cartItems.map((item) => (
-                <div key={item.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+              {items.map((item) => (
+                <div key={item.product.sku} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
                   <div className="p-6">
                     <div className="flex items-start space-x-4">
                       {/* Product Image */}
-                      <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Package className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                      <div className="relative w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 rounded-xl flex-shrink-0 overflow-hidden">
+                        <Image
+                          src={item.product.imagen_principal_url || '/placeholder-product.svg'}
+                          alt={item.product.nombre}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
                       
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                          {item.name}
+                          {item.product.nombre}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                          SKU: {item.sku}
+                          SKU: {item.product.sku_producto || item.product.sku}
                         </p>
                         
                         <div className="flex items-center justify-between">
                           <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                             <span className="text-xl font-bold">
-                              ${item.price.toFixed(2)}
+                              {item.product.precio_venta 
+                                ? formatPrice(item.product.precio_venta)
+                                : 'Consultar precio'
+                              }
                             </span>
                           </div>
                           
                           {/* Quantity Controls */}
                           <div className="flex items-center space-x-3">
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.product.sku, item.quantity - 1)}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
                             >
                               <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -163,7 +133,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                               {item.quantity}
                             </span>
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.product.sku, item.quantity + 1)}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
                             >
                               <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -178,7 +148,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                           <Heart className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.product.sku)}
                           className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -191,7 +161,10 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500 dark:text-gray-400">Total del producto:</span>
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {item.product.precio_venta 
+                            ? formatPrice(item.product.precio_venta * item.quantity)
+                            : 'Consultar precio'
+                          }
                         </span>
                       </div>
                     </div>
@@ -211,7 +184,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      ${subtotal.toFixed(2)}
+                      {formatPrice(subtotal)}
                     </span>
                   </div>
                   
@@ -226,7 +199,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
                       <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                        ${subtotal.toFixed(2)}
+                        {formatPrice(subtotal)}
                       </span>
                     </div>
                   </div>

@@ -6,22 +6,17 @@ import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useCart } from '@/hooks/use-cart'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 export function Header() {
-  const { getItemsCount, updateTrigger } = useCart()
+  const { items, updateTrigger, isLoaded } = useCart()
   const [searchQuery, setSearchQuery] = useState('')
-  const [itemsCount, setItemsCount] = useState(0)
   const pathname = usePathname() || '/es'
   const locale = (pathname.split('/')[1] || 'es') || 'es'
 
-  // Force re-render when updateTrigger changes
-  useEffect(() => {
-    const count = getItemsCount()
-    console.log('🔄 Header useEffect - updateTrigger:', updateTrigger, 'itemsCount:', count)
-    setItemsCount(count)
-  }, [updateTrigger, getItemsCount])
+  // Calcular la cantidad de items directamente desde el array
+  const itemsCount = items.reduce((total, item) => total + item.quantity, 0)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,8 +122,8 @@ export function Header() {
             <Button variant="ghost" size="sm" className="relative">
               <ShoppingCart className="h-5 w-5" />
               {itemsCount > 0 && (
-                <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-xs text-primary-foreground flex items-center justify-center">
-                  {itemsCount}
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-lg border-2 border-background">
+                  {itemsCount > 99 ? '99+' : itemsCount}
                 </span>
               )}
             </Button>

@@ -18,12 +18,15 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
-  const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, clearCart } = useCart()
+  const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, clearCart, updateTrigger } = useCart()
   const totalItems = getItemsCount()
   const total = getTotalPrice()
   const isEmpty = items.length === 0
   const pathname = usePathname()
   const locale = (pathname?.split('/')?.[1] || 'es')
+  
+  // Forzar re-render cuando cambie updateTrigger
+  // Esto asegura que el drawer se actualice cuando se agreguen productos
 
   // Si no se pasan props, usar como trigger independiente
   if (open === undefined && onOpenChange === undefined) {
@@ -109,8 +112,8 @@ export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
                         {item.product.nombre}
                       </h4>
                       <p className="text-sm font-semibold text-inxora-blue mt-1">
-                        {item.product.precios_por_moneda?.soles 
-                          ? `${item.product.precios_por_moneda.soles.moneda.simbolo} ${item.product.precios_por_moneda.soles.precio_venta.toFixed(2)}`
+                        {item.product.precio_venta 
+                          ? formatPrice(item.product.precio_venta)
                           : 'Consultar precio'
                         }
                       </p>

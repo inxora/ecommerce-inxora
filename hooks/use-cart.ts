@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Product } from '@/lib/supabase'
 import { cartUtils } from '@/lib/utils'
 import { useToast } from './use-toast'
@@ -10,14 +10,16 @@ export function useCart() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [updateTrigger, setUpdateTrigger] = useState(0)
   const { toast } = useToast()
+  const isUpdatingFromEvent = useRef(false)
+  const prevCartRef = useRef<string>('')
 
   // Cargar carrito desde localStorage al montar el componente
   useEffect(() => {
-    const savedCart = cartUtils.getCart()
-    console.log('Loading cart from localStorage:', savedCart)
-    
-    setCart({ 
-      items: savedCart.items.map(item => ({
+    const loadCart = () => {
+      const savedCart = cartUtils.getCart()
+      console.log('Loading cart from localStorage:', savedCart)
+      
+      const newCartItems = savedCart.items.map(item => ({
         product: {
           sku: item.sku,
           nombre: item.nombre,
@@ -28,13 +30,55 @@ export function useCart() {
         quantity: item.cantidad,
         selectedSize: undefined
       }))
-    })
-    setIsLoaded(true)
+      
+      // Actualizar referencia para evitar guardar inmediatamente
+      prevCartRef.current = JSON.stringify(newCartItems.map(item => ({
+        sku: item.product.sku,
+        quantity: item.quantity
+      })))
+      
+      setCart({ items: newCartItems })
+      setIsLoaded(true)
+    }
+    
+    loadCart()
+    
+    // Escuchar cambios en localStorage desde otras pestañas/ventanas
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'inxora-cart') {
+        console.log('Storage changed, reloading cart')
+        isUpdatingFromEvent.current = true
+        loadCart()
+        setUpdateTrigger(prev => prev + 1)
+        setTimeout(() => {
+          isUpdatingFromEvent.current = false
+        }, 100)
+      }
+    }
+    
+    // Escuchar eventos personalizados de cambios en el carrito (solo de otras pestañas)
+    // NO escuchamos nuestros propios eventos para evitar ciclos
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
-
+  
   // Guardar carrito en localStorage cuando cambie (solo después de cargar)
   useEffect(() => {
-    if (!isLoaded) return
+    if (!isLoaded || isUpdatingFromEvent.current) return
+    
+    // Serializar el carrito para comparar si realmente cambió
+    const cartSerialized = JSON.stringify(cart.items.map(item => ({
+      sku: item.product.sku,
+      quantity: item.quantity
+    })))
+    
+    // Si no cambió, no hacer nada
+    if (prevCartRef.current === cartSerialized) return
+    
+    prevCartRef.current = cartSerialized
     
     const cartState = {
       items: cart.items.map(item => ({
@@ -51,6 +95,14 @@ export function useCart() {
 
     console.log('Saving cart to localStorage:', cartState)
     cartUtils.saveCart(cartState)
+    
+    // Disparar evento personalizado para sincronizar otros componentes en la misma ventana
+    // Usar setTimeout para evitar disparar en el mismo ciclo de render
+    setTimeout(() => {
+      if (!isUpdatingFromEvent.current) {
+        window.dispatchEvent(new CustomEvent('cart-updated'))
+      }
+    }, 0)
   }, [cart, isLoaded])
 
   const addItem = (product: Product, quantity: number = 1, selectedSize?: string) => {

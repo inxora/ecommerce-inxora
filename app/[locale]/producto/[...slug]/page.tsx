@@ -272,67 +272,41 @@ export default function ProductPage() {
         </div>
 
         {/* Product Details Sections */}
-        <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {product.descripcion_corta && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full mr-3"></div>
-                Descripción
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
-                {product.descripcion_corta}
-              </p>
-            </div>
-          )}
-
-          {product.descripcion_detallada && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+        {product.descripcion_detallada && (
+          <div className="mt-16">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 lg:p-12 shadow-xl">
+              <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
                 <div className="w-2 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full mr-3"></div>
                 Descripción Detallada
               </h3>
-              <div className="text-gray-700 dark:text-gray-300 prose prose-lg max-w-none">
-                {product.descripcion_detallada.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-3 leading-relaxed">{paragraph}</p>
-                ))}
-              </div>
+              <div 
+                className="text-gray-700 dark:text-gray-300 prose prose-lg max-w-none dark:prose-invert
+                  prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-bold
+                  prose-p:mb-6 prose-p:leading-relaxed prose-p:text-base lg:prose-p:text-lg prose-p:text-gray-700 dark:prose-p:text-gray-300
+                  prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-bold prose-strong:text-lg
+                  prose-ul:my-8 prose-ul:space-y-4 prose-ul:pl-6
+                  prose-ol:my-8 prose-ol:space-y-4 prose-ol:pl-6
+                  prose-li:marker:text-green-600 dark:prose-li:marker:text-green-400
+                  prose-li:ml-4 prose-li:leading-relaxed prose-li:text-base lg:prose-li:text-lg
+                  prose-li:pl-2 prose-li:my-2
+                  prose-h3:text-xl lg:prose-h3:text-2xl prose-h3:font-bold prose-h3:mt-10 prose-h3:mb-6 prose-h3:text-gray-900 dark:prose-h3:text-white
+                  prose-h4:text-lg lg:prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-8 prose-h4:mb-4 prose-h4:text-gray-800 dark:prose-h4:text-gray-200
+                  prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-6
+                  prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+                  prose-blockquote:border-l-4 prose-blockquote:border-green-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6
+                  prose-table:w-full prose-table:my-6
+                  prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:px-4 prose-th:py-2 prose-th:bg-gray-100 dark:prose-th:bg-gray-700
+                  prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:px-4 prose-td:py-2
+                  [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
+                  [&>p]:mb-6 [&>p]:leading-7
+                  [&>ul>li]:mb-3 [&>ol>li]:mb-3
+                  [&>h2]:mt-12 [&>h2]:mb-6
+                  [&>h3]:mt-10 [&>h3]:mb-6"
+                dangerouslySetInnerHTML={{ __html: product.descripcion_detallada }}
+              />
             </div>
-          )}
-
-          {product.especificaciones_tecnicas && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full mr-3"></div>
-                Especificaciones Técnicas
-              </h3>
-              <div className="text-gray-700 dark:text-gray-300 space-y-2">
-                {product.especificaciones_tecnicas.split('\n').map((spec, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="leading-relaxed">{spec}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {product.aplicaciones && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full mr-3"></div>
-                Aplicaciones
-              </h3>
-              <div className="text-gray-700 dark:text-gray-300 space-y-2">
-                {product.aplicaciones.split('\n').map((app, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="leading-relaxed">{app}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
