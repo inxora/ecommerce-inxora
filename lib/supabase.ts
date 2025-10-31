@@ -874,8 +874,14 @@ export const getProductosDestacados = async (limit = 8) => {
 
   // Procesar los datos para obtener los precios actuales
   const processedData = data?.map(producto => {
+    // Normalizar relaciones (pueden venir como arrays en Supabase)
+    const categoria = Array.isArray(producto.categoria) ? producto.categoria[0] : producto.categoria
+    const marca = Array.isArray(producto.marca) ? producto.marca[0] : producto.marca
+    const unidad = Array.isArray(producto.unidad) ? producto.unidad[0] : producto.unidad
+    const disponibilidad = Array.isArray(producto.disponibilidad) ? producto.disponibilidad[0] : producto.disponibilidad
+    
     // Filtrar precios activos y vigentes
-    const preciosVigentes = producto.precios?.filter(precio => {
+    const preciosVigentes = (producto.precios || []).filter(precio => {
       if (!precio.activo) return false
       
       const hoy = new Date().toISOString().split('T')[0]
@@ -889,17 +895,34 @@ export const getProductosDestacados = async (limit = 8) => {
       if (fechaHasta && fechaHasta < hoy) return false
       
       return true
-    }) || []
+    })
+    
+    // Normalizar monedas en los precios (pueden venir como arrays)
+    const preciosNormalizados = preciosVigentes.map(precio => ({
+      ...precio,
+      moneda: Array.isArray(precio.moneda) ? precio.moneda[0] : precio.moneda
+    }))
     
     // Separar precios por moneda
-    const precioSoles = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'PEN')
-    const precioDolares = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'USD')
+    const precioSoles = preciosNormalizados.find(p => {
+      const moneda = p.moneda
+      return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'PEN'
+    })
+    const precioDolares = preciosNormalizados.find(p => {
+      const moneda = p.moneda
+      return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'USD'
+    })
     
     // Priorizar soles, luego dólares
-    const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
+    const precioPrincipal = precioSoles || precioDolares || preciosNormalizados[0]
     
     return {
       ...producto,
+      // Normalizar relaciones
+      categoria,
+      marca,
+      unidad,
+      disponibilidad,
       // Asegurar que los campos requeridos tengan valores por defecto
       descripcion_detallada: producto.descripcion_detallada || '',
       id_categoria: producto.id_categoria || 0,
@@ -933,7 +956,9 @@ export const getProductosDestacados = async (limit = 8) => {
       // Precio principal (para compatibilidad)
       precio_venta: precioPrincipal?.precio_venta || 0,
       precio_referencia: precioPrincipal?.precio_proveedor || 0,
-      moneda: precioPrincipal?.moneda,
+      moneda: precioPrincipal?.moneda || undefined,
+      // Precios procesados con monedas normalizadas
+      precios: preciosNormalizados,
       // Precios por moneda
       precios_por_moneda: {
         soles: precioSoles ? {
