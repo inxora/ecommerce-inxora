@@ -29,7 +29,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
         
         if (productosData.data) {
           console.log('Setting featured products:', productosData.data.length, 'productos');
-          setFeaturedProducts(productosData.data);
+          setFeaturedProducts(productosData.data as Producto[]);
         } else {
           console.log('No hay datos de productos destacados');
         }
