@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast'
 import { useCurrency } from '@/hooks/use-currency'
 import { useParams } from 'next/navigation'
 import { buildProductUrl } from '@/lib/product-url'
-import Image from 'next/image'
 
 interface ProductCardProps {
   product: Product
