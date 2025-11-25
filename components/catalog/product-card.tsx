@@ -11,7 +11,10 @@ import { formatPrice } from '@/lib/utils'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/hooks/use-cart'
 import { useToast } from '@/hooks/use-toast'
+import { useCurrency } from '@/hooks/use-currency'
 import { useParams } from 'next/navigation'
+import { buildProductUrl } from '@/lib/product-url'
+import Image from 'next/image'
 
 interface ProductCardProps {
   product: Product
@@ -21,6 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const { addItem } = useCart()
   const { toast } = useToast()
+  const { currency } = useCurrency()
   const params = useParams() as { locale?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
 
@@ -44,14 +48,8 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsWishlisted(!isWishlisted)
   }
 
-  const brandSegment = product.marca && typeof product.marca !== 'string' 
-    ? product.marca.nombre.toLowerCase().replace(/\s+/g, '-') 
-    : typeof product.marca === 'string' 
-      ? (product.marca as string).toLowerCase().replace(/\s+/g, '-')
-      : undefined
-  const productUrl = brandSegment 
-    ? `/${locale}/producto/${brandSegment}/${product.seo_slug}` 
-    : `/${locale}/producto/${product.seo_slug}`
+  // Usar función helper para construir URL de forma consistente
+  const productUrl = buildProductUrl(product, locale)
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-md hover:shadow-xl hover:-translate-y-1">
@@ -135,8 +133,8 @@ export function ProductCard({ product }: ProductCardProps) {
             {/* Price */}
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                {/* Precio en soles */}
-                {product.precios_por_moneda?.soles && (
+                {/* Precio según moneda seleccionada */}
+                {currency === 'PEN' && product.precios_por_moneda?.soles && (
                   <div className="flex items-center gap-1">
                     <span className="text-lg font-bold text-primary">
                       {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
@@ -149,10 +147,9 @@ export function ProductCard({ product }: ProductCardProps) {
                   </div>
                 )}
                 
-                {/* Precio en dólares */}
-                {product.precios_por_moneda?.dolares && (
+                {currency === 'USD' && product.precios_por_moneda?.dolares && (
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-semibold text-blue-600">
+                    <span className="text-lg font-bold text-primary">
                       {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
                     </span>
                     {product.precios_por_moneda.dolares.precio_referencia && product.precios_por_moneda.dolares.precio_referencia > product.precios_por_moneda.dolares.precio_venta && (
@@ -163,8 +160,9 @@ export function ProductCard({ product }: ProductCardProps) {
                   </div>
                 )}
                 
-                {/* Fallback al precio principal si no hay precios por moneda */}
-                {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
+                {/* Fallback si no hay precio en la moneda seleccionada */}
+                {((currency === 'PEN' && !product.precios_por_moneda?.soles) ||
+                  (currency === 'USD' && !product.precios_por_moneda?.dolares)) && !product.precios_por_moneda?.dolares && (
                   <div className="flex items-center gap-1">
                     <span className="text-lg font-bold text-primary">
                       Consultar precio

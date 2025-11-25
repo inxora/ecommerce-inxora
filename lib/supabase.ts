@@ -286,11 +286,14 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
       const unidad = Array.isArray(data?.unidad) ? data.unidad[0] : data?.unidad
       const disponibilidad = Array.isArray(data?.disponibilidad) ? data.disponibilidad[0] : data?.disponibilidad
       
-      // Obtener el precio actual
-      const precioActual = data.precios?.[0]
+      // Normalizar monedas en los precios (pueden venir como arrays)
+      const preciosNormalizados = (data.precios || []).map(precio => ({
+        ...precio,
+        moneda: Array.isArray(precio.moneda) ? precio.moneda[0] : precio.moneda
+      }))
       
       // Procesar precios por moneda
-      const preciosVigentes = data.precios?.filter(precio => {
+      const preciosVigentes = preciosNormalizados.filter(precio => {
         if (!precio.activo) return false
         
         const hoy = new Date().toISOString().split('T')[0]
@@ -301,10 +304,16 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
         if (fechaHasta && fechaHasta < hoy) return false
         
         return true
-      }) || []
+      })
       
-      const precioSoles = preciosVigentes.find(p => p.moneda?.codigo === 'PEN')
-      const precioDolares = preciosVigentes.find(p => p.moneda?.codigo === 'USD')
+      const precioSoles = preciosVigentes.find(p => {
+        const moneda = p.moneda
+        return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'PEN'
+      })
+      const precioDolares = preciosVigentes.find(p => {
+        const moneda = p.moneda
+        return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'USD'
+      })
       const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
       
       return { 
@@ -313,9 +322,14 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
         marca, 
         unidad, 
         disponibilidad,
+        // Asegurar que imagen_principal_url y galeria_imagenes_urls estén definidos
+        imagen_principal_url: data.imagen_principal_url || '',
+        galeria_imagenes_urls: data.galeria_imagenes_urls || [],
         precio_venta: precioPrincipal?.precio_venta || 0,
         precio_referencia: precioPrincipal?.precio_proveedor || 0,
-        moneda: precioPrincipal?.moneda,
+        moneda: precioPrincipal?.moneda || undefined,
+        // Precios procesados con monedas normalizadas
+        precios: preciosNormalizados,
         precios_por_moneda: {
           soles: precioSoles ? {
             precio_venta: precioSoles.precio_venta,
@@ -376,7 +390,7 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
         categoria:id_categoria(id, nombre),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
-        disponibilidad:id_disponibilidad(id, nombre),
+        disponibilidad:id_disponibilidad(id, nombre, descripcion),
         precios:producto_precio_moneda(
           id,
           precio_venta,
@@ -427,7 +441,7 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
           categoria:id_categoria(id, nombre),
           marca:id_marca(id, nombre, logo_url),
           unidad:id_unidad(id, nombre, simbolo),
-          disponibilidad:id_disponibilidad(id, nombre),
+          disponibilidad:id_disponibilidad(id, nombre, descripcion),
           precios:producto_precio_moneda(
             id,
             precio_venta,
@@ -473,7 +487,7 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             categoria:id_categoria(id, nombre),
             marca:id_marca(id, nombre, logo_url),
             unidad:id_unidad(id, nombre, simbolo),
-            disponibilidad:id_disponibilidad(id, nombre),
+            disponibilidad:id_disponibilidad(id, nombre, descripcion),
             precios:producto_precio_moneda(
               id,
               precio_venta,
@@ -524,7 +538,7 @@ export async function getProductBySlug(slug: string): Promise<Producto | null> {
             categoria:id_categoria(id, nombre),
             marca:id_marca(id, nombre, logo_url),
             unidad:id_unidad(id, nombre, simbolo),
-            disponibilidad:id_disponibilidad(id, nombre),
+            disponibilidad:id_disponibilidad(id, nombre, descripcion),
             precios:producto_precio_moneda(
               id,
               precio_venta,
@@ -608,7 +622,7 @@ export async function getProducts({
         categoria:id_categoria(id, nombre),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
-        disponibilidad:id_disponibilidad(id, nombre),
+        disponibilidad:id_disponibilidad(id, nombre, descripcion),
         precios:producto_precio_moneda(
           id,
           precio_venta,
@@ -841,7 +855,7 @@ export const getProductosDestacados = async (limit = 8) => {
         categoria:id_categoria(id, nombre),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
-        disponibilidad:id_disponibilidad(id, nombre),
+        disponibilidad:id_disponibilidad(id, nombre, descripcion),
         precios:producto_precio_moneda(
           id,
           precio_venta,
@@ -916,6 +930,34 @@ export const getProductosDestacados = async (limit = 8) => {
     // Priorizar soles, luego dólares
     const precioPrincipal = precioSoles || precioDolares || preciosNormalizados[0]
     
+    // Procesar URLs de imágenes (similar a getProductos)
+    // Asegurar que imagen_principal_url sea una cadena válida
+    let imagenPrincipalUrl = ''
+    if (producto.imagen_principal_url && typeof producto.imagen_principal_url === 'string') {
+      imagenPrincipalUrl = producto.imagen_principal_url.trim()
+    } else if (Array.isArray(producto.imagen_principal_url) && producto.imagen_principal_url.length > 0) {
+      // En caso de que venga como array, tomar el primer elemento
+      imagenPrincipalUrl = String(producto.imagen_principal_url[0]).trim()
+    }
+    
+    // Procesar galería de imágenes
+    let galeriaImagenesUrls: string[] = []
+    if (Array.isArray(producto.galeria_imagenes_urls)) {
+      galeriaImagenesUrls = producto.galeria_imagenes_urls
+        .filter(url => url && typeof url === 'string' && url.trim() !== '')
+        .map(url => url.trim())
+    }
+    
+    // Si no hay galería, usar solo la imagen principal
+    if (galeriaImagenesUrls.length === 0 && imagenPrincipalUrl) {
+      galeriaImagenesUrls = [imagenPrincipalUrl]
+    }
+    
+    console.log('Procesando imágenes para producto destacado:', producto.nombre, {
+      imagenPrincipalUrl,
+      galeriaImagenesUrls: galeriaImagenesUrls.length
+    })
+    
     return {
       ...producto,
       // Normalizar relaciones
@@ -935,7 +977,9 @@ export const getProductosDestacados = async (limit = 8) => {
       codigo_arancelario: producto.codigo_arancelario || '',
       es_importado: producto.es_importado ?? false,
       tiempo_importacion_dias: producto.tiempo_importacion_dias || 0,
-      galeria_imagenes_urls: producto.galeria_imagenes_urls || [],
+      // URLs de imagen procesadas (asegurar que estén definidas)
+      imagen_principal_url: imagenPrincipalUrl,
+      galeria_imagenes_urls: galeriaImagenesUrls,
       seo_title: producto.seo_title || '',
       seo_description: producto.seo_description || '',
       seo_keywords: producto.seo_keywords || '',

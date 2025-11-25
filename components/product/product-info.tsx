@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/hooks/use-cart'
 import { useToast } from '@/hooks/use-toast'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface ProductInfoProps {
   product: Product
@@ -17,6 +18,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [quantity, setQuantity] = useState(1)
   const { addItem } = useCart()
   const { toast } = useToast()
+  const { currency } = useCurrency()
 
   const handleAddToCart = () => {
     console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity)
@@ -74,22 +76,22 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{product.nombre}</h1>
         <div className="space-y-2">
-          {/* Precio en soles */}
-          {product.precios_por_moneda?.soles && (
+          {/* Precio según moneda seleccionada */}
+          {currency === 'PEN' && product.precios_por_moneda?.soles && (
             <p className="text-xl font-semibold text-primary dark:text-blue-400">
               {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
             </p>
           )}
           
-          {/* Precio en dólares */}
-          {product.precios_por_moneda?.dolares && (
-            <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+          {currency === 'USD' && product.precios_por_moneda?.dolares && (
+            <p className="text-xl font-semibold text-primary dark:text-blue-400">
               {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
             </p>
           )}
           
-          {/* Fallback si no hay precios */}
-          {!product.precios_por_moneda?.soles && !product.precios_por_moneda?.dolares && (
+          {/* Fallback si no hay precio en la moneda seleccionada */}
+          {((currency === 'PEN' && !product.precios_por_moneda?.soles) || 
+            (currency === 'USD' && !product.precios_por_moneda?.dolares)) && (
             <p className="text-xl font-semibold text-primary dark:text-blue-400">Consultar precio</p>
           )}
         </div>
@@ -98,7 +100,23 @@ export function ProductInfo({ product }: ProductInfoProps) {
       {product.descripcion_corta && (
         <div>
           <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Descripción</h3>
-          <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{product.descripcion_corta}</p>
+          <div 
+            className="text-gray-600 dark:text-gray-300 leading-relaxed prose prose-sm max-w-none dark:prose-invert
+              prose-p:mb-3 prose-p:leading-relaxed prose-p:text-gray-600 dark:prose-p:text-gray-300
+              prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-bold
+              prose-ul:my-4 prose-ul:space-y-2 prose-ul:pl-6
+              prose-ol:my-4 prose-ol:space-y-2 prose-ol:pl-6
+              prose-li:marker:text-blue-600 dark:prose-li:marker:text-blue-400
+              prose-li:ml-4 prose-li:leading-relaxed
+              prose-h2:text-lg prose-h2:font-bold prose-h2:mt-4 prose-h2:mb-3 prose-h2:text-gray-900 dark:prose-h2:text-white
+              prose-h3:text-base prose-h3:font-semibold prose-h3:mt-3 prose-h3:mb-2 prose-h3:text-gray-800 dark:prose-h3:text-gray-200
+              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
+              [&>p]:mb-3 [&>p]:leading-6
+              [&>ul>li]:mb-2 [&>ol>li]:mb-2
+              [&>h2]:mt-4 [&>h2]:mb-3
+              [&>h3]:mt-3 [&>h3]:mb-2"
+            dangerouslySetInnerHTML={{ __html: product.descripcion_corta }}
+          />
         </div>
       )}
 
@@ -150,6 +168,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">Marca: </span>
             <Badge variant="outline">{typeof product.marca === 'string' ? product.marca : product.marca.nombre}</Badge>
+          </div>
+        )}
+        
+        {product.disponibilidad && (
+          <div>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Disponibilidad: </span>
+            <Badge variant="secondary">{product.disponibilidad.descripcion || product.disponibilidad.nombre}</Badge>
           </div>
         )}
       </div>

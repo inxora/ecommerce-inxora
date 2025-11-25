@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCart } from '@/hooks/use-cart'
+import { useCurrency } from '@/hooks/use-currency'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 
 export function Header() {
   const { items, updateTrigger, isLoaded } = useCart()
+  const { currency, setCurrency, currencySymbol } = useCurrency()
   const [searchQuery, setSearchQuery] = useState('')
   const pathname = usePathname() || '/es'
   const locale = (pathname.split('/')[1] || 'es') || 'es'
@@ -29,8 +33,15 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
         <div className="flex gap-6 md:gap-10">
-          <a href={`/${locale}`} className="flex items-center space-x-2">
-            <span className="inline-block font-bold text-xl">INXORA</span>
+          <a href="https://www.inxora.com/" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
+            <Image 
+              src="/LOGO-35.png" 
+              alt="INXORA" 
+              width={180} 
+              height={60} 
+              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto max-w-[200px] sm:max-w-[240px] md:max-w-[280px] lg:max-w-[320px] object-contain transition-all duration-300"
+              priority
+            />
           </a>
           <nav className="hidden md:flex gap-6">
             <a
@@ -60,18 +71,38 @@ export function Header() {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <form onSubmit={handleSearch} className="hidden sm:flex items-center space-x-2">
-            <Input
-              type="search"
-              placeholder="Buscar productos..."
-              className="w-64"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button type="submit" size="sm" variant="ghost">
-              <Search className="h-4 w-4" />
-            </Button>
+          <form onSubmit={handleSearch} className="hidden sm:flex items-center">
+            <div className="relative w-64">
+              <Input
+                type="search"
+                placeholder="Buscar productos..."
+                className="w-full pr-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button 
+                type="submit" 
+                size="sm" 
+                variant="ghost"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </form>
+
+          {/* Currency Selector */}
+          <Select value={currency} onValueChange={(value) => setCurrency(value as 'PEN' | 'USD')}>
+            <SelectTrigger className="hidden sm:flex w-[110px] h-9">
+              <SelectValue placeholder="Moneda">
+                {currencySymbol} {currency}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PEN">S/ Soles (PEN)</SelectItem>
+              <SelectItem value="USD">$ Dólares (USD)</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Mobile menu button (hamburger) visible on small screens */}
           <Sheet>

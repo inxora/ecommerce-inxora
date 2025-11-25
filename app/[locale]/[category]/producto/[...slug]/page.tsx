@@ -18,13 +18,25 @@ interface Review {
 }
 
 export default function ProductPage() {
-  const params = useParams() as { slug?: string[] | string; locale?: string }
+  const params = useParams() as { 
+    slug?: string[] | string
+    category?: string
+    locale?: string 
+  }
   const [product, setProduct] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
     const fetchProduct = async () => {
+      // Debug: log all params
+      console.log('🔍 ProductPage params:', {
+        slug: params.slug,
+        category: params.category,
+        locale: params.locale,
+        allParams: params
+      })
+
       if (params.slug) {
         setLoading(true)
         try {
@@ -32,21 +44,40 @@ export default function ProductPage() {
           const segments = Array.isArray(params.slug) ? params.slug : [params.slug]
           const fullSlug = segments.join('/')
           const lastSegment = segments[segments.length - 1]
+          
+          console.log('🔍 Searching product with:', {
+            segments,
+            fullSlug,
+            lastSegment,
+            category: params.category
+          })
+          
+          // Try to find product with full slug first (includes brand + product)
           let productData = await getProductBySlug(fullSlug)
+          
+          console.log('🔍 First search result:', productData ? 'Found' : 'Not found')
+          
+          // If not found and we have multiple segments, try just the last segment (product slug only)
           if (!productData && segments.length > 1) {
+            console.log('🔍 Trying with last segment only:', lastSegment)
             productData = await getProductBySlug(lastSegment)
+            console.log('🔍 Second search result:', productData ? 'Found' : 'Not found')
           }
+          
           setProduct(productData)
         } catch (error) {
-          console.error('Error fetching product:', error)
+          console.error('❌ Error fetching product:', error)
         } finally {
           setLoading(false)
         }
+      } else {
+        console.warn('⚠️ No slug parameter found in params:', params)
+        setLoading(false)
       }
     }
 
     fetchProduct()
-  }, [params.slug])
+  }, [params.slug, params.category])
 
   // Manejar metadata dinámico para SEO
   useEffect(() => {
@@ -68,7 +99,7 @@ export default function ProductPage() {
         ? `/${locale}/producto/${brandSegment}/${product.seo_slug}`
         : `/${locale}/producto/${product.seo_slug}`
 
-    // Actualizar o crear tag canonical
+    // Actualizar o crear tag canonical - usar origin actual (funciona en localhost y producción)
     let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement
     if (!canonicalLink) {
       canonicalLink = document.createElement('link')
@@ -375,3 +406,4 @@ export default function ProductPage() {
     </div>
   )
 }
+

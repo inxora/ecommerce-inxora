@@ -5,7 +5,7 @@
 -- Dumped from database version 17.4
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-10-29 15:26:38
+-- Started on 2025-11-24 09:29:41
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -101,6 +101,7 @@ DROP POLICY "Allow public read access to moneda" ON public.contacto_rol;
 DROP POLICY "Allow public read access to marca" ON public.rol_compra;
 DROP POLICY "Allow public read access to marca" ON public.marca;
 DROP POLICY "Actualizar notificaciones" ON public.notificaciones;
+ALTER TABLE ONLY storage.vector_indexes DROP CONSTRAINT vector_indexes_bucket_id_fkey;
 ALTER TABLE ONLY storage.s3_multipart_uploads_parts DROP CONSTRAINT s3_multipart_uploads_parts_upload_id_fkey;
 ALTER TABLE ONLY storage.s3_multipart_uploads_parts DROP CONSTRAINT s3_multipart_uploads_parts_bucket_id_fkey;
 ALTER TABLE ONLY storage.s3_multipart_uploads DROP CONSTRAINT s3_multipart_uploads_bucket_id_fkey;
@@ -119,8 +120,10 @@ ALTER TABLE ONLY public.solicitud_cotizacion DROP CONSTRAINT solicitud_cotizacio
 ALTER TABLE ONLY public.solicitud_cotizacion DROP CONSTRAINT solicitud_cotizacion_creado_por_fkey;
 ALTER TABLE ONLY public.solicitud_archivo DROP CONSTRAINT solicitud_archivo_id_solicitud_cotizacion_fkey;
 ALTER TABLE ONLY public.recogedores DROP CONSTRAINT recogedores_id_vehicle_type_fkey;
+ALTER TABLE ONLY public.provincia DROP CONSTRAINT provincia_id_ciudad_fkey;
 ALTER TABLE ONLY public.proveedor_marca DROP CONSTRAINT proveedor_marca_id_proveedor_fkey;
 ALTER TABLE ONLY public.proveedor_marca DROP CONSTRAINT proveedor_marca_id_marca_fkey;
+ALTER TABLE ONLY public.proveedor DROP CONSTRAINT proveedor_id_provincia_fkey;
 ALTER TABLE ONLY public.proveedor DROP CONSTRAINT proveedor_id_pais_fkey;
 ALTER TABLE ONLY public.proveedor DROP CONSTRAINT proveedor_id_condiciones_comerciales_fkey;
 ALTER TABLE ONLY public.proveedor DROP CONSTRAINT proveedor_id_ciudad_fkey;
@@ -160,6 +163,13 @@ ALTER TABLE ONLY public.pago_recibido DROP CONSTRAINT pago_recibido_id_moneda_fk
 ALTER TABLE ONLY public.pago_recibido DROP CONSTRAINT pago_recibido_id_forma_pago_fkey;
 ALTER TABLE ONLY public.pago_recibido DROP CONSTRAINT pago_recibido_id_cuenta_por_cobrar_fkey;
 ALTER TABLE ONLY public.pago_recibido DROP CONSTRAINT pago_recibido_id_cliente_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_validado_por_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_registrado_por_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_id_proveedor_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_id_moneda_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_id_forma_pago_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_id_cuenta_por_pagar_fkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_anulado_por_fkey;
 ALTER TABLE ONLY public.oportunidad DROP CONSTRAINT oportunidad_id_solicitud_cotizacion_fkey;
 ALTER TABLE ONLY public.oportunidad DROP CONSTRAINT oportunidad_id_moneda_valor_fkey;
 ALTER TABLE ONLY public.oportunidad DROP CONSTRAINT oportunidad_id_etapa_fkey;
@@ -177,6 +187,9 @@ ALTER TABLE ONLY public.historial_precios DROP CONSTRAINT historial_precios_id_p
 ALTER TABLE ONLY public.historial_precios DROP CONSTRAINT historial_precios_id_moneda_fkey;
 ALTER TABLE ONLY public.solicitud_cotizacion DROP CONSTRAINT fk_solicitud_cotizacion_generada;
 ALTER TABLE ONLY public.notificaciones DROP CONSTRAINT fk_producto;
+ALTER TABLE ONLY public.historial_cotizacion DROP CONSTRAINT fk_historial_cotizacion_usuario;
+ALTER TABLE ONLY public.historial_cotizacion DROP CONSTRAINT fk_historial_cotizacion_cotizacion;
+ALTER TABLE ONLY public.historial_cotizacion DROP CONSTRAINT fk_historial_cotizacion_aprobador;
 ALTER TABLE ONLY public.contacto_rol DROP CONSTRAINT fk_contacto_rol_rol;
 ALTER TABLE ONLY public.contacto_rol DROP CONSTRAINT fk_contacto_rol_contacto;
 ALTER TABLE ONLY public.contacto_empresa DROP CONSTRAINT fk_contacto_cliente;
@@ -191,13 +204,18 @@ ALTER TABLE ONLY public.factura_detalle DROP CONSTRAINT factura_detalle_id_factu
 ALTER TABLE ONLY public.factura DROP CONSTRAINT factura_creado_por_fkey;
 ALTER TABLE ONLY public.factoring_operacion DROP CONSTRAINT factoring_operacion_id_factura_fkey;
 ALTER TABLE ONLY public.empresa_emisora DROP CONSTRAINT empresa_emisora_id_pais_fkey;
-ALTER TABLE ONLY public.distrito DROP CONSTRAINT distrito_id_ciudad_fkey;
+ALTER TABLE ONLY public.distrito DROP CONSTRAINT distrito_id_provincia_fkey;
 ALTER TABLE ONLY public.direccion_cliente DROP CONSTRAINT direccion_cliente_id_pais_fkey;
 ALTER TABLE ONLY public.direccion_cliente DROP CONSTRAINT direccion_cliente_id_distrito_fkey;
 ALTER TABLE ONLY public.direccion_cliente DROP CONSTRAINT direccion_cliente_id_cliente_fkey;
 ALTER TABLE ONLY public.direccion_cliente DROP CONSTRAINT direccion_cliente_id_ciudad_fkey;
 ALTER TABLE ONLY public.detalle_solicitud_cotizacion DROP CONSTRAINT detalle_solicitud_cotizacion_sku_fkey;
 ALTER TABLE ONLY public.detalle_solicitud_cotizacion DROP CONSTRAINT detalle_solicitud_cotizacion_id_solicitud_cotizacion_fkey;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_id_proveedor_fkey;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_id_pedido_fkey;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_id_moneda_fkey;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_creado_por_fkey;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_actualizado_por_fkey;
 ALTER TABLE ONLY public.cuenta_por_cobrar DROP CONSTRAINT cuenta_por_cobrar_id_moneda_fkey;
 ALTER TABLE ONLY public.cuenta_por_cobrar DROP CONSTRAINT cuenta_por_cobrar_id_gestor_fkey;
 ALTER TABLE ONLY public.cuenta_por_cobrar DROP CONSTRAINT cuenta_por_cobrar_id_factura_fkey;
@@ -272,17 +290,24 @@ DROP TRIGGER update_vehicle_types_modtime ON public.vehicle_types;
 DROP TRIGGER update_recogedores_modtime ON public.recogedores;
 DROP TRIGGER trigger_verificar_producto_completo ON public.producto;
 DROP TRIGGER trigger_notificar_producto_nuevo ON public.producto;
+DROP TRIGGER trigger_generar_codigo_pago_proveedor ON public.pago_proveedor;
+DROP TRIGGER trigger_generar_codigo_cxp ON public.cuenta_por_pagar_proveedor;
 DROP TRIGGER trigger_calcular_costos_proveedor ON public.producto_proveedor;
+DROP TRIGGER trigger_actualizar_estado_cxp ON public.pago_proveedor;
 DROP TRIGGER trg_validar_contacto_empresa ON public.contacto_empresa;
 DROP TRIGGER trg_usuario_fecha_actualizacion ON public.usuario;
 DROP TRIGGER trg_producto_proveedor_fecha_actualizacion ON public.producto_proveedor;
 DROP TRIGGER trg_producto_fecha_actualizacion ON public.producto;
+DROP TRIGGER trg_historial_cotizacion_detalle ON public.cotizacion_detalle;
+DROP TRIGGER trg_historial_cotizacion ON public.cotizacion;
 DROP TRIGGER trg_generar_codigo_solicitud ON public.solicitud_cotizacion;
 DROP TRIGGER trg_cotizacion_primera_transicion ON public.cotizacion;
 DROP TRIGGER trg_cotizacion_fecha_actualizacion ON public.cotizacion;
 DROP TRIGGER trg_cotizacion_cambio_estado ON public.cotizacion;
 DROP TRIGGER trg_calcular_dias_vencimiento ON public.cuenta_por_cobrar;
 DROP TRIGGER trg_actualizar_fecha_contacto ON public.contacto_empresa;
+DROP TRIGGER before_insert_generar_sku_producto ON public.producto;
+DROP INDEX storage.vector_indexes_name_bucket_id_idx;
 DROP INDEX storage.objects_bucket_id_level_idx;
 DROP INDEX storage.name_prefix_search;
 DROP INDEX storage.idx_prefixes_lower_name;
@@ -290,6 +315,7 @@ DROP INDEX storage.idx_objects_lower_name;
 DROP INDEX storage.idx_objects_bucket_id_name;
 DROP INDEX storage.idx_name_bucket_level_unique;
 DROP INDEX storage.idx_multipart_uploads_list;
+DROP INDEX storage.buckets_analytics_unique_name_idx;
 DROP INDEX storage.bucketid_objname;
 DROP INDEX storage.bname;
 DROP INDEX realtime.subscription_subscription_id_entity_filters_key;
@@ -305,8 +331,12 @@ DROP INDEX public.idx_transicion_analisis;
 DROP INDEX public.idx_solicitud_fecha;
 DROP INDEX public.idx_solicitud_estado;
 DROP INDEX public.idx_solicitud_asesor;
+DROP INDEX public.idx_provincia_nombre;
+DROP INDEX public.idx_provincia_id_ciudad;
+DROP INDEX public.idx_proveedor_operaciones;
 DROP INDEX public.idx_producto_visto_por;
 DROP INDEX public.idx_producto_visible_web;
+DROP INDEX public.idx_producto_sku_producto;
 DROP INDEX public.idx_producto_seo;
 DROP INDEX public.idx_producto_proveedor_tc;
 DROP INDEX public.idx_producto_proveedor_sku;
@@ -320,9 +350,15 @@ DROP INDEX public.idx_producto_precio_moneda_id;
 DROP INDEX public.idx_producto_precio_activo;
 DROP INDEX public.idx_producto_nombre_trgm;
 DROP INDEX public.idx_producto_marca;
+DROP INDEX public.idx_producto_imagen_principal_seo;
 DROP INDEX public.idx_producto_imagen;
+DROP INDEX public.idx_producto_galeria_imagenes_seo;
 DROP INDEX public.idx_producto_estado;
 DROP INDEX public.idx_producto_categoria;
+DROP INDEX public.idx_pago_prov_proveedor;
+DROP INDEX public.idx_pago_prov_fecha;
+DROP INDEX public.idx_pago_prov_estado;
+DROP INDEX public.idx_pago_prov_cuenta;
 DROP INDEX public.idx_oportunidad_etapa;
 DROP INDEX public.idx_oportunidad_asesor;
 DROP INDEX public.idx_notificaciones_usuario;
@@ -332,12 +368,25 @@ DROP INDEX public.idx_notificaciones_producto;
 DROP INDEX public.idx_notificaciones_leida_fecha;
 DROP INDEX public.idx_historial_precios_sku;
 DROP INDEX public.idx_historial_precios_fecha;
+DROP INDEX public.idx_historial_cotizacion_usuario;
+DROP INDEX public.idx_historial_cotizacion_tipo;
+DROP INDEX public.idx_historial_cotizacion_productos;
+DROP INDEX public.idx_historial_cotizacion_numero;
+DROP INDEX public.idx_historial_cotizacion_id_cotizacion;
+DROP INDEX public.idx_historial_cotizacion_fecha;
 DROP INDEX public.idx_factura_fecha;
 DROP INDEX public.idx_factura_estado;
 DROP INDEX public.idx_factura_cliente;
 DROP INDEX public.idx_estado_cotizacion_final;
 DROP INDEX public.idx_estado_cotizacion_exitoso;
 DROP INDEX public.idx_estado_cotizacion_activo;
+DROP INDEX public.idx_distrito_nombre;
+DROP INDEX public.idx_distrito_id_provincia;
+DROP INDEX public.idx_distrito_codigo;
+DROP INDEX public.idx_cxp_vencimiento;
+DROP INDEX public.idx_cxp_proveedor;
+DROP INDEX public.idx_cxp_pedido;
+DROP INDEX public.idx_cxp_estado;
 DROP INDEX public.idx_crm_actividad_usuario;
 DROP INDEX public.idx_crm_actividad_fecha;
 DROP INDEX public.idx_cotizacion_fecha_emision;
@@ -348,9 +397,14 @@ DROP INDEX public.idx_contacto_rol_activo;
 DROP INDEX public.idx_contacto_principal_unico;
 DROP INDEX public.idx_contacto_empresa_cliente;
 DROP INDEX public.idx_contacto_empresa_activo;
+DROP INDEX public.idx_cliente_tipo_empresa;
 DROP INDEX public.idx_cliente_tipo;
 DROP INDEX public.idx_cliente_ruc;
-DROP INDEX public.idx_cliente_email;
+DROP INDEX public.idx_cliente_estado_condicion_sunat;
+DROP INDEX public.idx_cliente_es_buen_contribuyente;
+DROP INDEX public.idx_cliente_es_agente_retencion;
+DROP INDEX public.idx_ciudad_nombre;
+DROP INDEX public.idx_ciudad_id_pais;
 DROP INDEX auth.users_is_anonymous_idx;
 DROP INDEX auth.users_instance_id_idx;
 DROP INDEX auth.users_instance_id_email_idx;
@@ -396,12 +450,14 @@ DROP INDEX auth.email_change_token_new_idx;
 DROP INDEX auth.email_change_token_current_idx;
 DROP INDEX auth.confirmation_token_idx;
 DROP INDEX auth.audit_logs_instance_id_idx;
+ALTER TABLE ONLY storage.vector_indexes DROP CONSTRAINT vector_indexes_pkey;
 ALTER TABLE ONLY storage.s3_multipart_uploads DROP CONSTRAINT s3_multipart_uploads_pkey;
 ALTER TABLE ONLY storage.s3_multipart_uploads_parts DROP CONSTRAINT s3_multipart_uploads_parts_pkey;
 ALTER TABLE ONLY storage.prefixes DROP CONSTRAINT prefixes_pkey;
 ALTER TABLE ONLY storage.objects DROP CONSTRAINT objects_pkey;
 ALTER TABLE ONLY storage.migrations DROP CONSTRAINT migrations_pkey;
 ALTER TABLE ONLY storage.migrations DROP CONSTRAINT migrations_name_key;
+ALTER TABLE ONLY storage.buckets_vectors DROP CONSTRAINT buckets_vectors_pkey;
 ALTER TABLE ONLY storage.buckets DROP CONSTRAINT buckets_pkey;
 ALTER TABLE ONLY storage.buckets_analytics DROP CONSTRAINT buckets_analytics_pkey;
 ALTER TABLE ONLY realtime.schema_migrations DROP CONSTRAINT schema_migrations_pkey;
@@ -421,6 +477,7 @@ ALTER TABLE ONLY public.usuario_rol DROP CONSTRAINT usuario_rol_id_usuario_id_ro
 ALTER TABLE ONLY public.usuario DROP CONSTRAINT usuario_pkey;
 ALTER TABLE ONLY public.contacto_rol DROP CONSTRAINT uq_contacto_rol;
 ALTER TABLE ONLY public.contacto_empresa DROP CONSTRAINT uq_contacto_correo_cliente;
+ALTER TABLE ONLY public.producto DROP CONSTRAINT unique_sku_producto;
 ALTER TABLE ONLY public.unidad DROP CONSTRAINT unidad_pkey;
 ALTER TABLE ONLY public.unidad DROP CONSTRAINT unidad_codigo_key;
 ALTER TABLE ONLY public.transicion_estado_cotizacion DROP CONSTRAINT transicion_estado_cotizacion_pkey;
@@ -438,6 +495,7 @@ ALTER TABLE ONLY public.rol_compra DROP CONSTRAINT rol_compra_pkey;
 ALTER TABLE ONLY public.rol_compra DROP CONSTRAINT rol_compra_codigo_key;
 ALTER TABLE ONLY public.recogedores DROP CONSTRAINT recogedores_pkey;
 ALTER TABLE ONLY public.recogedores DROP CONSTRAINT recogedores_correo_key;
+ALTER TABLE ONLY public.provincia DROP CONSTRAINT provincia_pkey;
 ALTER TABLE ONLY public.proveedor DROP CONSTRAINT proveedor_pkey;
 ALTER TABLE ONLY public.proveedor_marca DROP CONSTRAINT proveedor_marca_pkey;
 ALTER TABLE ONLY public.proveedor DROP CONSTRAINT proveedor_documento_empresa_key;
@@ -463,6 +521,8 @@ ALTER TABLE ONLY public.pais DROP CONSTRAINT pais_iso_code_2_key;
 ALTER TABLE ONLY public.pais DROP CONSTRAINT pais_codigo_key;
 ALTER TABLE ONLY public.pago_recibido DROP CONSTRAINT pago_recibido_pkey;
 ALTER TABLE ONLY public.pago_recibido DROP CONSTRAINT pago_recibido_numero_recibo_key;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_pkey;
+ALTER TABLE ONLY public.pago_proveedor DROP CONSTRAINT pago_proveedor_codigo_key;
 ALTER TABLE ONLY public.oportunidad DROP CONSTRAINT oportunidad_pkey;
 ALTER TABLE ONLY public.notificaciones DROP CONSTRAINT notificaciones_pkey;
 ALTER TABLE ONLY public.moneda DROP CONSTRAINT moneda_pkey;
@@ -472,6 +532,7 @@ ALTER TABLE ONLY public.marca DROP CONSTRAINT marca_codigo_key;
 ALTER TABLE ONLY public.marca_categoria DROP CONSTRAINT marca_categoria_pkey;
 ALTER TABLE ONLY public.inversion_categoria DROP CONSTRAINT inversion_categoria_pkey;
 ALTER TABLE ONLY public.historial_precios DROP CONSTRAINT historial_precios_pkey;
+ALTER TABLE ONLY public.historial_cotizacion DROP CONSTRAINT historial_cotizacion_pkey;
 ALTER TABLE ONLY public.forma_pago DROP CONSTRAINT forma_pago_pkey;
 ALTER TABLE ONLY public.forma_pago DROP CONSTRAINT forma_pago_codigo_key;
 ALTER TABLE ONLY public.factura DROP CONSTRAINT factura_pkey;
@@ -489,6 +550,8 @@ ALTER TABLE ONLY public.disponibilidad DROP CONSTRAINT disponibilidad_codigo_key
 ALTER TABLE ONLY public.direccion_cliente DROP CONSTRAINT direccion_cliente_pkey;
 ALTER TABLE ONLY public.detalle_solicitud_cotizacion DROP CONSTRAINT detalle_solicitud_cotizacion_pkey;
 ALTER TABLE ONLY public.detalle_solicitud_cotizacion DROP CONSTRAINT detalle_solicitud_cotizacion_id_solicitud_cotizacion_item_key;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_pkey;
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor DROP CONSTRAINT cuenta_por_pagar_proveedor_codigo_key;
 ALTER TABLE ONLY public.cuenta_por_cobrar DROP CONSTRAINT cuenta_por_cobrar_pkey;
 ALTER TABLE ONLY public.cuenta_por_cobrar DROP CONSTRAINT cuenta_por_cobrar_numero_documento_key;
 ALTER TABLE ONLY public.crowdlending_operacion DROP CONSTRAINT crowdlending_operacion_pkey;
@@ -562,12 +625,14 @@ ALTER TABLE public.pedido_detalle ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.pedido ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.pais ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.pago_recibido ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.pago_proveedor ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.oportunidad ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.notificaciones ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.moneda ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.marca ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.inversion_categoria ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.historial_precios ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.historial_cotizacion ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.forma_pago ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.factura_detalle ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.factura ALTER COLUMN id DROP DEFAULT;
@@ -577,6 +642,7 @@ ALTER TABLE public.empresa_emisora ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.disponibilidad ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.direccion_cliente ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.detalle_solicitud_cotizacion ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.cuenta_por_pagar_proveedor ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.cuenta_por_cobrar ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.crowdlending_operacion ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.crm_nota ALTER COLUMN id DROP DEFAULT;
@@ -595,11 +661,13 @@ ALTER TABLE public.ciudad ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.categoria ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.carrito_compra ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE auth.refresh_tokens ALTER COLUMN id DROP DEFAULT;
+DROP TABLE storage.vector_indexes;
 DROP TABLE storage.s3_multipart_uploads_parts;
 DROP TABLE storage.s3_multipart_uploads;
 DROP TABLE storage.prefixes;
 DROP TABLE storage.objects;
 DROP TABLE storage.migrations;
+DROP TABLE storage.buckets_vectors;
 DROP TABLE storage.buckets_analytics;
 DROP TABLE storage.buckets;
 DROP TABLE realtime.subscription;
@@ -614,15 +682,23 @@ DROP TABLE realtime.messages_2025_09_22;
 DROP TABLE realtime.messages;
 DROP VIEW public.vista_analisis_descuentos;
 DROP VIEW public.v_transiciones_por_estado;
+DROP VIEW public.v_tipos_cambio_actuales;
 DROP VIEW public.v_solicitudes_pendientes;
+DROP VIEW public.v_resumen_estado_precios;
+DROP VIEW public.v_proximos_pagos_proveedores;
+DROP VIEW public.v_productos_sin_datos_comerciales;
 DROP VIEW public.v_pipeline_crm;
 DROP VIEW public.v_performance_asesores_embudo;
 DROP VIEW public.v_historial_precios_detallado;
+DROP VIEW public.v_historial_pagos_proveedor;
+DROP VIEW public.v_historial_cotizacion_completo;
 DROP VIEW public.v_estadisticas_roles;
+DROP VIEW public.v_cuentas_por_pagar_resumen;
 DROP VIEW public.v_cobranza_pendiente;
-DROP VIEW public.v_clientes_contactos_roles;
 DROP VIEW public.v_ciclo_vida_cotizaciones;
+DROP VIEW public.v_cambios_recientes_cotizaciones;
 DROP VIEW public.v_analisis_perdidas;
+DROP VIEW public.v_actividad_cotizaciones;
 DROP SEQUENCE public.usuario_rol_id_seq;
 DROP TABLE public.usuario_rol;
 DROP TABLE public.usuario;
@@ -644,6 +720,7 @@ DROP SEQUENCE public.rol_id_seq;
 DROP SEQUENCE public.rol_compra_id_seq;
 DROP TABLE public.rol_compra;
 DROP TABLE public.rol;
+DROP TABLE public.provincia;
 DROP TABLE public.proveedor_marca;
 DROP SEQUENCE public.proveedor_id_seq;
 DROP TABLE public.proveedor_categoria;
@@ -670,6 +747,8 @@ DROP SEQUENCE public.pais_id_seq;
 DROP TABLE public.pais;
 DROP SEQUENCE public.pago_recibido_id_seq;
 DROP TABLE public.pago_recibido;
+DROP SEQUENCE public.pago_proveedor_id_seq;
+DROP TABLE public.pago_proveedor;
 DROP SEQUENCE public.oportunidad_id_seq;
 DROP TABLE public.oportunidad;
 DROP SEQUENCE public.notificaciones_id_seq;
@@ -683,6 +762,8 @@ DROP SEQUENCE public.inversion_categoria_id_seq;
 DROP TABLE public.inversion_categoria;
 DROP SEQUENCE public.historial_precios_id_seq;
 DROP TABLE public.historial_precios;
+DROP SEQUENCE public.historial_cotizacion_id_seq;
+DROP TABLE public.historial_cotizacion;
 DROP SEQUENCE public.forma_pago_id_seq;
 DROP TABLE public.forma_pago;
 DROP SEQUENCE public.factura_id_seq;
@@ -702,6 +783,8 @@ DROP SEQUENCE public.direccion_cliente_id_seq;
 DROP TABLE public.direccion_cliente;
 DROP SEQUENCE public.detalle_solicitud_cotizacion_id_seq;
 DROP TABLE public.detalle_solicitud_cotizacion;
+DROP SEQUENCE public.cuenta_por_pagar_proveedor_id_seq;
+DROP TABLE public.cuenta_por_pagar_proveedor;
 DROP SEQUENCE public.cuenta_por_cobrar_id_seq;
 DROP TABLE public.cuenta_por_cobrar;
 DROP SEQUENCE public.crowdlending_operacion_id_seq;
@@ -806,25 +889,41 @@ DROP FUNCTION public.verificar_producto_completo();
 DROP FUNCTION public.validar_margen_producto();
 DROP FUNCTION public.validar_contacto_es_empresa();
 DROP FUNCTION public.update_updated_at_column();
+DROP FUNCTION public.trigger_historial_cotizacion_detalle();
+DROP FUNCTION public.trigger_historial_cotizacion();
+DROP FUNCTION public.trigger_generar_sku_producto();
 DROP FUNCTION public.sugerir_descuento_proveedor(p_id_proveedor bigint, p_id_categoria bigint);
 DROP FUNCTION public.reporte_descuentos_por_proveedor(p_id_proveedor bigint, p_fecha_desde date, p_fecha_hasta date);
+DROP FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint);
+DROP FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint);
+DROP FUNCTION public.regenerar_sku_productos_sin_codigo();
 DROP FUNCTION public.recalcular_precios_masivo(p_filtro_categoria bigint, p_filtro_proveedor bigint, p_nuevo_tipo_cambio numeric, p_usuario_id bigint);
 DROP FUNCTION public.obtener_tipo_cambio_vigente(p_moneda character varying);
 DROP FUNCTION public.obtener_tasa_conversion(estado_origen_codigo character varying, estado_destino_codigo character varying, fecha_desde date);
+DROP FUNCTION public.obtener_prefijo_categoria(p_id_categoria bigint);
 DROP FUNCTION public.obtener_precios_producto_multimoneda(p_sku bigint);
 DROP FUNCTION public.obtener_precio_proveedor_con_descuentos(p_sku bigint, p_id_proveedor bigint);
 DROP FUNCTION public.obtener_precio_producto(p_sku bigint, p_id_moneda bigint);
+DROP FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer);
+DROP FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying);
+DROP FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint);
+DROP FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint);
+DROP FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint);
 DROP FUNCTION public.marcar_producto_visto(p_producto_id bigint, p_usuario_id bigint);
 DROP FUNCTION public.limpiar_notificaciones_antiguas(dias_antiguedad integer);
 DROP FUNCTION public.get_precio_principal(p_sku bigint);
 DROP FUNCTION public.get_margen_principal(p_sku bigint);
 DROP FUNCTION public.get_auth_info();
+DROP FUNCTION public.generar_sku_producto(p_id_categoria bigint);
 DROP FUNCTION public.generar_codigo_solicitud();
+DROP FUNCTION public.generar_codigo_pago_proveedor();
+DROP FUNCTION public.generar_codigo_cxp();
 DROP FUNCTION public.fn_registrar_transicion_estado_cotizacion();
 DROP FUNCTION public.fn_registrar_primera_transicion();
 DROP FUNCTION public.establecer_precio_producto(p_sku bigint, p_id_moneda bigint, p_precio_venta numeric, p_margen_aplicado numeric, p_usuario_id bigint);
 DROP FUNCTION public.crear_notificacion_producto_nuevo();
 DROP FUNCTION public.cotizaciones_en_riesgo();
+DROP FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint);
 DROP FUNCTION public.calcular_precio_venta_usd(p_precio_soles numeric, p_tipo_cambio_bajo numeric);
 DROP FUNCTION public.calcular_precio_venta_soles(p_costo numeric, p_id_moneda bigint, p_margen numeric);
 DROP FUNCTION public.calcular_precio_venta_automatico();
@@ -835,11 +934,14 @@ DROP FUNCTION public.auto_generar_numero_factura();
 DROP FUNCTION public.auditar_cambio_descuentos();
 DROP FUNCTION public.asociar_marca_categoria(p_id_marca bigint, p_id_categoria bigint);
 DROP FUNCTION public.asegurar_principal_unico();
+DROP FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint);
 DROP FUNCTION public.actualizar_timestamp_cotizacion();
 DROP FUNCTION public.actualizar_stock_pedido();
 DROP FUNCTION public.actualizar_fecha_modificacion();
 DROP FUNCTION public.actualizar_fecha_contacto();
+DROP FUNCTION public.actualizar_estado_cxp();
 DROP FUNCTION public.actualizar_dias_pipeline();
+DROP FUNCTION public.actualizar_cuentas_vencidas();
 DROP FUNCTION pgbouncer.get_auth(p_usename text);
 DROP FUNCTION extensions.set_graphql_placeholder();
 DROP FUNCTION extensions.pgrst_drop_watch();
@@ -943,7 +1045,7 @@ ALTER SCHEMA pgbouncer OWNER TO pgbouncer;
 ALTER SCHEMA public OWNER TO postgres;
 
 --
--- TOC entry 5854 (class 0 OID 0)
+-- TOC entry 6072 (class 0 OID 0)
 -- Dependencies: 138
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
 --
@@ -990,7 +1092,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gin WITH SCHEMA public;
 
 
 --
--- TOC entry 5859 (class 0 OID 0)
+-- TOC entry 6077 (class 0 OID 0)
 -- Dependencies: 8
 -- Name: EXTENSION btree_gin; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1007,7 +1109,7 @@ CREATE EXTENSION IF NOT EXISTS pg_graphql WITH SCHEMA graphql;
 
 
 --
--- TOC entry 5860 (class 0 OID 0)
+-- TOC entry 6078 (class 0 OID 0)
 -- Dependencies: 6
 -- Name: EXTENSION pg_graphql; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1024,7 +1126,7 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;
 
 
 --
--- TOC entry 5861 (class 0 OID 0)
+-- TOC entry 6079 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION pg_stat_statements; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1041,7 +1143,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 
 --
--- TOC entry 5862 (class 0 OID 0)
+-- TOC entry 6080 (class 0 OID 0)
 -- Dependencies: 7
 -- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1058,7 +1160,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 
 --
--- TOC entry 5863 (class 0 OID 0)
+-- TOC entry 6081 (class 0 OID 0)
 -- Dependencies: 4
 -- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1075,7 +1177,7 @@ CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
 
 
 --
--- TOC entry 5864 (class 0 OID 0)
+-- TOC entry 6082 (class 0 OID 0)
 -- Dependencies: 5
 -- Name: EXTENSION supabase_vault; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1092,7 +1194,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 
 
 --
--- TOC entry 5865 (class 0 OID 0)
+-- TOC entry 6083 (class 0 OID 0)
 -- Dependencies: 3
 -- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
 --
@@ -1101,7 +1203,7 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 
 
 --
--- TOC entry 1473 (class 1247 OID 16782)
+-- TOC entry 1510 (class 1247 OID 16782)
 -- Name: aal_level; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1115,7 +1217,7 @@ CREATE TYPE auth.aal_level AS ENUM (
 ALTER TYPE auth.aal_level OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1497 (class 1247 OID 16923)
+-- TOC entry 1534 (class 1247 OID 16923)
 -- Name: code_challenge_method; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1128,7 +1230,7 @@ CREATE TYPE auth.code_challenge_method AS ENUM (
 ALTER TYPE auth.code_challenge_method OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1470 (class 1247 OID 16776)
+-- TOC entry 1507 (class 1247 OID 16776)
 -- Name: factor_status; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1141,7 +1243,7 @@ CREATE TYPE auth.factor_status AS ENUM (
 ALTER TYPE auth.factor_status OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1467 (class 1247 OID 16771)
+-- TOC entry 1504 (class 1247 OID 16771)
 -- Name: factor_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1155,7 +1257,7 @@ CREATE TYPE auth.factor_type AS ENUM (
 ALTER TYPE auth.factor_type OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1780 (class 1247 OID 126970)
+-- TOC entry 1820 (class 1247 OID 126970)
 -- Name: oauth_authorization_status; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1170,7 +1272,7 @@ CREATE TYPE auth.oauth_authorization_status AS ENUM (
 ALTER TYPE auth.oauth_authorization_status OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1792 (class 1247 OID 127043)
+-- TOC entry 1832 (class 1247 OID 127043)
 -- Name: oauth_client_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1183,7 +1285,7 @@ CREATE TYPE auth.oauth_client_type AS ENUM (
 ALTER TYPE auth.oauth_client_type OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1744 (class 1247 OID 77031)
+-- TOC entry 1781 (class 1247 OID 77031)
 -- Name: oauth_registration_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1196,7 +1298,7 @@ CREATE TYPE auth.oauth_registration_type AS ENUM (
 ALTER TYPE auth.oauth_registration_type OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1783 (class 1247 OID 126980)
+-- TOC entry 1823 (class 1247 OID 126980)
 -- Name: oauth_response_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1208,7 +1310,7 @@ CREATE TYPE auth.oauth_response_type AS ENUM (
 ALTER TYPE auth.oauth_response_type OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1503 (class 1247 OID 16965)
+-- TOC entry 1540 (class 1247 OID 16965)
 -- Name: one_time_token_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1225,7 +1327,7 @@ CREATE TYPE auth.one_time_token_type AS ENUM (
 ALTER TYPE auth.one_time_token_type OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 1518 (class 1247 OID 17136)
+-- TOC entry 1555 (class 1247 OID 17136)
 -- Name: action; Type: TYPE; Schema: realtime; Owner: supabase_admin
 --
 
@@ -1241,7 +1343,7 @@ CREATE TYPE realtime.action AS ENUM (
 ALTER TYPE realtime.action OWNER TO supabase_admin;
 
 --
--- TOC entry 1529 (class 1247 OID 17093)
+-- TOC entry 1566 (class 1247 OID 17093)
 -- Name: equality_op; Type: TYPE; Schema: realtime; Owner: supabase_admin
 --
 
@@ -1259,7 +1361,7 @@ CREATE TYPE realtime.equality_op AS ENUM (
 ALTER TYPE realtime.equality_op OWNER TO supabase_admin;
 
 --
--- TOC entry 1532 (class 1247 OID 17107)
+-- TOC entry 1569 (class 1247 OID 17107)
 -- Name: user_defined_filter; Type: TYPE; Schema: realtime; Owner: supabase_admin
 --
 
@@ -1273,7 +1375,7 @@ CREATE TYPE realtime.user_defined_filter AS (
 ALTER TYPE realtime.user_defined_filter OWNER TO supabase_admin;
 
 --
--- TOC entry 1524 (class 1247 OID 17179)
+-- TOC entry 1561 (class 1247 OID 17179)
 -- Name: wal_column; Type: TYPE; Schema: realtime; Owner: supabase_admin
 --
 
@@ -1290,7 +1392,7 @@ CREATE TYPE realtime.wal_column AS (
 ALTER TYPE realtime.wal_column OWNER TO supabase_admin;
 
 --
--- TOC entry 1521 (class 1247 OID 17149)
+-- TOC entry 1558 (class 1247 OID 17149)
 -- Name: wal_rls; Type: TYPE; Schema: realtime; Owner: supabase_admin
 --
 
@@ -1305,20 +1407,21 @@ CREATE TYPE realtime.wal_rls AS (
 ALTER TYPE realtime.wal_rls OWNER TO supabase_admin;
 
 --
--- TOC entry 1738 (class 1247 OID 68460)
+-- TOC entry 1775 (class 1247 OID 68460)
 -- Name: buckettype; Type: TYPE; Schema: storage; Owner: supabase_storage_admin
 --
 
 CREATE TYPE storage.buckettype AS ENUM (
     'STANDARD',
-    'ANALYTICS'
+    'ANALYTICS',
+    'VECTOR'
 );
 
 
 ALTER TYPE storage.buckettype OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 635 (class 1255 OID 16540)
+-- TOC entry 664 (class 1255 OID 16540)
 -- Name: email(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1336,8 +1439,8 @@ $$;
 ALTER FUNCTION auth.email() OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5866 (class 0 OID 0)
--- Dependencies: 635
+-- TOC entry 6084 (class 0 OID 0)
+-- Dependencies: 664
 -- Name: FUNCTION email(); Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1345,7 +1448,7 @@ COMMENT ON FUNCTION auth.email() IS 'Deprecated. Use auth.jwt() -> ''email'' ins
 
 
 --
--- TOC entry 683 (class 1255 OID 16753)
+-- TOC entry 712 (class 1255 OID 16753)
 -- Name: jwt(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1363,7 +1466,7 @@ $$;
 ALTER FUNCTION auth.jwt() OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 548 (class 1255 OID 16539)
+-- TOC entry 566 (class 1255 OID 16539)
 -- Name: role(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1381,8 +1484,8 @@ $$;
 ALTER FUNCTION auth.role() OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5869 (class 0 OID 0)
--- Dependencies: 548
+-- TOC entry 6087 (class 0 OID 0)
+-- Dependencies: 566
 -- Name: FUNCTION role(); Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1390,7 +1493,7 @@ COMMENT ON FUNCTION auth.role() IS 'Deprecated. Use auth.jwt() -> ''role'' inste
 
 
 --
--- TOC entry 585 (class 1255 OID 16538)
+-- TOC entry 604 (class 1255 OID 16538)
 -- Name: uid(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1408,8 +1511,8 @@ $$;
 ALTER FUNCTION auth.uid() OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5871 (class 0 OID 0)
--- Dependencies: 585
+-- TOC entry 6089 (class 0 OID 0)
+-- Dependencies: 604
 -- Name: FUNCTION uid(); Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -1417,7 +1520,7 @@ COMMENT ON FUNCTION auth.uid() IS 'Deprecated. Use auth.jwt() -> ''sub'' instead
 
 
 --
--- TOC entry 711 (class 1255 OID 16597)
+-- TOC entry 742 (class 1255 OID 16597)
 -- Name: grant_pg_cron_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1457,8 +1560,8 @@ $$;
 ALTER FUNCTION extensions.grant_pg_cron_access() OWNER TO supabase_admin;
 
 --
--- TOC entry 5887 (class 0 OID 0)
--- Dependencies: 711
+-- TOC entry 6105 (class 0 OID 0)
+-- Dependencies: 742
 -- Name: FUNCTION grant_pg_cron_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1466,7 +1569,7 @@ COMMENT ON FUNCTION extensions.grant_pg_cron_access() IS 'Grants access to pg_cr
 
 
 --
--- TOC entry 674 (class 1255 OID 16618)
+-- TOC entry 703 (class 1255 OID 16618)
 -- Name: grant_pg_graphql_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1527,8 +1630,8 @@ $_$;
 ALTER FUNCTION extensions.grant_pg_graphql_access() OWNER TO supabase_admin;
 
 --
--- TOC entry 5889 (class 0 OID 0)
--- Dependencies: 674
+-- TOC entry 6107 (class 0 OID 0)
+-- Dependencies: 703
 -- Name: FUNCTION grant_pg_graphql_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1536,7 +1639,7 @@ COMMENT ON FUNCTION extensions.grant_pg_graphql_access() IS 'Grants access to pg
 
 
 --
--- TOC entry 621 (class 1255 OID 16599)
+-- TOC entry 646 (class 1255 OID 16599)
 -- Name: grant_pg_net_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1590,8 +1693,8 @@ $$;
 ALTER FUNCTION extensions.grant_pg_net_access() OWNER TO supabase_admin;
 
 --
--- TOC entry 5891 (class 0 OID 0)
--- Dependencies: 621
+-- TOC entry 6109 (class 0 OID 0)
+-- Dependencies: 646
 -- Name: FUNCTION grant_pg_net_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1599,7 +1702,7 @@ COMMENT ON FUNCTION extensions.grant_pg_net_access() IS 'Grants access to pg_net
 
 
 --
--- TOC entry 532 (class 1255 OID 16609)
+-- TOC entry 550 (class 1255 OID 16609)
 -- Name: pgrst_ddl_watch(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1635,7 +1738,7 @@ END; $$;
 ALTER FUNCTION extensions.pgrst_ddl_watch() OWNER TO supabase_admin;
 
 --
--- TOC entry 742 (class 1255 OID 16610)
+-- TOC entry 774 (class 1255 OID 16610)
 -- Name: pgrst_drop_watch(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1669,7 +1772,7 @@ END; $$;
 ALTER FUNCTION extensions.pgrst_drop_watch() OWNER TO supabase_admin;
 
 --
--- TOC entry 562 (class 1255 OID 16620)
+-- TOC entry 580 (class 1255 OID 16620)
 -- Name: set_graphql_placeholder(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1729,8 +1832,8 @@ $_$;
 ALTER FUNCTION extensions.set_graphql_placeholder() OWNER TO supabase_admin;
 
 --
--- TOC entry 5920 (class 0 OID 0)
--- Dependencies: 562
+-- TOC entry 6138 (class 0 OID 0)
+-- Dependencies: 580
 -- Name: FUNCTION set_graphql_placeholder(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
 --
 
@@ -1738,7 +1841,7 @@ COMMENT ON FUNCTION extensions.set_graphql_placeholder() IS 'Reintroduces placeh
 
 
 --
--- TOC entry 637 (class 1255 OID 16387)
+-- TOC entry 666 (class 1255 OID 16387)
 -- Name: get_auth(text); Type: FUNCTION; Schema: pgbouncer; Owner: supabase_admin
 --
 
@@ -1764,7 +1867,36 @@ $_$;
 ALTER FUNCTION pgbouncer.get_auth(p_usename text) OWNER TO supabase_admin;
 
 --
--- TOC entry 617 (class 1255 OID 19468)
+-- TOC entry 657 (class 1255 OID 147951)
+-- Name: actualizar_cuentas_vencidas(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_cuentas_vencidas() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    UPDATE cuenta_por_pagar_proveedor
+    SET estado = 'VENCIDO'
+    WHERE fecha_vencimiento < CURRENT_DATE
+        AND estado IN ('PENDIENTE', 'PARCIAL')
+        AND activo = true;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_cuentas_vencidas() OWNER TO postgres;
+
+--
+-- TOC entry 6152 (class 0 OID 0)
+-- Dependencies: 657
+-- Name: FUNCTION actualizar_cuentas_vencidas(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.actualizar_cuentas_vencidas() IS 'Actualiza el estado de cuentas por pagar que han vencido. Debe ejecutarse diariamente';
+
+
+--
+-- TOC entry 641 (class 1255 OID 19468)
 -- Name: actualizar_dias_pipeline(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1782,7 +1914,57 @@ $$;
 ALTER FUNCTION public.actualizar_dias_pipeline() OWNER TO postgres;
 
 --
--- TOC entry 589 (class 1255 OID 134258)
+-- TOC entry 653 (class 1255 OID 147949)
+-- Name: actualizar_estado_cxp(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_estado_cxp() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_total NUMERIC(12,2);
+    v_pagado NUMERIC(12,2);
+    v_fecha_venc DATE;
+BEGIN
+    -- Obtener datos de la cuenta por pagar
+    SELECT monto_total, monto_pagado, fecha_vencimiento
+    INTO v_total, v_pagado, v_fecha_venc
+    FROM cuenta_por_pagar_proveedor
+    WHERE id = NEW.id_cuenta_por_pagar;
+    
+    -- Actualizar monto pagado
+    IF TG_OP = 'INSERT' AND NEW.estado = 'PROCESADO' THEN
+        UPDATE cuenta_por_pagar_proveedor
+        SET 
+            monto_pagado = monto_pagado + NEW.monto_pagado,
+            fecha_actualizacion = NOW(),
+            actualizado_por = NEW.registrado_por
+        WHERE id = NEW.id_cuenta_por_pagar;
+        
+        -- Recalcular estado
+        v_pagado := v_pagado + NEW.monto_pagado;
+    END IF;
+    
+    -- Determinar nuevo estado
+    UPDATE cuenta_por_pagar_proveedor
+    SET estado = CASE
+        WHEN monto_pagado = 0 AND fecha_vencimiento < CURRENT_DATE THEN 'VENCIDO'
+        WHEN monto_pagado = 0 THEN 'PENDIENTE'
+        WHEN monto_pagado >= monto_total THEN 'PAGADO'
+        WHEN monto_pagado > 0 AND monto_pagado < monto_total THEN 'PARCIAL'
+        ELSE estado
+    END
+    WHERE id = NEW.id_cuenta_por_pagar;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_estado_cxp() OWNER TO postgres;
+
+--
+-- TOC entry 610 (class 1255 OID 134258)
 -- Name: actualizar_fecha_contacto(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1799,7 +1981,7 @@ $$;
 ALTER FUNCTION public.actualizar_fecha_contacto() OWNER TO postgres;
 
 --
--- TOC entry 566 (class 1255 OID 21118)
+-- TOC entry 584 (class 1255 OID 21118)
 -- Name: actualizar_fecha_modificacion(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1816,7 +1998,7 @@ $$;
 ALTER FUNCTION public.actualizar_fecha_modificacion() OWNER TO postgres;
 
 --
--- TOC entry 719 (class 1255 OID 21096)
+-- TOC entry 750 (class 1255 OID 21096)
 -- Name: actualizar_stock_pedido(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1840,7 +2022,7 @@ $$;
 ALTER FUNCTION public.actualizar_stock_pedido() OWNER TO postgres;
 
 --
--- TOC entry 595 (class 1255 OID 21119)
+-- TOC entry 617 (class 1255 OID 21119)
 -- Name: actualizar_timestamp_cotizacion(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1857,7 +2039,76 @@ $$;
 ALTER FUNCTION public.actualizar_timestamp_cotizacion() OWNER TO postgres;
 
 --
--- TOC entry 757 (class 1255 OID 21120)
+-- TOC entry 614 (class 1255 OID 158808)
+-- Name: actualizar_tipo_cambio_manual(character varying, character varying, numeric, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint DEFAULT NULL::bigint) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_clave VARCHAR(50);
+    v_valor_anterior NUMERIC;
+BEGIN
+    -- Construir clave
+    v_clave := 'tipo_cambio_' || LOWER(p_moneda) || '_pen_' || LOWER(p_tipo);
+    
+    -- Obtener valor anterior
+    SELECT valor::NUMERIC INTO v_valor_anterior
+    FROM configuracion_sistema
+    WHERE clave = v_clave;
+    
+    -- Actualizar
+    UPDATE configuracion_sistema SET
+        valor = p_nuevo_valor::VARCHAR,
+        fecha_actualizacion = NOW()
+    WHERE clave = v_clave;
+    
+    IF NOT FOUND THEN
+        -- Insertar si no existe
+        INSERT INTO configuracion_sistema (clave, valor, descripcion, tipo_dato, categoria, editable, activo)
+        VALUES (
+            v_clave,
+            p_nuevo_valor::VARCHAR,
+            'Tipo de cambio ' || p_moneda || '/PEN ' || p_tipo || ' (manual)',
+            'NUMBER',
+            'FINANCIERO',
+            TRUE,
+            TRUE
+        );
+        RETURN '✅ Tipo de cambio creado: ' || v_clave || ' = ' || p_nuevo_valor;
+    END IF;
+    
+    RETURN '✅ Tipo de cambio actualizado: ' || v_clave || 
+           ' | Anterior: ' || COALESCE(v_valor_anterior::TEXT, 'N/A') || 
+           ' | Nuevo: ' || p_nuevo_valor;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6160 (class 0 OID 0)
+-- Dependencies: 614
+-- Name: FUNCTION actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint) IS 'Actualiza el tipo de cambio manualmente cuando la API no funciona.
+
+EJEMPLOS:
+-- Actualizar TC de venta USD
+SELECT actualizar_tipo_cambio_manual(''USD'', ''venta'', 3.78);
+
+-- Actualizar TC de compra EUR
+SELECT actualizar_tipo_cambio_manual(''EUR'', ''compra'', 4.05);
+
+NOTA: El sistema usa tipo_cambio_usd_pen_venta para calcular precios USD
+';
+
+
+--
+-- TOC entry 791 (class 1255 OID 21120)
 -- Name: asegurar_principal_unico(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1905,7 +2156,7 @@ $$;
 ALTER FUNCTION public.asegurar_principal_unico() OWNER TO postgres;
 
 --
--- TOC entry 721 (class 1255 OID 21121)
+-- TOC entry 752 (class 1255 OID 21121)
 -- Name: asociar_marca_categoria(bigint, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1923,7 +2174,7 @@ $$;
 ALTER FUNCTION public.asociar_marca_categoria(p_id_marca bigint, p_id_categoria bigint) OWNER TO postgres;
 
 --
--- TOC entry 709 (class 1255 OID 134739)
+-- TOC entry 740 (class 1255 OID 134739)
 -- Name: auditar_cambio_descuentos(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1981,7 +2232,7 @@ $$;
 ALTER FUNCTION public.auditar_cambio_descuentos() OWNER TO postgres;
 
 --
--- TOC entry 649 (class 1255 OID 21122)
+-- TOC entry 678 (class 1255 OID 21122)
 -- Name: auto_generar_numero_factura(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2007,7 +2258,7 @@ $$;
 ALTER FUNCTION public.auto_generar_numero_factura() OWNER TO postgres;
 
 --
--- TOC entry 768 (class 1255 OID 112342)
+-- TOC entry 804 (class 1255 OID 112342)
 -- Name: calcular_costos_producto_proveedor(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2019,6 +2270,17 @@ DECLARE
     precio_con_descuentos NUMERIC(12,4);
     descuento_acumulado NUMERIC(12,4);
 BEGIN
+    -- ✅ NUEVO: Si solo_relacion = TRUE o precio_cotizado es NULL, no calcular costos
+    IF NEW.solo_relacion = TRUE OR NEW.precio_cotizado IS NULL THEN
+        -- Solo actualizar fecha y dejar costos en NULL
+        NEW.fecha_actualizacion := NOW();
+        NEW.costo_sin_igv := NULL;
+        NEW.costo_con_igv := NULL;
+        NEW.precio_final_con_descuentos := NULL;
+        NEW.descuento_total_porcentaje := 0;
+        RETURN NEW;
+    END IF;
+
     -- ==================================
     -- PASO 1: APLICAR DESCUENTOS EN CASCADA
     -- ==================================
@@ -2075,16 +2337,16 @@ $$;
 ALTER FUNCTION public.calcular_costos_producto_proveedor() OWNER TO postgres;
 
 --
--- TOC entry 5943 (class 0 OID 0)
--- Dependencies: 768
+-- TOC entry 6166 (class 0 OID 0)
+-- Dependencies: 804
 -- Name: FUNCTION calcular_costos_producto_proveedor(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.calcular_costos_producto_proveedor() IS 'Calcula descuentos en cascada y costos con/sin IGV automáticamente';
+COMMENT ON FUNCTION public.calcular_costos_producto_proveedor() IS 'Calcula descuentos en cascada y costos con/sin IGV automáticamente. Si solo_relacion=TRUE o precio_cotizado es NULL, no calcula costos (para Marketing).';
 
 
 --
--- TOC entry 765 (class 1255 OID 66326)
+-- TOC entry 800 (class 1255 OID 66326)
 -- Name: calcular_dias_vencimiento(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2101,7 +2363,7 @@ $$;
 ALTER FUNCTION public.calcular_dias_vencimiento() OWNER TO postgres;
 
 --
--- TOC entry 669 (class 1255 OID 106323)
+-- TOC entry 698 (class 1255 OID 106323)
 -- Name: calcular_precio_multimoneda_automatico(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2134,7 +2396,7 @@ $$;
 ALTER FUNCTION public.calcular_precio_multimoneda_automatico() OWNER TO postgres;
 
 --
--- TOC entry 633 (class 1255 OID 78218)
+-- TOC entry 662 (class 1255 OID 78218)
 -- Name: calcular_precio_venta_automatico(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2221,7 +2483,7 @@ $$;
 ALTER FUNCTION public.calcular_precio_venta_automatico() OWNER TO postgres;
 
 --
--- TOC entry 618 (class 1255 OID 123307)
+-- TOC entry 643 (class 1255 OID 123307)
 -- Name: calcular_precio_venta_soles(numeric, bigint, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2269,7 +2531,7 @@ $$;
 ALTER FUNCTION public.calcular_precio_venta_soles(p_costo numeric, p_id_moneda bigint, p_margen numeric) OWNER TO postgres;
 
 --
--- TOC entry 552 (class 1255 OID 123308)
+-- TOC entry 570 (class 1255 OID 123308)
 -- Name: calcular_precio_venta_usd(numeric, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2303,7 +2565,133 @@ $$;
 ALTER FUNCTION public.calcular_precio_venta_usd(p_precio_soles numeric, p_tipo_cambio_bajo numeric) OWNER TO postgres;
 
 --
--- TOC entry 551 (class 1255 OID 90408)
+-- TOC entry 605 (class 1255 OID 158797)
+-- Name: comercial_completar_datos_proveedor(bigint, bigint, numeric, numeric, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric DEFAULT NULL::numeric, p_usuario_id bigint DEFAULT 1) RETURNS TABLE(resultado text, precio_venta numeric, precio_proveedor numeric, margen_calculado numeric, es_margen_sano boolean)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_precio_venta NUMERIC(12,2);
+    v_margen NUMERIC(5,2);
+    v_tipo_cambio NUMERIC(10,4);
+    v_costo_en_soles NUMERIC(12,2);
+    v_id_precio BIGINT;
+    v_precio_proveedor_anterior NUMERIC(12,4);
+    v_margen_anterior NUMERIC(5,2);
+    v_usuario_id BIGINT;
+BEGIN
+    v_usuario_id := COALESCE(p_usuario_id, 1);
+    
+    -- Obtener precio de venta actual y datos existentes
+    SELECT ppm.id, ppm.precio_venta, ppm.tipo_cambio_usado, ppm.precio_proveedor, ppm.margen_aplicado
+    INTO v_id_precio, v_precio_venta, v_tipo_cambio, v_precio_proveedor_anterior, v_margen_anterior
+    FROM producto_precio_moneda ppm
+    WHERE ppm.sku = p_sku 
+      AND ppm.id_moneda = p_id_moneda
+      AND ppm.activo = TRUE
+    LIMIT 1;
+    
+    IF v_precio_venta IS NULL THEN
+        RETURN QUERY SELECT 
+            'ERROR: No existe precio de venta para este producto/moneda'::TEXT,
+            NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC, NULL::BOOLEAN;
+        RETURN;
+    END IF;
+    
+    -- Usar tipo de cambio proporcionado o el existente
+    v_tipo_cambio := COALESCE(p_tipo_cambio, v_tipo_cambio, 1);
+    
+    -- Convertir costo a soles si es necesario (para calcular margen correctamente)
+    IF p_id_moneda = 1 THEN -- PEN
+        v_costo_en_soles := p_precio_proveedor;
+    ELSE
+        v_costo_en_soles := p_precio_proveedor * v_tipo_cambio;
+    END IF;
+    
+    -- =====================================================
+    -- CALCULAR MARGEN HACIA ATRÁS
+    -- Fórmula: Margen = (1 - Costo/PrecioVenta) * 100
+    -- =====================================================
+    IF v_precio_venta > 0 THEN
+        v_margen := ROUND((1 - (v_costo_en_soles / v_precio_venta)) * 100, 2);
+    ELSE
+        v_margen := 0;
+    END IF;
+    
+    -- Actualizar registro
+    UPDATE producto_precio_moneda SET
+        precio_proveedor = p_precio_proveedor,
+        margen_aplicado = v_margen,
+        tipo_cambio_usado = v_tipo_cambio,
+        solo_precio_venta = FALSE, -- Ya está completo
+        observaciones = 'Datos comerciales completados - Margen calculado: ' || v_margen || '%',
+        actualizado_por = v_usuario_id,
+        fecha_actualizacion = NOW()
+    WHERE id = v_id_precio;
+    
+    -- Registrar en historial de precios (auditoría)
+    INSERT INTO historial_precios (
+        sku, tipo_precio, precio_anterior, precio_nuevo, id_moneda,
+        tipo_cambio_usado, motivo_cambio, id_usuario, contexto_evento,
+        factor_aplicado, fecha_cambio, fecha_efectiva, aplicado
+    ) VALUES (
+        p_sku, 'COSTO_PROVEEDOR', v_precio_proveedor_anterior, p_precio_proveedor, p_id_moneda,
+        v_tipo_cambio, 'COMERCIAL_COMPLETA_DATOS', v_usuario_id, 'COMPLETAR_PRECIO_MARKETING',
+        v_margen / 100.0, NOW(), CURRENT_DATE, TRUE
+    );
+    
+    -- Retornar resultado con verificación de margen saludable
+    RETURN QUERY SELECT 
+        CASE 
+            WHEN v_margen < 15 THEN '⚠️ ALERTA: Margen menor al 15% mínimo'
+            WHEN v_margen < 20 THEN '🟡 Margen bajo (entre 15-20%)'
+            WHEN v_margen >= 20 AND v_margen <= 30 THEN '🟢 Margen óptimo (20-30%)'
+            WHEN v_margen > 30 THEN '🔵 Margen alto (>30%)'
+            ELSE '❌ Error calculando margen'
+        END::TEXT,
+        v_precio_venta,
+        p_precio_proveedor,
+        v_margen,
+        (v_margen >= 15)::BOOLEAN;
+        
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN QUERY SELECT 
+            ('❌ Error: ' || SQLERRM)::TEXT,
+            NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC, NULL::BOOLEAN;
+END;
+$$;
+
+
+ALTER FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6173 (class 0 OID 0)
+-- Dependencies: 605
+-- Name: FUNCTION comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint) IS 'Función para que el área COMERCIAL complete los datos de proveedor
+en productos que marketing ya puso precio de venta.
+CALCULA EL MARGEN HACIA ATRÁS basado en el precio de venta ya establecido.
+
+EJEMPLO:
+-- Comercial completa datos para SKU 12345
+SELECT * FROM comercial_completar_datos_proveedor(
+    12345,    -- SKU
+    1,        -- Moneda (1=PEN)
+    100.00,   -- Precio proveedor
+    NULL,     -- Usar TC del sistema
+    5         -- ID usuario comercial
+);
+-- Si precio venta es 150 y costo es 100, margen = 33.33%
+';
+
+
+--
+-- TOC entry 569 (class 1255 OID 90408)
 -- Name: cotizaciones_en_riesgo(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2354,7 +2742,7 @@ $$;
 ALTER FUNCTION public.cotizaciones_en_riesgo() OWNER TO postgres;
 
 --
--- TOC entry 792 (class 1255 OID 141571)
+-- TOC entry 829 (class 1255 OID 141571)
 -- Name: crear_notificacion_producto_nuevo(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2387,7 +2775,7 @@ $$;
 ALTER FUNCTION public.crear_notificacion_producto_nuevo() OWNER TO postgres;
 
 --
--- TOC entry 665 (class 1255 OID 106317)
+-- TOC entry 694 (class 1255 OID 106317)
 -- Name: establecer_precio_producto(bigint, bigint, numeric, numeric, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2420,7 +2808,7 @@ $$;
 ALTER FUNCTION public.establecer_precio_producto(p_sku bigint, p_id_moneda bigint, p_precio_venta numeric, p_margen_aplicado numeric, p_usuario_id bigint) OWNER TO postgres;
 
 --
--- TOC entry 746 (class 1255 OID 90385)
+-- TOC entry 778 (class 1255 OID 90385)
 -- Name: fn_registrar_primera_transicion(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2465,7 +2853,7 @@ $$;
 ALTER FUNCTION public.fn_registrar_primera_transicion() OWNER TO postgres;
 
 --
--- TOC entry 723 (class 1255 OID 90383)
+-- TOC entry 755 (class 1255 OID 90383)
 -- Name: fn_registrar_transicion_estado_cotizacion(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2538,7 +2926,49 @@ $$;
 ALTER FUNCTION public.fn_registrar_transicion_estado_cotizacion() OWNER TO postgres;
 
 --
--- TOC entry 751 (class 1255 OID 66327)
+-- TOC entry 796 (class 1255 OID 147945)
+-- Name: generar_codigo_cxp(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.generar_codigo_cxp() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NEW.codigo IS NULL THEN
+        NEW.codigo := 'CXP-' || 
+                      TO_CHAR(NEW.fecha_emision, 'YYYYMM') || '-' || 
+                      LPAD(NEXTVAL('cuenta_por_pagar_proveedor_id_seq')::TEXT, 6, '0');
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.generar_codigo_cxp() OWNER TO postgres;
+
+--
+-- TOC entry 738 (class 1255 OID 147947)
+-- Name: generar_codigo_pago_proveedor(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.generar_codigo_pago_proveedor() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NEW.codigo IS NULL THEN
+        NEW.codigo := 'PP-' || 
+                      TO_CHAR(NEW.fecha_pago, 'YYYYMM') || '-' || 
+                      LPAD(NEXTVAL('pago_proveedor_id_seq')::TEXT, 6, '0');
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.generar_codigo_pago_proveedor() OWNER TO postgres;
+
+--
+-- TOC entry 783 (class 1255 OID 66327)
 -- Name: generar_codigo_solicitud(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2558,7 +2988,66 @@ $$;
 ALTER FUNCTION public.generar_codigo_solicitud() OWNER TO postgres;
 
 --
--- TOC entry 678 (class 1255 OID 69036)
+-- TOC entry 642 (class 1255 OID 147741)
+-- Name: generar_sku_producto(bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.generar_sku_producto(p_id_categoria bigint) RETURNS character varying
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+    v_prefijo VARCHAR(4);
+    v_max_numero INT;
+    v_nuevo_numero INT;
+    v_numero_formateado VARCHAR(10);
+    v_nuevo_sku VARCHAR(50);
+BEGIN
+    -- Obtener prefijo de la categoría (ej: MECA de MECANICA_INDUSTRIAL)
+    v_prefijo := obtener_prefijo_categoria(p_id_categoria);
+    
+    -- Obtener el máximo número secuencial existente para esta categoría
+    SELECT COALESCE(
+        MAX(
+            CAST(
+                REGEXP_REPLACE(
+                    SUBSTRING(sku_producto FROM LENGTH('INX' || v_prefijo) + 1),
+                    '[^0-9]',
+                    '',
+                    'g'
+                ) AS INTEGER
+            )
+        ),
+        0
+    )
+    INTO v_max_numero
+    FROM producto
+    WHERE sku_producto LIKE 'INX' || v_prefijo || '%'
+      AND sku_producto ~ ('^INX' || v_prefijo || '[0-9]+$');
+    
+    -- Incrementar el número
+    v_nuevo_numero := v_max_numero + 1;
+    
+    -- Formatear según el rango:
+    -- 1-999: Con padding de 3 dígitos (001, 002, ..., 999)
+    -- 1000+: Sin padding (1000, 1001, 1002, ...)
+    IF v_nuevo_numero <= 999 THEN
+        v_numero_formateado := LPAD(v_nuevo_numero::TEXT, 3, '0');
+    ELSE
+        v_numero_formateado := v_nuevo_numero::TEXT;
+    END IF;
+    
+    -- Construir el SKU completo
+    v_nuevo_sku := 'INX' || v_prefijo || v_numero_formateado;
+    
+    RETURN v_nuevo_sku;
+END;
+$_$;
+
+
+ALTER FUNCTION public.generar_sku_producto(p_id_categoria bigint) OWNER TO postgres;
+
+--
+-- TOC entry 707 (class 1255 OID 69036)
 -- Name: get_auth_info(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2579,7 +3068,7 @@ $$;
 ALTER FUNCTION public.get_auth_info() OWNER TO postgres;
 
 --
--- TOC entry 599 (class 1255 OID 106316)
+-- TOC entry 621 (class 1255 OID 106316)
 -- Name: get_margen_principal(bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2605,7 +3094,7 @@ $$;
 ALTER FUNCTION public.get_margen_principal(p_sku bigint) OWNER TO postgres;
 
 --
--- TOC entry 650 (class 1255 OID 106315)
+-- TOC entry 679 (class 1255 OID 106315)
 -- Name: get_precio_principal(bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2621,7 +3110,7 @@ $$;
 ALTER FUNCTION public.get_precio_principal(p_sku bigint) OWNER TO postgres;
 
 --
--- TOC entry 554 (class 1255 OID 141578)
+-- TOC entry 572 (class 1255 OID 141578)
 -- Name: limpiar_notificaciones_antiguas(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2644,7 +3133,7 @@ $$;
 ALTER FUNCTION public.limpiar_notificaciones_antiguas(dias_antiguedad integer) OWNER TO postgres;
 
 --
--- TOC entry 605 (class 1255 OID 141577)
+-- TOC entry 629 (class 1255 OID 141577)
 -- Name: marcar_producto_visto(bigint, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2675,7 +3164,719 @@ $$;
 ALTER FUNCTION public.marcar_producto_visto(p_producto_id bigint, p_usuario_id bigint) OWNER TO postgres;
 
 --
--- TOC entry 755 (class 1255 OID 106314)
+-- TOC entry 648 (class 1255 OID 158799)
+-- Name: marketing_crear_promocion_precio(bigint, character varying, numeric, timestamp without time zone, timestamp without time zone, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone DEFAULT now(), p_fecha_fin timestamp without time zone DEFAULT (now() + '30 days'::interval), p_usuario_id bigint DEFAULT 1) RETURNS TABLE(resultado text, id_promocion bigint, precio_original numeric, precio_promocional numeric, descuento_porcentaje numeric)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_id_promocion BIGINT;
+    v_precio_original NUMERIC(12,2);
+    v_descuento NUMERIC(5,2);
+    v_codigo VARCHAR(50);
+    v_usuario_id BIGINT;
+BEGIN
+    v_usuario_id := COALESCE(p_usuario_id, 1);
+    
+    -- Validar que el producto existe
+    IF NOT EXISTS (SELECT 1 FROM producto WHERE sku = p_sku AND activo = TRUE) THEN
+        RETURN QUERY SELECT 
+            'ERROR: Producto no existe o no está activo'::TEXT,
+            NULL::BIGINT, NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC;
+        RETURN;
+    END IF;
+    
+    -- Obtener precio original
+    SELECT precio_venta INTO v_precio_original
+    FROM producto_precio_moneda
+    WHERE sku = p_sku AND id_moneda = 1 AND activo = TRUE
+    ORDER BY fecha_creacion DESC
+    LIMIT 1;
+    
+    IF v_precio_original IS NULL THEN
+        RETURN QUERY SELECT 
+            'ERROR: No existe precio base para este SKU'::TEXT,
+            NULL::BIGINT, NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC;
+        RETURN;
+    END IF;
+    
+    -- Validar que el precio promocional es menor al original
+    IF p_precio_promocional_pen >= v_precio_original THEN
+        RETURN QUERY SELECT 
+            'ERROR: El precio promocional debe ser menor al precio original (S/' || v_precio_original || ')'::TEXT,
+            NULL::BIGINT, v_precio_original, p_precio_promocional_pen, NULL::NUMERIC;
+        RETURN;
+    END IF;
+    
+    -- Calcular porcentaje de descuento
+    v_descuento := ROUND((1 - (p_precio_promocional_pen / v_precio_original)) * 100, 2);
+    
+    -- Generar código único
+    v_codigo := 'PROMO-' || p_sku || '-' || TO_CHAR(NOW(), 'YYYYMMDDHH24MI');
+    
+    -- Crear promoción principal
+    INSERT INTO promocion (
+        codigo,
+        nombre,
+        descripcion,
+        fecha_inicio,
+        fecha_fin,
+        activa,
+        aplicacion_automatica,
+        prioridad,
+        creado_por
+    ) VALUES (
+        v_codigo,
+        p_nombre_promocion,
+        'Precio promocional: S/ ' || v_precio_original || ' → S/ ' || p_precio_promocional_pen || ' (-' || v_descuento || '%)',
+        p_fecha_inicio,
+        p_fecha_fin,
+        TRUE,
+        TRUE,
+        10, -- Prioridad alta para promociones de marketing
+        v_usuario_id
+    ) RETURNING id INTO v_id_promocion;
+    
+    -- Crear detalle de descuento (usando estructura existente de INXORA)
+    INSERT INTO promocion_descuento (
+        id_promocion,
+        tipo_aplicacion,
+        referencia_id,
+        tipo_descuento,
+        valor_descuento,
+        activo
+    ) VALUES (
+        v_id_promocion,
+        'PRODUCTO',           -- Aplica solo a este SKU
+        p_sku,                -- referencia_id = SKU del producto
+        'PRECIO_ESPECIAL',    -- Tipo: precio fijo
+        p_precio_promocional_pen,
+        TRUE
+    );
+    
+    RETURN QUERY SELECT 
+        ('✅ Promoción creada: ' || v_codigo)::TEXT,
+        v_id_promocion,
+        v_precio_original,
+        p_precio_promocional_pen,
+        v_descuento;
+        
+EXCEPTION
+    WHEN unique_violation THEN
+        RETURN QUERY SELECT 
+            'ERROR: Ya existe una promoción con ese código. Intente nuevamente.'::TEXT,
+            NULL::BIGINT, NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC;
+    WHEN OTHERS THEN
+        RETURN QUERY SELECT 
+            ('❌ Error: ' || SQLERRM)::TEXT,
+            NULL::BIGINT, NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC;
+END;
+$$;
+
+
+ALTER FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6189 (class 0 OID 0)
+-- Dependencies: 648
+-- Name: FUNCTION marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) IS 'Crea una promoción de PRECIO ESPECIAL para un producto.
+Ideal para campañas donde quieres bajar precio de 100 a 93 soles.
+
+NOTA: La promoción se aplica automáticamente cuando se consulta precio
+usando la función existente obtener_precio_con_promociones().
+
+EJEMPLO:
+-- Producto SKU 12345 normalmente cuesta S/100, ponerlo a S/93
+SELECT * FROM marketing_crear_promocion_precio(
+    12345,                          -- SKU
+    ''Oferta Black Friday'',        -- Nombre promoción
+    93.00,                          -- Precio promocional
+    ''2025-11-29 00:00:00'',        -- Inicio
+    ''2025-12-01 23:59:59''         -- Fin
+);
+
+El precio con promoción se obtiene automáticamente con:
+SELECT * FROM obtener_precio_con_promociones(12345, 1, NULL, NOW(), 1);
+-- Para USD:
+SELECT * FROM obtener_precio_con_promociones(12345, 2, NULL, NOW(), 1);
+';
+
+
+--
+-- TOC entry 622 (class 1255 OID 158801)
+-- Name: marketing_crear_promocion_precio_multimoneda(bigint, character varying, numeric, numeric, numeric, timestamp without time zone, timestamp without time zone, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric DEFAULT NULL::numeric, p_tipo_cambio numeric DEFAULT NULL::numeric, p_fecha_inicio timestamp without time zone DEFAULT now(), p_fecha_fin timestamp without time zone DEFAULT (now() + '30 days'::interval), p_usuario_id bigint DEFAULT 1) RETURNS TABLE(resultado text, id_promocion bigint, precio_promo_pen numeric, precio_promo_usd numeric, tipo_cambio_usado numeric)
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+    v_id_promocion BIGINT;
+    v_tipo_cambio NUMERIC(10,4);
+    v_precio_usd NUMERIC(12,2);
+    v_codigo VARCHAR(50);
+    v_usuario_id BIGINT;
+BEGIN
+    v_usuario_id := COALESCE(p_usuario_id, 1);
+    
+    -- Obtener tipo de cambio
+    IF p_tipo_cambio IS NOT NULL THEN
+        v_tipo_cambio := p_tipo_cambio;
+    ELSE
+        v_tipo_cambio := COALESCE(obtener_tipo_cambio_vigente('USD'), 3.75);
+    END IF;
+    
+    -- Calcular precio USD si no se proporcionó
+    IF p_precio_promocional_usd IS NOT NULL THEN
+        v_precio_usd := p_precio_promocional_usd;
+    ELSE
+        v_precio_usd := ROUND(p_precio_promocional_pen / v_tipo_cambio, 2);
+    END IF;
+    
+    -- Validar que el producto existe
+    IF NOT EXISTS (SELECT 1 FROM producto WHERE sku = p_sku AND activo = TRUE) THEN
+        RETURN QUERY SELECT 
+            'ERROR: Producto no existe'::TEXT,
+            NULL::BIGINT, NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC;
+        RETURN;
+    END IF;
+    
+    -- Generar código único
+    v_codigo := 'PROMO-MULTI-' || p_sku || '-' || TO_CHAR(NOW(), 'YYYYMMDDHH24MI');
+    
+    -- Crear promoción principal
+    INSERT INTO promocion (
+        codigo, nombre, descripcion, fecha_inicio, fecha_fin,
+        activa, aplicacion_automatica, prioridad, creado_por
+    ) VALUES (
+        v_codigo,
+        p_nombre_promocion,
+        'Promoción multimoneda: S/' || p_precio_promocional_pen || ' / $' || v_precio_usd,
+        p_fecha_inicio,
+        p_fecha_fin,
+        TRUE, TRUE, 10, v_usuario_id
+    ) RETURNING id INTO v_id_promocion;
+    
+    -- Crear descuento para PEN
+    INSERT INTO promocion_descuento (
+        id_promocion, tipo_aplicacion, referencia_id, 
+        tipo_descuento, valor_descuento, activo
+    ) VALUES (
+        v_id_promocion, 'PRODUCTO', p_sku,
+        'PRECIO_ESPECIAL', p_precio_promocional_pen, TRUE
+    );
+    
+    -- NOTA: El sistema de promociones de INXORA aplica por producto,
+    -- no por moneda específica. La función obtener_precio_con_promociones
+    -- maneja la conversión automáticamente.
+    
+    RETURN QUERY SELECT 
+        ('✅ Promoción multimoneda creada: ' || v_codigo)::TEXT,
+        v_id_promocion,
+        p_precio_promocional_pen,
+        v_precio_usd,
+        v_tipo_cambio;
+        
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN QUERY SELECT 
+            ('❌ Error: ' || SQLERRM)::TEXT,
+            NULL::BIGINT, NULL::NUMERIC, NULL::NUMERIC, NULL::NUMERIC;
+END;
+$_$;
+
+
+ALTER FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6191 (class 0 OID 0)
+-- Dependencies: 622
+-- Name: FUNCTION marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) IS 'Crea promoción mostrando equivalente en PEN y USD para referencia.
+El sistema de promociones INXORA ya maneja la conversión automáticamente.';
+
+
+--
+-- TOC entry 608 (class 1255 OID 158795)
+-- Name: marketing_establecer_precio_venta(bigint, numeric, numeric, numeric, text, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric DEFAULT NULL::numeric, p_tipo_cambio_manual numeric DEFAULT NULL::numeric, p_notas text DEFAULT NULL::text, p_usuario_id bigint DEFAULT 1) RETURNS TABLE(resultado text, sku_procesado bigint, precio_pen numeric, precio_usd numeric, tipo_cambio_usado numeric)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_tipo_cambio NUMERIC(10,4);
+    v_precio_usd NUMERIC(12,2);
+    v_precio_anterior_pen NUMERIC(12,2);
+    v_precio_anterior_usd NUMERIC(12,2);
+    v_usuario_id BIGINT;
+BEGIN
+    -- Asegurar que siempre hay un usuario (historial_precios.id_usuario es NOT NULL)
+    v_usuario_id := COALESCE(p_usuario_id, 1);
+    
+    -- Validar que el producto existe
+    IF NOT EXISTS (SELECT 1 FROM producto WHERE sku = p_sku AND activo = TRUE) THEN
+        RETURN QUERY SELECT 
+            'ERROR: Producto no existe o no está activo'::TEXT,
+            p_sku,
+            NULL::NUMERIC,
+            NULL::NUMERIC,
+            NULL::NUMERIC;
+        RETURN;
+    END IF;
+    
+    -- Obtener tipo de cambio (manual o del sistema)
+    IF p_tipo_cambio_manual IS NOT NULL THEN
+        v_tipo_cambio := p_tipo_cambio_manual;
+    ELSE
+        v_tipo_cambio := COALESCE(obtener_tipo_cambio_vigente('USD'), 3.75);
+    END IF;
+    
+    -- Calcular precio USD si no se proporcionó
+    IF p_precio_venta_usd IS NOT NULL THEN
+        v_precio_usd := p_precio_venta_usd;
+    ELSE
+        v_precio_usd := ROUND(p_precio_venta_pen / v_tipo_cambio, 2);
+    END IF;
+    
+    -- =====================================================
+    -- PRECIO EN SOLES (PEN = id_moneda 1)
+    -- =====================================================
+    
+    -- Obtener precio anterior para historial
+    SELECT precio_venta INTO v_precio_anterior_pen
+    FROM producto_precio_moneda 
+    WHERE sku = p_sku AND id_moneda = 1 AND activo = TRUE
+    LIMIT 1;
+    
+    -- Paso 1: Desactivar registro anterior (patrón INXORA)
+    UPDATE producto_precio_moneda 
+    SET activo = FALSE, 
+        fecha_actualizacion = NOW(),
+        actualizado_por = v_usuario_id
+    WHERE sku = p_sku AND id_moneda = 1 AND activo = TRUE;
+    
+    -- Paso 2: Insertar nuevo registro
+    INSERT INTO producto_precio_moneda (
+        sku,
+        id_moneda,
+        precio_venta,
+        precio_proveedor,      -- NULL - Marketing no tiene este dato
+        margen_aplicado,       -- NULL - Se calculará cuando comercial complete
+        tipo_cambio_usado,
+        solo_precio_venta,     -- TRUE - Marca que fue ingresado solo por marketing
+        notas_marketing,
+        observaciones,
+        creado_por,
+        activo,
+        fecha_vigencia_desde
+    ) VALUES (
+        p_sku,
+        1, -- PEN
+        p_precio_venta_pen,
+        NULL,
+        NULL,
+        1, -- Para PEN siempre es 1
+        TRUE,
+        p_notas,
+        'Precio ingresado por marketing - Pendiente datos de proveedor',
+        v_usuario_id,
+        TRUE,
+        CURRENT_DATE
+    );
+    
+    -- Paso 3: Registrar en historial para auditoría
+    INSERT INTO historial_precios (
+        sku, tipo_precio, precio_anterior, precio_nuevo, id_moneda,
+        tipo_cambio_usado, motivo_cambio, id_usuario, contexto_evento,
+        fecha_cambio, fecha_efectiva, aplicado
+    ) VALUES (
+        p_sku, 'PRECIO_VENTA', v_precio_anterior_pen, p_precio_venta_pen, 1,
+        1, 'MARKETING_PRECIO_DIRECTO', v_usuario_id, 'MARKETING_MANUAL',
+        NOW(), CURRENT_DATE, TRUE
+    );
+    
+    -- =====================================================
+    -- PRECIO EN USD (USD = id_moneda 2)
+    -- =====================================================
+    
+    -- Obtener precio anterior para historial
+    SELECT precio_venta INTO v_precio_anterior_usd
+    FROM producto_precio_moneda 
+    WHERE sku = p_sku AND id_moneda = 2 AND activo = TRUE
+    LIMIT 1;
+    
+    -- Paso 1: Desactivar registro anterior
+    UPDATE producto_precio_moneda 
+    SET activo = FALSE, 
+        fecha_actualizacion = NOW(),
+        actualizado_por = v_usuario_id
+    WHERE sku = p_sku AND id_moneda = 2 AND activo = TRUE;
+    
+    -- Paso 2: Insertar nuevo registro
+    INSERT INTO producto_precio_moneda (
+        sku,
+        id_moneda,
+        precio_venta,
+        precio_proveedor,
+        margen_aplicado,
+        tipo_cambio_usado,
+        solo_precio_venta,
+        notas_marketing,
+        observaciones,
+        creado_por,
+        activo,
+        fecha_vigencia_desde
+    ) VALUES (
+        p_sku,
+        2, -- USD
+        v_precio_usd,
+        NULL,
+        NULL,
+        v_tipo_cambio,
+        TRUE,
+        p_notas,
+        'Precio USD calculado - TC: ' || v_tipo_cambio,
+        v_usuario_id,
+        TRUE,
+        CURRENT_DATE
+    );
+    
+    -- Paso 3: Registrar en historial
+    INSERT INTO historial_precios (
+        sku, tipo_precio, precio_anterior, precio_nuevo, id_moneda,
+        tipo_cambio_usado, motivo_cambio, id_usuario, contexto_evento,
+        fecha_cambio, fecha_efectiva, aplicado
+    ) VALUES (
+        p_sku, 'PRECIO_VENTA', v_precio_anterior_usd, v_precio_usd, 2,
+        v_tipo_cambio, 'MARKETING_PRECIO_USD_AUTO', v_usuario_id, 'MARKETING_MANUAL',
+        NOW(), CURRENT_DATE, TRUE
+    );
+    
+    -- Retornar resultado exitoso
+    RETURN QUERY SELECT 
+        '✅ Precio establecido correctamente (pendiente datos comerciales)'::TEXT,
+        p_sku,
+        p_precio_venta_pen,
+        v_precio_usd,
+        v_tipo_cambio;
+        
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN QUERY SELECT 
+            ('❌ Error: ' || SQLERRM)::TEXT,
+            p_sku,
+            NULL::NUMERIC,
+            NULL::NUMERIC,
+            NULL::NUMERIC;
+END;
+$$;
+
+
+ALTER FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6193 (class 0 OID 0)
+-- Dependencies: 608
+-- Name: FUNCTION marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint) IS 'Función para que el equipo de MARKETING ingrese precios de venta sin necesidad
+de conocer los precios de proveedor ni calcular márgenes.
+Los productos quedan marcados como "solo_precio_venta = TRUE" para que
+el área comercial los complete posteriormente.
+
+EJEMPLO:
+-- Marketing pone precio de venta a producto SKU 12345
+SELECT * FROM marketing_establecer_precio_venta(
+    12345,        -- SKU
+    150.00,       -- Precio en soles
+    NULL,         -- USD se calcula automático
+    3.75,         -- Tipo de cambio manual (opcional)
+    ''Precio de lanzamiento campaña Nov 2025''
+);
+';
+
+
+--
+-- TOC entry 753 (class 1255 OID 158890)
+-- Name: obtener_historial_cotizacion(character varying, bigint, date, date, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying DEFAULT NULL::character varying, p_id_cotizacion bigint DEFAULT NULL::bigint, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_tipo_cambio character varying DEFAULT NULL::character varying) RETURNS TABLE(version integer, tipo text, descripcion text, campo text, valor_anterior text, valor_nuevo text, total_anterior numeric, total_nuevo numeric, usuario text, fecha timestamp without time zone)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        hc.version,
+        hc.tipo_cambio::TEXT,
+        hc.descripcion,
+        hc.campo_modificado,
+        hc.valor_anterior,
+        hc.valor_nuevo,
+        hc.total_anterior,
+        hc.total_nuevo,
+        hc.nombre_usuario,
+        hc.fecha_cambio
+    FROM historial_cotizacion hc
+    WHERE (p_numero_cotizacion IS NULL OR hc.numero_cotizacion = p_numero_cotizacion)
+      AND (p_id_cotizacion IS NULL OR hc.id_cotizacion = p_id_cotizacion)
+      AND (p_desde IS NULL OR hc.fecha_cambio::DATE >= p_desde)
+      AND (p_hasta IS NULL OR hc.fecha_cambio::DATE <= p_hasta)
+      AND (p_tipo_cambio IS NULL OR hc.tipo_cambio = p_tipo_cambio)
+    ORDER BY hc.fecha_cambio DESC;
+END;
+$$;
+
+
+ALTER FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying) OWNER TO postgres;
+
+--
+-- TOC entry 6195 (class 0 OID 0)
+-- Dependencies: 753
+-- Name: FUNCTION obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying) IS 'Consulta el historial de cambios de una cotización.
+
+EJEMPLOS:
+-- Por número de cotización
+SELECT * FROM obtener_historial_cotizacion(''COT-2025-0001'');
+
+-- Por ID
+SELECT * FROM obtener_historial_cotizacion(NULL, 123);
+
+-- Por rango de fechas
+SELECT * FROM obtener_historial_cotizacion(NULL, NULL, ''2025-11-01'', ''2025-11-30'');
+
+-- Solo cambios de monto
+SELECT * FROM obtener_historial_cotizacion(''COT-2025-0001'', NULL, NULL, NULL, ''MODIFICACION_MONTO'');
+';
+
+
+--
+-- TOC entry 812 (class 1255 OID 148273)
+-- Name: obtener_precio_con_promociones(bigint, bigint, bigint, timestamp without time zone, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint DEFAULT NULL::bigint, p_fecha timestamp without time zone DEFAULT now(), p_cantidad integer DEFAULT 1) RETURNS TABLE(precio_base numeric, precio_con_descuento numeric, descuento_aplicado numeric, descuento_unitario numeric, porcentaje_descuento numeric, id_promocion bigint, codigo_promocion character varying, nombre_promocion character varying, tipo_descuento character varying, valor_descuento numeric, tipo_aplicacion character varying, cantidad_solicitada integer)
+    LANGUAGE plpgsql STABLE
+    AS $$
+DECLARE
+    v_precio_base numeric;
+    v_id_categoria bigint;
+    v_id_marca bigint;  -- 🆕 NUEVO: para promociones por marca
+    v_precio_final numeric;
+    v_descuento_unitario numeric;
+    v_descuento_total numeric;
+    v_porcentaje_descuento numeric;
+    v_promocion_aplicada record;
+BEGIN
+    -- Validar cantidad
+    IF p_cantidad <= 0 THEN
+        RAISE EXCEPTION 'La cantidad debe ser mayor a 0';
+    END IF;
+    
+    -- 1. Obtener precio base, categoría Y MARCA del producto
+    SELECT 
+        ppm.precio_venta,
+        p.id_categoria,
+        p.id_marca  -- 🆕 NUEVO
+    INTO v_precio_base, v_id_categoria, v_id_marca
+    FROM public.producto_precio_moneda ppm
+    INNER JOIN public.producto p ON ppm.sku = p.sku
+    WHERE ppm.sku = p_sku 
+      AND ppm.id_moneda = p_id_moneda
+      AND ppm.activo = true
+      AND (ppm.fecha_vigencia_desde IS NULL OR ppm.fecha_vigencia_desde <= p_fecha::date)
+      AND (ppm.fecha_vigencia_hasta IS NULL OR ppm.fecha_vigencia_hasta >= p_fecha::date)
+    ORDER BY ppm.fecha_vigencia_desde DESC NULLS LAST, ppm.fecha_creacion DESC
+    LIMIT 1;
+    
+    IF v_precio_base IS NULL THEN
+        RETURN;
+    END IF;
+    
+    -- Inicializar valores
+    v_precio_final := v_precio_base;
+    v_descuento_unitario := 0;
+    v_descuento_total := 0;
+    v_porcentaje_descuento := 0;
+    
+    -- 2. Buscar la MEJOR promoción activa aplicable
+    -- 🎯 Prioridad: CLIENTE > PRODUCTO > MARCA > CATEGORIA > GLOBAL
+    SELECT 
+        pr.id,
+        pr.codigo,
+        pr.nombre,
+        pd.tipo_descuento,
+        pd.valor_descuento,
+        pd.descuento_maximo,
+        pd.tipo_aplicacion,
+        pr.prioridad,
+        pr.monto_minimo_compra
+    INTO v_promocion_aplicada
+    FROM public.promocion pr
+    INNER JOIN public.promocion_descuento pd ON pr.id = pd.id_promocion
+    WHERE pr.activa = true
+      AND pd.activo = true
+      AND pr.fecha_inicio <= p_fecha
+      AND pr.fecha_fin >= p_fecha
+      AND (
+          -- 🆕 Promoción por CLIENTE específico (MÁS ESPECÍFICO)
+          (pd.tipo_aplicacion = 'CLIENTE' AND p_id_cliente IS NOT NULL 
+           AND pd.referencia_id = p_id_cliente)
+          OR
+          -- Promoción por PRODUCTO específico
+          (pd.tipo_aplicacion = 'PRODUCTO' AND pd.referencia_id = p_sku)
+          OR
+          -- 🆕 Promoción por MARCA
+          (pd.tipo_aplicacion = 'MARCA' AND pd.referencia_id = v_id_marca)
+          OR
+          -- Promoción por CATEGORÍA
+          (pd.tipo_aplicacion = 'CATEGORIA' AND pd.referencia_id = v_id_categoria)
+          OR
+          -- Promoción GLOBAL (MENOS ESPECÍFICO)
+          (pd.tipo_aplicacion = 'GLOBAL')
+      )
+      -- Validar monto mínimo de compra
+      AND (pr.monto_minimo_compra IS NULL 
+           OR (v_precio_base * p_cantidad) >= pr.monto_minimo_compra)
+      -- Validar límites de uso
+      AND (
+          p_id_cliente IS NULL 
+          OR pr.limite_uso_total IS NULL 
+          OR (SELECT COUNT(*) FROM public.promocion_uso 
+              WHERE id_promocion = pr.id AND fecha_uso <= p_fecha) < pr.limite_uso_total
+      )
+      AND (
+          p_id_cliente IS NULL
+          OR pr.limite_uso_por_cliente IS NULL
+          OR (SELECT COUNT(*) FROM public.promocion_uso 
+              WHERE id_promocion = pr.id 
+                AND id_cliente = p_id_cliente 
+                AND fecha_uso <= p_fecha) < pr.limite_uso_por_cliente
+      )
+    ORDER BY 
+        -- 🎯 Priorizar por especificidad (más específico = mayor prioridad)
+        CASE pd.tipo_aplicacion
+            WHEN 'CLIENTE' THEN 1    -- Promoción personalizada
+            WHEN 'PRODUCTO' THEN 2   -- Producto específico
+            WHEN 'MARCA' THEN 3      -- 🆕 NUEVO: Toda la marca
+            WHEN 'CATEGORIA' THEN 4  -- Toda la categoría
+            WHEN 'GLOBAL' THEN 5     -- Todos los productos
+            ELSE 6
+        END,
+        -- Luego por prioridad explícita (campo prioridad)
+        pr.prioridad DESC,
+        -- En caso de empate, la más reciente
+        pr.fecha_inicio DESC
+    LIMIT 1;
+    
+    -- 3. Si hay promoción aplicable, calcular descuento
+    IF v_promocion_aplicada IS NOT NULL THEN
+        CASE v_promocion_aplicada.tipo_descuento
+            WHEN 'PORCENTAJE' THEN
+                v_descuento_unitario := v_precio_base * (v_promocion_aplicada.valor_descuento / 100);
+                IF v_promocion_aplicada.descuento_maximo IS NOT NULL 
+                   AND v_descuento_unitario > v_promocion_aplicada.descuento_maximo THEN
+                    v_descuento_unitario := v_promocion_aplicada.descuento_maximo;
+                END IF;
+                v_precio_final := v_precio_base - v_descuento_unitario;
+                v_porcentaje_descuento := v_promocion_aplicada.valor_descuento;
+                
+            WHEN 'MONTO_FIJO' THEN
+                v_descuento_unitario := LEAST(v_promocion_aplicada.valor_descuento, v_precio_base);
+                v_precio_final := v_precio_base - v_descuento_unitario;
+                v_porcentaje_descuento := (v_descuento_unitario / v_precio_base) * 100;
+                
+            WHEN 'PRECIO_ESPECIAL' THEN
+                IF v_promocion_aplicada.valor_descuento < v_precio_base THEN
+                    v_precio_final := v_promocion_aplicada.valor_descuento;
+                    v_descuento_unitario := v_precio_base - v_precio_final;
+                    v_porcentaje_descuento := (v_descuento_unitario / v_precio_base) * 100;
+                ELSE
+                    v_descuento_unitario := 0;
+                    v_precio_final := v_precio_base;
+                    v_porcentaje_descuento := 0;
+                END IF;
+        END CASE;
+        
+        v_descuento_total := v_descuento_unitario * p_cantidad;
+    END IF;
+    
+    -- 4. Asegurar precio no negativo
+    v_precio_final := GREATEST(v_precio_final, 0);
+    
+    -- 5. Retornar resultado
+    RETURN QUERY SELECT
+        v_precio_base,
+        v_precio_final,
+        v_descuento_total,
+        v_descuento_unitario,
+        v_porcentaje_descuento,
+        COALESCE(v_promocion_aplicada.id, NULL::bigint),
+        COALESCE(v_promocion_aplicada.codigo, NULL::varchar),
+        COALESCE(v_promocion_aplicada.nombre, NULL::varchar),
+        COALESCE(v_promocion_aplicada.tipo_descuento, NULL::varchar),
+        COALESCE(v_promocion_aplicada.valor_descuento, NULL::numeric),
+        COALESCE(v_promocion_aplicada.tipo_aplicacion, NULL::varchar),  -- 🆕 NUEVO
+        p_cantidad;
+END;
+$$;
+
+
+ALTER FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer) OWNER TO postgres;
+
+--
+-- TOC entry 6197 (class 0 OID 0)
+-- Dependencies: 812
+-- Name: FUNCTION obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer) IS 'Versión 4.0 - Obtiene precio con promociones incluyendo soporte para MARCA.
+
+PRIORIDAD DE PROMOCIONES (de mayor a menor especificidad):
+1. CLIENTE - Promoción personalizada para un cliente específico
+2. PRODUCTO - Promoción para un SKU específico
+3. MARCA - Promoción para todos los productos de una marca (🆕 NUEVO)
+4. CATEGORIA - Promoción para toda una categoría
+5. GLOBAL - Promoción para todos los productos
+
+Dentro de cada tipo, se aplica el campo "prioridad" (número mayor = más importante).
+
+PARÁMETROS:
+- p_sku: SKU del producto
+- p_id_moneda: ID de la moneda (1=PEN, 2=USD, 3=EUR)
+- p_id_cliente: ID del cliente (opcional)
+- p_fecha: Fecha de consulta (default: NOW())
+- p_cantidad: Cantidad de productos (default: 1)
+
+RETORNA (12 columnas):
+- precio_base, precio_con_descuento, descuento_aplicado, descuento_unitario
+- porcentaje_descuento, id_promocion, codigo_promocion, nombre_promocion
+- tipo_descuento, valor_descuento, tipo_aplicacion (🆕), cantidad_solicitada
+
+EJEMPLOS:
+-- Promoción por marca:
+INSERT INTO promocion_descuento (id_promocion, tipo_aplicacion, referencia_id, tipo_descuento, valor_descuento)
+VALUES (1, ''MARCA'', 5, ''PORCENTAJE'', 15.00);  -- 15% en marca id=5
+
+-- Consultar precio:
+SELECT * FROM obtener_precio_con_promociones(12345, 1, NULL, NOW(), 10);
+';
+
+
+--
+-- TOC entry 789 (class 1255 OID 106314)
 -- Name: obtener_precio_producto(bigint, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2702,7 +3903,7 @@ $$;
 ALTER FUNCTION public.obtener_precio_producto(p_sku bigint, p_id_moneda bigint) OWNER TO postgres;
 
 --
--- TOC entry 540 (class 1255 OID 134729)
+-- TOC entry 558 (class 1255 OID 134729)
 -- Name: obtener_precio_proveedor_con_descuentos(bigint, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2729,8 +3930,8 @@ $$;
 ALTER FUNCTION public.obtener_precio_proveedor_con_descuentos(p_sku bigint, p_id_proveedor bigint) OWNER TO postgres;
 
 --
--- TOC entry 5962 (class 0 OID 0)
--- Dependencies: 540
+-- TOC entry 6200 (class 0 OID 0)
+-- Dependencies: 558
 -- Name: FUNCTION obtener_precio_proveedor_con_descuentos(p_sku bigint, p_id_proveedor bigint); Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -2738,7 +3939,7 @@ COMMENT ON FUNCTION public.obtener_precio_proveedor_con_descuentos(p_sku bigint,
 
 
 --
--- TOC entry 701 (class 1255 OID 123309)
+-- TOC entry 731 (class 1255 OID 123309)
 -- Name: obtener_precios_producto_multimoneda(bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2769,7 +3970,35 @@ $$;
 ALTER FUNCTION public.obtener_precios_producto_multimoneda(p_sku bigint) OWNER TO postgres;
 
 --
--- TOC entry 646 (class 1255 OID 90407)
+-- TOC entry 787 (class 1255 OID 147740)
+-- Name: obtener_prefijo_categoria(bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.obtener_prefijo_categoria(p_id_categoria bigint) RETURNS character varying
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_nombre_categoria VARCHAR(100);
+    v_prefijo VARCHAR(4);
+BEGIN
+    -- Obtener nombre de la categoría
+    SELECT UPPER(REPLACE(nombre, ' ', '')) 
+    INTO v_nombre_categoria
+    FROM categoria 
+    WHERE id = p_id_categoria;
+    
+    -- Extraer primeras 4 letras (sin espacios ni guiones bajos)
+    v_prefijo := SUBSTRING(REPLACE(REPLACE(v_nombre_categoria, '_', ''), ' ', ''), 1, 4);
+    
+    RETURN v_prefijo;
+END;
+$$;
+
+
+ALTER FUNCTION public.obtener_prefijo_categoria(p_id_categoria bigint) OWNER TO postgres;
+
+--
+-- TOC entry 675 (class 1255 OID 90407)
 -- Name: obtener_tasa_conversion(character varying, character varying, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2817,7 +4046,7 @@ $$;
 ALTER FUNCTION public.obtener_tasa_conversion(estado_origen_codigo character varying, estado_destino_codigo character varying, fecha_desde date) OWNER TO postgres;
 
 --
--- TOC entry 536 (class 1255 OID 123306)
+-- TOC entry 554 (class 1255 OID 123306)
 -- Name: obtener_tipo_cambio_vigente(character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2854,7 +4083,7 @@ $$;
 ALTER FUNCTION public.obtener_tipo_cambio_vigente(p_moneda character varying) OWNER TO postgres;
 
 --
--- TOC entry 639 (class 1255 OID 78220)
+-- TOC entry 668 (class 1255 OID 78220)
 -- Name: recalcular_precios_masivo(bigint, bigint, numeric, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2917,7 +4146,187 @@ $$;
 ALTER FUNCTION public.recalcular_precios_masivo(p_filtro_categoria bigint, p_filtro_proveedor bigint, p_nuevo_tipo_cambio numeric, p_usuario_id bigint) OWNER TO postgres;
 
 --
--- TOC entry 579 (class 1255 OID 134735)
+-- TOC entry 624 (class 1255 OID 147744)
+-- Name: regenerar_sku_productos_sin_codigo(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.regenerar_sku_productos_sin_codigo() RETURNS TABLE(sku_antiguo bigint, sku_producto_nuevo character varying)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    UPDATE producto
+    SET sku_producto = generar_sku_producto(id_categoria)
+    WHERE sku_producto IS NULL OR TRIM(sku_producto) = ''
+    RETURNING sku, producto.sku_producto;
+END;
+$$;
+
+
+ALTER FUNCTION public.regenerar_sku_productos_sin_codigo() OWNER TO postgres;
+
+--
+-- TOC entry 788 (class 1255 OID 158870)
+-- Name: registrar_cambio_cotizacion(bigint, character varying, text, character varying, text, text, jsonb, text, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text DEFAULT NULL::text, p_campo_modificado character varying DEFAULT NULL::character varying, p_valor_anterior text DEFAULT NULL::text, p_valor_nuevo text DEFAULT NULL::text, p_productos_afectados jsonb DEFAULT NULL::jsonb, p_motivo text DEFAULT NULL::text, p_usuario_id bigint DEFAULT 1) RETURNS bigint
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_id_historial BIGINT;
+    v_numero VARCHAR(20);
+    v_version INTEGER;
+    v_subtotal NUMERIC(12,2);
+    v_total NUMERIC(12,2);
+    v_total_soles NUMERIC(12,2);
+    v_margen NUMERIC(5,2);
+    v_costo NUMERIC(12,2);
+    v_tc_usd NUMERIC(10,4);
+    v_nombre_usuario VARCHAR(100);
+BEGIN
+    -- Obtener datos actuales de la cotización
+    SELECT 
+        c.numero, 
+        c.subtotal, 
+        c.total, 
+        c.total_soles,
+        c.porcentaje_margen_promedio,
+        c.costo_total_proveedores,
+        c.tipo_cambio_usd_pen
+    INTO v_numero, v_subtotal, v_total, v_total_soles, v_margen, v_costo, v_tc_usd
+    FROM cotizacion c
+    WHERE c.id = p_id_cotizacion;
+    
+    IF v_numero IS NULL THEN
+        RAISE EXCEPTION 'Cotización % no encontrada', p_id_cotizacion;
+    END IF;
+    
+    -- Calcular versión (número de cambios + 1)
+    SELECT COALESCE(MAX(version), 0) + 1 INTO v_version
+    FROM historial_cotizacion
+    WHERE id_cotizacion = p_id_cotizacion;
+    
+    -- Obtener nombre del usuario
+    SELECT nombre INTO v_nombre_usuario
+    FROM usuario WHERE id = p_usuario_id;
+    
+    -- Insertar registro de historial
+    INSERT INTO historial_cotizacion (
+        id_cotizacion,
+        numero_cotizacion,
+        version,
+        tipo_cambio,
+        descripcion,
+        campo_modificado,
+        valor_anterior,
+        valor_nuevo,
+        subtotal_nuevo,
+        total_nuevo,
+        total_soles_nuevo,
+        margen_nuevo,
+        costo_proveedor_nuevo,
+        tipo_cambio_usd_momento,
+        productos_afectados,
+        id_usuario,
+        nombre_usuario,
+        motivo_cambio
+    ) VALUES (
+        p_id_cotizacion,
+        v_numero,
+        v_version,
+        p_tipo_cambio,
+        p_descripcion,
+        p_campo_modificado,
+        p_valor_anterior,
+        p_valor_nuevo,
+        v_subtotal,
+        v_total,
+        v_total_soles,
+        v_margen,
+        v_costo,
+        v_tc_usd,
+        p_productos_afectados,
+        p_usuario_id,
+        v_nombre_usuario,
+        p_motivo
+    ) RETURNING id INTO v_id_historial;
+    
+    RETURN v_id_historial;
+END;
+$$;
+
+
+ALTER FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6208 (class 0 OID 0)
+-- Dependencies: 788
+-- Name: FUNCTION registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint) IS 'Registra un cambio en el historial de cotizaciones.
+
+EJEMPLOS:
+-- Registrar creación
+SELECT registrar_cambio_cotizacion(123, ''CREACION'', ''Cotización creada'');
+
+-- Registrar cambio de precio
+SELECT registrar_cambio_cotizacion(
+    123, 
+    ''MODIFICADO_PRODUCTO'', 
+    ''Precio actualizado'',
+    ''precio_unitario'',
+    ''100.00'',
+    ''95.00'',
+    ''[{"sku": 456, "nombre": "Rodamiento", "precio_ant": 100, "precio_new": 95}]''::jsonb
+);
+';
+
+
+--
+-- TOC entry 588 (class 1255 OID 147967)
+-- Name: reporte_cuentas_por_pagar_periodo(date, date, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint DEFAULT NULL::bigint) RETURNS TABLE(proveedor character varying, documento_empresa character varying, total_cuentas bigint, monto_total_pen numeric, monto_pagado_pen numeric, monto_pendiente_pen numeric, cuentas_vencidas bigint, promedio_dias_pago numeric)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.razon_social,
+        p.documento_empresa,
+        COUNT(cxp.id),
+        SUM(cxp.monto_total),
+        SUM(cxp.monto_pagado),
+        SUM(cxp.monto_pendiente),
+        COUNT(CASE WHEN cxp.estado = 'VENCIDO' THEN 1 END),
+        AVG(cxp.dias_credito)
+    FROM proveedor p
+    INNER JOIN cuenta_por_pagar_proveedor cxp ON cxp.id_proveedor = p.id
+    WHERE cxp.fecha_emision BETWEEN p_fecha_inicio AND p_fecha_fin
+        AND (p_id_proveedor IS NULL OR p.id = p_id_proveedor)
+        AND cxp.activo = true
+    GROUP BY p.id, p.razon_social, p.documento_empresa
+    ORDER BY SUM(cxp.monto_pendiente) DESC;
+END;
+$$;
+
+
+ALTER FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint) OWNER TO postgres;
+
+--
+-- TOC entry 6210 (class 0 OID 0)
+-- Dependencies: 588
+-- Name: FUNCTION reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint) IS 'Genera reporte de cuentas por pagar en un periodo específico para bancos y factoring';
+
+
+--
+-- TOC entry 598 (class 1255 OID 134735)
 -- Name: reporte_descuentos_por_proveedor(bigint, date, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2949,8 +4358,8 @@ $$;
 ALTER FUNCTION public.reporte_descuentos_por_proveedor(p_id_proveedor bigint, p_fecha_desde date, p_fecha_hasta date) OWNER TO postgres;
 
 --
--- TOC entry 5968 (class 0 OID 0)
--- Dependencies: 579
+-- TOC entry 6212 (class 0 OID 0)
+-- Dependencies: 598
 -- Name: FUNCTION reporte_descuentos_por_proveedor(p_id_proveedor bigint, p_fecha_desde date, p_fecha_hasta date); Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -2958,7 +4367,7 @@ COMMENT ON FUNCTION public.reporte_descuentos_por_proveedor(p_id_proveedor bigin
 
 
 --
--- TOC entry 707 (class 1255 OID 134738)
+-- TOC entry 737 (class 1255 OID 134738)
 -- Name: sugerir_descuento_proveedor(bigint, bigint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2985,8 +4394,8 @@ $$;
 ALTER FUNCTION public.sugerir_descuento_proveedor(p_id_proveedor bigint, p_id_categoria bigint) OWNER TO postgres;
 
 --
--- TOC entry 5970 (class 0 OID 0)
--- Dependencies: 707
+-- TOC entry 6214 (class 0 OID 0)
+-- Dependencies: 737
 -- Name: FUNCTION sugerir_descuento_proveedor(p_id_proveedor bigint, p_id_categoria bigint); Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -2994,7 +4403,263 @@ COMMENT ON FUNCTION public.sugerir_descuento_proveedor(p_id_proveedor bigint, p_
 
 
 --
--- TOC entry 679 (class 1255 OID 66325)
+-- TOC entry 659 (class 1255 OID 147742)
+-- Name: trigger_generar_sku_producto(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trigger_generar_sku_producto() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Solo generar si sku_producto es NULL o vacío
+    IF NEW.sku_producto IS NULL OR TRIM(NEW.sku_producto) = '' THEN
+        NEW.sku_producto := generar_sku_producto(NEW.id_categoria);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trigger_generar_sku_producto() OWNER TO postgres;
+
+--
+-- TOC entry 801 (class 1255 OID 158871)
+-- Name: trigger_historial_cotizacion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trigger_historial_cotizacion() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_descripcion TEXT;
+    v_campo TEXT;
+    v_valor_ant TEXT;
+    v_valor_new TEXT;
+BEGIN
+    -- INSERCIÓN: Nueva cotización
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO historial_cotizacion (
+            id_cotizacion, numero_cotizacion, version, tipo_cambio,
+            descripcion, subtotal_nuevo, total_nuevo, total_soles_nuevo,
+            margen_nuevo, costo_proveedor_nuevo, tipo_cambio_usd_momento,
+            id_usuario, nombre_usuario
+        ) VALUES (
+            NEW.id, NEW.numero, 1, 'CREACION',
+            'Cotización creada para cliente ID ' || NEW.id_cliente,
+            NEW.subtotal, NEW.total, NEW.total_soles,
+            NEW.porcentaje_margen_promedio, NEW.costo_total_proveedores,
+            NEW.tipo_cambio_usd_pen,
+            COALESCE(NEW.creado_por, 1),
+            (SELECT nombre FROM usuario WHERE id = COALESCE(NEW.creado_por, 1))
+        );
+        RETURN NEW;
+    END IF;
+    
+    -- ACTUALIZACIÓN: Detectar qué cambió
+    IF TG_OP = 'UPDATE' THEN
+        
+        -- Cambio en total
+        IF OLD.total IS DISTINCT FROM NEW.total THEN
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, campo_modificado, valor_anterior, valor_nuevo,
+                subtotal_anterior, subtotal_nuevo,
+                total_anterior, total_nuevo,
+                total_soles_anterior, total_soles_nuevo,
+                margen_anterior, margen_nuevo,
+                tipo_cambio_usd_momento, id_usuario
+            ) VALUES (
+                NEW.id, NEW.numero, 'MODIFICACION_MONTO',
+                'Monto total modificado',
+                'total',
+                OLD.total::TEXT, NEW.total::TEXT,
+                OLD.subtotal, NEW.subtotal,
+                OLD.total, NEW.total,
+                OLD.total_soles, NEW.total_soles,
+                OLD.porcentaje_margen_promedio, NEW.porcentaje_margen_promedio,
+                NEW.tipo_cambio_usd_pen,
+                COALESCE(NEW.creado_por, 1)
+            );
+        END IF;
+        
+        -- Cambio de cliente
+        IF OLD.id_cliente IS DISTINCT FROM NEW.id_cliente THEN
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, campo_modificado, valor_anterior, valor_nuevo,
+                total_nuevo, total_soles_nuevo, id_usuario
+            ) VALUES (
+                NEW.id, NEW.numero, 'CAMBIO_CLIENTE',
+                'Cliente modificado',
+                'id_cliente',
+                OLD.id_cliente::TEXT, NEW.id_cliente::TEXT,
+                NEW.total, NEW.total_soles,
+                COALESCE(NEW.creado_por, 1)
+            );
+        END IF;
+        
+        -- Cambio de tipo de cambio USD
+        IF OLD.tipo_cambio_usd_pen IS DISTINCT FROM NEW.tipo_cambio_usd_pen THEN
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, campo_modificado, valor_anterior, valor_nuevo,
+                total_anterior, total_nuevo,
+                total_soles_anterior, total_soles_nuevo,
+                tipo_cambio_usd_momento, id_usuario
+            ) VALUES (
+                NEW.id, NEW.numero, 'CAMBIO_TC',
+                'Tipo de cambio USD actualizado',
+                'tipo_cambio_usd_pen',
+                OLD.tipo_cambio_usd_pen::TEXT, NEW.tipo_cambio_usd_pen::TEXT,
+                OLD.total, NEW.total,
+                OLD.total_soles, NEW.total_soles,
+                NEW.tipo_cambio_usd_pen,
+                COALESCE(NEW.creado_por, 1)
+            );
+        END IF;
+        
+        -- Cambio de estado
+        IF OLD.id_estado IS DISTINCT FROM NEW.id_estado THEN
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, campo_modificado, valor_anterior, valor_nuevo,
+                total_nuevo, total_soles_nuevo, id_usuario
+            ) VALUES (
+                NEW.id, NEW.numero, 'CAMBIO_ESTADO',
+                'Estado de cotización modificado',
+                'id_estado',
+                OLD.id_estado::TEXT, NEW.id_estado::TEXT,
+                NEW.total, NEW.total_soles,
+                COALESCE(NEW.creado_por, 1)
+            );
+        END IF;
+        
+        -- Cambio de forma de pago
+        IF OLD.id_forma_pago IS DISTINCT FROM NEW.id_forma_pago THEN
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, campo_modificado, valor_anterior, valor_nuevo,
+                total_nuevo, id_usuario
+            ) VALUES (
+                NEW.id, NEW.numero, 'CAMBIO_CONDICIONES',
+                'Forma de pago modificada',
+                'id_forma_pago',
+                OLD.id_forma_pago::TEXT, NEW.id_forma_pago::TEXT,
+                NEW.total, COALESCE(NEW.creado_por, 1)
+            );
+        END IF;
+        
+        -- Anulación (activo = false)
+        IF OLD.activo = TRUE AND NEW.activo = FALSE THEN
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, total_nuevo, total_soles_nuevo, id_usuario
+            ) VALUES (
+                NEW.id, NEW.numero, 'ANULACION',
+                'Cotización anulada',
+                NEW.total, NEW.total_soles,
+                COALESCE(NEW.creado_por, 1)
+            );
+        END IF;
+        
+        RETURN NEW;
+    END IF;
+    
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION public.trigger_historial_cotizacion() OWNER TO postgres;
+
+--
+-- TOC entry 720 (class 1255 OID 158873)
+-- Name: trigger_historial_cotizacion_detalle(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trigger_historial_cotizacion_detalle() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_numero VARCHAR(20);
+    v_producto_json JSONB;
+BEGIN
+    -- Obtener número de cotización
+    SELECT numero INTO v_numero
+    FROM cotizacion WHERE id = COALESCE(NEW.id_cotizacion, OLD.id_cotizacion);
+    
+    IF TG_OP = 'INSERT' THEN
+        -- Producto agregado
+        v_producto_json := jsonb_build_array(jsonb_build_object(
+            'sku', NEW.sku,
+            'cantidad', NEW.cantidad,
+            'precio_unitario', NEW.precio_unitario_final,
+            'subtotal', NEW.subtotal
+        ));
+        
+        INSERT INTO historial_cotizacion (
+            id_cotizacion, numero_cotizacion, tipo_cambio,
+            descripcion, productos_afectados, id_usuario
+        ) VALUES (
+            NEW.id_cotizacion, v_numero, 'AGREGADO_PRODUCTO',
+            'Producto SKU ' || NEW.sku || ' agregado (Cant: ' || NEW.cantidad || ')',
+            v_producto_json, 1
+        );
+        
+    ELSIF TG_OP = 'UPDATE' THEN
+        -- Producto modificado (precio o cantidad)
+        IF OLD.cantidad IS DISTINCT FROM NEW.cantidad 
+           OR OLD.precio_unitario_final IS DISTINCT FROM NEW.precio_unitario_final THEN
+            
+            v_producto_json := jsonb_build_array(jsonb_build_object(
+                'sku', NEW.sku,
+                'cantidad_ant', OLD.cantidad,
+                'cantidad_new', NEW.cantidad,
+                'precio_ant', OLD.precio_unitario_final,
+                'precio_new', NEW.precio_unitario_final,
+                'subtotal_ant', OLD.subtotal,
+                'subtotal_new', NEW.subtotal
+            ));
+            
+            INSERT INTO historial_cotizacion (
+                id_cotizacion, numero_cotizacion, tipo_cambio,
+                descripcion, productos_afectados, id_usuario
+            ) VALUES (
+                NEW.id_cotizacion, v_numero, 'MODIFICADO_PRODUCTO',
+                'Producto SKU ' || NEW.sku || ' modificado',
+                v_producto_json, 1
+            );
+        END IF;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        -- Producto eliminado
+        v_producto_json := jsonb_build_array(jsonb_build_object(
+            'sku', OLD.sku,
+            'cantidad', OLD.cantidad,
+            'precio_unitario', OLD.precio_unitario_final,
+            'subtotal', OLD.subtotal
+        ));
+        
+        INSERT INTO historial_cotizacion (
+            id_cotizacion, numero_cotizacion, tipo_cambio,
+            descripcion, productos_afectados, id_usuario
+        ) VALUES (
+            OLD.id_cotizacion, v_numero, 'ELIMINADO_PRODUCTO',
+            'Producto SKU ' || OLD.sku || ' eliminado',
+            v_producto_json, 1
+        );
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+ALTER FUNCTION public.trigger_historial_cotizacion_detalle() OWNER TO postgres;
+
+--
+-- TOC entry 708 (class 1255 OID 66325)
 -- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3011,7 +4676,7 @@ $$;
 ALTER FUNCTION public.update_updated_at_column() OWNER TO postgres;
 
 --
--- TOC entry 789 (class 1255 OID 134256)
+-- TOC entry 826 (class 1255 OID 134256)
 -- Name: validar_contacto_es_empresa(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3030,7 +4695,7 @@ $$;
 ALTER FUNCTION public.validar_contacto_es_empresa() OWNER TO postgres;
 
 --
--- TOC entry 785 (class 1255 OID 78221)
+-- TOC entry 822 (class 1255 OID 78221)
 -- Name: validar_margen_producto(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3070,7 +4735,7 @@ $$;
 ALTER FUNCTION public.validar_margen_producto() OWNER TO postgres;
 
 --
--- TOC entry 710 (class 1255 OID 141569)
+-- TOC entry 741 (class 1255 OID 141569)
 -- Name: verificar_producto_completo(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3109,7 +4774,7 @@ $$;
 ALTER FUNCTION public.verificar_producto_completo() OWNER TO postgres;
 
 --
--- TOC entry 529 (class 1255 OID 17172)
+-- TOC entry 547 (class 1255 OID 17172)
 -- Name: apply_rls(jsonb, integer); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3417,7 +5082,7 @@ $$;
 ALTER FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) OWNER TO supabase_admin;
 
 --
--- TOC entry 794 (class 1255 OID 17252)
+-- TOC entry 831 (class 1255 OID 17252)
 -- Name: broadcast_changes(text, text, text, text, text, record, record, text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3449,7 +5114,7 @@ $$;
 ALTER FUNCTION realtime.broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text) OWNER TO supabase_admin;
 
 --
--- TOC entry 638 (class 1255 OID 17184)
+-- TOC entry 667 (class 1255 OID 17184)
 -- Name: build_prepared_statement_sql(text, regclass, realtime.wal_column[]); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3485,7 +5150,7 @@ CREATE FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name te
 ALTER FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) OWNER TO supabase_admin;
 
 --
--- TOC entry 759 (class 1255 OID 17133)
+-- TOC entry 793 (class 1255 OID 17133)
 -- Name: cast(text, regtype); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3504,7 +5169,7 @@ CREATE FUNCTION realtime."cast"(val text, type_ regtype) RETURNS jsonb
 ALTER FUNCTION realtime."cast"(val text, type_ regtype) OWNER TO supabase_admin;
 
 --
--- TOC entry 581 (class 1255 OID 17128)
+-- TOC entry 600 (class 1255 OID 17128)
 -- Name: check_equality_op(realtime.equality_op, regtype, text, text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3546,7 +5211,7 @@ CREATE FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtyp
 ALTER FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) OWNER TO supabase_admin;
 
 --
--- TOC entry 597 (class 1255 OID 17180)
+-- TOC entry 619 (class 1255 OID 17180)
 -- Name: is_visible_through_filters(realtime.wal_column[], realtime.user_defined_filter[]); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3585,7 +5250,7 @@ CREATE FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[
 ALTER FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) OWNER TO supabase_admin;
 
 --
--- TOC entry 576 (class 1255 OID 17192)
+-- TOC entry 595 (class 1255 OID 17192)
 -- Name: list_changes(name, name, integer, integer); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3654,7 +5319,7 @@ CREATE FUNCTION realtime.list_changes(publication name, slot_name name, max_chan
 ALTER FUNCTION realtime.list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer) OWNER TO supabase_admin;
 
 --
--- TOC entry 796 (class 1255 OID 17127)
+-- TOC entry 833 (class 1255 OID 17127)
 -- Name: quote_wal2json(regclass); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3695,21 +5360,34 @@ CREATE FUNCTION realtime.quote_wal2json(entity regclass) RETURNS text
 ALTER FUNCTION realtime.quote_wal2json(entity regclass) OWNER TO supabase_admin;
 
 --
--- TOC entry 591 (class 1255 OID 17251)
+-- TOC entry 612 (class 1255 OID 17251)
 -- Name: send(jsonb, text, text, boolean); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
 CREATE FUNCTION realtime.send(payload jsonb, event text, topic text, private boolean DEFAULT true) RETURNS void
     LANGUAGE plpgsql
     AS $$
+DECLARE
+  generated_id uuid;
+  final_payload jsonb;
 BEGIN
   BEGIN
+    -- Generate a new UUID for the id
+    generated_id := gen_random_uuid();
+
+    -- Check if payload has an 'id' key, if not, add the generated UUID
+    IF payload ? 'id' THEN
+      final_payload := payload;
+    ELSE
+      final_payload := jsonb_set(payload, '{id}', to_jsonb(generated_id));
+    END IF;
+
     -- Set the topic configuration
     EXECUTE format('SET LOCAL realtime.topic TO %L', topic);
 
     -- Attempt to insert the message
-    INSERT INTO realtime.messages (payload, event, topic, private, extension)
-    VALUES (payload, event, topic, private, 'broadcast');
+    INSERT INTO realtime.messages (id, payload, event, topic, private, extension)
+    VALUES (generated_id, final_payload, event, topic, private, 'broadcast');
   EXCEPTION
     WHEN OTHERS THEN
       -- Capture and notify the error
@@ -3722,7 +5400,7 @@ $$;
 ALTER FUNCTION realtime.send(payload jsonb, event text, topic text, private boolean) OWNER TO supabase_admin;
 
 --
--- TOC entry 738 (class 1255 OID 17125)
+-- TOC entry 770 (class 1255 OID 17125)
 -- Name: subscription_check_filters(); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3799,7 +5477,7 @@ CREATE FUNCTION realtime.subscription_check_filters() RETURNS trigger
 ALTER FUNCTION realtime.subscription_check_filters() OWNER TO supabase_admin;
 
 --
--- TOC entry 546 (class 1255 OID 17161)
+-- TOC entry 564 (class 1255 OID 17161)
 -- Name: to_regrole(text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
 --
 
@@ -3811,7 +5489,7 @@ CREATE FUNCTION realtime.to_regrole(role_name text) RETURNS regrole
 ALTER FUNCTION realtime.to_regrole(role_name text) OWNER TO supabase_admin;
 
 --
--- TOC entry 706 (class 1255 OID 17245)
+-- TOC entry 736 (class 1255 OID 17245)
 -- Name: topic(); Type: FUNCTION; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -3825,7 +5503,7 @@ $$;
 ALTER FUNCTION realtime.topic() OWNER TO supabase_realtime_admin;
 
 --
--- TOC entry 697 (class 1255 OID 68438)
+-- TOC entry 727 (class 1255 OID 68438)
 -- Name: add_prefixes(text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -3848,7 +5526,7 @@ $$;
 ALTER FUNCTION storage.add_prefixes(_bucket_id text, _name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 672 (class 1255 OID 17036)
+-- TOC entry 701 (class 1255 OID 17036)
 -- Name: can_insert_object(text, text, uuid, jsonb); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -3868,7 +5546,7 @@ $$;
 ALTER FUNCTION storage.can_insert_object(bucketid text, name text, owner uuid, metadata jsonb) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 596 (class 1255 OID 102328)
+-- TOC entry 618 (class 1255 OID 102328)
 -- Name: delete_leaf_prefixes(text[], text[]); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -3936,7 +5614,7 @@ $$;
 ALTER FUNCTION storage.delete_leaf_prefixes(bucket_ids text[], names text[]) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 718 (class 1255 OID 68439)
+-- TOC entry 749 (class 1255 OID 68439)
 -- Name: delete_prefix(text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -3975,7 +5653,7 @@ $$;
 ALTER FUNCTION storage.delete_prefix(_bucket_id text, _name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 655 (class 1255 OID 68442)
+-- TOC entry 684 (class 1255 OID 68442)
 -- Name: delete_prefix_hierarchy_trigger(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -3999,7 +5677,7 @@ $$;
 ALTER FUNCTION storage.delete_prefix_hierarchy_trigger() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 744 (class 1255 OID 68457)
+-- TOC entry 776 (class 1255 OID 68457)
 -- Name: enforce_bucket_name_length(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4018,7 +5696,7 @@ $$;
 ALTER FUNCTION storage.enforce_bucket_name_length() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 686 (class 1255 OID 17010)
+-- TOC entry 715 (class 1255 OID 17010)
 -- Name: extension(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4039,7 +5717,7 @@ $$;
 ALTER FUNCTION storage.extension(name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 727 (class 1255 OID 17009)
+-- TOC entry 759 (class 1255 OID 17009)
 -- Name: filename(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4058,7 +5736,7 @@ $$;
 ALTER FUNCTION storage.filename(name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 541 (class 1255 OID 17008)
+-- TOC entry 559 (class 1255 OID 17008)
 -- Name: foldername(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4079,7 +5757,7 @@ $$;
 ALTER FUNCTION storage.foldername(name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 572 (class 1255 OID 68420)
+-- TOC entry 591 (class 1255 OID 68420)
 -- Name: get_level(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4093,7 +5771,7 @@ $$;
 ALTER FUNCTION storage.get_level(name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 553 (class 1255 OID 68436)
+-- TOC entry 571 (class 1255 OID 68436)
 -- Name: get_prefix(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4112,7 +5790,7 @@ $_$;
 ALTER FUNCTION storage.get_prefix(name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 578 (class 1255 OID 68437)
+-- TOC entry 597 (class 1255 OID 68437)
 -- Name: get_prefixes(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4142,7 +5820,7 @@ $$;
 ALTER FUNCTION storage.get_prefixes(name text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 753 (class 1255 OID 68455)
+-- TOC entry 785 (class 1255 OID 68455)
 -- Name: get_size_by_bucket(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4161,7 +5839,7 @@ $$;
 ALTER FUNCTION storage.get_size_by_bucket() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 668 (class 1255 OID 17075)
+-- TOC entry 697 (class 1255 OID 17075)
 -- Name: list_multipart_uploads_with_delimiter(text, text, text, integer, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4210,7 +5888,7 @@ $_$;
 ALTER FUNCTION storage.list_multipart_uploads_with_delimiter(bucket_id text, prefix_param text, delimiter_param text, max_keys integer, next_key_token text, next_upload_token text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 714 (class 1255 OID 17038)
+-- TOC entry 745 (class 1255 OID 17038)
 -- Name: list_objects_with_delimiter(text, text, text, integer, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4257,7 +5935,7 @@ $_$;
 ALTER FUNCTION storage.list_objects_with_delimiter(bucket_id text, prefix_param text, delimiter_param text, max_keys integer, start_after text, next_token text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 603 (class 1255 OID 102327)
+-- TOC entry 627 (class 1255 OID 102327)
 -- Name: lock_top_prefixes(text[], text[]); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4284,7 +5962,7 @@ $$;
 ALTER FUNCTION storage.lock_top_prefixes(bucket_ids text[], names text[]) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 544 (class 1255 OID 102329)
+-- TOC entry 562 (class 1255 OID 102329)
 -- Name: objects_delete_cleanup(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4318,7 +5996,7 @@ $$;
 ALTER FUNCTION storage.objects_delete_cleanup() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 687 (class 1255 OID 68441)
+-- TOC entry 716 (class 1255 OID 68441)
 -- Name: objects_insert_prefix_trigger(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4337,7 +6015,7 @@ $$;
 ALTER FUNCTION storage.objects_insert_prefix_trigger() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 773 (class 1255 OID 102330)
+-- TOC entry 809 (class 1255 OID 102330)
 -- Name: objects_update_cleanup(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4432,7 +6110,7 @@ $$;
 ALTER FUNCTION storage.objects_update_cleanup() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 571 (class 1255 OID 110920)
+-- TOC entry 590 (class 1255 OID 110920)
 -- Name: objects_update_level_trigger(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4453,7 +6131,7 @@ $$;
 ALTER FUNCTION storage.objects_update_level_trigger() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 634 (class 1255 OID 68456)
+-- TOC entry 663 (class 1255 OID 68456)
 -- Name: objects_update_prefix_trigger(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4498,7 +6176,7 @@ $$;
 ALTER FUNCTION storage.objects_update_prefix_trigger() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 630 (class 1255 OID 17091)
+-- TOC entry 658 (class 1255 OID 17091)
 -- Name: operation(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4514,7 +6192,7 @@ $$;
 ALTER FUNCTION storage.operation() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 688 (class 1255 OID 102331)
+-- TOC entry 717 (class 1255 OID 102331)
 -- Name: prefixes_delete_cleanup(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4548,7 +6226,7 @@ $$;
 ALTER FUNCTION storage.prefixes_delete_cleanup() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 592 (class 1255 OID 68440)
+-- TOC entry 613 (class 1255 OID 68440)
 -- Name: prefixes_insert_trigger(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4565,7 +6243,7 @@ $$;
 ALTER FUNCTION storage.prefixes_insert_trigger() OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 555 (class 1255 OID 17025)
+-- TOC entry 573 (class 1255 OID 17025)
 -- Name: search(text, text, integer, integer, integer, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4592,7 +6270,7 @@ $$;
 ALTER FUNCTION storage.search(prefix text, bucketname text, limits integer, levels integer, offsets integer, search text, sortcolumn text, sortorder text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 739 (class 1255 OID 68453)
+-- TOC entry 771 (class 1255 OID 68453)
 -- Name: search_legacy_v1(text, text, integer, integer, integer, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4664,7 +6342,7 @@ $_$;
 ALTER FUNCTION storage.search_legacy_v1(prefix text, bucketname text, limits integer, levels integer, offsets integer, search text, sortcolumn text, sortorder text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 600 (class 1255 OID 68452)
+-- TOC entry 623 (class 1255 OID 68452)
 -- Name: search_v1_optimised(text, text, integer, integer, integer, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4735,7 +6413,7 @@ $_$;
 ALTER FUNCTION storage.search_v1_optimised(prefix text, bucketname text, limits integer, levels integer, offsets integer, search text, sortcolumn text, sortorder text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 575 (class 1255 OID 102326)
+-- TOC entry 594 (class 1255 OID 102326)
 -- Name: search_v2(text, text, integer, integer, text, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4834,7 +6512,7 @@ $_$;
 ALTER FUNCTION storage.search_v2(prefix text, bucket_name text, limits integer, levels integer, start_after text, sort_order text, sort_column text, sort_column_after text) OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 661 (class 1255 OID 17026)
+-- TOC entry 690 (class 1255 OID 17026)
 -- Name: update_updated_at_column(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -4871,7 +6549,7 @@ CREATE TABLE auth.audit_log_entries (
 ALTER TABLE auth.audit_log_entries OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5991 (class 0 OID 0)
+-- TOC entry 6238 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: TABLE audit_log_entries; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -4903,7 +6581,7 @@ CREATE TABLE auth.flow_state (
 ALTER TABLE auth.flow_state OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5993 (class 0 OID 0)
+-- TOC entry 6240 (class 0 OID 0)
 -- Dependencies: 373
 -- Name: TABLE flow_state; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -4932,7 +6610,7 @@ CREATE TABLE auth.identities (
 ALTER TABLE auth.identities OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5995 (class 0 OID 0)
+-- TOC entry 6242 (class 0 OID 0)
 -- Dependencies: 364
 -- Name: TABLE identities; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -4941,7 +6619,7 @@ COMMENT ON TABLE auth.identities IS 'Auth: Stores identities associated to a use
 
 
 --
--- TOC entry 5996 (class 0 OID 0)
+-- TOC entry 6243 (class 0 OID 0)
 -- Dependencies: 364
 -- Name: COLUMN identities.email; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -4966,7 +6644,7 @@ CREATE TABLE auth.instances (
 ALTER TABLE auth.instances OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 5998 (class 0 OID 0)
+-- TOC entry 6245 (class 0 OID 0)
 -- Dependencies: 355
 -- Name: TABLE instances; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -4991,7 +6669,7 @@ CREATE TABLE auth.mfa_amr_claims (
 ALTER TABLE auth.mfa_amr_claims OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6000 (class 0 OID 0)
+-- TOC entry 6247 (class 0 OID 0)
 -- Dependencies: 368
 -- Name: TABLE mfa_amr_claims; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5018,7 +6696,7 @@ CREATE TABLE auth.mfa_challenges (
 ALTER TABLE auth.mfa_challenges OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6002 (class 0 OID 0)
+-- TOC entry 6249 (class 0 OID 0)
 -- Dependencies: 367
 -- Name: TABLE mfa_challenges; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5043,19 +6721,29 @@ CREATE TABLE auth.mfa_factors (
     phone text,
     last_challenged_at timestamp with time zone,
     web_authn_credential jsonb,
-    web_authn_aaguid uuid
+    web_authn_aaguid uuid,
+    last_webauthn_challenge_data jsonb
 );
 
 
 ALTER TABLE auth.mfa_factors OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6004 (class 0 OID 0)
+-- TOC entry 6251 (class 0 OID 0)
 -- Dependencies: 366
 -- Name: TABLE mfa_factors; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
 COMMENT ON TABLE auth.mfa_factors IS 'auth: stores metadata about factors';
+
+
+--
+-- TOC entry 6252 (class 0 OID 0)
+-- Dependencies: 366
+-- Name: COLUMN mfa_factors.last_webauthn_challenge_data; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.mfa_factors.last_webauthn_challenge_data IS 'Stores the latest WebAuthn challenge data including attestation/assertion for customer verification';
 
 
 --
@@ -5178,7 +6866,7 @@ CREATE TABLE auth.refresh_tokens (
 ALTER TABLE auth.refresh_tokens OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6010 (class 0 OID 0)
+-- TOC entry 6258 (class 0 OID 0)
 -- Dependencies: 354
 -- Name: TABLE refresh_tokens; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5202,7 +6890,7 @@ CREATE SEQUENCE auth.refresh_tokens_id_seq
 ALTER SEQUENCE auth.refresh_tokens_id_seq OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6012 (class 0 OID 0)
+-- TOC entry 6260 (class 0 OID 0)
 -- Dependencies: 353
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5234,7 +6922,7 @@ CREATE TABLE auth.saml_providers (
 ALTER TABLE auth.saml_providers OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6014 (class 0 OID 0)
+-- TOC entry 6262 (class 0 OID 0)
 -- Dependencies: 371
 -- Name: TABLE saml_providers; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5263,7 +6951,7 @@ CREATE TABLE auth.saml_relay_states (
 ALTER TABLE auth.saml_relay_states OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6016 (class 0 OID 0)
+-- TOC entry 6264 (class 0 OID 0)
 -- Dependencies: 372
 -- Name: TABLE saml_relay_states; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5284,7 +6972,7 @@ CREATE TABLE auth.schema_migrations (
 ALTER TABLE auth.schema_migrations OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6018 (class 0 OID 0)
+-- TOC entry 6266 (class 0 OID 0)
 -- Dependencies: 357
 -- Name: TABLE schema_migrations; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5309,14 +6997,16 @@ CREATE TABLE auth.sessions (
     user_agent text,
     ip inet,
     tag text,
-    oauth_client_id uuid
+    oauth_client_id uuid,
+    refresh_token_hmac_key text,
+    refresh_token_counter bigint
 );
 
 
 ALTER TABLE auth.sessions OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6019 (class 0 OID 0)
+-- TOC entry 6267 (class 0 OID 0)
 -- Dependencies: 365
 -- Name: TABLE sessions; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5325,12 +7015,30 @@ COMMENT ON TABLE auth.sessions IS 'Auth: Stores session data associated to a use
 
 
 --
--- TOC entry 6020 (class 0 OID 0)
+-- TOC entry 6268 (class 0 OID 0)
 -- Dependencies: 365
 -- Name: COLUMN sessions.not_after; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
 COMMENT ON COLUMN auth.sessions.not_after IS 'Auth: Not after is a nullable column that contains a timestamp after which the session should be regarded as expired.';
+
+
+--
+-- TOC entry 6269 (class 0 OID 0)
+-- Dependencies: 365
+-- Name: COLUMN sessions.refresh_token_hmac_key; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.sessions.refresh_token_hmac_key IS 'Holds a HMAC-SHA256 key used to sign refresh tokens for this session.';
+
+
+--
+-- TOC entry 6270 (class 0 OID 0)
+-- Dependencies: 365
+-- Name: COLUMN sessions.refresh_token_counter; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.sessions.refresh_token_counter IS 'Holds the ID (counter) of the last issued refresh token.';
 
 
 --
@@ -5351,7 +7059,7 @@ CREATE TABLE auth.sso_domains (
 ALTER TABLE auth.sso_domains OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6022 (class 0 OID 0)
+-- TOC entry 6272 (class 0 OID 0)
 -- Dependencies: 370
 -- Name: TABLE sso_domains; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5377,7 +7085,7 @@ CREATE TABLE auth.sso_providers (
 ALTER TABLE auth.sso_providers OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6024 (class 0 OID 0)
+-- TOC entry 6274 (class 0 OID 0)
 -- Dependencies: 369
 -- Name: TABLE sso_providers; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5386,7 +7094,7 @@ COMMENT ON TABLE auth.sso_providers IS 'Auth: Manages SSO identity provider info
 
 
 --
--- TOC entry 6025 (class 0 OID 0)
+-- TOC entry 6275 (class 0 OID 0)
 -- Dependencies: 369
 -- Name: COLUMN sso_providers.resource_id; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5442,7 +7150,7 @@ CREATE TABLE auth.users (
 ALTER TABLE auth.users OWNER TO supabase_auth_admin;
 
 --
--- TOC entry 6027 (class 0 OID 0)
+-- TOC entry 6277 (class 0 OID 0)
 -- Dependencies: 352
 -- Name: TABLE users; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5451,7 +7159,7 @@ COMMENT ON TABLE auth.users IS 'Auth: Stores user login data within a secure sch
 
 
 --
--- TOC entry 6028 (class 0 OID 0)
+-- TOC entry 6278 (class 0 OID 0)
 -- Dependencies: 352
 -- Name: COLUMN users.is_sso_user; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
@@ -5504,7 +7212,7 @@ CREATE SEQUENCE public.carrito_compra_id_seq
 ALTER SEQUENCE public.carrito_compra_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6033 (class 0 OID 0)
+-- TOC entry 6283 (class 0 OID 0)
 -- Dependencies: 480
 -- Name: carrito_compra_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5544,7 +7252,7 @@ CREATE SEQUENCE public.categoria_id_seq
 ALTER SEQUENCE public.categoria_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6036 (class 0 OID 0)
+-- TOC entry 6286 (class 0 OID 0)
 -- Dependencies: 407
 -- Name: categoria_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5586,7 +7294,7 @@ CREATE SEQUENCE public.ciudad_id_seq
 ALTER SEQUENCE public.ciudad_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6039 (class 0 OID 0)
+-- TOC entry 6289 (class 0 OID 0)
 -- Dependencies: 389
 -- Name: ciudad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5603,7 +7311,6 @@ CREATE TABLE public.cliente (
     id bigint NOT NULL,
     nombre character varying(60) NOT NULL,
     apellidos character varying(60) NOT NULL,
-    correo character varying(100) NOT NULL,
     telefono character varying(25),
     contrasena character varying(255) NOT NULL,
     razon_social character varying(150),
@@ -5621,23 +7328,31 @@ CREATE TABLE public.cliente (
     estado_sunat character varying(50),
     condicion_sunat character varying(50),
     actividad_economica text,
-    fecha_consulta_sunat timestamp with time zone
+    fecha_consulta_sunat timestamp with time zone,
+    correo character varying,
+    tipo_empresa character varying(150),
+    es_buen_contribuyente boolean DEFAULT false,
+    es_agente_retencion boolean DEFAULT false,
+    notas_internas text,
+    requiere_epp boolean,
+    "requisitos_recojo text" text,
+    CONSTRAINT cliente_correo_check CHECK ((length((correo)::text) <= 100))
 );
 
 
 ALTER TABLE public.cliente OWNER TO postgres;
 
 --
--- TOC entry 6041 (class 0 OID 0)
+-- TOC entry 6291 (class 0 OID 0)
 -- Dependencies: 419
 -- Name: TABLE cliente; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.cliente IS 'Base de datos de clientes B2B (empresas y personas naturales)';
+COMMENT ON TABLE public.cliente IS 'Tabla principal de clientes. Incluye campos de SUNAT para empresas (RUC) y datos personales para personas naturales (DNI).';
 
 
 --
--- TOC entry 6042 (class 0 OID 0)
+-- TOC entry 6292 (class 0 OID 0)
 -- Dependencies: 419
 -- Name: COLUMN cliente.estado_sunat; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -5646,7 +7361,7 @@ COMMENT ON COLUMN public.cliente.estado_sunat IS 'Estado tributario según SUNAT
 
 
 --
--- TOC entry 6043 (class 0 OID 0)
+-- TOC entry 6293 (class 0 OID 0)
 -- Dependencies: 419
 -- Name: COLUMN cliente.condicion_sunat; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -5655,7 +7370,7 @@ COMMENT ON COLUMN public.cliente.condicion_sunat IS 'Condición tributaria segú
 
 
 --
--- TOC entry 6044 (class 0 OID 0)
+-- TOC entry 6294 (class 0 OID 0)
 -- Dependencies: 419
 -- Name: COLUMN cliente.actividad_economica; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -5664,12 +7379,48 @@ COMMENT ON COLUMN public.cliente.actividad_economica IS 'Actividad económica pr
 
 
 --
--- TOC entry 6045 (class 0 OID 0)
+-- TOC entry 6295 (class 0 OID 0)
 -- Dependencies: 419
 -- Name: COLUMN cliente.fecha_consulta_sunat; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON COLUMN public.cliente.fecha_consulta_sunat IS 'Fecha y hora de última consulta a la API de SUNAT';
+
+
+--
+-- TOC entry 6296 (class 0 OID 0)
+-- Dependencies: 419
+-- Name: COLUMN cliente.correo; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cliente.correo IS 'Recomendado para Clientes Naturales';
+
+
+--
+-- TOC entry 6297 (class 0 OID 0)
+-- Dependencies: 419
+-- Name: COLUMN cliente.tipo_empresa; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cliente.tipo_empresa IS 'Forma jurídica de la empresa según SUNAT (ej: SOCIEDAD ANONIMA, SOCIEDAD ANONIMA CERRADA, E.I.R.L., S.R.L.)';
+
+
+--
+-- TOC entry 6298 (class 0 OID 0)
+-- Dependencies: 419
+-- Name: COLUMN cliente.es_buen_contribuyente; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cliente.es_buen_contribuyente IS 'Indica si la empresa tiene la condición de "Buen Contribuyente" según SUNAT (derecho a deducción anticipada de IGV)';
+
+
+--
+-- TOC entry 6299 (class 0 OID 0)
+-- Dependencies: 419
+-- Name: COLUMN cliente.es_agente_retencion; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cliente.es_agente_retencion IS 'Indica si la empresa es Agente de Retención del IGV según SUNAT';
 
 
 --
@@ -5688,7 +7439,7 @@ CREATE SEQUENCE public.cliente_id_seq
 ALTER SEQUENCE public.cliente_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6047 (class 0 OID 0)
+-- TOC entry 6301 (class 0 OID 0)
 -- Dependencies: 418
 -- Name: cliente_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5806,7 +7557,7 @@ CREATE SEQUENCE public.comunicacion_solicitud_id_seq
 ALTER SEQUENCE public.comunicacion_solicitud_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6053 (class 0 OID 0)
+-- TOC entry 6307 (class 0 OID 0)
 -- Dependencies: 447
 -- Name: comunicacion_solicitud_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5857,7 +7608,7 @@ CREATE SEQUENCE public.condiciones_comerciales_id_seq
 ALTER SEQUENCE public.condiciones_comerciales_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6056 (class 0 OID 0)
+-- TOC entry 6310 (class 0 OID 0)
 -- Dependencies: 403
 -- Name: condiciones_comerciales_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5931,7 +7682,7 @@ CREATE SEQUENCE public.configuracion_fe_id_seq
 ALTER SEQUENCE public.configuracion_fe_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6060 (class 0 OID 0)
+-- TOC entry 6314 (class 0 OID 0)
 -- Dependencies: 428
 -- Name: configuracion_fe_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -5984,7 +7735,7 @@ CREATE TABLE public.contacto_empresa (
 ALTER TABLE public.contacto_empresa OWNER TO postgres;
 
 --
--- TOC entry 6063 (class 0 OID 0)
+-- TOC entry 6317 (class 0 OID 0)
 -- Dependencies: 518
 -- Name: TABLE contacto_empresa; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -5993,7 +7744,7 @@ COMMENT ON TABLE public.contacto_empresa IS 'Contactos operativos de clientes ti
 
 
 --
--- TOC entry 6064 (class 0 OID 0)
+-- TOC entry 6318 (class 0 OID 0)
 -- Dependencies: 518
 -- Name: COLUMN contacto_empresa.cargo; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6002,7 +7753,7 @@ COMMENT ON COLUMN public.contacto_empresa.cargo IS 'Posición laboral en la empr
 
 
 --
--- TOC entry 6065 (class 0 OID 0)
+-- TOC entry 6319 (class 0 OID 0)
 -- Dependencies: 518
 -- Name: COLUMN contacto_empresa.es_contacto_principal; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6026,7 +7777,7 @@ CREATE SEQUENCE public.contacto_empresa_id_seq
 ALTER SEQUENCE public.contacto_empresa_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6067 (class 0 OID 0)
+-- TOC entry 6321 (class 0 OID 0)
 -- Dependencies: 517
 -- Name: contacto_empresa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6054,7 +7805,7 @@ CREATE TABLE public.contacto_rol (
 ALTER TABLE public.contacto_rol OWNER TO postgres;
 
 --
--- TOC entry 6069 (class 0 OID 0)
+-- TOC entry 6323 (class 0 OID 0)
 -- Dependencies: 522
 -- Name: TABLE contacto_rol; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6063,7 +7814,7 @@ COMMENT ON TABLE public.contacto_rol IS 'Un contacto puede tener múltiples role
 
 
 --
--- TOC entry 6070 (class 0 OID 0)
+-- TOC entry 6324 (class 0 OID 0)
 -- Dependencies: 522
 -- Name: COLUMN contacto_rol.nivel_influencia; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6087,7 +7838,7 @@ CREATE SEQUENCE public.contacto_rol_id_seq
 ALTER SEQUENCE public.contacto_rol_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6072 (class 0 OID 0)
+-- TOC entry 6326 (class 0 OID 0)
 -- Dependencies: 521
 -- Name: contacto_rol_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6137,7 +7888,7 @@ CREATE SEQUENCE public.costos_operativos_id_seq
 ALTER SEQUENCE public.costos_operativos_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6075 (class 0 OID 0)
+-- TOC entry 6329 (class 0 OID 0)
 -- Dependencies: 484
 -- Name: costos_operativos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6202,7 +7953,7 @@ CREATE TABLE public.cotizacion (
 ALTER TABLE public.cotizacion OWNER TO postgres;
 
 --
--- TOC entry 6077 (class 0 OID 0)
+-- TOC entry 6331 (class 0 OID 0)
 -- Dependencies: 461
 -- Name: TABLE cotizacion; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6211,7 +7962,7 @@ COMMENT ON TABLE public.cotizacion IS 'Cotizaciones generadas para clientes con 
 
 
 --
--- TOC entry 6078 (class 0 OID 0)
+-- TOC entry 6332 (class 0 OID 0)
 -- Dependencies: 461
 -- Name: COLUMN cotizacion.margen_bruto_total; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6280,7 +8031,7 @@ CREATE SEQUENCE public.cotizacion_detalle_id_seq
 ALTER SEQUENCE public.cotizacion_detalle_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6081 (class 0 OID 0)
+-- TOC entry 6335 (class 0 OID 0)
 -- Dependencies: 462
 -- Name: cotizacion_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6304,7 +8055,7 @@ CREATE SEQUENCE public.cotizacion_id_seq
 ALTER SEQUENCE public.cotizacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6083 (class 0 OID 0)
+-- TOC entry 6337 (class 0 OID 0)
 -- Dependencies: 460
 -- Name: cotizacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6369,7 +8120,7 @@ CREATE SEQUENCE public.crm_actividad_id_seq
 ALTER SEQUENCE public.crm_actividad_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6086 (class 0 OID 0)
+-- TOC entry 6340 (class 0 OID 0)
 -- Dependencies: 456
 -- Name: crm_actividad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6414,7 +8165,7 @@ CREATE SEQUENCE public.crm_etapa_id_seq
 ALTER SEQUENCE public.crm_etapa_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6089 (class 0 OID 0)
+-- TOC entry 6343 (class 0 OID 0)
 -- Dependencies: 413
 -- Name: crm_etapa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6462,7 +8213,7 @@ CREATE SEQUENCE public.crm_nota_id_seq
 ALTER SEQUENCE public.crm_nota_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6092 (class 0 OID 0)
+-- TOC entry 6346 (class 0 OID 0)
 -- Dependencies: 458
 -- Name: crm_nota_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6516,7 +8267,7 @@ CREATE SEQUENCE public.crowdlending_operacion_id_seq
 ALTER SEQUENCE public.crowdlending_operacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6095 (class 0 OID 0)
+-- TOC entry 6349 (class 0 OID 0)
 -- Dependencies: 478
 -- Name: crowdlending_operacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6579,12 +8330,87 @@ CREATE SEQUENCE public.cuenta_por_cobrar_id_seq
 ALTER SEQUENCE public.cuenta_por_cobrar_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6098 (class 0 OID 0)
+-- TOC entry 6352 (class 0 OID 0)
 -- Dependencies: 472
 -- Name: cuenta_por_cobrar_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.cuenta_por_cobrar_id_seq OWNED BY public.cuenta_por_cobrar.id;
+
+
+--
+-- TOC entry 529 (class 1259 OID 147833)
+-- Name: cuenta_por_pagar_proveedor; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cuenta_por_pagar_proveedor (
+    id bigint NOT NULL,
+    codigo character varying(30) NOT NULL,
+    id_proveedor bigint NOT NULL,
+    id_pedido bigint,
+    numero_factura_proveedor character varying(50),
+    id_moneda bigint NOT NULL,
+    monto_total numeric(12,2) NOT NULL,
+    monto_pagado numeric(12,2) DEFAULT 0,
+    monto_pendiente numeric(12,2) GENERATED ALWAYS AS ((monto_total - monto_pagado)) STORED,
+    tipo_cambio_registro numeric(10,4) DEFAULT 1.0000,
+    fecha_emision date DEFAULT CURRENT_DATE NOT NULL,
+    fecha_vencimiento date NOT NULL,
+    dias_credito smallint DEFAULT 30,
+    estado character varying(20) DEFAULT 'PENDIENTE'::character varying,
+    incluye_igv boolean DEFAULT true,
+    porcentaje_igv numeric(5,2) DEFAULT 18.00,
+    monto_sin_igv numeric(12,2),
+    monto_igv numeric(12,2),
+    descuento_pronto_pago numeric(5,2) DEFAULT 0,
+    monto_descuento numeric(12,2) DEFAULT 0,
+    concepto text,
+    observaciones text,
+    creado_por bigint,
+    fecha_creacion timestamp without time zone DEFAULT now(),
+    actualizado_por bigint,
+    fecha_actualizacion timestamp without time zone,
+    activo boolean DEFAULT true,
+    CONSTRAINT cuenta_por_pagar_proveedor_estado_check CHECK (((estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PARCIAL'::character varying, 'PAGADO'::character varying, 'VENCIDO'::character varying, 'ANULADO'::character varying])::text[]))),
+    CONSTRAINT cuenta_por_pagar_proveedor_monto_pagado_check CHECK ((monto_pagado >= (0)::numeric)),
+    CONSTRAINT cuenta_por_pagar_proveedor_monto_total_check CHECK ((monto_total > (0)::numeric)),
+    CONSTRAINT fecha_vencimiento_valida CHECK ((fecha_vencimiento >= fecha_emision))
+);
+
+
+ALTER TABLE public.cuenta_por_pagar_proveedor OWNER TO postgres;
+
+--
+-- TOC entry 6354 (class 0 OID 0)
+-- Dependencies: 529
+-- Name: TABLE cuenta_por_pagar_proveedor; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.cuenta_por_pagar_proveedor IS 'Cuentas por pagar a proveedores. Controla facturas recibidas de proveedores y sus pagos';
+
+
+--
+-- TOC entry 528 (class 1259 OID 147832)
+-- Name: cuenta_por_pagar_proveedor_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cuenta_por_pagar_proveedor_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cuenta_por_pagar_proveedor_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 6356 (class 0 OID 0)
+-- Dependencies: 528
+-- Name: cuenta_por_pagar_proveedor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cuenta_por_pagar_proveedor_id_seq OWNED BY public.cuenta_por_pagar_proveedor.id;
 
 
 --
@@ -6631,7 +8457,7 @@ CREATE SEQUENCE public.detalle_solicitud_cotizacion_id_seq
 ALTER SEQUENCE public.detalle_solicitud_cotizacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6101 (class 0 OID 0)
+-- TOC entry 6359 (class 0 OID 0)
 -- Dependencies: 452
 -- Name: detalle_solicitud_cotizacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6677,7 +8503,7 @@ CREATE TABLE public.direccion_cliente (
 ALTER TABLE public.direccion_cliente OWNER TO postgres;
 
 --
--- TOC entry 6103 (class 0 OID 0)
+-- TOC entry 6361 (class 0 OID 0)
 -- Dependencies: 444
 -- Name: COLUMN direccion_cliente.tipo_direccion; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6686,7 +8512,7 @@ COMMENT ON COLUMN public.direccion_cliente.tipo_direccion IS 'Tipo: FISCAL (de S
 
 
 --
--- TOC entry 6104 (class 0 OID 0)
+-- TOC entry 6362 (class 0 OID 0)
 -- Dependencies: 444
 -- Name: COLUMN direccion_cliente.origen_sunat; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6695,7 +8521,7 @@ COMMENT ON COLUMN public.direccion_cliente.origen_sunat IS 'TRUE si la direcció
 
 
 --
--- TOC entry 6105 (class 0 OID 0)
+-- TOC entry 6363 (class 0 OID 0)
 -- Dependencies: 444
 -- Name: COLUMN direccion_cliente.ubigeo_sunat; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -6719,7 +8545,7 @@ CREATE SEQUENCE public.direccion_cliente_id_seq
 ALTER SEQUENCE public.direccion_cliente_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6107 (class 0 OID 0)
+-- TOC entry 6365 (class 0 OID 0)
 -- Dependencies: 443
 -- Name: direccion_cliente_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6764,7 +8590,7 @@ CREATE SEQUENCE public.disponibilidad_id_seq
 ALTER SEQUENCE public.disponibilidad_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6110 (class 0 OID 0)
+-- TOC entry 6368 (class 0 OID 0)
 -- Dependencies: 397
 -- Name: disponibilidad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6781,7 +8607,7 @@ CREATE TABLE public.distrito (
     id bigint NOT NULL,
     codigo character varying(10) NOT NULL,
     nombre character varying(100) NOT NULL,
-    id_ciudad bigint NOT NULL,
+    id_provincia bigint NOT NULL,
     codigo_postal character varying(20),
     descripcion text,
     activo boolean DEFAULT true NOT NULL,
@@ -6848,7 +8674,7 @@ CREATE SEQUENCE public.empresa_emisora_id_seq
 ALTER SEQUENCE public.empresa_emisora_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6115 (class 0 OID 0)
+-- TOC entry 6373 (class 0 OID 0)
 -- Dependencies: 420
 -- Name: empresa_emisora_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6895,7 +8721,7 @@ CREATE SEQUENCE public.estado_cotizacion_id_seq
 ALTER SEQUENCE public.estado_cotizacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6118 (class 0 OID 0)
+-- TOC entry 6376 (class 0 OID 0)
 -- Dependencies: 496
 -- Name: estado_cotizacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -6950,7 +8776,7 @@ CREATE SEQUENCE public.factoring_operacion_id_seq
 ALTER SEQUENCE public.factoring_operacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6121 (class 0 OID 0)
+-- TOC entry 6379 (class 0 OID 0)
 -- Dependencies: 476
 -- Name: factoring_operacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7054,7 +8880,7 @@ CREATE SEQUENCE public.factura_detalle_id_seq
 ALTER SEQUENCE public.factura_detalle_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6125 (class 0 OID 0)
+-- TOC entry 6383 (class 0 OID 0)
 -- Dependencies: 470
 -- Name: factura_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7078,7 +8904,7 @@ CREATE SEQUENCE public.factura_id_seq
 ALTER SEQUENCE public.factura_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6127 (class 0 OID 0)
+-- TOC entry 6385 (class 0 OID 0)
 -- Dependencies: 468
 -- Name: factura_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7122,12 +8948,108 @@ CREATE SEQUENCE public.forma_pago_id_seq
 ALTER SEQUENCE public.forma_pago_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6130 (class 0 OID 0)
+-- TOC entry 6388 (class 0 OID 0)
 -- Dependencies: 401
 -- Name: forma_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.forma_pago_id_seq OWNED BY public.forma_pago.id;
+
+
+--
+-- TOC entry 542 (class 1259 OID 158835)
+-- Name: historial_cotizacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.historial_cotizacion (
+    id bigint NOT NULL,
+    id_cotizacion bigint NOT NULL,
+    numero_cotizacion character varying(20) NOT NULL,
+    version integer DEFAULT 1,
+    tipo_cambio character varying(50) NOT NULL,
+    descripcion text,
+    campo_modificado character varying(100),
+    valor_anterior text,
+    valor_nuevo text,
+    subtotal_anterior numeric(12,2),
+    subtotal_nuevo numeric(12,2),
+    total_anterior numeric(12,2),
+    total_nuevo numeric(12,2),
+    total_soles_anterior numeric(12,2),
+    total_soles_nuevo numeric(12,2),
+    margen_anterior numeric(5,2),
+    margen_nuevo numeric(5,2),
+    costo_proveedor_anterior numeric(12,2),
+    costo_proveedor_nuevo numeric(12,2),
+    tipo_cambio_usd_momento numeric(10,4),
+    productos_afectados jsonb,
+    id_usuario bigint NOT NULL,
+    nombre_usuario character varying(100),
+    fecha_cambio timestamp without time zone DEFAULT now() NOT NULL,
+    ip_origen inet,
+    user_agent text,
+    motivo_cambio text,
+    requiere_aprobacion boolean DEFAULT false,
+    aprobado_por bigint,
+    fecha_aprobacion timestamp without time zone,
+    activo boolean DEFAULT true,
+    created_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT tipo_cambio_valido CHECK (((tipo_cambio)::text = ANY ((ARRAY['CREACION'::character varying, 'MODIFICACION_MONTO'::character varying, 'MODIFICACION_DETALLE'::character varying, 'CAMBIO_CLIENTE'::character varying, 'CAMBIO_CONDICIONES'::character varying, 'CAMBIO_TC'::character varying, 'AGREGADO_PRODUCTO'::character varying, 'ELIMINADO_PRODUCTO'::character varying, 'MODIFICADO_PRODUCTO'::character varying, 'APLICADO_DESCUENTO'::character varying, 'REVISION'::character varying, 'DUPLICACION'::character varying, 'ANULACION'::character varying, 'CAMBIO_ESTADO'::character varying, 'ENVIO_CLIENTE'::character varying, 'SEGUIMIENTO'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.historial_cotizacion OWNER TO postgres;
+
+--
+-- TOC entry 6390 (class 0 OID 0)
+-- Dependencies: 542
+-- Name: TABLE historial_cotizacion; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.historial_cotizacion IS 'Historial completo de todos los cambios realizados en cotizaciones.
+Complementa transicion_estado_cotizacion con cambios en datos/valores.';
+
+
+--
+-- TOC entry 6391 (class 0 OID 0)
+-- Dependencies: 542
+-- Name: COLUMN historial_cotizacion.version; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.historial_cotizacion.version IS 'Número de versión de la cotización después de este cambio';
+
+
+--
+-- TOC entry 6392 (class 0 OID 0)
+-- Dependencies: 542
+-- Name: COLUMN historial_cotizacion.productos_afectados; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.historial_cotizacion.productos_afectados IS 'JSON con detalles de productos modificados: [{sku, nombre, cantidad_ant, cantidad_new, precio_ant, precio_new}]';
+
+
+--
+-- TOC entry 541 (class 1259 OID 158834)
+-- Name: historial_cotizacion_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.historial_cotizacion_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.historial_cotizacion_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 6394 (class 0 OID 0)
+-- Dependencies: 541
+-- Name: historial_cotizacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.historial_cotizacion_id_seq OWNED BY public.historial_cotizacion.id;
 
 
 --
@@ -7183,7 +9105,7 @@ CREATE SEQUENCE public.historial_precios_id_seq
 ALTER SEQUENCE public.historial_precios_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6133 (class 0 OID 0)
+-- TOC entry 6397 (class 0 OID 0)
 -- Dependencies: 482
 -- Name: historial_precios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7230,7 +9152,7 @@ CREATE SEQUENCE public.inversion_categoria_id_seq
 ALTER SEQUENCE public.inversion_categoria_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6136 (class 0 OID 0)
+-- TOC entry 6400 (class 0 OID 0)
 -- Dependencies: 486
 -- Name: inversion_categoria_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7290,7 +9212,7 @@ CREATE SEQUENCE public.marca_id_seq
 ALTER SEQUENCE public.marca_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6140 (class 0 OID 0)
+-- TOC entry 6404 (class 0 OID 0)
 -- Dependencies: 409
 -- Name: marca_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7336,7 +9258,7 @@ CREATE SEQUENCE public.moneda_id_seq
 ALTER SEQUENCE public.moneda_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6143 (class 0 OID 0)
+-- TOC entry 6407 (class 0 OID 0)
 -- Dependencies: 385
 -- Name: moneda_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7345,7 +9267,7 @@ ALTER SEQUENCE public.moneda_id_seq OWNED BY public.moneda.id;
 
 
 --
--- TOC entry 527 (class 1259 OID 141537)
+-- TOC entry 525 (class 1259 OID 141537)
 -- Name: notificaciones; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -7367,8 +9289,8 @@ CREATE TABLE public.notificaciones (
 ALTER TABLE public.notificaciones OWNER TO postgres;
 
 --
--- TOC entry 6145 (class 0 OID 0)
--- Dependencies: 527
+-- TOC entry 6409 (class 0 OID 0)
+-- Dependencies: 525
 -- Name: TABLE notificaciones; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -7376,8 +9298,8 @@ COMMENT ON TABLE public.notificaciones IS 'Notificaciones del sistema para usuar
 
 
 --
--- TOC entry 6146 (class 0 OID 0)
--- Dependencies: 527
+-- TOC entry 6410 (class 0 OID 0)
+-- Dependencies: 525
 -- Name: COLUMN notificaciones.producto_nombre; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -7385,8 +9307,8 @@ COMMENT ON COLUMN public.notificaciones.producto_nombre IS 'Nombre del producto 
 
 
 --
--- TOC entry 6147 (class 0 OID 0)
--- Dependencies: 527
+-- TOC entry 6411 (class 0 OID 0)
+-- Dependencies: 525
 -- Name: COLUMN notificaciones.usuario_id; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -7394,7 +9316,7 @@ COMMENT ON COLUMN public.notificaciones.usuario_id IS 'NULL significa notificaci
 
 
 --
--- TOC entry 526 (class 1259 OID 141536)
+-- TOC entry 524 (class 1259 OID 141536)
 -- Name: notificaciones_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -7409,8 +9331,8 @@ CREATE SEQUENCE public.notificaciones_id_seq
 ALTER SEQUENCE public.notificaciones_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6149 (class 0 OID 0)
--- Dependencies: 526
+-- TOC entry 6413 (class 0 OID 0)
+-- Dependencies: 524
 -- Name: notificaciones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -7484,12 +9406,84 @@ CREATE SEQUENCE public.oportunidad_id_seq
 ALTER SEQUENCE public.oportunidad_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6152 (class 0 OID 0)
+-- TOC entry 6416 (class 0 OID 0)
 -- Dependencies: 454
 -- Name: oportunidad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.oportunidad_id_seq OWNED BY public.oportunidad.id;
+
+
+--
+-- TOC entry 531 (class 1259 OID 147889)
+-- Name: pago_proveedor; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.pago_proveedor (
+    id bigint NOT NULL,
+    codigo character varying(30) NOT NULL,
+    id_cuenta_por_pagar bigint NOT NULL,
+    id_proveedor bigint NOT NULL,
+    id_forma_pago bigint NOT NULL,
+    id_moneda bigint NOT NULL,
+    monto_pagado numeric(12,2) NOT NULL,
+    tipo_cambio_pago numeric(10,4) DEFAULT 1.0000,
+    fecha_pago date DEFAULT CURRENT_DATE NOT NULL,
+    fecha_registro timestamp without time zone DEFAULT now(),
+    numero_operacion character varying(100),
+    banco_origen character varying(100),
+    banco_destino character varying(100),
+    cuenta_destino character varying(50),
+    comprobante_pago character varying(200),
+    voucher_operacion character varying(200),
+    estado character varying(20) DEFAULT 'PROCESADO'::character varying,
+    validado_por bigint,
+    fecha_validacion timestamp without time zone,
+    concepto text,
+    observaciones text,
+    registrado_por bigint NOT NULL,
+    anulado_por bigint,
+    fecha_anulacion timestamp without time zone,
+    motivo_anulacion text,
+    activo boolean DEFAULT true,
+    CONSTRAINT pago_proveedor_estado_check CHECK (((estado)::text = ANY ((ARRAY['PROCESADO'::character varying, 'ANULADO'::character varying, 'REVERTIDO'::character varying])::text[]))),
+    CONSTRAINT pago_proveedor_monto_pagado_check CHECK ((monto_pagado > (0)::numeric))
+);
+
+
+ALTER TABLE public.pago_proveedor OWNER TO postgres;
+
+--
+-- TOC entry 6418 (class 0 OID 0)
+-- Dependencies: 531
+-- Name: TABLE pago_proveedor; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.pago_proveedor IS 'Registro de pagos realizados a proveedores. Cada pago puede cubrir total o parcialmente una cuenta por pagar';
+
+
+--
+-- TOC entry 530 (class 1259 OID 147888)
+-- Name: pago_proveedor_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.pago_proveedor_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.pago_proveedor_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 6420 (class 0 OID 0)
+-- Dependencies: 530
+-- Name: pago_proveedor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.pago_proveedor_id_seq OWNED BY public.pago_proveedor.id;
 
 
 --
@@ -7543,7 +9537,7 @@ CREATE SEQUENCE public.pago_recibido_id_seq
 ALTER SEQUENCE public.pago_recibido_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6155 (class 0 OID 0)
+-- TOC entry 6423 (class 0 OID 0)
 -- Dependencies: 474
 -- Name: pago_recibido_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7595,7 +9589,7 @@ CREATE SEQUENCE public.pais_id_seq
 ALTER SEQUENCE public.pais_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6158 (class 0 OID 0)
+-- TOC entry 6426 (class 0 OID 0)
 -- Dependencies: 387
 -- Name: pais_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7716,7 +9710,7 @@ CREATE SEQUENCE public.pedido_detalle_id_seq
 ALTER SEQUENCE public.pedido_detalle_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6162 (class 0 OID 0)
+-- TOC entry 6430 (class 0 OID 0)
 -- Dependencies: 466
 -- Name: pedido_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7740,7 +9734,7 @@ CREATE SEQUENCE public.pedido_id_seq
 ALTER SEQUENCE public.pedido_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6164 (class 0 OID 0)
+-- TOC entry 6432 (class 0 OID 0)
 -- Dependencies: 464
 -- Name: pedido_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7782,7 +9776,7 @@ CREATE SEQUENCE public.procesamiento_archivo_log_id_seq
 ALTER SEQUENCE public.procesamiento_archivo_log_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6167 (class 0 OID 0)
+-- TOC entry 6435 (class 0 OID 0)
 -- Dependencies: 450
 -- Name: procesamiento_archivo_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7800,7 +9794,7 @@ CREATE TABLE public.producto (
     sku_producto character varying(50),
     cod_producto_marca character varying(30),
     nombre character varying(150) NOT NULL,
-    descripcion_corta character varying(500),
+    descripcion_corta text,
     descripcion_detallada text,
     id_categoria bigint NOT NULL,
     id_marca bigint NOT NULL,
@@ -7838,7 +9832,8 @@ CREATE TABLE public.producto (
     tiene_seo boolean DEFAULT false,
     estado_producto character varying(20) DEFAULT 'nuevo'::character varying,
     visto_por bigint[] DEFAULT ARRAY[]::bigint[],
-    CONSTRAINT producto_descripcion_corta_check CHECK ((length((descripcion_corta)::text) < 500)),
+    imagen_principal_seo jsonb,
+    galeria_imagenes_seo jsonb[],
     CONSTRAINT valid_estado_producto CHECK (((estado_producto)::text = ANY ((ARRAY['nuevo'::character varying, 'visto'::character varying, 'completo'::character varying])::text[])))
 );
 
@@ -7846,7 +9841,7 @@ CREATE TABLE public.producto (
 ALTER TABLE public.producto OWNER TO postgres;
 
 --
--- TOC entry 6169 (class 0 OID 0)
+-- TOC entry 6437 (class 0 OID 0)
 -- Dependencies: 434
 -- Name: TABLE producto; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -7855,7 +9850,16 @@ COMMENT ON TABLE public.producto IS 'Catálogo principal de productos del market
 
 
 --
--- TOC entry 6170 (class 0 OID 0)
+-- TOC entry 6438 (class 0 OID 0)
+-- Dependencies: 434
+-- Name: COLUMN producto.descripcion_corta; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.producto.descripcion_corta IS 'Descripción breve del producto para listados y catálogo (sin límite de caracteres)';
+
+
+--
+-- TOC entry 6439 (class 0 OID 0)
 -- Dependencies: 434
 -- Name: COLUMN producto.tiene_imagen; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -7864,7 +9868,7 @@ COMMENT ON COLUMN public.producto.tiene_imagen IS 'TRUE si el producto tiene ima
 
 
 --
--- TOC entry 6171 (class 0 OID 0)
+-- TOC entry 6440 (class 0 OID 0)
 -- Dependencies: 434
 -- Name: COLUMN producto.tiene_seo; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -7873,7 +9877,7 @@ COMMENT ON COLUMN public.producto.tiene_seo IS 'TRUE si el producto tiene meta_d
 
 
 --
--- TOC entry 6172 (class 0 OID 0)
+-- TOC entry 6441 (class 0 OID 0)
 -- Dependencies: 434
 -- Name: COLUMN producto.estado_producto; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -7882,12 +9886,30 @@ COMMENT ON COLUMN public.producto.estado_producto IS 'Estado: nuevo, visto, comp
 
 
 --
--- TOC entry 6173 (class 0 OID 0)
+-- TOC entry 6442 (class 0 OID 0)
 -- Dependencies: 434
 -- Name: COLUMN producto.visto_por; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON COLUMN public.producto.visto_por IS 'Array de IDs de usuarios que vieron el producto';
+
+
+--
+-- TOC entry 6443 (class 0 OID 0)
+-- Dependencies: 434
+-- Name: COLUMN producto.imagen_principal_seo; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.producto.imagen_principal_seo IS 'Datos SEO de la imagen principal: alt_text, title, description, keywords, filename';
+
+
+--
+-- TOC entry 6444 (class 0 OID 0)
+-- Dependencies: 434
+-- Name: COLUMN producto.galeria_imagenes_seo; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.producto.galeria_imagenes_seo IS 'Array de datos SEO para cada imagen de la galería: [{alt_text, title, description, keywords, filename}, ...]';
 
 
 --
@@ -7911,6 +9933,8 @@ CREATE TABLE public.producto_precio_moneda (
     observaciones text,
     tipo_cambio_usado numeric(10,4),
     precio_proveedor numeric(12,4),
+    solo_precio_venta boolean DEFAULT false,
+    notas_marketing text,
     CONSTRAINT margen_valido CHECK (((margen_aplicado >= (0)::numeric) AND (margen_aplicado < (100)::numeric))),
     CONSTRAINT precio_positivo CHECK ((precio_venta > (0)::numeric)),
     CONSTRAINT precio_proveedor_positivo CHECK ((precio_proveedor > (0)::numeric))
@@ -7920,7 +9944,7 @@ CREATE TABLE public.producto_precio_moneda (
 ALTER TABLE public.producto_precio_moneda OWNER TO postgres;
 
 --
--- TOC entry 6175 (class 0 OID 0)
+-- TOC entry 6446 (class 0 OID 0)
 -- Dependencies: 514
 -- Name: COLUMN producto_precio_moneda.tipo_cambio_usado; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -7929,12 +9953,31 @@ COMMENT ON COLUMN public.producto_precio_moneda.tipo_cambio_usado IS 'Tipo de ca
 
 
 --
--- TOC entry 6176 (class 0 OID 0)
+-- TOC entry 6447 (class 0 OID 0)
 -- Dependencies: 514
 -- Name: COLUMN producto_precio_moneda.precio_proveedor; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON COLUMN public.producto_precio_moneda.precio_proveedor IS 'Precio interno del proveedor (confidencial)';
+
+
+--
+-- TOC entry 6448 (class 0 OID 0)
+-- Dependencies: 514
+-- Name: COLUMN producto_precio_moneda.solo_precio_venta; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.producto_precio_moneda.solo_precio_venta IS 'TRUE = Precio ingresado directamente por marketing sin calcular desde proveedor. 
+        Requiere que comercial complete la información del proveedor posteriormente.';
+
+
+--
+-- TOC entry 6449 (class 0 OID 0)
+-- Dependencies: 514
+-- Name: COLUMN producto_precio_moneda.notas_marketing; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.producto_precio_moneda.notas_marketing IS 'Notas agregadas por marketing al ingresar el precio de venta directamente';
 
 
 --
@@ -7953,7 +9996,7 @@ CREATE SEQUENCE public.producto_precio_moneda_id_seq
 ALTER SEQUENCE public.producto_precio_moneda_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6178 (class 0 OID 0)
+-- TOC entry 6451 (class 0 OID 0)
 -- Dependencies: 513
 -- Name: producto_precio_moneda_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -7982,10 +10025,10 @@ CREATE TABLE public.producto_proveedor (
     activo boolean DEFAULT true NOT NULL,
     fecha_creacion timestamp without time zone DEFAULT now(),
     fecha_actualizacion timestamp without time zone DEFAULT now(),
-    precio_cotizado numeric(12,4) NOT NULL,
+    precio_cotizado numeric(12,4),
     cotizacion_incluye_igv boolean DEFAULT false NOT NULL,
-    costo_sin_igv numeric(12,4) NOT NULL,
-    costo_con_igv numeric(12,4) NOT NULL,
+    costo_sin_igv numeric(12,4),
+    costo_con_igv numeric(12,4),
     notas_internas text,
     creado_por bigint,
     actualizado_por bigint,
@@ -7995,13 +10038,14 @@ CREATE TABLE public.producto_proveedor (
     descuento_3 numeric(5,2) DEFAULT 0.00,
     precio_final_con_descuentos numeric(12,4),
     descuento_total_porcentaje numeric(5,2) DEFAULT 0.00,
-    CONSTRAINT costo_con_igv_positivo CHECK ((costo_con_igv > (0)::numeric)),
-    CONSTRAINT costo_sin_igv_positivo CHECK ((costo_sin_igv > (0)::numeric)),
+    solo_relacion boolean DEFAULT false NOT NULL,
+    CONSTRAINT costo_con_igv_positivo_o_null CHECK (((costo_con_igv IS NULL) OR (costo_con_igv > (0)::numeric))),
+    CONSTRAINT costo_sin_igv_positivo_o_null CHECK (((costo_sin_igv IS NULL) OR (costo_sin_igv > (0)::numeric))),
     CONSTRAINT descuento_1_valido CHECK (((descuento_1 >= (0)::numeric) AND (descuento_1 <= (100)::numeric))),
     CONSTRAINT descuento_2_valido CHECK (((descuento_2 >= (0)::numeric) AND (descuento_2 <= (100)::numeric))),
     CONSTRAINT descuento_3_valido CHECK (((descuento_3 >= (0)::numeric) AND (descuento_3 <= (100)::numeric))),
     CONSTRAINT descuento_total_valido CHECK (((descuento_total_porcentaje >= (0)::numeric) AND (descuento_total_porcentaje < (100)::numeric))),
-    CONSTRAINT precio_cotizado_positivo CHECK ((precio_cotizado > (0)::numeric)),
+    CONSTRAINT precio_cotizado_positivo_o_null CHECK (((precio_cotizado IS NULL) OR (precio_cotizado > (0)::numeric))),
     CONSTRAINT precio_final_positivo CHECK (((precio_final_con_descuentos IS NULL) OR (precio_final_con_descuentos > (0)::numeric)))
 );
 
@@ -8009,7 +10053,7 @@ CREATE TABLE public.producto_proveedor (
 ALTER TABLE public.producto_proveedor OWNER TO postgres;
 
 --
--- TOC entry 6180 (class 0 OID 0)
+-- TOC entry 6453 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: TABLE producto_proveedor; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8018,7 +10062,7 @@ COMMENT ON TABLE public.producto_proveedor IS 'Relación many-to-many entre prod
 
 
 --
--- TOC entry 6181 (class 0 OID 0)
+-- TOC entry 6454 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: COLUMN producto_proveedor.tipo_cambio_usado; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8027,7 +10071,7 @@ COMMENT ON COLUMN public.producto_proveedor.tipo_cambio_usado IS 'Tipo de cambio
 
 
 --
--- TOC entry 6182 (class 0 OID 0)
+-- TOC entry 6455 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: COLUMN producto_proveedor.descuento_1; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8036,7 +10080,7 @@ COMMENT ON COLUMN public.producto_proveedor.descuento_1 IS 'Primer descuento ofr
 
 
 --
--- TOC entry 6183 (class 0 OID 0)
+-- TOC entry 6456 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: COLUMN producto_proveedor.descuento_2; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8045,7 +10089,7 @@ COMMENT ON COLUMN public.producto_proveedor.descuento_2 IS 'Segundo descuento of
 
 
 --
--- TOC entry 6184 (class 0 OID 0)
+-- TOC entry 6457 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: COLUMN producto_proveedor.descuento_3; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8054,7 +10098,7 @@ COMMENT ON COLUMN public.producto_proveedor.descuento_3 IS 'Tercer descuento ofr
 
 
 --
--- TOC entry 6185 (class 0 OID 0)
+-- TOC entry 6458 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: COLUMN producto_proveedor.precio_final_con_descuentos; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8063,12 +10107,21 @@ COMMENT ON COLUMN public.producto_proveedor.precio_final_con_descuentos IS 'Prec
 
 
 --
--- TOC entry 6186 (class 0 OID 0)
+-- TOC entry 6459 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: COLUMN producto_proveedor.descuento_total_porcentaje; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON COLUMN public.producto_proveedor.descuento_total_porcentaje IS 'Descuento total equivalente resultado de la aplicación en cascada';
+
+
+--
+-- TOC entry 6460 (class 0 OID 0)
+-- Dependencies: 436
+-- Name: COLUMN producto_proveedor.solo_relacion; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.producto_proveedor.solo_relacion IS 'TRUE si el proveedor está asociado solo como relación, sin precio cotizado. Cuando es TRUE, NO se ejecuta la calculadora/formula de costos. Usado SOLO por Marketing (ProductoForm). ProductoRapidoForm siempre usa precio_cotizado y fórmulas.';
 
 
 --
@@ -8087,7 +10140,7 @@ CREATE SEQUENCE public.producto_proveedor_id_seq
 ALTER SEQUENCE public.producto_proveedor_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6188 (class 0 OID 0)
+-- TOC entry 6462 (class 0 OID 0)
 -- Dependencies: 435
 -- Name: producto_proveedor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8111,7 +10164,7 @@ CREATE SEQUENCE public.producto_sku_seq
 ALTER SEQUENCE public.producto_sku_seq OWNER TO postgres;
 
 --
--- TOC entry 6190 (class 0 OID 0)
+-- TOC entry 6464 (class 0 OID 0)
 -- Dependencies: 433
 -- Name: producto_sku_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8160,12 +10213,26 @@ CREATE TABLE public.promocion_descuento (
     descuento_maximo numeric(12,2),
     aplicar_sobre character varying(20) DEFAULT 'PRECIO_FINAL'::character varying,
     activo boolean DEFAULT true,
-    CONSTRAINT tipo_aplicacion_valido CHECK (((tipo_aplicacion)::text = ANY (ARRAY[('GLOBAL'::character varying)::text, ('CATEGORIA'::character varying)::text, ('PRODUCTO'::character varying)::text, ('CLIENTE'::character varying)::text, ('RUBRO'::character varying)::text]))),
+    CONSTRAINT promocion_descuento_tipo_aplicacion_check CHECK (((tipo_aplicacion)::text = ANY ((ARRAY['GLOBAL'::character varying, 'PRODUCTO'::character varying, 'CATEGORIA'::character varying, 'CLIENTE'::character varying, 'MARCA'::character varying])::text[]))),
     CONSTRAINT tipo_descuento_valido CHECK (((tipo_descuento)::text = ANY (ARRAY[('PORCENTAJE'::character varying)::text, ('MONTO_FIJO'::character varying)::text, ('PRECIO_ESPECIAL'::character varying)::text])))
 );
 
 
 ALTER TABLE public.promocion_descuento OWNER TO postgres;
+
+--
+-- TOC entry 6467 (class 0 OID 0)
+-- Dependencies: 440
+-- Name: COLUMN promocion_descuento.tipo_aplicacion; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.promocion_descuento.tipo_aplicacion IS 'Tipo de aplicación de la promoción:
+- GLOBAL: Aplica a todos los productos
+- PRODUCTO: Aplica a un SKU específico (referencia_id = sku)
+- CATEGORIA: Aplica a toda una categoría (referencia_id = id_categoria)
+- MARCA: Aplica a todos los productos de una marca (referencia_id = id_marca)
+- CLIENTE: Aplica solo a un cliente específico (referencia_id = id_cliente)';
+
 
 --
 -- TOC entry 439 (class 1259 OID 67207)
@@ -8183,7 +10250,7 @@ CREATE SEQUENCE public.promocion_descuento_id_seq
 ALTER SEQUENCE public.promocion_descuento_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6194 (class 0 OID 0)
+-- TOC entry 6469 (class 0 OID 0)
 -- Dependencies: 439
 -- Name: promocion_descuento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8207,7 +10274,7 @@ CREATE SEQUENCE public.promocion_id_seq
 ALTER SEQUENCE public.promocion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6196 (class 0 OID 0)
+-- TOC entry 6471 (class 0 OID 0)
 -- Dependencies: 437
 -- Name: promocion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8252,7 +10319,7 @@ CREATE SEQUENCE public.promocion_uso_id_seq
 ALTER SEQUENCE public.promocion_uso_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6199 (class 0 OID 0)
+-- TOC entry 6474 (class 0 OID 0)
 -- Dependencies: 441
 -- Name: promocion_uso_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8292,6 +10359,10 @@ CREATE TABLE public.proveedor (
     fecha_registro timestamp without time zone DEFAULT now(),
     ultima_cotizacion timestamp without time zone,
     notas_internas text,
+    requiere_epp boolean DEFAULT false,
+    requisitos_recojo text,
+    es_demorado boolean DEFAULT false,
+    id_provincia bigint,
     CONSTRAINT proveedor_razon_social_check CHECK ((length((razon_social)::text) >= 3))
 );
 
@@ -8299,12 +10370,39 @@ CREATE TABLE public.proveedor (
 ALTER TABLE public.proveedor OWNER TO postgres;
 
 --
--- TOC entry 6201 (class 0 OID 0)
+-- TOC entry 6476 (class 0 OID 0)
 -- Dependencies: 423
 -- Name: TABLE proveedor; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON TABLE public.proveedor IS 'Proveedores y distribuidores del marketplace';
+
+
+--
+-- TOC entry 6477 (class 0 OID 0)
+-- Dependencies: 423
+-- Name: COLUMN proveedor.requiere_epp; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.proveedor.requiere_epp IS 'Indica si se requiere Equipo de Protección Personal (EPP) para ingresar a las instalaciones del proveedor';
+
+
+--
+-- TOC entry 6478 (class 0 OID 0)
+-- Dependencies: 423
+-- Name: COLUMN proveedor.requisitos_recojo; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.proveedor.requisitos_recojo IS 'Describe los requisitos, procedimientos o documentación necesaria para realizar recojos en el proveedor. Ejemplo: "Traer orden de compra impresa, DNI del conductor, llamar con 1 día de anticipación"';
+
+
+--
+-- TOC entry 6479 (class 0 OID 0)
+-- Dependencies: 423
+-- Name: COLUMN proveedor.es_demorado; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.proveedor.es_demorado IS 'Indica si el proveedor tiene historial de demoras en preparación de pedidos o atención. Útil para planificación logística';
 
 
 --
@@ -8339,7 +10437,7 @@ CREATE SEQUENCE public.proveedor_id_seq
 ALTER SEQUENCE public.proveedor_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6204 (class 0 OID 0)
+-- TOC entry 6482 (class 0 OID 0)
 -- Dependencies: 422
 -- Name: proveedor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8363,6 +10461,36 @@ CREATE TABLE public.proveedor_marca (
 
 
 ALTER TABLE public.proveedor_marca OWNER TO postgres;
+
+--
+-- TOC entry 526 (class 1259 OID 146388)
+-- Name: provincia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.provincia (
+    id bigint NOT NULL,
+    nombre character varying,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    id_ciudad bigint
+);
+
+
+ALTER TABLE public.provincia OWNER TO postgres;
+
+--
+-- TOC entry 527 (class 1259 OID 146391)
+-- Name: provincia_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.provincia ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.provincia_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- TOC entry 424 (class 1259 OID 66946)
@@ -8414,7 +10542,7 @@ CREATE TABLE public.rol_compra (
 ALTER TABLE public.rol_compra OWNER TO postgres;
 
 --
--- TOC entry 6209 (class 0 OID 0)
+-- TOC entry 6489 (class 0 OID 0)
 -- Dependencies: 520
 -- Name: TABLE rol_compra; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8438,7 +10566,7 @@ CREATE SEQUENCE public.rol_compra_id_seq
 ALTER SEQUENCE public.rol_compra_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6211 (class 0 OID 0)
+-- TOC entry 6491 (class 0 OID 0)
 -- Dependencies: 519
 -- Name: rol_compra_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8462,7 +10590,7 @@ CREATE SEQUENCE public.rol_id_seq
 ALTER SEQUENCE public.rol_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6213 (class 0 OID 0)
+-- TOC entry 6493 (class 0 OID 0)
 -- Dependencies: 393
 -- Name: rol_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8504,7 +10632,7 @@ CREATE SEQUENCE public.rubro_id_seq
 ALTER SEQUENCE public.rubro_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6216 (class 0 OID 0)
+-- TOC entry 6496 (class 0 OID 0)
 -- Dependencies: 405
 -- Name: rubro_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8606,7 +10734,7 @@ CREATE TABLE public.solicitud_cotizacion (
 ALTER TABLE public.solicitud_cotizacion OWNER TO postgres;
 
 --
--- TOC entry 6219 (class 0 OID 0)
+-- TOC entry 6499 (class 0 OID 0)
 -- Dependencies: 446
 -- Name: TABLE solicitud_cotizacion; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8615,7 +10743,7 @@ COMMENT ON TABLE public.solicitud_cotizacion IS 'Leads y solicitudes de cotizaci
 
 
 --
--- TOC entry 6220 (class 0 OID 0)
+-- TOC entry 6500 (class 0 OID 0)
 -- Dependencies: 446
 -- Name: COLUMN solicitud_cotizacion.codigo; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -8639,7 +10767,7 @@ CREATE SEQUENCE public.solicitud_cotizacion_id_seq
 ALTER SEQUENCE public.solicitud_cotizacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6222 (class 0 OID 0)
+-- TOC entry 6502 (class 0 OID 0)
 -- Dependencies: 445
 -- Name: solicitud_cotizacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8693,7 +10821,7 @@ CREATE SEQUENCE public.tipo_cliente_id_seq1
 ALTER SEQUENCE public.tipo_cliente_id_seq1 OWNER TO postgres;
 
 --
--- TOC entry 6226 (class 0 OID 0)
+-- TOC entry 6506 (class 0 OID 0)
 -- Dependencies: 395
 -- Name: tipo_cliente_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8737,7 +10865,7 @@ CREATE SEQUENCE public.tipo_contacto_id_seq
 ALTER SEQUENCE public.tipo_contacto_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6229 (class 0 OID 0)
+-- TOC entry 6509 (class 0 OID 0)
 -- Dependencies: 498
 -- Name: tipo_contacto_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8792,7 +10920,7 @@ CREATE SEQUENCE public.transicion_estado_cotizacion_id_seq
 ALTER SEQUENCE public.transicion_estado_cotizacion_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6232 (class 0 OID 0)
+-- TOC entry 6512 (class 0 OID 0)
 -- Dependencies: 500
 -- Name: transicion_estado_cotizacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8835,7 +10963,7 @@ CREATE SEQUENCE public.unidad_id_seq
 ALTER SEQUENCE public.unidad_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6235 (class 0 OID 0)
+-- TOC entry 6515 (class 0 OID 0)
 -- Dependencies: 399
 -- Name: unidad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8900,13 +11028,41 @@ CREATE SEQUENCE public.usuario_rol_id_seq
 ALTER SEQUENCE public.usuario_rol_id_seq OWNER TO postgres;
 
 --
--- TOC entry 6239 (class 0 OID 0)
+-- TOC entry 6519 (class 0 OID 0)
 -- Dependencies: 416
 -- Name: usuario_rol_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.usuario_rol_id_seq OWNED BY public.usuario_rol.id;
 
+
+--
+-- TOC entry 544 (class 1259 OID 158880)
+-- Name: v_actividad_cotizaciones; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_actividad_cotizaciones AS
+ SELECT hc.numero_cotizacion,
+    c.id AS id_cotizacion,
+    cl.razon_social AS cliente,
+    count(*) AS total_cambios,
+    count(*) FILTER (WHERE ((hc.tipo_cambio)::text = 'MODIFICACION_MONTO'::text)) AS cambios_monto,
+    count(*) FILTER (WHERE ((hc.tipo_cambio)::text = ANY ((ARRAY['AGREGADO_PRODUCTO'::character varying, 'ELIMINADO_PRODUCTO'::character varying, 'MODIFICADO_PRODUCTO'::character varying])::text[]))) AS cambios_productos,
+    max(hc.version) AS version_actual,
+    min(hc.fecha_cambio) AS fecha_creacion,
+    max(hc.fecha_cambio) AS ultima_modificacion,
+    EXTRACT(day FROM (max(hc.fecha_cambio) - min(hc.fecha_cambio))) AS dias_en_edicion,
+    c.total_soles AS monto_actual,
+    ec.nombre AS estado_actual
+   FROM (((public.historial_cotizacion hc
+     JOIN public.cotizacion c ON ((hc.id_cotizacion = c.id)))
+     JOIN public.cliente cl ON ((c.id_cliente = cl.id)))
+     JOIN public.estado_cotizacion ec ON ((c.id_estado = ec.id)))
+  GROUP BY hc.numero_cotizacion, c.id, cl.razon_social, c.total_soles, ec.nombre
+  ORDER BY (max(hc.fecha_cambio)) DESC;
+
+
+ALTER VIEW public.v_actividad_cotizaciones OWNER TO postgres;
 
 --
 -- TOC entry 504 (class 1259 OID 90397)
@@ -8933,6 +11089,28 @@ CREATE VIEW public.v_analisis_perdidas AS
 
 
 ALTER VIEW public.v_analisis_perdidas OWNER TO postgres;
+
+--
+-- TOC entry 545 (class 1259 OID 158885)
+-- Name: v_cambios_recientes_cotizaciones; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_cambios_recientes_cotizaciones AS
+ SELECT hc.numero_cotizacion,
+    hc.tipo_cambio,
+    hc.descripcion,
+    hc.nombre_usuario,
+    hc.fecha_cambio,
+    cl.razon_social AS cliente,
+    hc.total_nuevo AS monto
+   FROM ((public.historial_cotizacion hc
+     JOIN public.cotizacion c ON ((hc.id_cotizacion = c.id)))
+     JOIN public.cliente cl ON ((c.id_cliente = cl.id)))
+  WHERE (hc.fecha_cambio >= (now() - '7 days'::interval))
+  ORDER BY hc.fecha_cambio DESC;
+
+
+ALTER VIEW public.v_cambios_recientes_cotizaciones OWNER TO postgres;
 
 --
 -- TOC entry 505 (class 1259 OID 90402)
@@ -8977,53 +11155,6 @@ CREATE VIEW public.v_ciclo_vida_cotizaciones AS
 ALTER VIEW public.v_ciclo_vida_cotizaciones OWNER TO postgres;
 
 --
--- TOC entry 523 (class 1259 OID 134260)
--- Name: v_clientes_contactos_roles; Type: VIEW; Schema: public; Owner: postgres
---
-
-CREATE VIEW public.v_clientes_contactos_roles AS
- SELECT c.id AS cliente_id,
-    c.razon_social,
-    c.documento_empresa AS ruc,
-    c.correo AS correo_empresa,
-    c.telefono AS telefono_empresa,
-    c.estado_sunat,
-    c.condicion_sunat,
-    c.actividad_economica,
-    c.num_trabajadores,
-    p.nombre AS pais,
-    ci.nombre AS ciudad,
-    d.nombre AS distrito,
-    dc.direccion AS direccion_completa,
-    dc.tipo_direccion,
-    r.nombre AS rubro,
-    tc.nombre AS tipo_contacto,
-    ce.id AS contacto_id,
-    ce.nombre_completo AS contacto_nombre,
-    ce.cargo AS contacto_cargo,
-    ce.telefono AS contacto_telefono,
-    ce.correo AS contacto_correo,
-    ce.es_contacto_principal,
-    array_agg(DISTINCT rc.nombre) FILTER (WHERE (rc.nombre IS NOT NULL)) AS roles,
-    c.activo,
-    c.fecha_registro
-   FROM (((((((((public.cliente c
-     LEFT JOIN public.pais p ON ((c.id_pais = p.id)))
-     LEFT JOIN public.rubro r ON ((c.id_rubro = r.id)))
-     LEFT JOIN public.tipo_contacto tc ON ((c.id_tipo_contacto = tc.id)))
-     LEFT JOIN public.direccion_cliente dc ON (((c.id = dc.id_cliente) AND (dc.activo = true))))
-     LEFT JOIN public.distrito d ON ((dc.id_distrito = d.id)))
-     LEFT JOIN public.ciudad ci ON ((d.id_ciudad = ci.id)))
-     LEFT JOIN public.contacto_empresa ce ON (((c.id = ce.id_cliente) AND (ce.activo = true))))
-     LEFT JOIN public.contacto_rol cr ON (((ce.id = cr.id_contacto) AND (cr.activo = true))))
-     LEFT JOIN public.rol_compra rc ON (((cr.id_rol = rc.id) AND (rc.activo = true))))
-  WHERE ((c.id_tipo_cliente = 2) AND (c.activo = true))
-  GROUP BY c.id, c.razon_social, c.documento_empresa, c.correo, c.telefono, c.estado_sunat, c.condicion_sunat, c.actividad_economica, c.num_trabajadores, p.nombre, ci.nombre, d.nombre, dc.direccion, dc.tipo_direccion, r.nombre, tc.nombre, ce.id, ce.nombre_completo, ce.cargo, ce.telefono, ce.correo, ce.es_contacto_principal, c.activo, c.fecha_registro;
-
-
-ALTER VIEW public.v_clientes_contactos_roles OWNER TO postgres;
-
---
 -- TOC entry 491 (class 1259 OID 68143)
 -- Name: v_cobranza_pendiente; Type: VIEW; Schema: public; Owner: postgres
 --
@@ -9046,7 +11177,56 @@ CREATE VIEW public.v_cobranza_pendiente AS
 ALTER VIEW public.v_cobranza_pendiente OWNER TO postgres;
 
 --
--- TOC entry 524 (class 1259 OID 134265)
+-- TOC entry 532 (class 1259 OID 147952)
+-- Name: v_cuentas_por_pagar_resumen; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_cuentas_por_pagar_resumen AS
+ SELECT p.id AS id_proveedor,
+    p.razon_social,
+    p.nombre_comercial,
+    p.telefono,
+    p.correo,
+    count(cxp.id) AS total_cuentas,
+    count(
+        CASE
+            WHEN ((cxp.estado)::text = 'PENDIENTE'::text) THEN 1
+            ELSE NULL::integer
+        END) AS cuentas_pendientes,
+    count(
+        CASE
+            WHEN ((cxp.estado)::text = 'VENCIDO'::text) THEN 1
+            ELSE NULL::integer
+        END) AS cuentas_vencidas,
+    sum(
+        CASE
+            WHEN ((cxp.estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PARCIAL'::character varying])::text[])) THEN cxp.monto_pendiente
+            ELSE (0)::numeric
+        END) AS total_deuda_pen,
+    min(
+        CASE
+            WHEN ((cxp.estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PARCIAL'::character varying])::text[])) THEN cxp.fecha_vencimiento
+            ELSE NULL::date
+        END) AS proxima_fecha_vencimiento
+   FROM (public.proveedor p
+     LEFT JOIN public.cuenta_por_pagar_proveedor cxp ON (((cxp.id_proveedor = p.id) AND (cxp.activo = true))))
+  WHERE (p.activo = true)
+  GROUP BY p.id, p.razon_social, p.nombre_comercial, p.telefono, p.correo;
+
+
+ALTER VIEW public.v_cuentas_por_pagar_resumen OWNER TO postgres;
+
+--
+-- TOC entry 6526 (class 0 OID 0)
+-- Dependencies: 532
+-- Name: VIEW v_cuentas_por_pagar_resumen; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON VIEW public.v_cuentas_por_pagar_resumen IS 'Resumen de deudas por proveedor con totales y próximos vencimientos';
+
+
+--
+-- TOC entry 523 (class 1259 OID 134265)
 -- Name: v_estadisticas_roles; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -9065,6 +11245,80 @@ CREATE VIEW public.v_estadisticas_roles AS
 
 
 ALTER VIEW public.v_estadisticas_roles OWNER TO postgres;
+
+--
+-- TOC entry 543 (class 1259 OID 158875)
+-- Name: v_historial_cotizacion_completo; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_historial_cotizacion_completo AS
+ SELECT hc.id,
+    hc.numero_cotizacion,
+    hc.version,
+    hc.tipo_cambio,
+    hc.descripcion,
+    hc.campo_modificado,
+    hc.valor_anterior,
+    hc.valor_nuevo,
+    hc.total_anterior,
+    hc.total_nuevo,
+        CASE
+            WHEN ((hc.total_anterior IS NOT NULL) AND (hc.total_nuevo IS NOT NULL)) THEN (hc.total_nuevo - hc.total_anterior)
+            ELSE NULL::numeric
+        END AS diferencia_total,
+    hc.margen_anterior,
+    hc.margen_nuevo,
+    hc.productos_afectados,
+    hc.nombre_usuario,
+    hc.fecha_cambio,
+    hc.motivo_cambio,
+    cl.razon_social AS cliente,
+    ec.nombre AS estado_actual
+   FROM (((public.historial_cotizacion hc
+     LEFT JOIN public.cotizacion c ON ((hc.id_cotizacion = c.id)))
+     LEFT JOIN public.cliente cl ON ((c.id_cliente = cl.id)))
+     LEFT JOIN public.estado_cotizacion ec ON ((c.id_estado = ec.id)))
+  ORDER BY hc.fecha_cambio DESC;
+
+
+ALTER VIEW public.v_historial_cotizacion_completo OWNER TO postgres;
+
+--
+-- TOC entry 534 (class 1259 OID 147962)
+-- Name: v_historial_pagos_proveedor; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_historial_pagos_proveedor AS
+ SELECT pp.id,
+    pp.codigo,
+    pp.fecha_pago,
+    p.razon_social AS proveedor,
+    m.simbolo AS moneda,
+    pp.monto_pagado,
+    fp.nombre AS forma_pago,
+    pp.numero_operacion,
+    pp.concepto,
+    (((u.nombre)::text || ' '::text) || (u.apellidos)::text) AS registrado_por,
+    pp.estado
+   FROM ((((public.pago_proveedor pp
+     JOIN public.proveedor p ON ((p.id = pp.id_proveedor)))
+     JOIN public.moneda m ON ((m.id = pp.id_moneda)))
+     JOIN public.forma_pago fp ON ((fp.id = pp.id_forma_pago)))
+     JOIN public.usuario u ON ((u.id = pp.registrado_por)))
+  WHERE (pp.activo = true)
+  ORDER BY pp.fecha_pago DESC;
+
+
+ALTER VIEW public.v_historial_pagos_proveedor OWNER TO postgres;
+
+--
+-- TOC entry 6530 (class 0 OID 0)
+-- Dependencies: 534
+-- Name: VIEW v_historial_pagos_proveedor; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON VIEW public.v_historial_pagos_proveedor IS 'Historial completo de pagos realizados a proveedores';
+
 
 --
 -- TOC entry 489 (class 1259 OID 68118)
@@ -9185,6 +11439,148 @@ CREATE VIEW public.v_pipeline_crm AS
 ALTER VIEW public.v_pipeline_crm OWNER TO postgres;
 
 --
+-- TOC entry 538 (class 1259 OID 158790)
+-- Name: v_productos_sin_datos_comerciales; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_productos_sin_datos_comerciales AS
+ SELECT p.sku,
+    p.sku_producto AS codigo_producto,
+    p.cod_producto_marca,
+    p.nombre,
+    c.nombre AS categoria,
+    m.nombre AS marca,
+    ppm.id AS id_precio,
+    mon.codigo AS moneda,
+    ppm.precio_venta,
+    ppm.precio_proveedor,
+    ppm.margen_aplicado,
+    ppm.tipo_cambio_usado,
+    ppm.solo_precio_venta,
+    ppm.notas_marketing,
+    ppm.fecha_creacion,
+    u.nombre AS creado_por,
+        CASE
+            WHEN (ppm.precio_proveedor IS NULL) THEN '❌ Falta precio proveedor'::text
+            ELSE '✅ OK'::text
+        END AS estado_precio_proveedor,
+        CASE
+            WHEN ((ppm.margen_aplicado IS NULL) OR (ppm.margen_aplicado = (0)::numeric)) THEN '❌ Falta margen'::text
+            ELSE (('✅ '::text || ppm.margen_aplicado) || '%'::text)
+        END AS estado_margen,
+        CASE
+            WHEN (((mon.codigo)::text <> 'PEN'::text) AND (ppm.tipo_cambio_usado IS NULL)) THEN '❌ Falta tipo cambio'::text
+            WHEN ((mon.codigo)::text = 'PEN'::text) THEN '➖ No aplica (PEN)'::text
+            ELSE ('✅ TC: '::text || ppm.tipo_cambio_usado)
+        END AS estado_tipo_cambio,
+        CASE
+            WHEN ((ppm.precio_proveedor IS NOT NULL) AND (ppm.margen_aplicado IS NOT NULL) AND (ppm.margen_aplicado > (0)::numeric)) THEN '🟢 COMPLETO'::text
+            WHEN (ppm.solo_precio_venta = true) THEN '🟡 SOLO MARKETING'::text
+            ELSE '🔴 INCOMPLETO'::text
+        END AS estado_general
+   FROM (((((public.producto_precio_moneda ppm
+     JOIN public.producto p ON ((ppm.sku = p.sku)))
+     LEFT JOIN public.categoria c ON ((p.id_categoria = c.id)))
+     LEFT JOIN public.marca m ON ((p.id_marca = m.id)))
+     LEFT JOIN public.moneda mon ON ((ppm.id_moneda = mon.id)))
+     LEFT JOIN public.usuario u ON ((ppm.creado_por = u.id)))
+  WHERE ((ppm.activo = true) AND ((ppm.precio_proveedor IS NULL) OR (ppm.margen_aplicado IS NULL) OR (ppm.margen_aplicado = (0)::numeric) OR (ppm.solo_precio_venta = true)))
+  ORDER BY ppm.fecha_creacion DESC;
+
+
+ALTER VIEW public.v_productos_sin_datos_comerciales OWNER TO postgres;
+
+--
+-- TOC entry 6535 (class 0 OID 0)
+-- Dependencies: 538
+-- Name: VIEW v_productos_sin_datos_comerciales; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON VIEW public.v_productos_sin_datos_comerciales IS 'Productos con precios ingresados pero sin información comercial completa.
+Marketing puede ver qué productos necesitan revisión del área comercial.';
+
+
+--
+-- TOC entry 533 (class 1259 OID 147957)
+-- Name: v_proximos_pagos_proveedores; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_proximos_pagos_proveedores AS
+ SELECT cxp.id,
+    cxp.codigo,
+    cxp.fecha_vencimiento,
+    p.razon_social AS proveedor,
+    p.telefono,
+    m.simbolo AS moneda,
+    cxp.monto_pendiente,
+    cxp.dias_credito,
+    (cxp.fecha_vencimiento - CURRENT_DATE) AS dias_para_vencimiento,
+        CASE
+            WHEN (cxp.fecha_vencimiento < CURRENT_DATE) THEN 'VENCIDO'::text
+            WHEN ((cxp.fecha_vencimiento - CURRENT_DATE) <= 7) THEN 'URGENTE'::text
+            WHEN ((cxp.fecha_vencimiento - CURRENT_DATE) <= 15) THEN 'PRÓXIMO'::text
+            ELSE 'NORMAL'::text
+        END AS prioridad,
+    cxp.numero_factura_proveedor,
+    cxp.concepto
+   FROM ((public.cuenta_por_pagar_proveedor cxp
+     JOIN public.proveedor p ON ((p.id = cxp.id_proveedor)))
+     JOIN public.moneda m ON ((m.id = cxp.id_moneda)))
+  WHERE (((cxp.estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PARCIAL'::character varying])::text[])) AND (cxp.activo = true))
+  ORDER BY cxp.fecha_vencimiento,
+        CASE
+            WHEN (cxp.fecha_vencimiento < CURRENT_DATE) THEN 'VENCIDO'::text
+            WHEN ((cxp.fecha_vencimiento - CURRENT_DATE) <= 7) THEN 'URGENTE'::text
+            WHEN ((cxp.fecha_vencimiento - CURRENT_DATE) <= 15) THEN 'PRÓXIMO'::text
+            ELSE 'NORMAL'::text
+        END;
+
+
+ALTER VIEW public.v_proximos_pagos_proveedores OWNER TO postgres;
+
+--
+-- TOC entry 6537 (class 0 OID 0)
+-- Dependencies: 533
+-- Name: VIEW v_proximos_pagos_proveedores; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON VIEW public.v_proximos_pagos_proveedores IS 'Lista de próximos pagos a proveedores ordenados por urgencia y fecha de vencimiento';
+
+
+--
+-- TOC entry 540 (class 1259 OID 158809)
+-- Name: v_resumen_estado_precios; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_resumen_estado_precios AS
+ SELECT
+        CASE
+            WHEN ((precio_proveedor IS NOT NULL) AND (margen_aplicado > (0)::numeric)) THEN '🟢 Completo'::text
+            WHEN (solo_precio_venta = true) THEN '🟡 Solo Marketing'::text
+            ELSE '🔴 Incompleto'::text
+        END AS estado,
+    count(*) AS cantidad,
+    round(avg(precio_venta), 2) AS precio_promedio,
+    round(avg(margen_aplicado), 2) AS margen_promedio
+   FROM public.producto_precio_moneda ppm
+  WHERE ((activo = true) AND (id_moneda = 1))
+  GROUP BY
+        CASE
+            WHEN ((precio_proveedor IS NOT NULL) AND (margen_aplicado > (0)::numeric)) THEN '🟢 Completo'::text
+            WHEN (solo_precio_venta = true) THEN '🟡 Solo Marketing'::text
+            ELSE '🔴 Incompleto'::text
+        END
+  ORDER BY
+        CASE
+            WHEN ((precio_proveedor IS NOT NULL) AND (margen_aplicado > (0)::numeric)) THEN '🟢 Completo'::text
+            WHEN (solo_precio_venta = true) THEN '🟡 Solo Marketing'::text
+            ELSE '🔴 Incompleto'::text
+        END;
+
+
+ALTER VIEW public.v_resumen_estado_precios OWNER TO postgres;
+
+--
 -- TOC entry 492 (class 1259 OID 68148)
 -- Name: v_solicitudes_pendientes; Type: VIEW; Schema: public; Owner: postgres
 --
@@ -9211,6 +11607,28 @@ CREATE VIEW public.v_solicitudes_pendientes AS
 
 
 ALTER VIEW public.v_solicitudes_pendientes OWNER TO postgres;
+
+--
+-- TOC entry 539 (class 1259 OID 158803)
+-- Name: v_tipos_cambio_actuales; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_tipos_cambio_actuales AS
+ SELECT clave,
+    (valor)::numeric AS tipo_cambio,
+    descripcion,
+    fecha_actualizacion,
+        CASE
+            WHEN ((clave)::text ~~ '%compra%'::text) THEN '💰 Compra (cuando pagamos a proveedores)'::text
+            WHEN ((clave)::text ~~ '%venta%'::text) THEN '💵 Venta (cuando cobramos a clientes)'::text
+            ELSE 'ℹ️ Referencia'::text
+        END AS uso_recomendado
+   FROM public.configuracion_sistema
+  WHERE (((clave)::text ~~ 'tipo_cambio_%'::text) AND (activo = true))
+  ORDER BY clave;
+
+
+ALTER VIEW public.v_tipos_cambio_actuales OWNER TO postgres;
 
 --
 -- TOC entry 502 (class 1259 OID 90387)
@@ -9254,7 +11672,7 @@ ALTER TABLE public.vehicle_types ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTIT
 
 
 --
--- TOC entry 525 (class 1259 OID 134730)
+-- TOC entry 535 (class 1259 OID 149491)
 -- Name: vista_analisis_descuentos; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -9293,8 +11711,8 @@ CREATE VIEW public.vista_analisis_descuentos AS
 ALTER VIEW public.vista_analisis_descuentos OWNER TO postgres;
 
 --
--- TOC entry 6252 (class 0 OID 0)
--- Dependencies: 525
+-- TOC entry 6544 (class 0 OID 0)
+-- Dependencies: 535
 -- Name: VIEW vista_analisis_descuentos; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -9523,7 +11941,7 @@ CREATE TABLE storage.buckets (
 ALTER TABLE storage.buckets OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 6265 (class 0 OID 0)
+-- TOC entry 6557 (class 0 OID 0)
 -- Dependencies: 358
 -- Name: COLUMN buckets.owner; Type: COMMENT; Schema: storage; Owner: supabase_storage_admin
 --
@@ -9537,15 +11955,32 @@ COMMENT ON COLUMN storage.buckets.owner IS 'Field is deprecated, use owner_id in
 --
 
 CREATE TABLE storage.buckets_analytics (
-    id text NOT NULL,
+    name text NOT NULL,
     type storage.buckettype DEFAULT 'ANALYTICS'::storage.buckettype NOT NULL,
     format text DEFAULT 'ICEBERG'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    deleted_at timestamp with time zone
+);
+
+
+ALTER TABLE storage.buckets_analytics OWNER TO supabase_storage_admin;
+
+--
+-- TOC entry 536 (class 1259 OID 156547)
+-- Name: buckets_vectors; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.buckets_vectors (
+    id text NOT NULL,
+    type storage.buckettype DEFAULT 'VECTOR'::storage.buckettype NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
-ALTER TABLE storage.buckets_analytics OWNER TO supabase_storage_admin;
+ALTER TABLE storage.buckets_vectors OWNER TO supabase_storage_admin;
 
 --
 -- TOC entry 360 (class 1259 OID 16588)
@@ -9587,7 +12022,7 @@ CREATE TABLE storage.objects (
 ALTER TABLE storage.objects OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 6268 (class 0 OID 0)
+-- TOC entry 6561 (class 0 OID 0)
 -- Dependencies: 359
 -- Name: COLUMN objects.owner; Type: COMMENT; Schema: storage; Owner: supabase_storage_admin
 --
@@ -9653,7 +12088,27 @@ CREATE TABLE storage.s3_multipart_uploads_parts (
 ALTER TABLE storage.s3_multipart_uploads_parts OWNER TO supabase_storage_admin;
 
 --
--- TOC entry 4274 (class 0 OID 0)
+-- TOC entry 537 (class 1259 OID 156557)
+-- Name: vector_indexes; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.vector_indexes (
+    id text DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL COLLATE pg_catalog."C",
+    bucket_id text NOT NULL,
+    data_type text NOT NULL,
+    dimension integer NOT NULL,
+    distance_metric text NOT NULL,
+    metadata_configuration jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE storage.vector_indexes OWNER TO supabase_storage_admin;
+
+--
+-- TOC entry 4353 (class 0 OID 0)
 -- Name: messages_2025_09_22; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9661,7 +12116,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_22
 
 
 --
--- TOC entry 4275 (class 0 OID 0)
+-- TOC entry 4354 (class 0 OID 0)
 -- Name: messages_2025_09_23; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9669,7 +12124,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_23
 
 
 --
--- TOC entry 4276 (class 0 OID 0)
+-- TOC entry 4355 (class 0 OID 0)
 -- Name: messages_2025_09_24; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9677,7 +12132,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_24
 
 
 --
--- TOC entry 4277 (class 0 OID 0)
+-- TOC entry 4356 (class 0 OID 0)
 -- Name: messages_2025_09_25; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9685,7 +12140,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_25
 
 
 --
--- TOC entry 4278 (class 0 OID 0)
+-- TOC entry 4357 (class 0 OID 0)
 -- Name: messages_2025_09_26; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9693,7 +12148,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_26
 
 
 --
--- TOC entry 4279 (class 0 OID 0)
+-- TOC entry 4358 (class 0 OID 0)
 -- Name: messages_2025_09_27; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9701,7 +12156,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_27
 
 
 --
--- TOC entry 4280 (class 0 OID 0)
+-- TOC entry 4359 (class 0 OID 0)
 -- Name: messages_2025_09_28; Type: TABLE ATTACH; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9709,7 +12164,7 @@ ALTER TABLE ONLY realtime.messages ATTACH PARTITION realtime.messages_2025_09_28
 
 
 --
--- TOC entry 4290 (class 2604 OID 16510)
+-- TOC entry 4369 (class 2604 OID 16510)
 -- Name: refresh_tokens id; Type: DEFAULT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -9717,7 +12172,7 @@ ALTER TABLE ONLY auth.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('auth.r
 
 
 --
--- TOC entry 4641 (class 2604 OID 67965)
+-- TOC entry 4725 (class 2604 OID 67965)
 -- Name: carrito_compra id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9725,7 +12180,7 @@ ALTER TABLE ONLY public.carrito_compra ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4370 (class 2604 OID 66780)
+-- TOC entry 4449 (class 2604 OID 66780)
 -- Name: categoria id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9733,7 +12188,7 @@ ALTER TABLE ONLY public.categoria ALTER COLUMN id SET DEFAULT nextval('public.ca
 
 
 --
--- TOC entry 4334 (class 2604 OID 66656)
+-- TOC entry 4413 (class 2604 OID 66656)
 -- Name: ciudad id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9741,7 +12196,7 @@ ALTER TABLE ONLY public.ciudad ALTER COLUMN id SET DEFAULT nextval('public.ciuda
 
 
 --
--- TOC entry 4393 (class 2604 OID 66867)
+-- TOC entry 4472 (class 2604 OID 66867)
 -- Name: cliente id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9749,7 +12204,7 @@ ALTER TABLE ONLY public.cliente ALTER COLUMN id SET DEFAULT nextval('public.clie
 
 
 --
--- TOC entry 4510 (class 2604 OID 67326)
+-- TOC entry 4594 (class 2604 OID 67326)
 -- Name: comunicacion_solicitud id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9757,7 +12212,7 @@ ALTER TABLE ONLY public.comunicacion_solicitud ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- TOC entry 4361 (class 2604 OID 66746)
+-- TOC entry 4440 (class 2604 OID 66746)
 -- Name: condiciones_comerciales id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9765,7 +12220,7 @@ ALTER TABLE ONLY public.condiciones_comerciales ALTER COLUMN id SET DEFAULT next
 
 
 --
--- TOC entry 4424 (class 2604 OID 66997)
+-- TOC entry 4507 (class 2604 OID 66997)
 -- Name: configuracion_fe id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9773,7 +12228,7 @@ ALTER TABLE ONLY public.configuracion_fe ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
--- TOC entry 4725 (class 2604 OID 134197)
+-- TOC entry 4811 (class 2604 OID 134197)
 -- Name: contacto_empresa id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9781,7 +12236,7 @@ ALTER TABLE ONLY public.contacto_empresa ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
--- TOC entry 4733 (class 2604 OID 134233)
+-- TOC entry 4819 (class 2604 OID 134233)
 -- Name: contacto_rol id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9789,7 +12244,7 @@ ALTER TABLE ONLY public.contacto_rol ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- TOC entry 4652 (class 2604 OID 68039)
+-- TOC entry 4736 (class 2604 OID 68039)
 -- Name: costos_operativos id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9797,7 +12252,7 @@ ALTER TABLE ONLY public.costos_operativos ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4547 (class 2604 OID 67530)
+-- TOC entry 4631 (class 2604 OID 67530)
 -- Name: cotizacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9805,7 +12260,7 @@ ALTER TABLE ONLY public.cotizacion ALTER COLUMN id SET DEFAULT nextval('public.c
 
 
 --
--- TOC entry 4569 (class 2604 OID 67599)
+-- TOC entry 4653 (class 2604 OID 67599)
 -- Name: cotizacion_detalle id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9813,7 +12268,7 @@ ALTER TABLE ONLY public.cotizacion_detalle ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- TOC entry 4534 (class 2604 OID 67443)
+-- TOC entry 4618 (class 2604 OID 67443)
 -- Name: crm_actividad id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9821,7 +12276,7 @@ ALTER TABLE ONLY public.crm_actividad ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4379 (class 2604 OID 66815)
+-- TOC entry 4458 (class 2604 OID 66815)
 -- Name: crm_etapa id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9829,7 +12284,7 @@ ALTER TABLE ONLY public.crm_etapa ALTER COLUMN id SET DEFAULT nextval('public.cr
 
 
 --
--- TOC entry 4543 (class 2604 OID 67493)
+-- TOC entry 4627 (class 2604 OID 67493)
 -- Name: crm_nota id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9837,7 +12292,7 @@ ALTER TABLE ONLY public.crm_nota ALTER COLUMN id SET DEFAULT nextval('public.crm
 
 
 --
--- TOC entry 4634 (class 2604 OID 67939)
+-- TOC entry 4718 (class 2604 OID 67939)
 -- Name: crowdlending_operacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9845,7 +12300,7 @@ ALTER TABLE ONLY public.crowdlending_operacion ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- TOC entry 4616 (class 2604 OID 67831)
+-- TOC entry 4700 (class 2604 OID 67831)
 -- Name: cuenta_por_cobrar id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9853,7 +12308,15 @@ ALTER TABLE ONLY public.cuenta_por_cobrar ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4520 (class 2604 OID 67372)
+-- TOC entry 4828 (class 2604 OID 147836)
+-- Name: cuenta_por_pagar_proveedor id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor ALTER COLUMN id SET DEFAULT nextval('public.cuenta_por_pagar_proveedor_id_seq'::regclass);
+
+
+--
+-- TOC entry 4604 (class 2604 OID 67372)
 -- Name: detalle_solicitud_cotizacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9861,7 +12324,7 @@ ALTER TABLE ONLY public.detalle_solicitud_cotizacion ALTER COLUMN id SET DEFAULT
 
 
 --
--- TOC entry 4485 (class 2604 OID 67246)
+-- TOC entry 4569 (class 2604 OID 67246)
 -- Name: direccion_cliente id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9869,7 +12332,7 @@ ALTER TABLE ONLY public.direccion_cliente ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4343 (class 2604 OID 66704)
+-- TOC entry 4422 (class 2604 OID 66704)
 -- Name: disponibilidad id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9877,7 +12340,7 @@ ALTER TABLE ONLY public.disponibilidad ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4398 (class 2604 OID 66894)
+-- TOC entry 4479 (class 2604 OID 66894)
 -- Name: empresa_emisora id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9885,7 +12348,7 @@ ALTER TABLE ONLY public.empresa_emisora ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4668 (class 2604 OID 86645)
+-- TOC entry 4753 (class 2604 OID 86645)
 -- Name: estado_cotizacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9893,7 +12356,7 @@ ALTER TABLE ONLY public.estado_cotizacion ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4628 (class 2604 OID 67921)
+-- TOC entry 4712 (class 2604 OID 67921)
 -- Name: factoring_operacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9901,7 +12364,7 @@ ALTER TABLE ONLY public.factoring_operacion ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
--- TOC entry 4596 (class 2604 OID 67746)
+-- TOC entry 4680 (class 2604 OID 67746)
 -- Name: factura id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9909,7 +12372,7 @@ ALTER TABLE ONLY public.factura ALTER COLUMN id SET DEFAULT nextval('public.fact
 
 
 --
--- TOC entry 4609 (class 2604 OID 67805)
+-- TOC entry 4693 (class 2604 OID 67805)
 -- Name: factura_detalle id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9917,7 +12380,7 @@ ALTER TABLE ONLY public.factura_detalle ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4355 (class 2604 OID 66732)
+-- TOC entry 4434 (class 2604 OID 66732)
 -- Name: forma_pago id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9925,7 +12388,15 @@ ALTER TABLE ONLY public.forma_pago ALTER COLUMN id SET DEFAULT nextval('public.f
 
 
 --
--- TOC entry 4646 (class 2604 OID 67994)
+-- TOC entry 4853 (class 2604 OID 158838)
+-- Name: historial_cotizacion id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.historial_cotizacion ALTER COLUMN id SET DEFAULT nextval('public.historial_cotizacion_id_seq'::regclass);
+
+
+--
+-- TOC entry 4730 (class 2604 OID 67994)
 -- Name: historial_precios id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9933,7 +12404,7 @@ ALTER TABLE ONLY public.historial_precios ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4656 (class 2604 OID 68061)
+-- TOC entry 4740 (class 2604 OID 68061)
 -- Name: inversion_categoria id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9941,7 +12412,7 @@ ALTER TABLE ONLY public.inversion_categoria ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
--- TOC entry 4373 (class 2604 OID 66789)
+-- TOC entry 4452 (class 2604 OID 66789)
 -- Name: marca id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9949,7 +12420,7 @@ ALTER TABLE ONLY public.marca ALTER COLUMN id SET DEFAULT nextval('public.marca_
 
 
 --
--- TOC entry 4324 (class 2604 OID 66618)
+-- TOC entry 4403 (class 2604 OID 66618)
 -- Name: moneda id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9957,7 +12428,7 @@ ALTER TABLE ONLY public.moneda ALTER COLUMN id SET DEFAULT nextval('public.moned
 
 
 --
--- TOC entry 4736 (class 2604 OID 141540)
+-- TOC entry 4822 (class 2604 OID 141540)
 -- Name: notificaciones id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9965,7 +12436,7 @@ ALTER TABLE ONLY public.notificaciones ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4524 (class 2604 OID 67397)
+-- TOC entry 4608 (class 2604 OID 67397)
 -- Name: oportunidad id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9973,7 +12444,15 @@ ALTER TABLE ONLY public.oportunidad ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
--- TOC entry 4623 (class 2604 OID 67875)
+-- TOC entry 4841 (class 2604 OID 147892)
+-- Name: pago_proveedor id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor ALTER COLUMN id SET DEFAULT nextval('public.pago_proveedor_id_seq'::regclass);
+
+
+--
+-- TOC entry 4707 (class 2604 OID 67875)
 -- Name: pago_recibido id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9981,7 +12460,7 @@ ALTER TABLE ONLY public.pago_recibido ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4331 (class 2604 OID 66634)
+-- TOC entry 4410 (class 2604 OID 66634)
 -- Name: pais id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9989,7 +12468,7 @@ ALTER TABLE ONLY public.pais ALTER COLUMN id SET DEFAULT nextval('public.pais_id
 
 
 --
--- TOC entry 4577 (class 2604 OID 67643)
+-- TOC entry 4661 (class 2604 OID 67643)
 -- Name: pedido id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -9997,7 +12476,7 @@ ALTER TABLE ONLY public.pedido ALTER COLUMN id SET DEFAULT nextval('public.pedid
 
 
 --
--- TOC entry 4589 (class 2604 OID 67713)
+-- TOC entry 4673 (class 2604 OID 67713)
 -- Name: pedido_detalle id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10005,7 +12484,7 @@ ALTER TABLE ONLY public.pedido_detalle ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4518 (class 2604 OID 67362)
+-- TOC entry 4602 (class 2604 OID 67362)
 -- Name: procesamiento_archivo_log id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10013,7 +12492,7 @@ ALTER TABLE ONLY public.procesamiento_archivo_log ALTER COLUMN id SET DEFAULT ne
 
 
 --
--- TOC entry 4441 (class 2604 OID 67077)
+-- TOC entry 4524 (class 2604 OID 67077)
 -- Name: producto sku; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10021,7 +12500,7 @@ ALTER TABLE ONLY public.producto ALTER COLUMN sku SET DEFAULT nextval('public.pr
 
 
 --
--- TOC entry 4715 (class 2604 OID 106231)
+-- TOC entry 4800 (class 2604 OID 106231)
 -- Name: producto_precio_moneda id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10029,7 +12508,7 @@ ALTER TABLE ONLY public.producto_precio_moneda ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- TOC entry 4461 (class 2604 OID 67158)
+-- TOC entry 4544 (class 2604 OID 67158)
 -- Name: producto_proveedor id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10037,7 +12516,7 @@ ALTER TABLE ONLY public.producto_proveedor ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- TOC entry 4474 (class 2604 OID 67191)
+-- TOC entry 4558 (class 2604 OID 67191)
 -- Name: promocion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10045,7 +12524,7 @@ ALTER TABLE ONLY public.promocion ALTER COLUMN id SET DEFAULT nextval('public.pr
 
 
 --
--- TOC entry 4480 (class 2604 OID 67211)
+-- TOC entry 4564 (class 2604 OID 67211)
 -- Name: promocion_descuento id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10053,7 +12532,7 @@ ALTER TABLE ONLY public.promocion_descuento ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
--- TOC entry 4483 (class 2604 OID 67227)
+-- TOC entry 4567 (class 2604 OID 67227)
 -- Name: promocion_uso id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10061,7 +12540,7 @@ ALTER TABLE ONLY public.promocion_uso ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4401 (class 2604 OID 66912)
+-- TOC entry 4482 (class 2604 OID 66912)
 -- Name: proveedor id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10069,7 +12548,7 @@ ALTER TABLE ONLY public.proveedor ALTER COLUMN id SET DEFAULT nextval('public.pr
 
 
 --
--- TOC entry 4339 (class 2604 OID 66685)
+-- TOC entry 4418 (class 2604 OID 66685)
 -- Name: rol id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10077,7 +12556,7 @@ ALTER TABLE ONLY public.rol ALTER COLUMN id SET DEFAULT nextval('public.rol_id_s
 
 
 --
--- TOC entry 4730 (class 2604 OID 134220)
+-- TOC entry 4816 (class 2604 OID 134220)
 -- Name: rol_compra id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10085,7 +12564,7 @@ ALTER TABLE ONLY public.rol_compra ALTER COLUMN id SET DEFAULT nextval('public.r
 
 
 --
--- TOC entry 4367 (class 2604 OID 66767)
+-- TOC entry 4446 (class 2604 OID 66767)
 -- Name: rubro id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10093,7 +12572,7 @@ ALTER TABLE ONLY public.rubro ALTER COLUMN id SET DEFAULT nextval('public.rubro_
 
 
 --
--- TOC entry 4494 (class 2604 OID 67281)
+-- TOC entry 4578 (class 2604 OID 67281)
 -- Name: solicitud_cotizacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10101,7 +12580,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion ALTER COLUMN id SET DEFAULT nextval
 
 
 --
--- TOC entry 4342 (class 2604 OID 66696)
+-- TOC entry 4421 (class 2604 OID 66696)
 -- Name: tipo_cliente id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10109,7 +12588,7 @@ ALTER TABLE ONLY public.tipo_cliente ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- TOC entry 4676 (class 2604 OID 89064)
+-- TOC entry 4761 (class 2604 OID 89064)
 -- Name: tipo_contacto id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10117,7 +12596,7 @@ ALTER TABLE ONLY public.tipo_contacto ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4681 (class 2604 OID 90347)
+-- TOC entry 4766 (class 2604 OID 90347)
 -- Name: transicion_estado_cotizacion id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10125,7 +12604,7 @@ ALTER TABLE ONLY public.transicion_estado_cotizacion ALTER COLUMN id SET DEFAULT
 
 
 --
--- TOC entry 4350 (class 2604 OID 66719)
+-- TOC entry 4429 (class 2604 OID 66719)
 -- Name: unidad id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10133,7 +12612,7 @@ ALTER TABLE ONLY public.unidad ALTER COLUMN id SET DEFAULT nextval('public.unida
 
 
 --
--- TOC entry 4390 (class 2604 OID 66841)
+-- TOC entry 4469 (class 2604 OID 66841)
 -- Name: usuario_rol id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -10141,7 +12620,7 @@ ALTER TABLE ONLY public.usuario_rol ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
--- TOC entry 5694 (class 0 OID 16525)
+-- TOC entry 5902 (class 0 OID 16525)
 -- Dependencies: 356
 -- Data for Name: audit_log_entries; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10722,7 +13201,7 @@ INSERT INTO auth.audit_log_entries (instance_id, id, payload, created_at, ip_add
 
 
 --
--- TOC entry 5708 (class 0 OID 16927)
+-- TOC entry 5916 (class 0 OID 16927)
 -- Dependencies: 373
 -- Data for Name: flow_state; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10730,7 +13209,7 @@ INSERT INTO auth.audit_log_entries (instance_id, id, payload, created_at, ip_add
 
 
 --
--- TOC entry 5699 (class 0 OID 16725)
+-- TOC entry 5907 (class 0 OID 16725)
 -- Dependencies: 364
 -- Data for Name: identities; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10745,7 +13224,7 @@ INSERT INTO auth.identities (provider_id, user_id, identity_data, provider, last
 
 
 --
--- TOC entry 5693 (class 0 OID 16518)
+-- TOC entry 5901 (class 0 OID 16518)
 -- Dependencies: 355
 -- Data for Name: instances; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10753,7 +13232,7 @@ INSERT INTO auth.identities (provider_id, user_id, identity_data, provider, last
 
 
 --
--- TOC entry 5703 (class 0 OID 16814)
+-- TOC entry 5911 (class 0 OID 16814)
 -- Dependencies: 368
 -- Data for Name: mfa_amr_claims; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10846,7 +13325,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5702 (class 0 OID 16802)
+-- TOC entry 5910 (class 0 OID 16802)
 -- Dependencies: 367
 -- Data for Name: mfa_challenges; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10854,7 +13333,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5701 (class 0 OID 16789)
+-- TOC entry 5909 (class 0 OID 16789)
 -- Dependencies: 366
 -- Data for Name: mfa_factors; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10862,7 +13341,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5837 (class 0 OID 126983)
+-- TOC entry 6045 (class 0 OID 126983)
 -- Dependencies: 515
 -- Data for Name: oauth_authorizations; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10870,7 +13349,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5821 (class 0 OID 77035)
+-- TOC entry 6029 (class 0 OID 77035)
 -- Dependencies: 495
 -- Data for Name: oauth_clients; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10878,7 +13357,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5838 (class 0 OID 127016)
+-- TOC entry 6046 (class 0 OID 127016)
 -- Dependencies: 516
 -- Data for Name: oauth_consents; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10886,7 +13365,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5709 (class 0 OID 16977)
+-- TOC entry 5917 (class 0 OID 16977)
 -- Dependencies: 374
 -- Data for Name: one_time_tokens; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -10894,7 +13373,7 @@ INSERT INTO auth.mfa_amr_claims (session_id, created_at, updated_at, authenticat
 
 
 --
--- TOC entry 5692 (class 0 OID 16507)
+-- TOC entry 5900 (class 0 OID 16507)
 -- Dependencies: 354
 -- Data for Name: refresh_tokens; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11043,7 +13522,7 @@ INSERT INTO auth.refresh_tokens (instance_id, id, token, user_id, revoked, creat
 
 
 --
--- TOC entry 5706 (class 0 OID 16856)
+-- TOC entry 5914 (class 0 OID 16856)
 -- Dependencies: 371
 -- Data for Name: saml_providers; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11051,7 +13530,7 @@ INSERT INTO auth.refresh_tokens (instance_id, id, token, user_id, revoked, creat
 
 
 --
--- TOC entry 5707 (class 0 OID 16874)
+-- TOC entry 5915 (class 0 OID 16874)
 -- Dependencies: 372
 -- Data for Name: saml_relay_states; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11059,7 +13538,7 @@ INSERT INTO auth.refresh_tokens (instance_id, id, token, user_id, revoked, creat
 
 
 --
--- TOC entry 5695 (class 0 OID 16533)
+-- TOC entry 5903 (class 0 OID 16533)
 -- Dependencies: 357
 -- Data for Name: schema_migrations; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11131,103 +13610,105 @@ INSERT INTO auth.schema_migrations (version) VALUES ('20250804100000');
 INSERT INTO auth.schema_migrations (version) VALUES ('20250901200500');
 INSERT INTO auth.schema_migrations (version) VALUES ('20250903112500');
 INSERT INTO auth.schema_migrations (version) VALUES ('20250904133000');
+INSERT INTO auth.schema_migrations (version) VALUES ('20250925093508');
+INSERT INTO auth.schema_migrations (version) VALUES ('20251007112900');
 
 
 --
--- TOC entry 5700 (class 0 OID 16755)
+-- TOC entry 5908 (class 0 OID 16755)
 -- Dependencies: 365
 -- Data for Name: sessions; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
 
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('f81ecfcb-82ce-4afa-a303-4b84f79db98d', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:48:30.686043+00', '2025-10-16 14:48:30.686043+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('674af039-e869-439c-935b-00fb4d37a13e', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:48:31.574398+00', '2025-10-16 14:48:31.574398+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('db56bc4a-9704-4fcc-95aa-f74bdcc3989f', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:50:05.364716+00', '2025-10-16 14:50:05.364716+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8b854996-0fe8-4d3f-8b2f-c1100a630e15', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:50:06.607619+00', '2025-10-16 14:50:06.607619+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('7689bb7a-7247-417a-8474-2679cb40993d', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:50:07.928199+00', '2025-10-16 14:50:07.928199+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('7efd7e3c-9b5c-45af-8395-da9466de2637', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:50:09.188603+00', '2025-10-16 14:50:09.188603+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('dbf4474c-f938-4f95-af93-c906366dd507', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:50:10.077962+00', '2025-10-16 14:50:10.077962+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('b5f84568-3f84-4e7d-87d6-fc14e7ddc719', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:50:10.962097+00', '2025-10-16 14:50:10.962097+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('df89d355-124a-4f94-b42c-6d1af9833158', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:53:40.032421+00', '2025-10-16 14:53:40.032421+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('b68a5a78-ee64-4102-899d-0016a89ed815', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:53:54.94565+00', '2025-10-16 14:53:54.94565+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('f9896d54-2c04-4330-a84d-11aea33efe9d', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:53:56.229537+00', '2025-10-16 14:53:56.229537+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('516472a5-7a51-4932-a42f-05b689fdad7c', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:53:57.037194+00', '2025-10-16 14:53:57.037194+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('0735168f-0233-4370-935e-4863a3d161be', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:53:57.954125+00', '2025-10-16 14:53:57.954125+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('0bc9bee3-505b-4f46-beee-b11285b7360a', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:53:58.777229+00', '2025-10-16 14:53:58.777229+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('cb51e927-baad-42e4-831b-79a119fd50bc', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:53:59.595553+00', '2025-10-16 14:53:59.595553+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8979dbdb-1097-4c0e-a5df-e6ecd701c930', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:56:40.552831+00', '2025-10-16 14:56:40.552831+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('f93fa63c-797c-4d47-9e3b-2dcbd20a7879', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:57:13.827168+00', '2025-10-16 14:57:13.827168+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('e8f141f7-e1f1-4e4e-a87a-9e7c712b9427', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:57:43.633118+00', '2025-10-16 14:57:43.633118+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('464ee46c-0e52-496a-a2ef-4a2c3845f2c8', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:57:45.21708+00', '2025-10-16 14:57:45.21708+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('f65cc674-92a2-4840-b22c-03c0f5ddc3e9', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:58:45.284832+00', '2025-10-16 14:58:45.284832+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('6ad2ce9c-b9d1-4958-9c23-7e94454f7344', '82df97ec-0c85-495e-b673-31c03757603b', '2025-09-25 21:02:55.285709+00', '2025-10-03 14:41:07.626786+00', NULL, 'aal1', NULL, '2025-10-03 14:41:07.625694', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '38.253.158.33', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('bc828e2c-3820-4a97-9ea1-be5a74eff443', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:40:07.162039+00', '2025-10-16 14:40:07.162039+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('6269855c-ae0e-4951-badd-2c4d145e1da2', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:40:21.800629+00', '2025-10-16 14:40:21.800629+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('adad4856-873a-4630-85f6-dff0287880ff', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:40:30.250693+00', '2025-10-16 14:40:30.250693+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('43296761-a365-4cc1-a11f-2b3d92f02e7c', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:41:12.350279+00', '2025-10-16 14:41:12.350279+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('873f0176-a85a-495c-8a1b-cfe1b31a1706', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:41:47.432328+00', '2025-10-16 14:41:47.432328+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('4e232a3c-4946-4c6c-8f25-ab181d515538', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-09-22 16:16:17.226581+00', '2025-09-22 16:16:17.226581+00', NULL, 'aal1', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '181.66.176.122', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('d2873876-e3bc-410e-89bd-c57d1f35876d', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:42:20.781747+00', '2025-10-16 14:42:20.781747+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('cdcdb128-7199-4924-a213-5db9ab1676a9', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:42:49.571035+00', '2025-10-16 14:42:49.571035+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8ec19fc1-82ff-430f-8b0d-1fc3d586d606', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:43:22.357027+00', '2025-10-16 14:43:22.357027+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('f1d31d5b-7907-4999-a069-4cf6cb7c3908', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:43:28.240471+00', '2025-10-16 14:43:28.240471+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('87e39ba1-2bbd-4783-ab5c-9017c83f931a', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:44:58.424308+00', '2025-10-16 14:44:58.424308+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8d390557-9fe0-40fe-87b5-69a97b9325bc', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:45:44.254776+00', '2025-10-16 14:45:44.254776+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('ed71b5d5-45e5-4753-8010-76a43602e143', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:59:00.623779+00', '2025-10-16 14:59:00.623779+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('344d7d4f-f886-481e-8027-dabe92fb07f0', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:45:49.301211+00', '2025-10-16 14:45:49.301211+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('b4f60093-eb90-4e52-ad26-3dde48dc4795', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:46:30.656469+00', '2025-10-16 14:46:30.656469+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('cc8c4cf8-d4bc-42ec-857f-6bd11be84944', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:47:58.37882+00', '2025-10-16 14:47:58.37882+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('88fbf137-06d6-4309-b8a4-b264c27fd3f1', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:48:07.71125+00', '2025-10-16 14:48:07.71125+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('600945da-e584-499f-9ecc-1c1b78a4917e', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:48:14.649327+00', '2025-10-16 14:48:14.649327+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('070684d5-6aeb-4329-bc97-f877e7d47c98', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:48:26.839452+00', '2025-10-16 14:48:26.839452+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('2532e5c1-207b-42be-8c9a-730767ad7b1f', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:48:27.761024+00', '2025-10-16 14:48:27.761024+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('cfb149cc-33fb-440f-a8e7-75d5ccc6bcfe', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:48:28.61482+00', '2025-10-16 14:48:28.61482+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('c158a0e2-c6a8-4d5f-b5e6-80be207e0878', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:48:29.82288+00', '2025-10-16 14:48:29.82288+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('3c96de8f-a4a1-40cb-8ba8-5b25cfe0de3e', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:59:01.546103+00', '2025-10-16 14:59:01.546103+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('ca05a6c1-2062-4eab-9c0c-9766d4bf6fe7', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:59:02.485477+00', '2025-10-16 14:59:02.485477+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('59ca8ed4-fafc-4036-9dda-7a42c77cc979', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:59:03.444555+00', '2025-10-16 14:59:03.444555+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('62dd3887-68a0-46fc-a803-927217fecb31', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:59:04.283073+00', '2025-10-16 14:59:04.283073+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8110f9b6-0245-4347-887b-50ea7fedb81d', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:59:05.141526+00', '2025-10-16 14:59:05.141526+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('657e809f-d4f3-4b0e-a97e-eaf709cb3a00', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 15:04:04.865176+00', '2025-10-16 15:04:04.865176+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('5da19186-5a71-46e0-9019-b1836cfc4534', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 15:04:05.763582+00', '2025-10-16 15:04:05.763582+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('92146aba-c17e-4d27-9e82-4dde3786e50e', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:04:07.055808+00', '2025-10-16 15:04:07.055808+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('3d69a476-790c-4186-8d10-020a7b5c9fbe', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 15:04:07.916374+00', '2025-10-16 15:04:07.916374+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('7eff8a6f-e1b6-4b24-9f62-4cf7e29e0c85', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 15:04:09.252724+00', '2025-10-16 15:04:09.252724+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8cd60356-a330-4c64-a8ea-d2542c37d955', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 15:10:10.851361+00', '2025-10-16 15:10:10.851361+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('beba7fe6-d034-4ce4-993d-baf83d91c579', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:10:19.658892+00', '2025-10-16 15:10:19.658892+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('fd73db4f-452c-44e9-bd62-0b2558925aac', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 15:12:07.136385+00', '2025-10-16 15:12:07.136385+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('4284773c-7555-4e2d-8664-b9f812565151', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 15:12:24.572232+00', '2025-10-16 15:12:24.572232+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('b41c3d4e-31d0-45de-ba20-9783ed88bd36', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:12:37.39526+00', '2025-10-16 15:12:37.39526+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('cd33c148-4d91-407a-9e04-ba012ce2a54c', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:16:22.757967+00', '2025-10-16 15:16:22.757967+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8400fa6c-b6de-47e0-a350-7b32ccd41447', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:23:15.456601+00', '2025-10-16 15:23:15.456601+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('655c34ab-bfce-4985-a67f-d596774eb0ab', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:33:25.355457+00', '2025-10-16 15:33:25.355457+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('6bfff431-784b-450f-baf5-976bf76afab6', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 15:48:53.961035+00', '2025-10-16 15:48:53.961035+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('3619a670-b848-4fc0-8824-5c62641a5761', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:49:08.875749+00', '2025-10-16 15:49:08.875749+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('2b31ed02-bd61-4e6f-81bd-85e659d66aff', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:05:31.889892+00', '2025-10-16 16:05:31.889892+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('be93d828-31d0-437c-950f-bf2d7991c20e', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:08:00.199438+00', '2025-10-16 16:08:00.199438+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('7031c3df-58fc-428f-842a-e2ee065d6ba1', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:13:48.831209+00', '2025-10-16 16:13:48.831209+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('ab54b548-5942-455d-a167-fc040bc0fa44', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 16:13:50.103882+00', '2025-10-16 16:13:50.103882+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('3ae3247d-bf6f-40c5-b39f-d7f4ca66dd8a', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:13:51.329883+00', '2025-10-16 16:13:51.329883+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('0dfe7f32-3f4c-4a80-925b-571a137e0630', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 16:13:52.5606+00', '2025-10-16 16:13:52.5606+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('96cfcbb8-a4a2-46cc-9c61-bd8c3fb6f70f', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 16:13:53.749669+00', '2025-10-16 16:13:53.749669+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('2a54be20-05bf-47da-9279-39d9a24848af', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:15:42.17975+00', '2025-10-16 16:15:42.17975+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('0fd7f5f8-fdd0-48cb-a01f-1a9078ebaa91', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:15:47.599592+00', '2025-10-16 16:15:47.599592+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('f643a9b2-d253-45ff-9759-e90d04305761', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:48:31.37211+00', '2025-10-16 16:48:31.37211+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('35e8ffba-f0ad-44cd-8c7f-4ee97429db9d', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:48:35.992867+00', '2025-10-16 16:48:35.992867+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('e1714bae-fbf5-4b64-bc2d-d65b424da4a8', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:50:55.500048+00', '2025-10-16 16:50:55.500048+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('89788019-2a45-4f0a-ba38-90f37a0e6033', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 16:56:39.307557+00', '2025-10-16 16:56:39.307557+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('8fbaaa0a-97c2-43e3-950a-0cf64929d869', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:56:48.228152+00', '2025-10-16 16:56:48.228152+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('5a1f4892-b2e0-475d-96e8-c65891fc14f1', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 17:14:54.26176+00', '2025-10-16 17:14:54.26176+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('e13df357-bf89-47fe-b529-ce1d009d2fa4', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:15:17.981937+00', '2025-10-16 17:15:17.981937+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('55911969-3925-4466-847c-118c26a3d749', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:15:57.07932+00', '2025-10-16 17:15:57.07932+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('66c739fa-2569-4913-8ac1-d788c8726044', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:16:16.08336+00', '2025-10-16 17:16:16.08336+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('afae9d8b-e564-427f-95c0-fbe037dea4a8', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:48:08.649323+00', '2025-10-16 17:48:08.649323+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('80f82fad-def6-4b2c-b049-1dbd8c0d9ee0', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 17:51:24.20329+00', '2025-10-16 17:51:24.20329+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('57520dd3-065e-420e-9e85-3f46d4967810', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:51:50.855905+00', '2025-10-16 17:51:50.855905+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
-INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id) VALUES ('4a33a471-6393-46fc-83c4-13d30f288cab', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:56:20.640071+00', '2025-10-16 17:56:20.640071+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('f81ecfcb-82ce-4afa-a303-4b84f79db98d', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:48:30.686043+00', '2025-10-16 14:48:30.686043+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('674af039-e869-439c-935b-00fb4d37a13e', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:48:31.574398+00', '2025-10-16 14:48:31.574398+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('db56bc4a-9704-4fcc-95aa-f74bdcc3989f', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:50:05.364716+00', '2025-10-16 14:50:05.364716+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8b854996-0fe8-4d3f-8b2f-c1100a630e15', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:50:06.607619+00', '2025-10-16 14:50:06.607619+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('7689bb7a-7247-417a-8474-2679cb40993d', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:50:07.928199+00', '2025-10-16 14:50:07.928199+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('7efd7e3c-9b5c-45af-8395-da9466de2637', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:50:09.188603+00', '2025-10-16 14:50:09.188603+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('dbf4474c-f938-4f95-af93-c906366dd507', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:50:10.077962+00', '2025-10-16 14:50:10.077962+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('b5f84568-3f84-4e7d-87d6-fc14e7ddc719', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:50:10.962097+00', '2025-10-16 14:50:10.962097+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('df89d355-124a-4f94-b42c-6d1af9833158', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:53:40.032421+00', '2025-10-16 14:53:40.032421+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('b68a5a78-ee64-4102-899d-0016a89ed815', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:53:54.94565+00', '2025-10-16 14:53:54.94565+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('f9896d54-2c04-4330-a84d-11aea33efe9d', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:53:56.229537+00', '2025-10-16 14:53:56.229537+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('516472a5-7a51-4932-a42f-05b689fdad7c', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:53:57.037194+00', '2025-10-16 14:53:57.037194+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('0735168f-0233-4370-935e-4863a3d161be', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:53:57.954125+00', '2025-10-16 14:53:57.954125+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('0bc9bee3-505b-4f46-beee-b11285b7360a', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:53:58.777229+00', '2025-10-16 14:53:58.777229+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('cb51e927-baad-42e4-831b-79a119fd50bc', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:53:59.595553+00', '2025-10-16 14:53:59.595553+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8979dbdb-1097-4c0e-a5df-e6ecd701c930', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:56:40.552831+00', '2025-10-16 14:56:40.552831+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('f93fa63c-797c-4d47-9e3b-2dcbd20a7879', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:57:13.827168+00', '2025-10-16 14:57:13.827168+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('e8f141f7-e1f1-4e4e-a87a-9e7c712b9427', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:57:43.633118+00', '2025-10-16 14:57:43.633118+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('464ee46c-0e52-496a-a2ef-4a2c3845f2c8', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:57:45.21708+00', '2025-10-16 14:57:45.21708+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('f65cc674-92a2-4840-b22c-03c0f5ddc3e9', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:58:45.284832+00', '2025-10-16 14:58:45.284832+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('6ad2ce9c-b9d1-4958-9c23-7e94454f7344', '82df97ec-0c85-495e-b673-31c03757603b', '2025-09-25 21:02:55.285709+00', '2025-10-03 14:41:07.626786+00', NULL, 'aal1', NULL, '2025-10-03 14:41:07.625694', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '38.253.158.33', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('bc828e2c-3820-4a97-9ea1-be5a74eff443', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:40:07.162039+00', '2025-10-16 14:40:07.162039+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('6269855c-ae0e-4951-badd-2c4d145e1da2', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:40:21.800629+00', '2025-10-16 14:40:21.800629+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('adad4856-873a-4630-85f6-dff0287880ff', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:40:30.250693+00', '2025-10-16 14:40:30.250693+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('43296761-a365-4cc1-a11f-2b3d92f02e7c', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:41:12.350279+00', '2025-10-16 14:41:12.350279+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('873f0176-a85a-495c-8a1b-cfe1b31a1706', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:41:47.432328+00', '2025-10-16 14:41:47.432328+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('4e232a3c-4946-4c6c-8f25-ab181d515538', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-09-22 16:16:17.226581+00', '2025-09-22 16:16:17.226581+00', NULL, 'aal1', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', '181.66.176.122', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('d2873876-e3bc-410e-89bd-c57d1f35876d', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:42:20.781747+00', '2025-10-16 14:42:20.781747+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('cdcdb128-7199-4924-a213-5db9ab1676a9', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:42:49.571035+00', '2025-10-16 14:42:49.571035+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8ec19fc1-82ff-430f-8b0d-1fc3d586d606', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:43:22.357027+00', '2025-10-16 14:43:22.357027+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('f1d31d5b-7907-4999-a069-4cf6cb7c3908', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:43:28.240471+00', '2025-10-16 14:43:28.240471+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('87e39ba1-2bbd-4783-ab5c-9017c83f931a', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:44:58.424308+00', '2025-10-16 14:44:58.424308+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8d390557-9fe0-40fe-87b5-69a97b9325bc', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:45:44.254776+00', '2025-10-16 14:45:44.254776+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('ed71b5d5-45e5-4753-8010-76a43602e143', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:59:00.623779+00', '2025-10-16 14:59:00.623779+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('344d7d4f-f886-481e-8027-dabe92fb07f0', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:45:49.301211+00', '2025-10-16 14:45:49.301211+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('b4f60093-eb90-4e52-ad26-3dde48dc4795', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:46:30.656469+00', '2025-10-16 14:46:30.656469+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('cc8c4cf8-d4bc-42ec-857f-6bd11be84944', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:47:58.37882+00', '2025-10-16 14:47:58.37882+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('88fbf137-06d6-4309-b8a4-b264c27fd3f1', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:48:07.71125+00', '2025-10-16 14:48:07.71125+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('600945da-e584-499f-9ecc-1c1b78a4917e', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:48:14.649327+00', '2025-10-16 14:48:14.649327+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('070684d5-6aeb-4329-bc97-f877e7d47c98', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 14:48:26.839452+00', '2025-10-16 14:48:26.839452+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('2532e5c1-207b-42be-8c9a-730767ad7b1f', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:48:27.761024+00', '2025-10-16 14:48:27.761024+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('cfb149cc-33fb-440f-a8e7-75d5ccc6bcfe', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:48:28.61482+00', '2025-10-16 14:48:28.61482+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('c158a0e2-c6a8-4d5f-b5e6-80be207e0878', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:48:29.82288+00', '2025-10-16 14:48:29.82288+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('3c96de8f-a4a1-40cb-8ba8-5b25cfe0de3e', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 14:59:01.546103+00', '2025-10-16 14:59:01.546103+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('ca05a6c1-2062-4eab-9c0c-9766d4bf6fe7', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 14:59:02.485477+00', '2025-10-16 14:59:02.485477+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('59ca8ed4-fafc-4036-9dda-7a42c77cc979', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 14:59:03.444555+00', '2025-10-16 14:59:03.444555+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('62dd3887-68a0-46fc-a803-927217fecb31', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 14:59:04.283073+00', '2025-10-16 14:59:04.283073+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8110f9b6-0245-4347-887b-50ea7fedb81d', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 14:59:05.141526+00', '2025-10-16 14:59:05.141526+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('657e809f-d4f3-4b0e-a97e-eaf709cb3a00', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 15:04:04.865176+00', '2025-10-16 15:04:04.865176+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('5da19186-5a71-46e0-9019-b1836cfc4534', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 15:04:05.763582+00', '2025-10-16 15:04:05.763582+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('92146aba-c17e-4d27-9e82-4dde3786e50e', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:04:07.055808+00', '2025-10-16 15:04:07.055808+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('3d69a476-790c-4186-8d10-020a7b5c9fbe', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 15:04:07.916374+00', '2025-10-16 15:04:07.916374+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('7eff8a6f-e1b6-4b24-9f62-4cf7e29e0c85', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 15:04:09.252724+00', '2025-10-16 15:04:09.252724+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8cd60356-a330-4c64-a8ea-d2542c37d955', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 15:10:10.851361+00', '2025-10-16 15:10:10.851361+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('beba7fe6-d034-4ce4-993d-baf83d91c579', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:10:19.658892+00', '2025-10-16 15:10:19.658892+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('fd73db4f-452c-44e9-bd62-0b2558925aac', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 15:12:07.136385+00', '2025-10-16 15:12:07.136385+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('4284773c-7555-4e2d-8664-b9f812565151', 'b56d1e4e-d523-419f-b000-9936e02c0db2', '2025-10-16 15:12:24.572232+00', '2025-10-16 15:12:24.572232+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('b41c3d4e-31d0-45de-ba20-9783ed88bd36', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:12:37.39526+00', '2025-10-16 15:12:37.39526+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('cd33c148-4d91-407a-9e04-ba012ce2a54c', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:16:22.757967+00', '2025-10-16 15:16:22.757967+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8400fa6c-b6de-47e0-a350-7b32ccd41447', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:23:15.456601+00', '2025-10-16 15:23:15.456601+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('655c34ab-bfce-4985-a67f-d596774eb0ab', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:33:25.355457+00', '2025-10-16 15:33:25.355457+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('6bfff431-784b-450f-baf5-976bf76afab6', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 15:48:53.961035+00', '2025-10-16 15:48:53.961035+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('3619a670-b848-4fc0-8824-5c62641a5761', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 15:49:08.875749+00', '2025-10-16 15:49:08.875749+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('2b31ed02-bd61-4e6f-81bd-85e659d66aff', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:05:31.889892+00', '2025-10-16 16:05:31.889892+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('be93d828-31d0-437c-950f-bf2d7991c20e', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:08:00.199438+00', '2025-10-16 16:08:00.199438+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('7031c3df-58fc-428f-842a-e2ee065d6ba1', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:13:48.831209+00', '2025-10-16 16:13:48.831209+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('ab54b548-5942-455d-a167-fc040bc0fa44', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 16:13:50.103882+00', '2025-10-16 16:13:50.103882+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('3ae3247d-bf6f-40c5-b39f-d7f4ca66dd8a', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:13:51.329883+00', '2025-10-16 16:13:51.329883+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('0dfe7f32-3f4c-4a80-925b-571a137e0630', '5ed36a9e-5329-4b84-a3f0-7e8b9a01be5b', '2025-10-16 16:13:52.5606+00', '2025-10-16 16:13:52.5606+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('96cfcbb8-a4a2-46cc-9c61-bd8c3fb6f70f', '2c387ed4-e734-46d0-ad85-666fa04a6c69', '2025-10-16 16:13:53.749669+00', '2025-10-16 16:13:53.749669+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('2a54be20-05bf-47da-9279-39d9a24848af', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:15:42.17975+00', '2025-10-16 16:15:42.17975+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('0fd7f5f8-fdd0-48cb-a01f-1a9078ebaa91', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:15:47.599592+00', '2025-10-16 16:15:47.599592+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('f643a9b2-d253-45ff-9759-e90d04305761', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:48:31.37211+00', '2025-10-16 16:48:31.37211+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('35e8ffba-f0ad-44cd-8c7f-4ee97429db9d', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:48:35.992867+00', '2025-10-16 16:48:35.992867+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('e1714bae-fbf5-4b64-bc2d-d65b424da4a8', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 16:50:55.500048+00', '2025-10-16 16:50:55.500048+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('89788019-2a45-4f0a-ba38-90f37a0e6033', '60bc1460-6cbf-48b0-937c-eb2322ca1cbc', '2025-10-16 16:56:39.307557+00', '2025-10-16 16:56:39.307557+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('8fbaaa0a-97c2-43e3-950a-0cf64929d869', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 16:56:48.228152+00', '2025-10-16 16:56:48.228152+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('5a1f4892-b2e0-475d-96e8-c65891fc14f1', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 17:14:54.26176+00', '2025-10-16 17:14:54.26176+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('e13df357-bf89-47fe-b529-ce1d009d2fa4', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:15:17.981937+00', '2025-10-16 17:15:17.981937+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('55911969-3925-4466-847c-118c26a3d749', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:15:57.07932+00', '2025-10-16 17:15:57.07932+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('66c739fa-2569-4913-8ac1-d788c8726044', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:16:16.08336+00', '2025-10-16 17:16:16.08336+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('afae9d8b-e564-427f-95c0-fbe037dea4a8', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:48:08.649323+00', '2025-10-16 17:48:08.649323+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('80f82fad-def6-4b2c-b049-1dbd8c0d9ee0', '82df97ec-0c85-495e-b673-31c03757603b', '2025-10-16 17:51:24.20329+00', '2025-10-16 17:51:24.20329+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('57520dd3-065e-420e-9e85-3f46d4967810', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:51:50.855905+00', '2025-10-16 17:51:50.855905+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
+INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter) VALUES ('4a33a471-6393-46fc-83c4-13d30f288cab', '36e6097c-3167-4a35-8d22-c5036418c0d5', '2025-10-16 17:56:20.640071+00', '2025-10-16 17:56:20.640071+00', NULL, 'aal1', NULL, NULL, 'python-httpx/0.27.2', '37.60.239.70', NULL, NULL, NULL, NULL);
 
 
 --
--- TOC entry 5705 (class 0 OID 16841)
+-- TOC entry 5913 (class 0 OID 16841)
 -- Dependencies: 370
 -- Data for Name: sso_domains; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11235,7 +13716,7 @@ INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, 
 
 
 --
--- TOC entry 5704 (class 0 OID 16832)
+-- TOC entry 5912 (class 0 OID 16832)
 -- Dependencies: 369
 -- Data for Name: sso_providers; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11243,7 +13724,7 @@ INSERT INTO auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, 
 
 
 --
--- TOC entry 5690 (class 0 OID 16495)
+-- TOC entry 5898 (class 0 OID 16495)
 -- Dependencies: 352
 -- Data for Name: users; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
 --
@@ -11258,7 +13739,7 @@ INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, e
 
 
 --
--- TOC entry 5812 (class 0 OID 67962)
+-- TOC entry 6020 (class 0 OID 67962)
 -- Dependencies: 481
 -- Data for Name: carrito_compra; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11266,7 +13747,7 @@ INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, e
 
 
 --
--- TOC entry 5739 (class 0 OID 66777)
+-- TOC entry 5947 (class 0 OID 66777)
 -- Dependencies: 408
 -- Data for Name: categoria; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11284,27 +13765,48 @@ INSERT INTO public.categoria (id, nombre, descripcion, activo, fecha_creacion) V
 
 
 --
--- TOC entry 5721 (class 0 OID 66653)
+-- TOC entry 5929 (class 0 OID 66653)
 -- Dependencies: 390
 -- Data for Name: ciudad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (1, 'LIM', 'Lima', 1, NULL, true, '2025-08-26 15:16:04.347035');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (1, 'LIM', 'Lima', 1, '15001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (2, 'CAL', 'Callao', 1, '07001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (3, 'ICA', 'Ica', 1, '11001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (4, 'LAL', 'La Libertad', 1, '13001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (5, 'LAM', 'Lambayeque', 1, '14001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (6, 'PIU', 'Piura', 1, '20001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (7, 'TUM', 'Tumbes', 1, '24001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (8, 'MOQ', 'Moquegua', 1, '18001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (9, 'TAC', 'Tacna', 1, '23001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (10, 'ARE', 'Arequipa', 1, '04001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (11, 'ANC', 'Áncash', 1, '02001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (12, 'APU', 'Apurímac', 1, '03001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (13, 'AYA', 'Ayacucho', 1, '05001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (14, 'CAJ', 'Cajamarca', 1, '06001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (15, 'CUS', 'Cusco', 1, '08001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (16, 'HUV', 'Huancavelica', 1, '09001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (17, 'HUC', 'Huánuco', 1, '10001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (18, 'JUN', 'Junín', 1, '12001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (19, 'PAS', 'Pasco', 1, '19001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (20, 'PUN', 'Puno', 1, '21001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (21, 'AMA', 'Amazonas', 1, '01001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (22, 'LOR', 'Loreto', 1, '15001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (23, 'MDD', 'Madre de Dios', 1, '17001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (24, 'SAM', 'San Martín', 1, '22001', true, '2025-11-03 19:14:46.712651');
+INSERT INTO public.ciudad (id, codigo, nombre, id_pais, codigo_postal, activo, fecha_creacion) VALUES (25, 'UCA', 'Ucayali', 1, '25001', true, '2025-11-03 19:14:46.712651');
 
 
 --
--- TOC entry 5750 (class 0 OID 66864)
+-- TOC entry 5958 (class 0 OID 66864)
 -- Dependencies: 419
 -- Data for Name: cliente; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.cliente (id, nombre, apellidos, correo, telefono, contrasena, razon_social, documento_personal, documento_empresa, id_rubro, id_tipo_cliente, id_pais, activo, verificado, fecha_registro, fecha_ultima_compra, id_tipo_contacto, num_trabajadores, estado_sunat, condicion_sunat, actividad_economica, fecha_consulta_sunat) VALUES (4, '', '', 'gffs@gmail.com', '949165670', '123456789', 'pepito sac', NULL, '12345678900', 7, 2, 1, true, false, '2025-09-11 13:36:10.749', NULL, 2, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.cliente (id, nombre, apellidos, correo, telefono, contrasena, razon_social, documento_personal, documento_empresa, id_rubro, id_tipo_cliente, id_pais, activo, verificado, fecha_registro, fecha_ultima_compra, id_tipo_contacto, num_trabajadores, estado_sunat, condicion_sunat, actividad_economica, fecha_consulta_sunat) VALUES (9, 'Juan', 'Pérez', 'juan@test.com', '987654321', '70377138643d0202a812e157660761a559dc721db5eff1144d23a5b2aa4a0a3d', 'Juan Pérez', '12345678', '', 1, 1, 1, true, false, '2025-10-21 20:25:09.577016', NULL, 2, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.cliente (id, nombre, apellidos, correo, telefono, contrasena, razon_social, documento_personal, documento_empresa, id_rubro, id_tipo_cliente, id_pais, activo, verificado, fecha_registro, fecha_ultima_compra, id_tipo_contacto, num_trabajadores, estado_sunat, condicion_sunat, actividad_economica, fecha_consulta_sunat) VALUES (11, 'fdsffds', '', 'dfsfsds@gmai.com', '999999999', '6eefd73848b5db72d3ddf4f8ee80fb6f3b2a5c3a13b676857732edbba953a5b0', 'AUTOMOTRIZ SAN BLAS S.A.', NULL, '20120476816', 8, 2, 1, true, false, '2025-10-24 23:05:22.952501', NULL, 2, NULL, NULL, NULL, NULL, NULL);
 
 
 --
--- TOC entry 5779 (class 0 OID 67323)
+-- TOC entry 5987 (class 0 OID 67323)
 -- Dependencies: 448
 -- Data for Name: comunicacion_solicitud; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11312,7 +13814,7 @@ INSERT INTO public.cliente (id, nombre, apellidos, correo, telefono, contrasena,
 
 
 --
--- TOC entry 5735 (class 0 OID 66743)
+-- TOC entry 5943 (class 0 OID 66743)
 -- Dependencies: 404
 -- Data for Name: condiciones_comerciales; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11321,7 +13823,7 @@ INSERT INTO public.condiciones_comerciales (id, codigo, nombre, descripcion, ter
 
 
 --
--- TOC entry 5758 (class 0 OID 66982)
+-- TOC entry 5966 (class 0 OID 66982)
 -- Dependencies: 427
 -- Data for Name: configuracion_archivos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11329,7 +13831,7 @@ INSERT INTO public.condiciones_comerciales (id, codigo, nombre, descripcion, ter
 
 
 --
--- TOC entry 5760 (class 0 OID 66994)
+-- TOC entry 5968 (class 0 OID 66994)
 -- Dependencies: 429
 -- Data for Name: configuracion_fe; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11337,7 +13839,7 @@ INSERT INTO public.condiciones_comerciales (id, codigo, nombre, descripcion, ter
 
 
 --
--- TOC entry 5757 (class 0 OID 66968)
+-- TOC entry 5965 (class 0 OID 66968)
 -- Dependencies: 426
 -- Data for Name: configuracion_sistema; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11355,27 +13857,23 @@ INSERT INTO public.configuracion_sistema (clave, valor, descripcion, tipo_dato, 
 
 
 --
--- TOC entry 5840 (class 0 OID 134194)
+-- TOC entry 6048 (class 0 OID 134194)
 -- Dependencies: 518
 -- Data for Name: contacto_empresa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.contacto_empresa (id, id_cliente, nombre_completo, cargo, telefono, correo, es_contacto_principal, notas, activo, fecha_creacion, fecha_actualizacion) VALUES (1, 4, 'Juan Pérez', 'Gerente General', '987654321', 'juan.perez@pepito.com', true, NULL, true, '2025-10-21 19:54:02.148046+00', '2025-10-21 19:54:02.148046+00');
-INSERT INTO public.contacto_empresa (id, id_cliente, nombre_completo, cargo, telefono, correo, es_contacto_principal, notas, activo, fecha_creacion, fecha_actualizacion) VALUES (2, 11, 'fdsffds', 'Contacto Principal', '999999999', 'dfsfsds@gmai.com', true, NULL, true, '2025-10-24 23:05:23.411498+00', '2025-10-24 23:05:23.411498+00');
 
 
 --
--- TOC entry 5844 (class 0 OID 134230)
+-- TOC entry 6052 (class 0 OID 134230)
 -- Dependencies: 522
 -- Data for Name: contacto_rol; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.contacto_rol (id, id_contacto, id_rol, nivel_influencia, observaciones, fecha_asignacion, activo) VALUES (1, 1, 1, NULL, NULL, '2025-10-21 19:54:02.653107+00', true);
-INSERT INTO public.contacto_rol (id, id_contacto, id_rol, nivel_influencia, observaciones, fecha_asignacion, activo) VALUES (2, 1, 3, NULL, NULL, '2025-10-21 19:54:03.100877+00', true);
 
 
 --
--- TOC entry 5816 (class 0 OID 68036)
+-- TOC entry 6024 (class 0 OID 68036)
 -- Dependencies: 485
 -- Data for Name: costos_operativos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11383,25 +13881,23 @@ INSERT INTO public.contacto_rol (id, id_contacto, id_rol, nivel_influencia, obse
 
 
 --
--- TOC entry 5792 (class 0 OID 67527)
+-- TOC entry 6000 (class 0 OID 67527)
 -- Dependencies: 461
 -- Data for Name: cotizacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.cotizacion (id, numero, fecha_emision, fecha_vencimiento, validez_dias, validez_oferta_dias, id_cliente, atencion, id_asesor_ventas, tipo_cambio_usd_pen, tipo_cambio_eur_pen, tipo_cambio_clp_pen, fecha_tipo_cambio, lugar_entrega, id_forma_pago, id_condiciones_comerciales, id_moneda_cotizacion, subtotal, subtotal_soles, descuento_total, igv, igv_soles, total, total_soles, porcentaje_igv, costo_total_proveedores, margen_bruto_total, porcentaje_margen_promedio, gastos_operativos, gastos_ventas, gastos_administrativos, gastos_financieros, utilidad_neta, utilidad_operativa, observaciones, observaciones_internas, activo, telefono_contacto, email_contacto, fecha_creacion, fecha_actualizacion, fecha_ultima_modificacion, creado_por, id_estado, id_disponibilidad) VALUES (52, 'C000001-2025', '2025-10-25', '2025-10-31', 7, 7, 11, '', 2, 3.4000, 4.1000, NULL, '2025-10-24 23:33:46.151686', '', 1, NULL, 2, 5.43, 5.43, 0.00, 0.98, 0.98, 6.41, 6.41, 18.00, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, NULL, NULL, '', NULL, true, '+51 963 381 909', NULL, '2025-10-24 23:33:46.151686', '2025-10-24 23:33:46.151686', '2025-10-24 23:33:46.151686', NULL, 10, NULL);
 
 
 --
--- TOC entry 5794 (class 0 OID 67596)
+-- TOC entry 6002 (class 0 OID 67596)
 -- Dependencies: 463
 -- Data for Name: cotizacion_detalle; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.cotizacion_detalle (id, id_cotizacion, item, sku, descripcion_personalizada, cantidad, marca, unidad, precio_unitario_original, precio_unitario_soles, moneda_original, precio_unitario_convertido, descuento_unitario, descuento_porcentaje, precio_unitario_final, subtotal, precio_total_soles, id_proveedor_principal, id_proveedor, codigo_proveedor, precio_costo_proveedor, costo_unitario_proveedor, id_moneda_costo_proveedor, tipo_cambio_aplicado, tiempo_entrega_dias, tiempo_entrega_proveedor, margen_unitario, margen_total_linea, porcentaje_margen, notas_vendedor, notas_internas, activo, fecha_creacion) VALUES (1, 52, 1, 61, 'Silicona Roja Alta Temperatura ABRO', 1.000, 'ABRO', 'UND', 6.41, 20.51, 'USD', 6.41, 0.00, 0.00, 6.41, 6.41, 20.51, 36, 36, NULL, 13.56, 13.56, 1, 3.4000, 0, 0, -7.15, -7.15, -111.52, '', '', true, '2025-10-24 23:33:48.862255');
 
 
 --
--- TOC entry 5788 (class 0 OID 67440)
+-- TOC entry 5996 (class 0 OID 67440)
 -- Dependencies: 457
 -- Data for Name: crm_actividad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11409,7 +13905,7 @@ INSERT INTO public.cotizacion_detalle (id, id_cotizacion, item, sku, descripcion
 
 
 --
--- TOC entry 5745 (class 0 OID 66812)
+-- TOC entry 5953 (class 0 OID 66812)
 -- Dependencies: 414
 -- Data for Name: crm_etapa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11423,7 +13919,7 @@ INSERT INTO public.crm_etapa (id, nombre, descripcion, orden_secuencial, probabi
 
 
 --
--- TOC entry 5790 (class 0 OID 67490)
+-- TOC entry 5998 (class 0 OID 67490)
 -- Dependencies: 459
 -- Data for Name: crm_nota; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11431,7 +13927,7 @@ INSERT INTO public.crm_etapa (id, nombre, descripcion, orden_secuencial, probabi
 
 
 --
--- TOC entry 5810 (class 0 OID 67936)
+-- TOC entry 6018 (class 0 OID 67936)
 -- Dependencies: 479
 -- Data for Name: crowdlending_operacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11439,7 +13935,7 @@ INSERT INTO public.crm_etapa (id, nombre, descripcion, orden_secuencial, probabi
 
 
 --
--- TOC entry 5804 (class 0 OID 67828)
+-- TOC entry 6012 (class 0 OID 67828)
 -- Dependencies: 473
 -- Data for Name: cuenta_por_cobrar; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11447,7 +13943,15 @@ INSERT INTO public.crm_etapa (id, nombre, descripcion, orden_secuencial, probabi
 
 
 --
--- TOC entry 5784 (class 0 OID 67369)
+-- TOC entry 6058 (class 0 OID 147833)
+-- Dependencies: 529
+-- Data for Name: cuenta_por_pagar_proveedor; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 5992 (class 0 OID 67369)
 -- Dependencies: 453
 -- Data for Name: detalle_solicitud_cotizacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11455,7 +13959,7 @@ INSERT INTO public.crm_etapa (id, nombre, descripcion, orden_secuencial, probabi
 
 
 --
--- TOC entry 5775 (class 0 OID 67243)
+-- TOC entry 5983 (class 0 OID 67243)
 -- Dependencies: 444
 -- Data for Name: direccion_cliente; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11463,7 +13967,7 @@ INSERT INTO public.crm_etapa (id, nombre, descripcion, orden_secuencial, probabi
 
 
 --
--- TOC entry 5729 (class 0 OID 66701)
+-- TOC entry 5937 (class 0 OID 66701)
 -- Dependencies: 398
 -- Data for Name: disponibilidad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11478,58 +13982,96 @@ INSERT INTO public.disponibilidad (id, codigo, nombre, descripcion, color_hex, d
 
 
 --
--- TOC entry 5723 (class 0 OID 66667)
+-- TOC entry 5931 (class 0 OID 66667)
 -- Dependencies: 392
 -- Data for Name: distrito; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (1, 'ANC', 'Ancón', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (2, 'ATE', 'Ate', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (3, 'BAR', 'Barranco', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (4, 'BRE', 'Breña', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (5, 'CAR', 'Carabayllo', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (6, 'CER', 'Cercado de Lima', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (7, 'CHA', 'Chaclacayo', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (8, 'CHO', 'Chorrillos', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (9, 'CIE', 'Cieneguilla', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (10, 'COM', 'Comas', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (11, 'AGU', 'El Agustino', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (12, 'IND', 'Independencia', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (13, 'JMA', 'Jesús María', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (14, 'MOL', 'La Molina', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (15, 'VIC', 'La Victoria', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (16, 'LIN', 'Lince', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (17, 'OLI', 'Los Olivos', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (18, 'LUR', 'Lurigancho-Chosica', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (19, 'LRI', 'Lurín', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (20, 'MAG', 'Magdalena del Mar', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (21, 'MIR', 'Miraflores', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (22, 'PAC', 'Pachacamac', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (23, 'PUC', 'Pucusana', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (24, 'PUE', 'Pueblo Libre', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (25, 'PPE', 'Puente Piedra', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (26, 'PHE', 'Punta Hermosa', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (27, 'PNE', 'Punta Negra', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (28, 'RIM', 'Rímac', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (29, 'SBA', 'San Bartolo', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (30, 'SBO', 'San Borja', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (31, 'SIS', 'San Isidro', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (32, 'SJL', 'San Juan de Lurigancho', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (33, 'SJM', 'San Juan de Miraflores', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (34, 'SLU', 'San Luis', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (35, 'SMP', 'San Martín de Porres', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (36, 'SMI', 'San Miguel', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (37, 'SAN', 'Santa Anita', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (38, 'SMM', 'Santa María del Mar', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (39, 'SRO', 'Santa Rosa', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (40, 'SUR', 'Santiago de Surco', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (41, 'SUQ', 'Surquillo', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (42, 'VES', 'Villa El Salvador', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
-INSERT INTO public.distrito (id, codigo, nombre, id_ciudad, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (43, 'VMT', 'Villa María del Triunfo', 1, NULL, NULL, true, '2025-08-18 15:24:43.260842+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (1, 'ANC', 'Ancón', 1, '15370', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (2, 'ATE', 'Ate', 1, '15480', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (3, 'BAR', 'Barranco', 1, '15063', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (4, 'BRE', 'Breña', 1, '15082', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (5, 'CAR', 'Carabayllo', 1, '15310', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (6, 'CER', 'Cercado de Lima', 1, '15001', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (7, 'CHA', 'Chaclacayo', 1, '15470', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (8, 'CHO', 'Chorrillos', 1, '15056', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (9, 'CIE', 'Cieneguilla', 1, '15710', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (10, 'COM', 'Comas', 1, '15320', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (11, 'ELA', 'El Agustino', 1, '15490', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (12, 'IND', 'Independencia', 1, '15300', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (13, 'JES', 'Jesús María', 1, '15072', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (14, 'LAM', 'La Molina', 1, '15023', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (15, 'LAV', 'La Victoria', 1, '15018', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (16, 'LIN', 'Lince', 1, '15073', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (17, 'LOS', 'Los Olivos', 1, '15302', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (18, 'LUR', 'Lurín', 1, '15710', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (19, 'MAG', 'Magdalena del Mar', 1, '15076', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (20, 'MIR', 'Miraflores', 1, '15074', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (21, 'PAC', 'Pachacámac', 1, '15820', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (22, 'PUC', 'Pucusana', 1, '15710', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (23, 'PUE', 'Pueblo Libre', 1, '15084', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (24, 'PUB', 'Puente Piedra', 1, '15110', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (25, 'PUN', 'Punta Hermosa', 1, '15710', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (26, 'PNE', 'Punta Negra', 1, '15710', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (27, 'RIM', 'Rímac', 1, '15093', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (28, 'SAB', 'San Bartolo', 1, '15710', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (29, 'SBO', 'San Borja', 1, '15021', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (30, 'SIS', 'San Isidro', 1, '15073', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (31, 'SJL', 'San Juan de Lurigancho', 1, '15400', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (32, 'SJM', 'San Juan de Miraflores', 1, '15800', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (33, 'SLU', 'San Luis', 1, '15020', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (34, 'SMA', 'San Martín de Porres', 1, '15101', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (35, 'SMI', 'San Miguel', 1, '15087', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (36, 'SAN', 'Santa Anita', 1, '15480', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (37, 'SMA2', 'Santa María del Mar', 1, '15710', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (38, 'SRO', 'Santa Rosa', 1, '15370', 'Lima Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (39, 'SUR', 'Santiago de Surco', 1, '15023', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (40, 'SRQ', 'Surquillo', 1, '15047', 'Lima Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (41, 'VES', 'Villa El Salvador', 1, '15842', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (42, 'VMA', 'Villa María del Triunfo', 1, '15800', 'Lima Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (43, 'LUP', 'Lurigancho', 1, '15400', 'Lima Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (44, 'CAL', 'Callao', 11, '07001', 'Puerto', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (45, 'BEL', 'Bellavista', 11, '07011', 'Callao', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (46, 'CLR', 'Carmen de la Legua Reynoso', 11, '07001', 'Callao', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (47, 'LPE', 'La Perla', 11, '07016', 'Callao', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (48, 'LPU', 'La Punta', 11, '07021', 'Callao', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (49, 'VEN', 'Ventanilla', 11, '07061', 'Callao Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (50, 'MIP', 'Mi Perú', 11, '07071', 'Callao Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (51, 'AQP', 'Arequipa', 50, '04001', 'Cercado', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (52, 'CAY', 'Cayma', 50, '04002', 'Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (53, 'CCO', 'Cerro Colorado', 50, '04013', 'Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (54, 'JLB', 'José Luis Bustamante y Rivero', 50, '04007', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (55, 'PAU', 'Paucarpata', 50, '04006', 'Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (56, 'YAN', 'Yanahuara', 50, '04017', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (57, 'MIR2', 'Miraflores', 50, '04010', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (58, 'SOC', 'Socabaya', 50, '04011', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (59, 'TRU', 'Trujillo', 17, '13001', 'Cercado', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (60, 'VLH', 'Víctor Larco Herrera', 17, '13009', 'Costa', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (61, 'HUA', 'Huanchaco', 17, '13011', 'Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (62, 'LAE', 'La Esperanza', 17, '13004', 'Oeste', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (63, 'ELP', 'El Porvenir', 17, '13002', 'Oeste', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (64, 'CUS', 'Cusco', 99, '08001', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (65, 'WAN', 'Wanchaq', 99, '08008', 'Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (66, 'SSE', 'San Sebastián', 99, '08005', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (67, 'SJE', 'San Jerónimo', 99, '08004', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (68, 'SAY', 'Santiago', 99, '08006', 'Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (69, 'CHI', 'Chiclayo', 29, '14001', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (70, 'JLO', 'José Leonardo Ortiz', 29, '14002', 'Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (71, 'LAV2', 'La Victoria', 29, '14003', 'Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (72, 'PIU', 'Piura', 32, '20001', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (73, 'CAS', 'Castilla', 32, '20002', 'Oeste', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (74, 'CAT', 'Catacaos', 32, '20003', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (75, 'IQT', 'Iquitos', 162, '16001', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (76, 'BEL2', 'Belén', 162, '16002', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (77, 'PUN2', 'Punchana', 162, '16003', 'Norte', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (78, 'SJB', 'San Juan Bautista', 162, '16004', 'Sur', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (79, 'HYO', 'Huancayo', 130, '12001', 'Centro', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (80, 'TAM', 'Tambo', 130, '12002', 'Este', true, '2025-11-03 19:14:46.712651+00');
+INSERT INTO public.distrito (id, codigo, nombre, id_provincia, codigo_postal, descripcion, activo, fecha_creacion) OVERRIDING SYSTEM VALUE VALUES (81, 'CHI2', 'Chilca', 130, '12003', 'Sur', true, '2025-11-03 19:14:46.712651+00');
 
 
 --
--- TOC entry 5752 (class 0 OID 66891)
+-- TOC entry 5960 (class 0 OID 66891)
 -- Dependencies: 421
 -- Data for Name: empresa_emisora; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11538,7 +14080,7 @@ INSERT INTO public.empresa_emisora (id, razon_social, nombre_comercial, ruc, dir
 
 
 --
--- TOC entry 5823 (class 0 OID 86642)
+-- TOC entry 6031 (class 0 OID 86642)
 -- Dependencies: 497
 -- Data for Name: estado_cotizacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11551,7 +14093,7 @@ INSERT INTO public.estado_cotizacion (id, codigo, nombre, descripcion, color, ac
 
 
 --
--- TOC entry 5808 (class 0 OID 67918)
+-- TOC entry 6016 (class 0 OID 67918)
 -- Dependencies: 477
 -- Data for Name: factoring_operacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11559,7 +14101,7 @@ INSERT INTO public.estado_cotizacion (id, codigo, nombre, descripcion, color, ac
 
 
 --
--- TOC entry 5800 (class 0 OID 67743)
+-- TOC entry 6008 (class 0 OID 67743)
 -- Dependencies: 469
 -- Data for Name: factura; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11567,7 +14109,7 @@ INSERT INTO public.estado_cotizacion (id, codigo, nombre, descripcion, color, ac
 
 
 --
--- TOC entry 5802 (class 0 OID 67802)
+-- TOC entry 6010 (class 0 OID 67802)
 -- Dependencies: 471
 -- Data for Name: factura_detalle; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11575,7 +14117,7 @@ INSERT INTO public.estado_cotizacion (id, codigo, nombre, descripcion, color, ac
 
 
 --
--- TOC entry 5733 (class 0 OID 66729)
+-- TOC entry 5941 (class 0 OID 66729)
 -- Dependencies: 402
 -- Data for Name: forma_pago; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11591,7 +14133,15 @@ INSERT INTO public.forma_pago (id, codigo, nombre, descripcion, dias_credito, co
 
 
 --
--- TOC entry 5814 (class 0 OID 67991)
+-- TOC entry 6064 (class 0 OID 158835)
+-- Dependencies: 542
+-- Data for Name: historial_cotizacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 6022 (class 0 OID 67991)
 -- Dependencies: 483
 -- Data for Name: historial_precios; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11599,7 +14149,7 @@ INSERT INTO public.forma_pago (id, codigo, nombre, descripcion, dias_credito, co
 
 
 --
--- TOC entry 5818 (class 0 OID 68058)
+-- TOC entry 6026 (class 0 OID 68058)
 -- Dependencies: 487
 -- Data for Name: inversion_categoria; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11607,7 +14157,7 @@ INSERT INTO public.forma_pago (id, codigo, nombre, descripcion, dias_credito, co
 
 
 --
--- TOC entry 5741 (class 0 OID 66786)
+-- TOC entry 5949 (class 0 OID 66786)
 -- Dependencies: 410
 -- Data for Name: marca; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11622,7 +14172,6 @@ INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, 
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (12, 'EMERSON', 'EMERSON', 'Automatización y control de procesos', NULL, NULL, NULL, true, '2025-08-26 15:16:04.347035');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (13, 'HONEYWELL', 'HONEYWELL', 'Tecnología industrial y sensores', NULL, NULL, NULL, true, '2025-08-26 15:16:04.347035');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (14, 'GENERICO', 'GENERICO', 'Productos sin marca específica', NULL, NULL, NULL, true, '2025-08-26 15:16:04.347035');
-INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (23, NULL, 'MITUTOYO', 'Instrumentos de medición y tecnología metrológica', NULL, NULL, NULL, true, '2025-09-19 21:15:07.353158');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (24, NULL, 'RIDGID', 'Herramientas profesionales para construcción, plomería y mantenimiento', NULL, NULL, NULL, true, '2025-09-19 21:16:40.339223');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (25, NULL, 'PHOENIX CONTACT', 'Electrificación, interconexión y automatización industrial', NULL, NULL, NULL, true, '2025-09-19 21:20:08.129453');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (26, NULL, 'BAHCO', NULL, NULL, NULL, NULL, true, '2025-09-22 17:01:46.663457');
@@ -11653,7 +14202,6 @@ INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, 
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (52, NULL, 'ABRALIT', NULL, NULL, NULL, NULL, true, '2025-09-23 15:44:20.328544');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (53, NULL, '3M', NULL, NULL, NULL, NULL, true, '2025-09-23 15:44:29.501221');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (54, NULL, 'NORTON', NULL, NULL, NULL, NULL, true, '2025-09-23 15:45:36.555946');
-INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (55, NULL, 'FEIM', NULL, NULL, NULL, NULL, true, '2025-09-23 15:46:52.281871');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (56, NULL, 'KEPLER', NULL, NULL, NULL, NULL, true, '2025-09-23 15:48:09.887423');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (57, NULL, 'SOFAMEL', NULL, NULL, NULL, NULL, true, '2025-09-23 15:48:33.289522');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (58, 'AGRA', 'AGRATOOLS', '', NULL, NULL, NULL, true, '2025-09-29 17:28:06.533583');
@@ -11661,11 +14209,13 @@ INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, 
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (64, 'HELL', 'HELLERMANNTYTON', 'Marca especializada en soluciones de cableado y organización', NULL, NULL, NULL, true, '2025-10-14 15:04:09.066078');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (28, NULL, 'LOCTITE', NULL, NULL, NULL, NULL, true, '2025-09-23 15:13:04.469094');
 INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (66, NULL, 'Loctite', 'Marca de adhesivos industriales', NULL, NULL, NULL, true, '2025-10-15 15:53:37.526896');
-INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (67, 'MITU', 'MITUTOYO', '', NULL, NULL, NULL, true, '2025-10-22 21:13:16.991504');
+INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (68, 'WDXX', 'WD-40', '', NULL, NULL, NULL, true, '2025-10-31 13:45:18.566571');
+INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (69, 'TTOX', 'TTO', '', NULL, NULL, NULL, true, '2025-10-31 16:27:55.056649');
+INSERT INTO public.marca (id, codigo, nombre, descripcion, logo_url, sitio_web, pais_origen, activo, fecha_creacion) VALUES (23, 'MITU', 'MITUTOYO', 'Instrumentos de medición y tecnología metrológica', NULL, NULL, NULL, true, '2025-09-19 21:15:07.353158');
 
 
 --
--- TOC entry 5761 (class 0 OID 67018)
+-- TOC entry 5969 (class 0 OID 67018)
 -- Dependencies: 430
 -- Data for Name: marca_categoria; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11686,12 +14236,14 @@ INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, act
 INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (58, 5, false, true, '2025-09-29 17:28:23.442338');
 INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (64, 1, false, true, '2025-10-14 20:41:09.283867');
 INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (28, 6, false, true, '2025-10-14 21:58:13.299224');
-INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (67, 5, false, true, '2025-10-22 21:16:28.826208');
 INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (29, 6, false, true, '2025-10-23 17:32:26.655963');
+INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (68, 6, false, true, '2025-10-31 14:17:22.25135');
+INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (69, 6, false, true, '2025-10-31 16:34:26.880008');
+INSERT INTO public.marca_categoria (id_marca, id_categoria, es_especialista, activo, fecha_asociacion) VALUES (23, 10, false, true, '2025-11-10 20:27:52.277561');
 
 
 --
--- TOC entry 5717 (class 0 OID 66615)
+-- TOC entry 5925 (class 0 OID 66615)
 -- Dependencies: 386
 -- Data for Name: moneda; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11704,15 +14256,16 @@ INSERT INTO public.moneda (id, codigo, nombre, simbolo, decimales, tasa_cambio, 
 
 
 --
--- TOC entry 5846 (class 0 OID 141537)
--- Dependencies: 527
+-- TOC entry 6054 (class 0 OID 141537)
+-- Dependencies: 525
 -- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+INSERT INTO public.notificaciones (id, tipo, mensaje, producto_id, producto_nombre, leida, usuario_id, rol_destinatario, created_at, leida_at) VALUES (7, 'producto_nuevo', 'Se creó un nuevo producto: Calibrador Vernier Mitutoyo 530-114', 69, 'Calibrador Vernier Mitutoyo 530-114', false, NULL, 'marketing', '2025-11-24 14:20:53.187061', NULL);
 
 
 --
--- TOC entry 5786 (class 0 OID 67394)
+-- TOC entry 5994 (class 0 OID 67394)
 -- Dependencies: 455
 -- Data for Name: oportunidad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11720,7 +14273,15 @@ INSERT INTO public.moneda (id, codigo, nombre, simbolo, decimales, tasa_cambio, 
 
 
 --
--- TOC entry 5806 (class 0 OID 67872)
+-- TOC entry 6060 (class 0 OID 147889)
+-- Dependencies: 531
+-- Data for Name: pago_proveedor; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 6014 (class 0 OID 67872)
 -- Dependencies: 475
 -- Data for Name: pago_recibido; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11728,7 +14289,7 @@ INSERT INTO public.moneda (id, codigo, nombre, simbolo, decimales, tasa_cambio, 
 
 
 --
--- TOC entry 5719 (class 0 OID 66631)
+-- TOC entry 5927 (class 0 OID 66631)
 -- Dependencies: 388
 -- Data for Name: pais; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11739,7 +14300,7 @@ INSERT INTO public.pais (id, nombre, iso_code, iso_code_2, codigo, id_moneda_pri
 
 
 --
--- TOC entry 5796 (class 0 OID 67640)
+-- TOC entry 6004 (class 0 OID 67640)
 -- Dependencies: 465
 -- Data for Name: pedido; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11747,7 +14308,7 @@ INSERT INTO public.pais (id, nombre, iso_code, iso_code_2, codigo, id_moneda_pri
 
 
 --
--- TOC entry 5798 (class 0 OID 67710)
+-- TOC entry 6006 (class 0 OID 67710)
 -- Dependencies: 467
 -- Data for Name: pedido_detalle; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11755,7 +14316,7 @@ INSERT INTO public.pais (id, nombre, iso_code, iso_code_2, codigo, id_moneda_pri
 
 
 --
--- TOC entry 5782 (class 0 OID 67359)
+-- TOC entry 5990 (class 0 OID 67359)
 -- Dependencies: 451
 -- Data for Name: procesamiento_archivo_log; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11763,54 +14324,63 @@ INSERT INTO public.pais (id, nombre, iso_code, iso_code_2, codigo, id_moneda_pri
 
 
 --
--- TOC entry 5765 (class 0 OID 67074)
+-- TOC entry 5973 (class 0 OID 67074)
 -- Dependencies: 434
 -- Data for Name: producto; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.producto (sku, sku_producto, cod_producto_marca, nombre, descripcion_corta, descripcion_detallada, id_categoria, id_marca, id_unidad, id_disponibilidad, requiere_stock, stock_minimo, punto_reorden, codigo_arancelario, es_importado, tiempo_importacion_dias, imagen_principal_url, galeria_imagenes_urls, seo_title, seo_description, seo_keywords, seo_slug, meta_robots, canonical_url, structured_data, seo_score, seo_optimizado, tags, es_destacado, es_novedad, es_promocion, activo, visible_web, requiere_aprobacion, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, tiene_imagen, tiene_seo, estado_producto, visto_por) VALUES (45, 'INXMECA001', 'LOCTITE 401', 'PEGAMENTO ADHERENTE FLEXIBLE LOCTITE 401 (ALTERNATIVO)', '- Adhesivo instantáneo de alta resistencia.
-- Cura en segundos al contacto con humedad ambiental.
-- Aplicable en una amplia variedad de materiales (metal, goma, PVC, cerámica, madera).
-- Consistencia líquida de baja viscosidad para penetración precisa.
-- Excelente resistencia al corte y tracción.', 'El pegamento adherente flexible tipo LOCTITE 401 es un adhesivo de cianoacrilato de curado rápido, ideal para
-uniones rápidas de materiales como metal, caucho, cerámica, cuero, madera y plásticos. Diseñado para ofrecer una
-adherencia instantánea y duradera, este producto es una excelente solución para trabajos industriales, reparaciones
-técnicas y aplicaciones de ensamblaje que requieren alta resistencia en poco tiempo. Su fórmula versátil lo convierte en
-una herramienta confiable en diversos entornos productivos.', 6, 28, 1, 1, false, 0, 0, NULL, false, NULL, 'https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/INXMECA001/principal-20251015_232744-e1ea6c3f.webp', NULL, 'PEGAMENTO ADHERENTE FLEXIBLE LOCTITE 401 (ALTERNATIVO) - ...', 'PEGAMENTO ADHERENTE FLEXIBLE LOCTITE 401 (ALTERNATIVO). LOCTITE INXMECA001 - MECANICA_INDUSTRIAL. Suministros industriales INXORA - Calidad garantizada.', 'pegamento, adherente, flexible, loctite, 401, alternativo, loctite peru, loctite industrial, mecanica industrial, mecanica industrial industrial, mecanica industrial peru, loctite mecanica_industrial, mecanica_industrial loctite, inxmeca001, producto industrial, repuestos, herramientas, equipos, suministros, distribuidor, venta, precio, cotizar', 'loctite-pegamento-adherente-flexible-loctite-401-alternativo', 'index,follow', 'https://tienda.inxora.com/loctite/loctite-pegamento-adherente-flexible-loctite-401-alternativo', '{"sku": "INXMECA001", "name": "PEGAMENTO ADHERENTE FLEXIBLE LOCTITE 401 (ALTERNATIVO)", "@type": "Product", "brand": {"name": "LOCTITE", "@type": "Brand"}, "offers": {"@type": "Offer", "price": "64.1000", "availability": "https://schema.org/InStock", "priceCurrency": "PEN"}, "@context": "https://schema.org/", "category": "MECANICA_INDUSTRIAL", "productID": "INXMECA001", "description": "El pegamento adherente flexible tipo LOCTITE 401 es un adhesivo de cianoacrilato de curado rápido, ideal para\nuniones rápidas de materiales como metal, caucho, cerámica, cuero, madera y plásticos. Diseñado para ofrecer una\nadherencia instantánea y duradera, este producto es una excelente solución para trabajos industriales, reparaciones\ntécnicas y aplicaciones de ensamblaje que requieren alta resistencia en poco tiempo."}', 90, true, NULL, false, false, false, true, true, false, '2025-10-14 23:57:40.385313', '2025-10-29 20:24:26.774907', NULL, NULL, true, true, 'completo', '{}');
-INSERT INTO public.producto (sku, sku_producto, cod_producto_marca, nombre, descripcion_corta, descripcion_detallada, id_categoria, id_marca, id_unidad, id_disponibilidad, requiere_stock, stock_minimo, punto_reorden, codigo_arancelario, es_importado, tiempo_importacion_dias, imagen_principal_url, galeria_imagenes_urls, seo_title, seo_description, seo_keywords, seo_slug, meta_robots, canonical_url, structured_data, seo_score, seo_optimizado, tags, es_destacado, es_novedad, es_promocion, activo, visible_web, requiere_aprobacion, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, tiene_imagen, tiene_seo, estado_producto, visto_por) VALUES (61, 'INXMECA002', 'abro', 'Silicona Roja Alta Temperatura ABRO', 'La Silicona Roja de Alta Temperatura ABRO es un sellador RTV (vulcanizante a temperatura ambiente) especialmente
-formulado para resistir temperaturas extremas, vibraciones, presión y exposición a aceites y refrigerantes. Diseñada
-para formar juntas flexibles y duraderas, es ideal para reemplazar empaquetaduras convencionales en motores,
-bombas, cajas de transmisión y sistemas de escape. ', NULL, 6, 29, 1, 4, false, 0, 0, NULL, false, NULL, 'https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/INXMECA002/principal-20251027_212550-d01069b6.jpeg', NULL, 'Silicona Roja Alta Temperatura ABRO - ABRO INXMECA002 | M...', 'Silicona Roja Alta Temperatura ABRO. ABRO INXMECA002 - MECANICA_INDUSTRIAL. Suministros industriales INXORA - Calidad garantizada.', 'silicona, roja, alta, temperatura, abro, abro peru, abro industrial, mecanica industrial, mecanica industrial industrial, mecanica industrial peru, abro mecanica_industrial, mecanica_industrial abro, inxmeca002, producto industrial, repuestos, herramientas, equipos, suministros, distribuidor, venta, precio, cotizar', 'abro-silicona-roja-alta-temperatura-abro', 'index,follow', 'https://tienda.inxora.com/abro/abro-silicona-roja-alta-temperatura-abro', '{"sku": "INXMECA002", "name": "Silicona Roja Alta Temperatura ABRO", "@type": "Product", "brand": {"name": "ABRO", "@type": "Brand"}, "image": "https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/61/principal-20251027_145539-ab06c830.jpeg", "offers": {"@type": "Offer", "price": "20.5138", "availability": "https://schema.org/InStock", "priceCurrency": "PEN"}, "@context": "https://schema.org/", "category": "MECANICA_INDUSTRIAL", "productID": "INXMECA002", "description": "La Silicona Roja de Alta Temperatura ABRO es un sellador RTV (vulcanizante a temperatura ambiente) especialmente\nformulado para resistir temperaturas extremas, vibraciones, presión y exposición a aceites y refrigerantes. Diseñada\npara formar juntas flexibles y duraderas, es ideal para reemplazar empaquetaduras convencionales en motores,\nbombas, cajas de transmisión y sistemas de escape. "}', 100, true, NULL, false, false, false, true, true, false, '2025-10-24 17:30:43.872482', '2025-10-29 20:24:26.774907', NULL, NULL, true, true, 'completo', '{}');
-INSERT INTO public.producto (sku, sku_producto, cod_producto_marca, nombre, descripcion_corta, descripcion_detallada, id_categoria, id_marca, id_unidad, id_disponibilidad, requiere_stock, stock_minimo, punto_reorden, codigo_arancelario, es_importado, tiempo_importacion_dias, imagen_principal_url, galeria_imagenes_urls, seo_title, seo_description, seo_keywords, seo_slug, meta_robots, canonical_url, structured_data, seo_score, seo_optimizado, tags, es_destacado, es_novedad, es_promocion, activo, visible_web, requiere_aprobacion, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, tiene_imagen, tiene_seo, estado_producto, visto_por) VALUES (62, 'INXHERR001', 'sASasS', 'SasSASas', 'SAsasasasaSAAs', '', 5, 23, 1, 1, false, 0, 0, NULL, false, NULL, 'https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/INXHERR001/principal-20251029_174155-d8f3ec0e.jpeg', NULL, 'SasSASas - MITUTOYO INXHERR001 | HERRAMIENTAS_MANIOBRA | ...', 'SAsasasasaSAAs. MITUTOYO INXHERR001 - HERRAMIENTAS_MANIOBRA. Suministros industriales INXORA - Calidad garantizada.', 'sassasas, mitutoyo, mitutoyo peru, mitutoyo industrial, herramientas maniobra, herramientas maniobra industrial, herramientas maniobra peru, mitutoyo herramientas_maniobra, herramientas_maniobra mitutoyo, inxherr001, producto industrial, repuestos, herramientas, equipos, suministros, distribuidor, venta, precio, cotizar', 'mitutoyo-sassasas', 'index,follow', 'https://tienda.inxora.com/mitutoyo/mitutoyo-sassasas', '{"sku": "INXHERR001", "name": "SasSASas", "@type": "Product", "brand": {"name": "MITUTOYO", "@type": "Brand"}, "image": "https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/INXHERR001/principal-20251029_174155-d8f3ec0e.jpeg", "offers": {"@type": "Offer", "price": "19.6515", "availability": "https://schema.org/InStock", "priceCurrency": "PEN"}, "@context": "https://schema.org/", "category": "HERRAMIENTAS_MANIOBRA", "productID": "INXHERR001", "description": "SAsasasasaSAAs"}', 83, true, NULL, false, false, false, true, true, false, '2025-10-29 16:35:05.548542', '2025-10-29 20:24:26.774907', NULL, NULL, true, true, 'completo', '{}');
+INSERT INTO public.producto (sku, sku_producto, cod_producto_marca, nombre, descripcion_corta, descripcion_detallada, id_categoria, id_marca, id_unidad, id_disponibilidad, requiere_stock, stock_minimo, punto_reorden, codigo_arancelario, es_importado, tiempo_importacion_dias, imagen_principal_url, galeria_imagenes_urls, seo_title, seo_description, seo_keywords, seo_slug, meta_robots, canonical_url, structured_data, seo_score, seo_optimizado, tags, es_destacado, es_novedad, es_promocion, activo, visible_web, requiere_aprobacion, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, tiene_imagen, tiene_seo, estado_producto, visto_por, imagen_principal_seo, galeria_imagenes_seo) VALUES (69, 'INXAUTO001', '', 'Calibrador Vernier Mitutoyo 530-114', '<p>APLICACIONES:<br>- Medición de Exteriores<br>- Medición de Profundidad<br>- Medición de Interiores</p>', '<h2>Calibrador Vernier Mitutoyo 530-114</h2>
+<p>El <strong>Calibrador Vernier Mitutoyo 530-114</strong>, conocido comúnmente como <strong>pie de rey</strong>, es un instrumento de medición de alta precisión diseñado para medir dimensiones externas, internas, profundidades y escalones en piezas mecánicas. Fabricado por la reconocida marca japonesa <strong>Mitutoyo</strong>, este calibrador es ampliamente utilizado en talleres mecánicos, laboratorios de metrología e industrias que requieren mediciones exactas.</p>
+<h3>Características Principales</h3>
+<ul>
+<li><strong>Rango de medición:</strong> 0 mm a 200 mm (0" a 8").</li>
+<li><strong>Resolución:</strong> 0,05 mm (1/128").</li>
+<li><strong>Exactitud:</strong> ±0,05 mm.</li>
+<li><strong>Material:</strong> Acero inoxidable templado, que garantiza durabilidad y resistencia al desgaste.</li>
+<li><strong>Acabado de la escala:</strong> Cromado satinado antideslumbrante, lo que facilita la lectura y evita reflejos molestos.</li>
+<li><strong>Diseño de la escala:</strong> La graduación en desnivel previene el desgaste de la escala por fricción, asegurando una larga vida útil.</li>
+<li><strong>Superficies de medición:</strong> Rectificadas con precisión para asegurar mediciones exactas.</li>
+<li><strong>Tornillo de fijación:</strong> Ubicado en la parte superior, permite bloquear el cursor para mantener una medida fija durante su uso.</li>
+<li><strong>Varilla de profundidad:</strong> Plana, ideal para medir la profundidad de orificios y ranuras.</li>
+</ul>
+<h3>Aplicaciones</h3>
+<p>Este calibrador es ideal para:</p>
+<ul>
+<li><strong>Medición de dimensiones externas:</strong> Como diámetros de ejes o espesores de piezas.</li>
+<li><strong>Medición de dimensiones internas:</strong> Como diámetros de agujeros o cavidades.</li>
+<li><strong>Medición de profundidades:</strong> En orificios, ranuras o cavidades.</li>
+<li><strong>Medición de escalones:</strong> Para determinar diferencias de altura en superficies.</li>
+</ul>
+<h3>Ventajas</h3>
+<ul>
+<li><strong>Versatilidad:</strong> Permite realizar múltiples tipos de mediciones con un solo instrumento.</li>
+<li><strong>Precisión:</strong> Su exactitud de ±0,05 mm lo hace adecuado para trabajos que requieren alta precisión.</li>
+<li><strong>Durabilidad:</strong> Fabricado en acero inoxidable y con acabados que previenen el desgaste, garantiza una larga vida útil.</li>
+<li><strong>Facilidad de uso:</strong> Su diseño ergonómico y la claridad de su escala facilitan su manejo incluso para usuarios no especializados.</li>
+</ul>
+<p>El <strong>Mitutoyo 530-114</strong> es una herramienta esencial para profesionales que buscan precisión y confiabilidad en sus mediciones diarias.</p>
+<p>Para más información o soporte técnico, contáctanos al <a href="http://bit.ly/Infotecnototal" target="_blank" rel="noopener"><strong>+51 924 685 133</strong></a>. Estamos listos para atenderte y brindarte la mejor solución.</p>
+<p><span class="selectable-text copyable-text"><a href="https://www.tecnototalperu.com/categoria-producto/mitutoyo" target="_blank" rel="noopener">Mostrar más Productos de Mitutoyo</a></span></p>', 10, 23, 1, 7, false, 0, 0, NULL, false, NULL, 'https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/INXAUTO001/alibradorernieritutoyo530-114-inxora.jpeg', '{}', 'Calibrador Vernier Mitutoyo 530-114', '✅ En TECNOTOTAL PERÚ encuentras mas productos como Calibrador Vernier Mitutoyo 530-114 🌐Visita nuestra web 📞 +51 942 312 712.', 'Calibrador Vernier Mitutoyo 530-114', 'Calibrador Vernier Mitutoyo 530-114', 'index,follow', NULL, NULL, 85, true, '{}', false, false, false, true, true, false, '2025-11-24 14:20:53.187061', '2025-11-24 14:20:58.628181', NULL, NULL, true, true, 'completo', '{}', NULL, NULL);
 
 
 --
--- TOC entry 5836 (class 0 OID 106228)
+-- TOC entry 6044 (class 0 OID 106228)
 -- Dependencies: 514
 -- Data for Name: producto_precio_moneda; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.producto_precio_moneda (id, sku, id_moneda, precio_venta, margen_aplicado, fecha_vigencia_desde, fecha_vigencia_hasta, activo, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, observaciones, tipo_cambio_usado, precio_proveedor) VALUES (65, 61, 1, 20.5138, 22.00, '2025-10-24', NULL, true, '2025-10-24 17:30:44.316251', '2025-10-24 17:30:44.316251', NULL, NULL, 'Precio calculado automáticamente', NULL, NULL);
-INSERT INTO public.producto_precio_moneda (id, sku, id_moneda, precio_venta, margen_aplicado, fecha_vigencia_desde, fecha_vigencia_hasta, activo, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, observaciones, tipo_cambio_usado, precio_proveedor) VALUES (66, 61, 2, 6.4106, 22.00, '2025-10-24', NULL, true, '2025-10-24 17:30:44.755465', '2025-10-24 17:30:44.755465', NULL, NULL, 'Precio en USD calculado automáticamente', NULL, NULL);
-INSERT INTO public.producto_precio_moneda (id, sku, id_moneda, precio_venta, margen_aplicado, fecha_vigencia_desde, fecha_vigencia_hasta, activo, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, observaciones, tipo_cambio_usado, precio_proveedor) VALUES (67, 62, 1, 19.6515, 22.00, '2025-10-29', NULL, true, '2025-10-29 16:35:06.044785', '2025-10-29 16:35:06.044785', NULL, NULL, 'Precio calculado automáticamente', NULL, NULL);
-INSERT INTO public.producto_precio_moneda (id, sku, id_moneda, precio_venta, margen_aplicado, fecha_vigencia_desde, fecha_vigencia_hasta, activo, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, observaciones, tipo_cambio_usado, precio_proveedor) VALUES (68, 62, 2, 6.1411, 22.00, '2025-10-29', NULL, true, '2025-10-29 16:35:06.615966', '2025-10-29 16:35:06.615966', NULL, NULL, 'Precio en USD calculado automáticamente', NULL, NULL);
-INSERT INTO public.producto_precio_moneda (id, sku, id_moneda, precio_venta, margen_aplicado, fecha_vigencia_desde, fecha_vigencia_hasta, activo, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, observaciones, tipo_cambio_usado, precio_proveedor) VALUES (33, 45, 1, 64.1000, 25.00, '2025-10-14', NULL, true, '2025-10-14 23:57:40.859246', '2025-10-15 16:12:59.142374', NULL, NULL, 'Precio calculado automáticamente', NULL, NULL);
-INSERT INTO public.producto_precio_moneda (id, sku, id_moneda, precio_venta, margen_aplicado, fecha_vigencia_desde, fecha_vigencia_hasta, activo, fecha_creacion, fecha_actualizacion, creado_por, actualizado_por, observaciones, tipo_cambio_usado, precio_proveedor) VALUES (34, 45, 2, 18.3500, 25.00, '2025-10-14', NULL, true, '2025-10-14 23:57:41.320303', '2025-10-15 16:12:59.873694', NULL, NULL, 'Precio en USD calculado automáticamente', NULL, NULL);
 
 
 --
--- TOC entry 5767 (class 0 OID 67155)
+-- TOC entry 5975 (class 0 OID 67155)
 -- Dependencies: 436
 -- Data for Name: producto_proveedor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.producto_proveedor (id, sku, id_proveedor, codigo_proveedor, id_moneda_costo, tiempo_entrega_dias, stock_disponible, minimo_pedido, es_proveedor_principal, margen_aplicado, fecha_ultima_cotizacion, observaciones, activo, fecha_creacion, fecha_actualizacion, precio_cotizado, cotizacion_incluye_igv, costo_sin_igv, costo_con_igv, notas_internas, creado_por, actualizado_por, tipo_cambio_usado, descuento_1, descuento_2, descuento_3, precio_final_con_descuentos, descuento_total_porcentaje) VALUES (24, 45, 28, NULL, 1, 0, 0, 1.000, true, NULL, NULL, NULL, true, '2025-10-15 00:12:14.782079', '2025-10-23 15:18:28.525736', 50.0000, false, 50.0000, 59.0000, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 50.0000, 0.00);
-INSERT INTO public.producto_proveedor (id, sku, id_proveedor, codigo_proveedor, id_moneda_costo, tiempo_entrega_dias, stock_disponible, minimo_pedido, es_proveedor_principal, margen_aplicado, fecha_ultima_cotizacion, observaciones, activo, fecha_creacion, fecha_actualizacion, precio_cotizado, cotizacion_incluye_igv, costo_sin_igv, costo_con_igv, notas_internas, creado_por, actualizado_por, tipo_cambio_usado, descuento_1, descuento_2, descuento_3, precio_final_con_descuentos, descuento_total_porcentaje) VALUES (25, 61, 36, NULL, 1, 0, 0, 1.000, true, NULL, NULL, NULL, true, '2025-10-24 17:30:47.667528', '2025-10-24 17:30:47.667528', 13.5600, false, 13.5600, 16.0008, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 13.5600, 0.00);
-INSERT INTO public.producto_proveedor (id, sku, id_proveedor, codigo_proveedor, id_moneda_costo, tiempo_entrega_dias, stock_disponible, minimo_pedido, es_proveedor_principal, margen_aplicado, fecha_ultima_cotizacion, observaciones, activo, fecha_creacion, fecha_actualizacion, precio_cotizado, cotizacion_incluye_igv, costo_sin_igv, costo_con_igv, notas_internas, creado_por, actualizado_por, tipo_cambio_usado, descuento_1, descuento_2, descuento_3, precio_final_con_descuentos, descuento_total_porcentaje) VALUES (26, 62, 43, NULL, 1, 0, 0, 1.000, true, NULL, NULL, NULL, true, '2025-10-29 16:35:10.213252', '2025-10-29 16:35:10.213252', 12.9900, false, 12.9900, 15.3282, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 12.9900, 0.00);
 
 
 --
--- TOC entry 5769 (class 0 OID 67188)
+-- TOC entry 5977 (class 0 OID 67188)
 -- Dependencies: 438
 -- Data for Name: promocion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11818,7 +14388,7 @@ INSERT INTO public.producto_proveedor (id, sku, id_proveedor, codigo_proveedor, 
 
 
 --
--- TOC entry 5771 (class 0 OID 67208)
+-- TOC entry 5979 (class 0 OID 67208)
 -- Dependencies: 440
 -- Data for Name: promocion_descuento; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11826,7 +14396,7 @@ INSERT INTO public.producto_proveedor (id, sku, id_proveedor, codigo_proveedor, 
 
 
 --
--- TOC entry 5773 (class 0 OID 67224)
+-- TOC entry 5981 (class 0 OID 67224)
 -- Dependencies: 442
 -- Data for Name: promocion_uso; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11834,61 +14404,229 @@ INSERT INTO public.producto_proveedor (id, sku, id_proveedor, codigo_proveedor, 
 
 
 --
--- TOC entry 5754 (class 0 OID 66909)
+-- TOC entry 5962 (class 0 OID 66909)
 -- Dependencies: 423
 -- Data for Name: proveedor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (23, NULL, 'SIERSAC', NULL, 'SIERSAC', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-22 21:57:07.347639', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (20, NULL, 'SIERSAC', 'SIERSAC', NULL, 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-22 17:16:19.842055', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (19, NULL, 'FESEPSA', 'FESEPSA', NULL, 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-19 22:29:22.30786', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (3, NULL, 'TUBOS Y ACCESORIOS DEL PERÚ SA', 'TAPSA', '20345678903', 'RUC', NULL, NULL, 'ventas@tapsa.com.pe', NULL, '+51016789012', NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-10 15:53:17.701059', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (2, NULL, 'MATERIALES INDUSTRIALES EIRL', 'MATINSA', '20234567892', 'RUC', NULL, NULL, 'cotizaciones@matinsa.pe', NULL, '+51015678901', NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-10 15:53:17.701059', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (1, NULL, 'DISTRIBUIDORA ELÉCTRICA SAC', 'DISELEC', '20123456781', 'RUC', NULL, NULL, 'ventas@diselec.com.pe', NULL, '+51014567890', NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-10 15:53:17.701059', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (24, NULL, 'VENSO', 'VENSO (VENSO PERU)', NULL, 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, 1, true, '2025-09-23 19:10:45.757149', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (25, NULL, 'VANTOOLS', NULL, 'VANTOOLS', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-09-29 17:37:30.104552', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (28, NULL, 'HELLERMANNTYTON PERU S.A.C.', 'HELLERMANNTYTON', '20123456789', 'RUC', NULL, NULL, 'ventas@hellermann-tyton.pe', NULL, '+51 1 234 5678', NULL, NULL, NULL, NULL, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-14 15:05:41.668388', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (34, NULL, 'RODAMIENTOS INDUSTRIALES', NULL, 'RODAMIENTOSINDUSTRIALES', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, false, '2025-10-14 22:01:48.059764', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (36, NULL, 'RODAMIENTOS INDUSTRIALES', NULL, '12345678900', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-14 22:29:26.065425', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (37, NULL, 'Loctite Perú S.A.', NULL, NULL, 'RUC', NULL, NULL, NULL, NULL, '01-234-5678', NULL, 'Av. Industrial 123', NULL, NULL, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-15 15:53:42.691601', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (38, NULL, 'Loctite Perú S.A.', NULL, NULL, 'RUC', NULL, NULL, NULL, NULL, '01-234-5678', NULL, 'Av. Industrial 123', NULL, NULL, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-15 16:02:40.965216', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (39, NULL, 'Loctite Perú S.A.', NULL, NULL, 'RUC', NULL, NULL, NULL, NULL, '01-234-5678', NULL, 'Av. Industrial 123', NULL, NULL, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-15 16:02:47.414123', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (40, NULL, 'FESEPSA', NULL, '20100004080', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-22 21:18:17.016508', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (42, NULL, 'dasdasd', NULL, 'sadadsad', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-23 19:36:49.39008', NULL, NULL);
-INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas) VALUES (43, NULL, 'fddsfsfs', NULL, 'dsffdsf', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, false, true, false, NULL, 30, NULL, true, '2025-10-29 16:34:03.367195', NULL, NULL);
+INSERT INTO public.proveedor (id, codigo, razon_social, nombre_comercial, documento_empresa, tipo_documento, nombre_contacto, apellidos_contacto, correo, correo_facturacion, telefono, whatsapp, direccion, id_ciudad, id_pais, sitio_web, soporte_productos, entrega_nacional, entrega_internacional, margen_negociado, dias_pago_promedio, id_condiciones_comerciales, activo, fecha_registro, ultima_cotizacion, notas_internas, requiere_epp, requisitos_recojo, es_demorado, id_provincia) VALUES (44, NULL, 'FESEPSA S.A', 'FESEPSA S.A', '20100004080', 'RUC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, true, false, NULL, 30, NULL, true, '2025-11-21 19:42:51.308954', NULL, NULL, false, NULL, false, NULL);
 
 
 --
--- TOC entry 5763 (class 0 OID 67055)
+-- TOC entry 5971 (class 0 OID 67055)
 -- Dependencies: 432
 -- Data for Name: proveedor_categoria; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.proveedor_categoria (id_proveedor, id_categoria, especialidad_nivel, fecha_asociacion, activo) VALUES (1, 1, 'EXPERT', '2025-10-13 15:02:36.031441', true);
 
 
 --
--- TOC entry 5762 (class 0 OID 67036)
+-- TOC entry 5970 (class 0 OID 67036)
 -- Dependencies: 431
 -- Data for Name: proveedor_marca; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (23, 26, false, 0.00, '2025-09-22 21:57:07.58898', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (24, 27, false, 0.00, '2025-09-23 19:10:45.926613', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (25, 58, false, 0.00, '2025-09-29 17:37:30.474739', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (25, 35, false, 0.00, '2025-09-29 17:37:30.474739', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (1, 1, true, 5.00, '2025-10-13 15:03:00.486579', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (28, 64, true, 0.00, '2025-10-14 15:31:39.292116', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (36, 28, false, 0.00, '2025-10-14 22:29:29.869844', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (36, 29, false, 0.00, '2025-10-14 22:29:33.463308', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (39, 28, true, 0.00, '2025-10-15 16:03:00.930078', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (40, 67, false, 0.00, '2025-10-22 21:18:20.563818', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (42, 24, false, 0.00, '2025-10-23 19:36:52.921372', true);
-INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (43, 23, false, 0.00, '2025-10-29 16:34:07.29183', true);
+INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (44, 23, false, 0.00, '2025-11-21 19:42:55.149264', true);
+INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (44, 26, false, 0.00, '2025-11-21 19:42:56.247281', true);
+INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_oficial, descuento_especial, fecha_asociacion, activo) VALUES (44, 24, false, 0.00, '2025-11-21 19:42:57.115443', true);
 
 
 --
--- TOC entry 5756 (class 0 OID 66947)
+-- TOC entry 6055 (class 0 OID 146388)
+-- Dependencies: 526
+-- Data for Name: provincia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (1, 'Lima', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (2, 'Barranca', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (3, 'Cajatambo', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (4, 'Canta', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (5, 'Cañete', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (6, 'Huaral', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (7, 'Huarochirí', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (8, 'Huaura', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (9, 'Oyón', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (10, 'Yauyos', '2025-11-03 19:14:46.712651+00', 1);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (11, 'Callao', '2025-11-03 19:14:46.712651+00', 2);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (12, 'Ica', '2025-11-03 19:14:46.712651+00', 3);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (13, 'Chincha', '2025-11-03 19:14:46.712651+00', 3);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (14, 'Nazca', '2025-11-03 19:14:46.712651+00', 3);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (15, 'Palpa', '2025-11-03 19:14:46.712651+00', 3);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (16, 'Pisco', '2025-11-03 19:14:46.712651+00', 3);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (17, 'Trujillo', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (18, 'Ascope', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (19, 'Bolívar', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (20, 'Chepén', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (21, 'Gran Chimú', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (22, 'Julcán', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (23, 'Otuzco', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (24, 'Pacasmayo', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (25, 'Pataz', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (26, 'Sánchez Carrión', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (27, 'Santiago de Chuco', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (28, 'Virú', '2025-11-03 19:14:46.712651+00', 4);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (29, 'Chiclayo', '2025-11-03 19:14:46.712651+00', 5);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (30, 'Ferreñafe', '2025-11-03 19:14:46.712651+00', 5);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (31, 'Lambayeque', '2025-11-03 19:14:46.712651+00', 5);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (32, 'Piura', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (33, 'Ayabaca', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (34, 'Huancabamba', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (35, 'Morropón', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (36, 'Paita', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (37, 'Sechura', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (38, 'Sullana', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (39, 'Talara', '2025-11-03 19:14:46.712651+00', 6);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (40, 'Tumbes', '2025-11-03 19:14:46.712651+00', 7);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (41, 'Contralmirante Villar', '2025-11-03 19:14:46.712651+00', 7);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (42, 'Zarumilla', '2025-11-03 19:14:46.712651+00', 7);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (43, 'Mariscal Nieto', '2025-11-03 19:14:46.712651+00', 8);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (44, 'General Sánchez Cerro', '2025-11-03 19:14:46.712651+00', 8);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (45, 'Ilo', '2025-11-03 19:14:46.712651+00', 8);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (46, 'Tacna', '2025-11-03 19:14:46.712651+00', 9);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (47, 'Candarave', '2025-11-03 19:14:46.712651+00', 9);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (48, 'Jorge Basadre', '2025-11-03 19:14:46.712651+00', 9);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (49, 'Tarata', '2025-11-03 19:14:46.712651+00', 9);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (50, 'Arequipa', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (51, 'Camaná', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (52, 'Caravelí', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (53, 'Castilla', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (54, 'Caylloma', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (55, 'Condesuyos', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (56, 'Islay', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (57, 'La Unión', '2025-11-03 19:14:46.712651+00', 10);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (58, 'Huaraz', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (59, 'Aija', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (60, 'Antonio Raymondi', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (61, 'Asunción', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (62, 'Bolognesi', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (63, 'Carhuaz', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (64, 'Carlos Fermín Fitzcarrald', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (65, 'Casma', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (66, 'Corongo', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (67, 'Huari', '2025-11-03 19:14:46.712651+00', 11);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (68, 'Abancay', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (69, 'Andahuaylas', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (70, 'Antabamba', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (71, 'Aymaraes', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (72, 'Cotabambas', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (73, 'Chincheros', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (74, 'Grau', '2025-11-03 19:14:46.712651+00', 12);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (75, 'Huamanga', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (76, 'Cangallo', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (77, 'Huanca Sancos', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (78, 'Huanta', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (79, 'La Mar', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (80, 'Lucanas', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (81, 'Parinacochas', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (82, 'Páucar del Sara Sara', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (83, 'Sucre', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (84, 'Víctor Fajardo', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (85, 'Vilcas Huamán', '2025-11-03 19:14:46.712651+00', 13);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (86, 'Cajamarca', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (87, 'Cajabamba', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (88, 'Celendín', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (89, 'Chota', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (90, 'Contumazá', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (91, 'Cutervo', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (92, 'Hualgayoc', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (93, 'Jaén', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (94, 'San Ignacio', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (95, 'San Marcos', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (96, 'San Miguel', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (97, 'San Pablo', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (98, 'Santa Cruz', '2025-11-03 19:14:46.712651+00', 14);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (99, 'Cusco', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (100, 'Acomayo', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (101, 'Anta', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (102, 'Calca', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (103, 'Canas', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (104, 'Canchis', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (105, 'Chumbivilcas', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (106, 'Espinar', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (107, 'La Convención', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (108, 'Paruro', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (109, 'Paucartambo', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (110, 'Quispicanchi', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (111, 'Urubamba', '2025-11-03 19:14:46.712651+00', 15);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (112, 'Huancavelica', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (113, 'Acobamba', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (114, 'Angaraes', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (115, 'Castrovirreyna', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (116, 'Churcampa', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (117, 'Huaytará', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (118, 'Tayacaja', '2025-11-03 19:14:46.712651+00', 16);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (119, 'Huánuco', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (120, 'Ambo', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (121, 'Dos de Mayo', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (122, 'Huacaybamba', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (123, 'Huamalíes', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (124, 'Leoncio Prado', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (125, 'Marañón', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (126, 'Pachitea', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (127, 'Puerto Inca', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (128, 'Lauricocha', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (129, 'Yarowilca', '2025-11-03 19:14:46.712651+00', 17);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (130, 'Huancayo', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (131, 'Concepción', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (132, 'Chanchamayo', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (133, 'Jauja', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (134, 'Junín', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (135, 'Satipo', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (136, 'Tarma', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (137, 'Yauli', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (138, 'Chupaca', '2025-11-03 19:14:46.712651+00', 18);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (139, 'Pasco', '2025-11-03 19:14:46.712651+00', 19);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (140, 'Daniel Alcides Carrión', '2025-11-03 19:14:46.712651+00', 19);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (141, 'Oxapampa', '2025-11-03 19:14:46.712651+00', 19);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (142, 'Puno', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (143, 'Azángaro', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (144, 'Carabaya', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (145, 'Chucuito', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (146, 'El Collao', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (147, 'Huancané', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (148, 'Lampa', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (149, 'Melgar', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (150, 'Moho', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (151, 'San Antonio de Putina', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (152, 'San Román', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (153, 'Sandia', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (154, 'Yunguyo', '2025-11-03 19:14:46.712651+00', 20);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (155, 'Chachapoyas', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (156, 'Bagua', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (157, 'Bongará', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (158, 'Condorcanqui', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (159, 'Luya', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (160, 'Rodríguez de Mendoza', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (161, 'Utcubamba', '2025-11-03 19:14:46.712651+00', 21);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (162, 'Maynas', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (163, 'Alto Amazonas', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (164, 'Loreto', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (165, 'Mariscal Ramón Castilla', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (166, 'Requena', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (167, 'Ucayali', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (168, 'Datem del Marañón', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (169, 'Putumayo', '2025-11-03 19:14:46.712651+00', 22);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (170, 'Tambopata', '2025-11-03 19:14:46.712651+00', 23);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (171, 'Manu', '2025-11-03 19:14:46.712651+00', 23);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (172, 'Tahuamanu', '2025-11-03 19:14:46.712651+00', 23);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (173, 'Moyobamba', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (174, 'Bellavista', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (175, 'El Dorado', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (176, 'Huallaga', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (177, 'Lamas', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (178, 'Mariscal Cáceres', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (179, 'Picota', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (180, 'Rioja', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (181, 'San Martín', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (182, 'Tocache', '2025-11-03 19:14:46.712651+00', 24);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (183, 'Coronel Portillo', '2025-11-03 19:14:46.712651+00', 25);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (184, 'Atalaya', '2025-11-03 19:14:46.712651+00', 25);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (185, 'Padre Abad', '2025-11-03 19:14:46.712651+00', 25);
+INSERT INTO public.provincia (id, nombre, created_at, id_ciudad) VALUES (186, 'Purús', '2025-11-03 19:14:46.712651+00', 25);
+
+
+--
+-- TOC entry 5964 (class 0 OID 66947)
 -- Dependencies: 425
 -- Data for Name: recogedores; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11896,7 +14634,7 @@ INSERT INTO public.proveedor_marca (id_proveedor, id_marca, es_distribuidor_ofic
 
 
 --
--- TOC entry 5725 (class 0 OID 66682)
+-- TOC entry 5933 (class 0 OID 66682)
 -- Dependencies: 394
 -- Data for Name: rol; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11913,7 +14651,7 @@ INSERT INTO public.rol (id, nombre, descripcion, activo, fecha_creacion) VALUES 
 
 
 --
--- TOC entry 5842 (class 0 OID 134217)
+-- TOC entry 6050 (class 0 OID 134217)
 -- Dependencies: 520
 -- Data for Name: rol_compra; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11926,7 +14664,7 @@ INSERT INTO public.rol_compra (id, codigo, nombre, descripcion, orden_visual, ac
 
 
 --
--- TOC entry 5737 (class 0 OID 66764)
+-- TOC entry 5945 (class 0 OID 66764)
 -- Dependencies: 406
 -- Data for Name: rubro; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11961,7 +14699,7 @@ INSERT INTO public.rubro (id, codigo, nombre, descripcion, sector_economico, act
 
 
 --
--- TOC entry 5780 (class 0 OID 67345)
+-- TOC entry 5988 (class 0 OID 67345)
 -- Dependencies: 449
 -- Data for Name: solicitud_archivo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11969,7 +14707,7 @@ INSERT INTO public.rubro (id, codigo, nombre, descripcion, sector_economico, act
 
 
 --
--- TOC entry 5777 (class 0 OID 67278)
+-- TOC entry 5985 (class 0 OID 67278)
 -- Dependencies: 446
 -- Data for Name: solicitud_cotizacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11977,7 +14715,7 @@ INSERT INTO public.rubro (id, codigo, nombre, descripcion, sector_economico, act
 
 
 --
--- TOC entry 5727 (class 0 OID 66693)
+-- TOC entry 5935 (class 0 OID 66693)
 -- Dependencies: 396
 -- Data for Name: tipo_cliente; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11987,7 +14725,7 @@ INSERT INTO public.tipo_cliente (id, nombre, descripcion) VALUES (2, 'EMPRESA', 
 
 
 --
--- TOC entry 5825 (class 0 OID 89061)
+-- TOC entry 6033 (class 0 OID 89061)
 -- Dependencies: 499
 -- Data for Name: tipo_contacto; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -11998,16 +14736,15 @@ INSERT INTO public.tipo_contacto (id, codigo, nombre, descripcion, color, orden_
 
 
 --
--- TOC entry 5827 (class 0 OID 90344)
+-- TOC entry 6035 (class 0 OID 90344)
 -- Dependencies: 501
 -- Data for Name: transicion_estado_cotizacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.transicion_estado_cotizacion (id, id_cotizacion, estado_anterior_id, estado_nuevo_id, motivo, observaciones, probabilidad_anterior, probabilidad_nueva, valor_estimado, fecha_transicion, dias_en_estado_anterior, usuario_responsable, automatico, ip_origen, user_agent, canal_origen, valor_cotizacion_momento, margen_estimado, created_at, updated_at) VALUES (51, 52, NULL, 10, NULL, 'Estado inicial de la cotización', NULL, NULL, 6.41, '2025-10-24 23:33:46.151686', 0, 2, true, NULL, NULL, NULL, 6.41, NULL, '2025-10-24 23:33:46.151686', '2025-10-24 23:33:46.151686');
 
 
 --
--- TOC entry 5731 (class 0 OID 66716)
+-- TOC entry 5939 (class 0 OID 66716)
 -- Dependencies: 400
 -- Data for Name: unidad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -12030,11 +14767,10 @@ INSERT INTO public.unidad (id, codigo, nombre, simbolo, tipo, factor_conversion_
 INSERT INTO public.unidad (id, codigo, nombre, simbolo, tipo, factor_conversion_base, activo, fecha_creacion) VALUES (16, 'DOC', 'DOCENA', 'DOC', 'CANTIDAD', 1.0000, true, '2025-08-26 15:16:04.347035');
 INSERT INTO public.unidad (id, codigo, nombre, simbolo, tipo, factor_conversion_base, activo, fecha_creacion) VALUES (17, 'CNT', 'CENTENA', 'CNT', 'CANTIDAD', 1.0000, true, '2025-08-26 15:16:04.347035');
 INSERT INTO public.unidad (id, codigo, nombre, simbolo, tipo, factor_conversion_base, activo, fecha_creacion) VALUES (18, 'MLL', 'MILLAR', 'MLL', 'CANTIDAD', 1.0000, true, '2025-08-26 15:16:04.347035');
-INSERT INTO public.unidad (id, codigo, nombre, simbolo, tipo, factor_conversion_base, activo, fecha_creacion) VALUES (21, 'TU', 'Test Unit', 'T', 'Unidad', 1.0000, true, '2025-10-10 15:25:42.716606');
 
 
 --
--- TOC entry 5746 (class 0 OID 66826)
+-- TOC entry 5954 (class 0 OID 66826)
 -- Dependencies: 415
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -12048,7 +14784,7 @@ INSERT INTO public.usuario (id, nombre, apellidos, correo, es_asesor_ventas, tel
 
 
 --
--- TOC entry 5748 (class 0 OID 66838)
+-- TOC entry 5956 (class 0 OID 66838)
 -- Dependencies: 417
 -- Data for Name: usuario_rol; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -12063,7 +14799,7 @@ INSERT INTO public.usuario_rol (id, id_usuario, id_rol, fecha_asignacion, asigna
 
 
 --
--- TOC entry 5743 (class 0 OID 66799)
+-- TOC entry 5951 (class 0 OID 66799)
 -- Dependencies: 412
 -- Data for Name: vehicle_types; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -12076,7 +14812,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5828 (class 0 OID 97132)
+-- TOC entry 6036 (class 0 OID 97132)
 -- Dependencies: 506
 -- Data for Name: messages_2025_09_22; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12084,7 +14820,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5829 (class 0 OID 102118)
+-- TOC entry 6037 (class 0 OID 102118)
 -- Dependencies: 507
 -- Data for Name: messages_2025_09_23; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12092,7 +14828,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5830 (class 0 OID 102129)
+-- TOC entry 6038 (class 0 OID 102129)
 -- Dependencies: 508
 -- Data for Name: messages_2025_09_24; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12100,7 +14836,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5831 (class 0 OID 102140)
+-- TOC entry 6039 (class 0 OID 102140)
 -- Dependencies: 509
 -- Data for Name: messages_2025_09_25; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12108,7 +14844,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5832 (class 0 OID 102252)
+-- TOC entry 6040 (class 0 OID 102252)
 -- Dependencies: 510
 -- Data for Name: messages_2025_09_26; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12116,7 +14852,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5833 (class 0 OID 102367)
+-- TOC entry 6041 (class 0 OID 102367)
 -- Dependencies: 511
 -- Data for Name: messages_2025_09_27; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12124,7 +14860,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5834 (class 0 OID 105112)
+-- TOC entry 6042 (class 0 OID 105112)
 -- Dependencies: 512
 -- Data for Name: messages_2025_09_28; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12132,7 +14868,7 @@ INSERT INTO public.vehicle_types (id, nombre, descripcion, capacidad_carga_kg, c
 
 
 --
--- TOC entry 5710 (class 0 OID 17003)
+-- TOC entry 5918 (class 0 OID 17003)
 -- Dependencies: 375
 -- Data for Name: schema_migrations; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12201,10 +14937,11 @@ INSERT INTO realtime.schema_migrations (version, inserted_at) VALUES (2025050622
 INSERT INTO realtime.schema_migrations (version, inserted_at) VALUES (20250523164012, '2025-08-25 13:57:53');
 INSERT INTO realtime.schema_migrations (version, inserted_at) VALUES (20250714121412, '2025-08-25 13:57:56');
 INSERT INTO realtime.schema_migrations (version, inserted_at) VALUES (20250905041441, '2025-09-23 22:04:46');
+INSERT INTO realtime.schema_migrations (version, inserted_at) VALUES (20251103001201, '2025-11-14 14:43:21');
 
 
 --
--- TOC entry 5714 (class 0 OID 17109)
+-- TOC entry 5922 (class 0 OID 17109)
 -- Dependencies: 380
 -- Data for Name: subscription; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
 --
@@ -12212,7 +14949,7 @@ INSERT INTO realtime.schema_migrations (version, inserted_at) VALUES (2025090504
 
 
 --
--- TOC entry 5696 (class 0 OID 16546)
+-- TOC entry 5904 (class 0 OID 16546)
 -- Dependencies: 358
 -- Data for Name: buckets; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
@@ -12225,7 +14962,7 @@ INSERT INTO storage.buckets (id, name, owner, created_at, updated_at, public, av
 
 
 --
--- TOC entry 5820 (class 0 OID 68466)
+-- TOC entry 6028 (class 0 OID 68466)
 -- Dependencies: 494
 -- Data for Name: buckets_analytics; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
@@ -12233,7 +14970,15 @@ INSERT INTO storage.buckets (id, name, owner, created_at, updated_at, public, av
 
 
 --
--- TOC entry 5698 (class 0 OID 16588)
+-- TOC entry 6061 (class 0 OID 156547)
+-- Dependencies: 536
+-- Data for Name: buckets_vectors; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+
+
+--
+-- TOC entry 5906 (class 0 OID 16588)
 -- Dependencies: 360
 -- Data for Name: migrations; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
@@ -12282,33 +15027,34 @@ INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (40, 'fix-pr
 INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (41, 'add-object-level-update-trigger', '44c22478bf01744b2129efc480cd2edc9a7d60e9', '2025-09-30 17:02:22.166807');
 INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (42, 'rollback-prefix-triggers', 'f2ab4f526ab7f979541082992593938c05ee4b47', '2025-09-30 17:02:22.192207');
 INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (43, 'fix-object-level', 'ab837ad8f1c7d00cc0b7310e989a23388ff29fc6', '2025-09-30 17:02:22.202167');
+INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (44, 'vector-bucket-type', '99c20c0ffd52bb1ff1f32fb992f3b351e3ef8fb3', '2025-11-19 13:29:59.449381');
+INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (45, 'vector-buckets', '049e27196d77a7cb76497a85afae669d8b230953', '2025-11-19 13:29:59.494022');
+INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (46, 'buckets-objects-grants', 'fedeb96d60fefd8e02ab3ded9fbde05632f84aed', '2025-11-19 13:29:59.604432');
+INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (47, 'iceberg-table-metadata', '649df56855c24d8b36dd4cc1aeb8251aa9ad42c2', '2025-11-19 13:29:59.614526');
+INSERT INTO storage.migrations (id, name, hash, executed_at) VALUES (48, 'iceberg-catalog-ids', '2666dff93346e5d04e0a878416be1d5fec345d6f', '2025-11-19 13:29:59.620612');
 
 
 --
--- TOC entry 5697 (class 0 OID 16561)
+-- TOC entry 5905 (class 0 OID 16561)
 -- Dependencies: 359
 -- Data for Name: objects; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
 
+INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata, version, owner_id, user_metadata, level) VALUES ('e419c6c7-649c-4a42-a775-5f12a55e7268', 'productos-images', 'INXAUTO001/alibradorernieritutoyo530-114-inxora.jpeg', NULL, '2025-11-24 14:20:58.404426+00', '2025-11-24 14:20:58.404426+00', '2025-11-24 14:20:58.404426+00', '{"eTag": "\"c0c9c4c61d4b91a9c1e9afd8e3b040e2\"", "size": 27140, "mimetype": "image/jpeg", "cacheControl": "no-cache", "lastModified": "2025-11-24T14:20:59.000Z", "contentLength": 27140, "httpStatusCode": 200}', '6f68249b-0314-4cd3-9bf7-2c10587feb15', NULL, '{}', 2);
 INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata, version, owner_id, user_metadata, level) VALUES ('b6c045c5-6744-4b08-9d57-fbde04ebe020', 'productos-images', '.emptyFolderPlaceholder', NULL, '2025-10-15 18:23:02.60102+00', '2025-10-15 18:23:02.60102+00', '2025-10-15 18:23:02.60102+00', '{"eTag": "\"d41d8cd98f00b204e9800998ecf8427e\"", "size": 0, "mimetype": "application/octet-stream", "cacheControl": "max-age=3600", "lastModified": "2025-10-15T18:23:02.603Z", "contentLength": 0, "httpStatusCode": 200}', '11a42cee-10ae-4cca-99c2-79c4d6bab7a6', NULL, '{}', 1);
-INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata, version, owner_id, user_metadata, level) VALUES ('65471aac-211c-4aec-ab8f-c5263c74f63f', 'productos-images', 'INXMECA001/principal-20251015_232744-e1ea6c3f.webp', NULL, '2025-10-15 21:27:45.461792+00', '2025-10-15 21:27:45.461792+00', '2025-10-15 21:27:45.461792+00', '{"eTag": "\"edce973134f64166ce978ca5e076186b\"", "size": 22908, "mimetype": "image/webp", "cacheControl": "no-cache", "lastModified": "2025-10-15T21:27:46.000Z", "contentLength": 22908, "httpStatusCode": 200}', 'b5ae076a-4591-487d-b03d-0c8af88ac5a4', NULL, '{}', 2);
-INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata, version, owner_id, user_metadata, level) VALUES ('ef796390-d07d-4557-99be-261489ecb9f4', 'productos-images', 'INXMECA002/principal-20251027_212550-d01069b6.jpeg', NULL, '2025-10-27 20:25:52.082955+00', '2025-10-27 20:25:52.082955+00', '2025-10-27 20:25:52.082955+00', '{"eTag": "\"71bdae52d444e9c3c891101e9f6316eb\"", "size": 630744, "mimetype": "image/jpeg", "cacheControl": "no-cache", "lastModified": "2025-10-27T20:25:52.000Z", "contentLength": 630744, "httpStatusCode": 200}', 'e401d630-8955-4a22-85bd-be765ef4d502', NULL, '{}', 2);
-INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata, version, owner_id, user_metadata, level) VALUES ('9547e883-72a5-4024-a7fa-1afd4bd3986c', 'productos-images', 'INXHERR001/principal-20251029_174155-d8f3ec0e.jpeg', NULL, '2025-10-29 16:41:57.680021+00', '2025-10-29 16:41:57.680021+00', '2025-10-29 16:41:57.680021+00', '{"eTag": "\"f3fcffc9aa2d69321db76fc5da03d9be\"", "size": 929095, "mimetype": "image/jpeg", "cacheControl": "no-cache", "lastModified": "2025-10-29T16:41:58.000Z", "contentLength": 929095, "httpStatusCode": 200}', 'a5370add-b87f-4faf-8fd4-9a50f97b2830', NULL, '{}', 2);
 
 
 --
--- TOC entry 5819 (class 0 OID 68421)
+-- TOC entry 6027 (class 0 OID 68421)
 -- Dependencies: 493
 -- Data for Name: prefixes; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
 
-INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('productos-images', 'INXMECA001', '2025-10-15 21:27:45.461792+00', '2025-10-15 21:27:45.461792+00');
-INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('productos-images', 'INXMECA002', '2025-10-27 20:25:52.082955+00', '2025-10-27 20:25:52.082955+00');
-INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('productos-images', 'INXHERR001', '2025-10-29 16:41:57.680021+00', '2025-10-29 16:41:57.680021+00');
+INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('productos-images', 'INXAUTO001', '2025-11-24 14:20:58.404426+00', '2025-11-24 14:20:58.404426+00');
 
 
 --
--- TOC entry 5711 (class 0 OID 17040)
+-- TOC entry 5919 (class 0 OID 17040)
 -- Dependencies: 376
 -- Data for Name: s3_multipart_uploads; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
@@ -12316,7 +15062,7 @@ INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('
 
 
 --
--- TOC entry 5712 (class 0 OID 17054)
+-- TOC entry 5920 (class 0 OID 17054)
 -- Dependencies: 377
 -- Data for Name: s3_multipart_uploads_parts; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
 --
@@ -12324,7 +15070,15 @@ INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('
 
 
 --
--- TOC entry 4273 (class 0 OID 16658)
+-- TOC entry 6062 (class 0 OID 156557)
+-- Dependencies: 537
+-- Data for Name: vector_indexes; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+
+
+--
+-- TOC entry 4352 (class 0 OID 16658)
 -- Dependencies: 361
 -- Data for Name: secrets; Type: TABLE DATA; Schema: vault; Owner: supabase_admin
 --
@@ -12332,7 +15086,7 @@ INSERT INTO storage.prefixes (bucket_id, name, created_at, updated_at) VALUES ('
 
 
 --
--- TOC entry 6275 (class 0 OID 0)
+-- TOC entry 6569 (class 0 OID 0)
 -- Dependencies: 353
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: auth; Owner: supabase_auth_admin
 --
@@ -12341,7 +15095,7 @@ SELECT pg_catalog.setval('auth.refresh_tokens_id_seq', 320, true);
 
 
 --
--- TOC entry 6276 (class 0 OID 0)
+-- TOC entry 6570 (class 0 OID 0)
 -- Dependencies: 480
 -- Name: carrito_compra_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12350,7 +15104,7 @@ SELECT pg_catalog.setval('public.carrito_compra_id_seq', 1, false);
 
 
 --
--- TOC entry 6277 (class 0 OID 0)
+-- TOC entry 6571 (class 0 OID 0)
 -- Dependencies: 407
 -- Name: categoria_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12359,16 +15113,16 @@ SELECT pg_catalog.setval('public.categoria_id_seq', 19, true);
 
 
 --
--- TOC entry 6278 (class 0 OID 0)
+-- TOC entry 6572 (class 0 OID 0)
 -- Dependencies: 389
 -- Name: ciudad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.ciudad_id_seq', 10, true);
+SELECT pg_catalog.setval('public.ciudad_id_seq', 25, true);
 
 
 --
--- TOC entry 6279 (class 0 OID 0)
+-- TOC entry 6573 (class 0 OID 0)
 -- Dependencies: 418
 -- Name: cliente_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12377,7 +15131,7 @@ SELECT pg_catalog.setval('public.cliente_id_seq', 11, true);
 
 
 --
--- TOC entry 6280 (class 0 OID 0)
+-- TOC entry 6574 (class 0 OID 0)
 -- Dependencies: 447
 -- Name: comunicacion_solicitud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12386,7 +15140,7 @@ SELECT pg_catalog.setval('public.comunicacion_solicitud_id_seq', 1, false);
 
 
 --
--- TOC entry 6281 (class 0 OID 0)
+-- TOC entry 6575 (class 0 OID 0)
 -- Dependencies: 403
 -- Name: condiciones_comerciales_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12395,7 +15149,7 @@ SELECT pg_catalog.setval('public.condiciones_comerciales_id_seq', 10, true);
 
 
 --
--- TOC entry 6282 (class 0 OID 0)
+-- TOC entry 6576 (class 0 OID 0)
 -- Dependencies: 428
 -- Name: configuracion_fe_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12404,7 +15158,7 @@ SELECT pg_catalog.setval('public.configuracion_fe_id_seq', 1, false);
 
 
 --
--- TOC entry 6283 (class 0 OID 0)
+-- TOC entry 6577 (class 0 OID 0)
 -- Dependencies: 517
 -- Name: contacto_empresa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12413,7 +15167,7 @@ SELECT pg_catalog.setval('public.contacto_empresa_id_seq', 3, true);
 
 
 --
--- TOC entry 6284 (class 0 OID 0)
+-- TOC entry 6578 (class 0 OID 0)
 -- Dependencies: 521
 -- Name: contacto_rol_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12422,7 +15176,7 @@ SELECT pg_catalog.setval('public.contacto_rol_id_seq', 2, true);
 
 
 --
--- TOC entry 6285 (class 0 OID 0)
+-- TOC entry 6579 (class 0 OID 0)
 -- Dependencies: 484
 -- Name: costos_operativos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12431,7 +15185,7 @@ SELECT pg_catalog.setval('public.costos_operativos_id_seq', 1, false);
 
 
 --
--- TOC entry 6286 (class 0 OID 0)
+-- TOC entry 6580 (class 0 OID 0)
 -- Dependencies: 462
 -- Name: cotizacion_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12440,16 +15194,16 @@ SELECT pg_catalog.setval('public.cotizacion_detalle_id_seq', 24, true);
 
 
 --
--- TOC entry 6287 (class 0 OID 0)
+-- TOC entry 6581 (class 0 OID 0)
 -- Dependencies: 460
 -- Name: cotizacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.cotizacion_id_seq', 52, true);
+SELECT pg_catalog.setval('public.cotizacion_id_seq', 53, true);
 
 
 --
--- TOC entry 6288 (class 0 OID 0)
+-- TOC entry 6582 (class 0 OID 0)
 -- Dependencies: 456
 -- Name: crm_actividad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12458,7 +15212,7 @@ SELECT pg_catalog.setval('public.crm_actividad_id_seq', 1, false);
 
 
 --
--- TOC entry 6289 (class 0 OID 0)
+-- TOC entry 6583 (class 0 OID 0)
 -- Dependencies: 413
 -- Name: crm_etapa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12467,7 +15221,7 @@ SELECT pg_catalog.setval('public.crm_etapa_id_seq', 13, true);
 
 
 --
--- TOC entry 6290 (class 0 OID 0)
+-- TOC entry 6584 (class 0 OID 0)
 -- Dependencies: 458
 -- Name: crm_nota_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12476,7 +15230,7 @@ SELECT pg_catalog.setval('public.crm_nota_id_seq', 1, false);
 
 
 --
--- TOC entry 6291 (class 0 OID 0)
+-- TOC entry 6585 (class 0 OID 0)
 -- Dependencies: 478
 -- Name: crowdlending_operacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12485,7 +15239,7 @@ SELECT pg_catalog.setval('public.crowdlending_operacion_id_seq', 1, false);
 
 
 --
--- TOC entry 6292 (class 0 OID 0)
+-- TOC entry 6586 (class 0 OID 0)
 -- Dependencies: 472
 -- Name: cuenta_por_cobrar_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12494,7 +15248,16 @@ SELECT pg_catalog.setval('public.cuenta_por_cobrar_id_seq', 1, false);
 
 
 --
--- TOC entry 6293 (class 0 OID 0)
+-- TOC entry 6587 (class 0 OID 0)
+-- Dependencies: 528
+-- Name: cuenta_por_pagar_proveedor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cuenta_por_pagar_proveedor_id_seq', 1, false);
+
+
+--
+-- TOC entry 6588 (class 0 OID 0)
 -- Dependencies: 452
 -- Name: detalle_solicitud_cotizacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12503,7 +15266,7 @@ SELECT pg_catalog.setval('public.detalle_solicitud_cotizacion_id_seq', 1, false)
 
 
 --
--- TOC entry 6294 (class 0 OID 0)
+-- TOC entry 6589 (class 0 OID 0)
 -- Dependencies: 443
 -- Name: direccion_cliente_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12512,7 +15275,7 @@ SELECT pg_catalog.setval('public.direccion_cliente_id_seq', 1, false);
 
 
 --
--- TOC entry 6295 (class 0 OID 0)
+-- TOC entry 6590 (class 0 OID 0)
 -- Dependencies: 397
 -- Name: disponibilidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12521,16 +15284,16 @@ SELECT pg_catalog.setval('public.disponibilidad_id_seq', 10, true);
 
 
 --
--- TOC entry 6296 (class 0 OID 0)
+-- TOC entry 6591 (class 0 OID 0)
 -- Dependencies: 391
 -- Name: distrito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.distrito_id_seq', 1, false);
+SELECT pg_catalog.setval('public.distrito_id_seq', 81, true);
 
 
 --
--- TOC entry 6297 (class 0 OID 0)
+-- TOC entry 6592 (class 0 OID 0)
 -- Dependencies: 420
 -- Name: empresa_emisora_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12539,7 +15302,7 @@ SELECT pg_catalog.setval('public.empresa_emisora_id_seq', 10, true);
 
 
 --
--- TOC entry 6298 (class 0 OID 0)
+-- TOC entry 6593 (class 0 OID 0)
 -- Dependencies: 496
 -- Name: estado_cotizacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12548,7 +15311,7 @@ SELECT pg_catalog.setval('public.estado_cotizacion_id_seq', 16, true);
 
 
 --
--- TOC entry 6299 (class 0 OID 0)
+-- TOC entry 6594 (class 0 OID 0)
 -- Dependencies: 476
 -- Name: factoring_operacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12557,7 +15320,7 @@ SELECT pg_catalog.setval('public.factoring_operacion_id_seq', 1, false);
 
 
 --
--- TOC entry 6300 (class 0 OID 0)
+-- TOC entry 6595 (class 0 OID 0)
 -- Dependencies: 470
 -- Name: factura_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12566,7 +15329,7 @@ SELECT pg_catalog.setval('public.factura_detalle_id_seq', 1, false);
 
 
 --
--- TOC entry 6301 (class 0 OID 0)
+-- TOC entry 6596 (class 0 OID 0)
 -- Dependencies: 468
 -- Name: factura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12575,7 +15338,7 @@ SELECT pg_catalog.setval('public.factura_id_seq', 1, false);
 
 
 --
--- TOC entry 6302 (class 0 OID 0)
+-- TOC entry 6597 (class 0 OID 0)
 -- Dependencies: 401
 -- Name: forma_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12584,7 +15347,16 @@ SELECT pg_catalog.setval('public.forma_pago_id_seq', 10, true);
 
 
 --
--- TOC entry 6303 (class 0 OID 0)
+-- TOC entry 6598 (class 0 OID 0)
+-- Dependencies: 541
+-- Name: historial_cotizacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.historial_cotizacion_id_seq', 1, false);
+
+
+--
+-- TOC entry 6599 (class 0 OID 0)
 -- Dependencies: 482
 -- Name: historial_precios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12593,7 +15365,7 @@ SELECT pg_catalog.setval('public.historial_precios_id_seq', 31, true);
 
 
 --
--- TOC entry 6304 (class 0 OID 0)
+-- TOC entry 6600 (class 0 OID 0)
 -- Dependencies: 486
 -- Name: inversion_categoria_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12602,16 +15374,16 @@ SELECT pg_catalog.setval('public.inversion_categoria_id_seq', 1, false);
 
 
 --
--- TOC entry 6305 (class 0 OID 0)
+-- TOC entry 6601 (class 0 OID 0)
 -- Dependencies: 409
 -- Name: marca_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.marca_id_seq', 67, true);
+SELECT pg_catalog.setval('public.marca_id_seq', 69, true);
 
 
 --
--- TOC entry 6306 (class 0 OID 0)
+-- TOC entry 6602 (class 0 OID 0)
 -- Dependencies: 385
 -- Name: moneda_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12620,16 +15392,16 @@ SELECT pg_catalog.setval('public.moneda_id_seq', 11, true);
 
 
 --
--- TOC entry 6307 (class 0 OID 0)
--- Dependencies: 526
+-- TOC entry 6603 (class 0 OID 0)
+-- Dependencies: 524
 -- Name: notificaciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_seq', 1, false);
+SELECT pg_catalog.setval('public.notificaciones_id_seq', 7, true);
 
 
 --
--- TOC entry 6308 (class 0 OID 0)
+-- TOC entry 6604 (class 0 OID 0)
 -- Dependencies: 454
 -- Name: oportunidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12638,7 +15410,16 @@ SELECT pg_catalog.setval('public.oportunidad_id_seq', 1, false);
 
 
 --
--- TOC entry 6309 (class 0 OID 0)
+-- TOC entry 6605 (class 0 OID 0)
+-- Dependencies: 530
+-- Name: pago_proveedor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.pago_proveedor_id_seq', 1, false);
+
+
+--
+-- TOC entry 6606 (class 0 OID 0)
 -- Dependencies: 474
 -- Name: pago_recibido_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12647,16 +15428,16 @@ SELECT pg_catalog.setval('public.pago_recibido_id_seq', 1, false);
 
 
 --
--- TOC entry 6310 (class 0 OID 0)
+-- TOC entry 6607 (class 0 OID 0)
 -- Dependencies: 387
 -- Name: pais_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pais_id_seq', 10, true);
+SELECT pg_catalog.setval('public.pais_id_seq', 3, true);
 
 
 --
--- TOC entry 6311 (class 0 OID 0)
+-- TOC entry 6608 (class 0 OID 0)
 -- Dependencies: 466
 -- Name: pedido_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12665,7 +15446,7 @@ SELECT pg_catalog.setval('public.pedido_detalle_id_seq', 1, false);
 
 
 --
--- TOC entry 6312 (class 0 OID 0)
+-- TOC entry 6609 (class 0 OID 0)
 -- Dependencies: 464
 -- Name: pedido_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12674,7 +15455,7 @@ SELECT pg_catalog.setval('public.pedido_id_seq', 1, false);
 
 
 --
--- TOC entry 6313 (class 0 OID 0)
+-- TOC entry 6610 (class 0 OID 0)
 -- Dependencies: 450
 -- Name: procesamiento_archivo_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12683,34 +15464,34 @@ SELECT pg_catalog.setval('public.procesamiento_archivo_log_id_seq', 1, false);
 
 
 --
--- TOC entry 6314 (class 0 OID 0)
+-- TOC entry 6611 (class 0 OID 0)
 -- Dependencies: 513
 -- Name: producto_precio_moneda_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.producto_precio_moneda_id_seq', 68, true);
+SELECT pg_catalog.setval('public.producto_precio_moneda_id_seq', 76, true);
 
 
 --
--- TOC entry 6315 (class 0 OID 0)
+-- TOC entry 6612 (class 0 OID 0)
 -- Dependencies: 435
 -- Name: producto_proveedor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.producto_proveedor_id_seq', 26, true);
+SELECT pg_catalog.setval('public.producto_proveedor_id_seq', 29, true);
 
 
 --
--- TOC entry 6316 (class 0 OID 0)
+-- TOC entry 6613 (class 0 OID 0)
 -- Dependencies: 433
 -- Name: producto_sku_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.producto_sku_seq', 62, true);
+SELECT pg_catalog.setval('public.producto_sku_seq', 69, true);
 
 
 --
--- TOC entry 6317 (class 0 OID 0)
+-- TOC entry 6614 (class 0 OID 0)
 -- Dependencies: 439
 -- Name: promocion_descuento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12719,7 +15500,7 @@ SELECT pg_catalog.setval('public.promocion_descuento_id_seq', 1, false);
 
 
 --
--- TOC entry 6318 (class 0 OID 0)
+-- TOC entry 6615 (class 0 OID 0)
 -- Dependencies: 437
 -- Name: promocion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12728,7 +15509,7 @@ SELECT pg_catalog.setval('public.promocion_id_seq', 1, false);
 
 
 --
--- TOC entry 6319 (class 0 OID 0)
+-- TOC entry 6616 (class 0 OID 0)
 -- Dependencies: 441
 -- Name: promocion_uso_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12737,16 +15518,25 @@ SELECT pg_catalog.setval('public.promocion_uso_id_seq', 1, false);
 
 
 --
--- TOC entry 6320 (class 0 OID 0)
+-- TOC entry 6617 (class 0 OID 0)
 -- Dependencies: 422
 -- Name: proveedor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.proveedor_id_seq', 43, true);
+SELECT pg_catalog.setval('public.proveedor_id_seq', 45, true);
 
 
 --
--- TOC entry 6321 (class 0 OID 0)
+-- TOC entry 6618 (class 0 OID 0)
+-- Dependencies: 527
+-- Name: provincia_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.provincia_id_seq', 186, true);
+
+
+--
+-- TOC entry 6619 (class 0 OID 0)
 -- Dependencies: 424
 -- Name: recogedores_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12755,7 +15545,7 @@ SELECT pg_catalog.setval('public.recogedores_id_seq', 1, false);
 
 
 --
--- TOC entry 6322 (class 0 OID 0)
+-- TOC entry 6620 (class 0 OID 0)
 -- Dependencies: 519
 -- Name: rol_compra_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12764,7 +15554,7 @@ SELECT pg_catalog.setval('public.rol_compra_id_seq', 5, true);
 
 
 --
--- TOC entry 6323 (class 0 OID 0)
+-- TOC entry 6621 (class 0 OID 0)
 -- Dependencies: 393
 -- Name: rol_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12773,7 +15563,7 @@ SELECT pg_catalog.setval('public.rol_id_seq', 11, true);
 
 
 --
--- TOC entry 6324 (class 0 OID 0)
+-- TOC entry 6622 (class 0 OID 0)
 -- Dependencies: 405
 -- Name: rubro_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12782,7 +15572,7 @@ SELECT pg_catalog.setval('public.rubro_id_seq', 33, true);
 
 
 --
--- TOC entry 6325 (class 0 OID 0)
+-- TOC entry 6623 (class 0 OID 0)
 -- Dependencies: 445
 -- Name: solicitud_cotizacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12791,7 +15581,7 @@ SELECT pg_catalog.setval('public.solicitud_cotizacion_id_seq', 1, false);
 
 
 --
--- TOC entry 6326 (class 0 OID 0)
+-- TOC entry 6624 (class 0 OID 0)
 -- Dependencies: 384
 -- Name: tipo_cliente_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12800,7 +15590,7 @@ SELECT pg_catalog.setval('public.tipo_cliente_id_seq', 10, true);
 
 
 --
--- TOC entry 6327 (class 0 OID 0)
+-- TOC entry 6625 (class 0 OID 0)
 -- Dependencies: 395
 -- Name: tipo_cliente_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12809,7 +15599,7 @@ SELECT pg_catalog.setval('public.tipo_cliente_id_seq1', 2, true);
 
 
 --
--- TOC entry 6328 (class 0 OID 0)
+-- TOC entry 6626 (class 0 OID 0)
 -- Dependencies: 498
 -- Name: tipo_contacto_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12818,16 +15608,16 @@ SELECT pg_catalog.setval('public.tipo_contacto_id_seq', 3, true);
 
 
 --
--- TOC entry 6329 (class 0 OID 0)
+-- TOC entry 6627 (class 0 OID 0)
 -- Dependencies: 500
 -- Name: transicion_estado_cotizacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.transicion_estado_cotizacion_id_seq', 51, true);
+SELECT pg_catalog.setval('public.transicion_estado_cotizacion_id_seq', 52, true);
 
 
 --
--- TOC entry 6330 (class 0 OID 0)
+-- TOC entry 6628 (class 0 OID 0)
 -- Dependencies: 399
 -- Name: unidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12836,7 +15626,7 @@ SELECT pg_catalog.setval('public.unidad_id_seq', 22, true);
 
 
 --
--- TOC entry 6331 (class 0 OID 0)
+-- TOC entry 6629 (class 0 OID 0)
 -- Dependencies: 416
 -- Name: usuario_rol_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12845,7 +15635,7 @@ SELECT pg_catalog.setval('public.usuario_rol_id_seq', 7, true);
 
 
 --
--- TOC entry 6332 (class 0 OID 0)
+-- TOC entry 6630 (class 0 OID 0)
 -- Dependencies: 411
 -- Name: vehicle_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -12854,7 +15644,7 @@ SELECT pg_catalog.setval('public.vehicle_types_id_seq', 1, false);
 
 
 --
--- TOC entry 6333 (class 0 OID 0)
+-- TOC entry 6631 (class 0 OID 0)
 -- Dependencies: 379
 -- Name: subscription_id_seq; Type: SEQUENCE SET; Schema: realtime; Owner: supabase_admin
 --
@@ -12863,7 +15653,7 @@ SELECT pg_catalog.setval('realtime.subscription_id_seq', 1, false);
 
 
 --
--- TOC entry 4887 (class 2606 OID 16827)
+-- TOC entry 5012 (class 2606 OID 16827)
 -- Name: mfa_amr_claims amr_id_pk; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12872,7 +15662,7 @@ ALTER TABLE ONLY auth.mfa_amr_claims
 
 
 --
--- TOC entry 4841 (class 2606 OID 16531)
+-- TOC entry 4966 (class 2606 OID 16531)
 -- Name: audit_log_entries audit_log_entries_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12881,7 +15671,7 @@ ALTER TABLE ONLY auth.audit_log_entries
 
 
 --
--- TOC entry 4910 (class 2606 OID 16933)
+-- TOC entry 5035 (class 2606 OID 16933)
 -- Name: flow_state flow_state_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12890,7 +15680,7 @@ ALTER TABLE ONLY auth.flow_state
 
 
 --
--- TOC entry 4865 (class 2606 OID 16951)
+-- TOC entry 4990 (class 2606 OID 16951)
 -- Name: identities identities_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12899,7 +15689,7 @@ ALTER TABLE ONLY auth.identities
 
 
 --
--- TOC entry 4867 (class 2606 OID 16961)
+-- TOC entry 4992 (class 2606 OID 16961)
 -- Name: identities identities_provider_id_provider_unique; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12908,7 +15698,7 @@ ALTER TABLE ONLY auth.identities
 
 
 --
--- TOC entry 4839 (class 2606 OID 16524)
+-- TOC entry 4964 (class 2606 OID 16524)
 -- Name: instances instances_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12917,7 +15707,7 @@ ALTER TABLE ONLY auth.instances
 
 
 --
--- TOC entry 4889 (class 2606 OID 16820)
+-- TOC entry 5014 (class 2606 OID 16820)
 -- Name: mfa_amr_claims mfa_amr_claims_session_id_authentication_method_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12926,7 +15716,7 @@ ALTER TABLE ONLY auth.mfa_amr_claims
 
 
 --
--- TOC entry 4885 (class 2606 OID 16808)
+-- TOC entry 5010 (class 2606 OID 16808)
 -- Name: mfa_challenges mfa_challenges_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12935,7 +15725,7 @@ ALTER TABLE ONLY auth.mfa_challenges
 
 
 --
--- TOC entry 4877 (class 2606 OID 17001)
+-- TOC entry 5002 (class 2606 OID 17001)
 -- Name: mfa_factors mfa_factors_last_challenged_at_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12944,7 +15734,7 @@ ALTER TABLE ONLY auth.mfa_factors
 
 
 --
--- TOC entry 4879 (class 2606 OID 16795)
+-- TOC entry 5004 (class 2606 OID 16795)
 -- Name: mfa_factors mfa_factors_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12953,7 +15743,7 @@ ALTER TABLE ONLY auth.mfa_factors
 
 
 --
--- TOC entry 5192 (class 2606 OID 127004)
+-- TOC entry 5332 (class 2606 OID 127004)
 -- Name: oauth_authorizations oauth_authorizations_authorization_code_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12962,7 +15752,7 @@ ALTER TABLE ONLY auth.oauth_authorizations
 
 
 --
--- TOC entry 5194 (class 2606 OID 127002)
+-- TOC entry 5334 (class 2606 OID 127002)
 -- Name: oauth_authorizations oauth_authorizations_authorization_id_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12971,7 +15761,7 @@ ALTER TABLE ONLY auth.oauth_authorizations
 
 
 --
--- TOC entry 5196 (class 2606 OID 127000)
+-- TOC entry 5336 (class 2606 OID 127000)
 -- Name: oauth_authorizations oauth_authorizations_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12980,7 +15770,7 @@ ALTER TABLE ONLY auth.oauth_authorizations
 
 
 --
--- TOC entry 5142 (class 2606 OID 77046)
+-- TOC entry 5282 (class 2606 OID 77046)
 -- Name: oauth_clients oauth_clients_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12989,7 +15779,7 @@ ALTER TABLE ONLY auth.oauth_clients
 
 
 --
--- TOC entry 5200 (class 2606 OID 127026)
+-- TOC entry 5340 (class 2606 OID 127026)
 -- Name: oauth_consents oauth_consents_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -12998,7 +15788,7 @@ ALTER TABLE ONLY auth.oauth_consents
 
 
 --
--- TOC entry 5202 (class 2606 OID 127028)
+-- TOC entry 5342 (class 2606 OID 127028)
 -- Name: oauth_consents oauth_consents_user_client_unique; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13007,7 +15797,7 @@ ALTER TABLE ONLY auth.oauth_consents
 
 
 --
--- TOC entry 4914 (class 2606 OID 16986)
+-- TOC entry 5039 (class 2606 OID 16986)
 -- Name: one_time_tokens one_time_tokens_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13016,7 +15806,7 @@ ALTER TABLE ONLY auth.one_time_tokens
 
 
 --
--- TOC entry 4833 (class 2606 OID 16514)
+-- TOC entry 4958 (class 2606 OID 16514)
 -- Name: refresh_tokens refresh_tokens_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13025,7 +15815,7 @@ ALTER TABLE ONLY auth.refresh_tokens
 
 
 --
--- TOC entry 4836 (class 2606 OID 16738)
+-- TOC entry 4961 (class 2606 OID 16738)
 -- Name: refresh_tokens refresh_tokens_token_unique; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13034,7 +15824,7 @@ ALTER TABLE ONLY auth.refresh_tokens
 
 
 --
--- TOC entry 4899 (class 2606 OID 16867)
+-- TOC entry 5024 (class 2606 OID 16867)
 -- Name: saml_providers saml_providers_entity_id_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13043,7 +15833,7 @@ ALTER TABLE ONLY auth.saml_providers
 
 
 --
--- TOC entry 4901 (class 2606 OID 16865)
+-- TOC entry 5026 (class 2606 OID 16865)
 -- Name: saml_providers saml_providers_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13052,7 +15842,7 @@ ALTER TABLE ONLY auth.saml_providers
 
 
 --
--- TOC entry 4906 (class 2606 OID 16881)
+-- TOC entry 5031 (class 2606 OID 16881)
 -- Name: saml_relay_states saml_relay_states_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13061,7 +15851,7 @@ ALTER TABLE ONLY auth.saml_relay_states
 
 
 --
--- TOC entry 4844 (class 2606 OID 16537)
+-- TOC entry 4969 (class 2606 OID 16537)
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13070,7 +15860,7 @@ ALTER TABLE ONLY auth.schema_migrations
 
 
 --
--- TOC entry 4872 (class 2606 OID 16759)
+-- TOC entry 4997 (class 2606 OID 16759)
 -- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13079,7 +15869,7 @@ ALTER TABLE ONLY auth.sessions
 
 
 --
--- TOC entry 4896 (class 2606 OID 16848)
+-- TOC entry 5021 (class 2606 OID 16848)
 -- Name: sso_domains sso_domains_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13088,7 +15878,7 @@ ALTER TABLE ONLY auth.sso_domains
 
 
 --
--- TOC entry 4891 (class 2606 OID 16839)
+-- TOC entry 5016 (class 2606 OID 16839)
 -- Name: sso_providers sso_providers_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13097,7 +15887,7 @@ ALTER TABLE ONLY auth.sso_providers
 
 
 --
--- TOC entry 4826 (class 2606 OID 16921)
+-- TOC entry 4951 (class 2606 OID 16921)
 -- Name: users users_phone_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13106,7 +15896,7 @@ ALTER TABLE ONLY auth.users
 
 
 --
--- TOC entry 4828 (class 2606 OID 16501)
+-- TOC entry 4953 (class 2606 OID 16501)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -13115,7 +15905,7 @@ ALTER TABLE ONLY auth.users
 
 
 --
--- TOC entry 5126 (class 2606 OID 67974)
+-- TOC entry 5265 (class 2606 OID 67974)
 -- Name: carrito_compra carrito_compra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13124,7 +15914,7 @@ ALTER TABLE ONLY public.carrito_compra
 
 
 --
--- TOC entry 4975 (class 2606 OID 66784)
+-- TOC entry 5105 (class 2606 OID 66784)
 -- Name: categoria categoria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13133,7 +15923,7 @@ ALTER TABLE ONLY public.categoria
 
 
 --
--- TOC entry 4945 (class 2606 OID 66660)
+-- TOC entry 5070 (class 2606 OID 66660)
 -- Name: ciudad ciudad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13142,7 +15932,7 @@ ALTER TABLE ONLY public.ciudad
 
 
 --
--- TOC entry 4995 (class 2606 OID 66874)
+-- TOC entry 5125 (class 2606 OID 66874)
 -- Name: cliente cliente_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13151,7 +15941,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 5065 (class 2606 OID 67334)
+-- TOC entry 5204 (class 2606 OID 67334)
 -- Name: comunicacion_solicitud comunicacion_solicitud_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13160,7 +15950,7 @@ ALTER TABLE ONLY public.comunicacion_solicitud
 
 
 --
--- TOC entry 4967 (class 2606 OID 66757)
+-- TOC entry 5097 (class 2606 OID 66757)
 -- Name: condiciones_comerciales condiciones_comerciales_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13169,7 +15959,7 @@ ALTER TABLE ONLY public.condiciones_comerciales
 
 
 --
--- TOC entry 4969 (class 2606 OID 66755)
+-- TOC entry 5099 (class 2606 OID 66755)
 -- Name: condiciones_comerciales condiciones_comerciales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13178,7 +15968,7 @@ ALTER TABLE ONLY public.condiciones_comerciales
 
 
 --
--- TOC entry 5016 (class 2606 OID 66992)
+-- TOC entry 5150 (class 2606 OID 66992)
 -- Name: configuracion_archivos configuracion_archivos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13187,7 +15977,7 @@ ALTER TABLE ONLY public.configuracion_archivos
 
 
 --
--- TOC entry 5018 (class 2606 OID 67007)
+-- TOC entry 5152 (class 2606 OID 67007)
 -- Name: configuracion_fe configuracion_fe_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13196,7 +15986,7 @@ ALTER TABLE ONLY public.configuracion_fe
 
 
 --
--- TOC entry 5014 (class 2606 OID 66981)
+-- TOC entry 5148 (class 2606 OID 66981)
 -- Name: configuracion_sistema configuracion_sistema_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13205,7 +15995,7 @@ ALTER TABLE ONLY public.configuracion_sistema
 
 
 --
--- TOC entry 5205 (class 2606 OID 134205)
+-- TOC entry 5345 (class 2606 OID 134205)
 -- Name: contacto_empresa contacto_empresa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13214,7 +16004,7 @@ ALTER TABLE ONLY public.contacto_empresa
 
 
 --
--- TOC entry 5216 (class 2606 OID 134240)
+-- TOC entry 5356 (class 2606 OID 134240)
 -- Name: contacto_rol contacto_rol_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13223,7 +16013,7 @@ ALTER TABLE ONLY public.contacto_rol
 
 
 --
--- TOC entry 5132 (class 2606 OID 68046)
+-- TOC entry 5271 (class 2606 OID 68046)
 -- Name: costos_operativos costos_operativos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13232,7 +16022,7 @@ ALTER TABLE ONLY public.costos_operativos
 
 
 --
--- TOC entry 5091 (class 2606 OID 67613)
+-- TOC entry 5230 (class 2606 OID 67613)
 -- Name: cotizacion_detalle cotizacion_detalle_id_cotizacion_item_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13241,7 +16031,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5093 (class 2606 OID 67611)
+-- TOC entry 5232 (class 2606 OID 67611)
 -- Name: cotizacion_detalle cotizacion_detalle_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13250,7 +16040,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5085 (class 2606 OID 67559)
+-- TOC entry 5224 (class 2606 OID 67559)
 -- Name: cotizacion cotizacion_numero_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13259,7 +16049,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5087 (class 2606 OID 67557)
+-- TOC entry 5226 (class 2606 OID 67557)
 -- Name: cotizacion cotizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13268,7 +16058,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5079 (class 2606 OID 67458)
+-- TOC entry 5218 (class 2606 OID 67458)
 -- Name: crm_actividad crm_actividad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13277,7 +16067,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 4985 (class 2606 OID 66825)
+-- TOC entry 5115 (class 2606 OID 66825)
 -- Name: crm_etapa crm_etapa_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13286,7 +16076,7 @@ ALTER TABLE ONLY public.crm_etapa
 
 
 --
--- TOC entry 4987 (class 2606 OID 66823)
+-- TOC entry 5117 (class 2606 OID 66823)
 -- Name: crm_etapa crm_etapa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13295,7 +16085,7 @@ ALTER TABLE ONLY public.crm_etapa
 
 
 --
--- TOC entry 5083 (class 2606 OID 67500)
+-- TOC entry 5222 (class 2606 OID 67500)
 -- Name: crm_nota crm_nota_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13304,7 +16094,7 @@ ALTER TABLE ONLY public.crm_nota
 
 
 --
--- TOC entry 5124 (class 2606 OID 67950)
+-- TOC entry 5263 (class 2606 OID 67950)
 -- Name: crowdlending_operacion crowdlending_operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13313,7 +16103,7 @@ ALTER TABLE ONLY public.crowdlending_operacion
 
 
 --
--- TOC entry 5114 (class 2606 OID 67845)
+-- TOC entry 5253 (class 2606 OID 67845)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_numero_documento_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13322,7 +16112,7 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5116 (class 2606 OID 67843)
+-- TOC entry 5255 (class 2606 OID 67843)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13331,7 +16121,25 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5071 (class 2606 OID 67382)
+-- TOC entry 5374 (class 2606 OID 147858)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_codigo_key UNIQUE (codigo);
+
+
+--
+-- TOC entry 5376 (class 2606 OID 147856)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5210 (class 2606 OID 67382)
 -- Name: detalle_solicitud_cotizacion detalle_solicitud_cotizacion_id_solicitud_cotizacion_item_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13340,7 +16148,7 @@ ALTER TABLE ONLY public.detalle_solicitud_cotizacion
 
 
 --
--- TOC entry 5073 (class 2606 OID 67380)
+-- TOC entry 5212 (class 2606 OID 67380)
 -- Name: detalle_solicitud_cotizacion detalle_solicitud_cotizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13349,7 +16157,7 @@ ALTER TABLE ONLY public.detalle_solicitud_cotizacion
 
 
 --
--- TOC entry 5056 (class 2606 OID 67256)
+-- TOC entry 5195 (class 2606 OID 67256)
 -- Name: direccion_cliente direccion_cliente_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13358,7 +16166,7 @@ ALTER TABLE ONLY public.direccion_cliente
 
 
 --
--- TOC entry 4955 (class 2606 OID 66714)
+-- TOC entry 5085 (class 2606 OID 66714)
 -- Name: disponibilidad disponibilidad_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13367,7 +16175,7 @@ ALTER TABLE ONLY public.disponibilidad
 
 
 --
--- TOC entry 4957 (class 2606 OID 66712)
+-- TOC entry 5087 (class 2606 OID 66712)
 -- Name: disponibilidad disponibilidad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13376,7 +16184,7 @@ ALTER TABLE ONLY public.disponibilidad
 
 
 --
--- TOC entry 4947 (class 2606 OID 66675)
+-- TOC entry 5074 (class 2606 OID 66675)
 -- Name: distrito distrito_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13385,7 +16193,7 @@ ALTER TABLE ONLY public.distrito
 
 
 --
--- TOC entry 5000 (class 2606 OID 66900)
+-- TOC entry 5133 (class 2606 OID 66900)
 -- Name: empresa_emisora empresa_emisora_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13394,7 +16202,7 @@ ALTER TABLE ONLY public.empresa_emisora
 
 
 --
--- TOC entry 5002 (class 2606 OID 66902)
+-- TOC entry 5135 (class 2606 OID 66902)
 -- Name: empresa_emisora empresa_emisora_ruc_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13403,7 +16211,7 @@ ALTER TABLE ONLY public.empresa_emisora
 
 
 --
--- TOC entry 5144 (class 2606 OID 86656)
+-- TOC entry 5284 (class 2606 OID 86656)
 -- Name: estado_cotizacion estado_cotizacion_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13412,7 +16220,7 @@ ALTER TABLE ONLY public.estado_cotizacion
 
 
 --
--- TOC entry 5146 (class 2606 OID 86654)
+-- TOC entry 5286 (class 2606 OID 86654)
 -- Name: estado_cotizacion estado_cotizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13421,7 +16229,7 @@ ALTER TABLE ONLY public.estado_cotizacion
 
 
 --
--- TOC entry 5122 (class 2606 OID 67929)
+-- TOC entry 5261 (class 2606 OID 67929)
 -- Name: factoring_operacion factoring_operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13430,7 +16238,7 @@ ALTER TABLE ONLY public.factoring_operacion
 
 
 --
--- TOC entry 5110 (class 2606 OID 67816)
+-- TOC entry 5249 (class 2606 OID 67816)
 -- Name: factura_detalle factura_detalle_id_factura_item_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13439,7 +16247,7 @@ ALTER TABLE ONLY public.factura_detalle
 
 
 --
--- TOC entry 5112 (class 2606 OID 67814)
+-- TOC entry 5251 (class 2606 OID 67814)
 -- Name: factura_detalle factura_detalle_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13448,7 +16256,7 @@ ALTER TABLE ONLY public.factura_detalle
 
 
 --
--- TOC entry 5103 (class 2606 OID 67765)
+-- TOC entry 5242 (class 2606 OID 67765)
 -- Name: factura factura_numero_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13457,7 +16265,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5105 (class 2606 OID 67763)
+-- TOC entry 5244 (class 2606 OID 67763)
 -- Name: factura factura_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13466,7 +16274,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 4963 (class 2606 OID 66741)
+-- TOC entry 5093 (class 2606 OID 66741)
 -- Name: forma_pago forma_pago_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13475,7 +16283,7 @@ ALTER TABLE ONLY public.forma_pago
 
 
 --
--- TOC entry 4965 (class 2606 OID 66739)
+-- TOC entry 5095 (class 2606 OID 66739)
 -- Name: forma_pago forma_pago_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13484,7 +16292,16 @@ ALTER TABLE ONLY public.forma_pago
 
 
 --
--- TOC entry 5128 (class 2606 OID 68004)
+-- TOC entry 5395 (class 2606 OID 158848)
+-- Name: historial_cotizacion historial_cotizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.historial_cotizacion
+    ADD CONSTRAINT historial_cotizacion_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5267 (class 2606 OID 68004)
 -- Name: historial_precios historial_precios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13493,7 +16310,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5134 (class 2606 OID 68065)
+-- TOC entry 5273 (class 2606 OID 68065)
 -- Name: inversion_categoria inversion_categoria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13502,7 +16319,7 @@ ALTER TABLE ONLY public.inversion_categoria
 
 
 --
--- TOC entry 5020 (class 2606 OID 67025)
+-- TOC entry 5154 (class 2606 OID 67025)
 -- Name: marca_categoria marca_categoria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13511,7 +16328,7 @@ ALTER TABLE ONLY public.marca_categoria
 
 
 --
--- TOC entry 4977 (class 2606 OID 66797)
+-- TOC entry 5107 (class 2606 OID 66797)
 -- Name: marca marca_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13520,7 +16337,7 @@ ALTER TABLE ONLY public.marca
 
 
 --
--- TOC entry 4979 (class 2606 OID 66795)
+-- TOC entry 5109 (class 2606 OID 66795)
 -- Name: marca marca_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13529,7 +16346,7 @@ ALTER TABLE ONLY public.marca
 
 
 --
--- TOC entry 4933 (class 2606 OID 66629)
+-- TOC entry 5058 (class 2606 OID 66629)
 -- Name: moneda moneda_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13538,7 +16355,7 @@ ALTER TABLE ONLY public.moneda
 
 
 --
--- TOC entry 4935 (class 2606 OID 66627)
+-- TOC entry 5060 (class 2606 OID 66627)
 -- Name: moneda moneda_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13547,7 +16364,7 @@ ALTER TABLE ONLY public.moneda
 
 
 --
--- TOC entry 5228 (class 2606 OID 141549)
+-- TOC entry 5368 (class 2606 OID 141549)
 -- Name: notificaciones notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13556,7 +16373,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5077 (class 2606 OID 67413)
+-- TOC entry 5216 (class 2606 OID 67413)
 -- Name: oportunidad oportunidad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13565,7 +16382,25 @@ ALTER TABLE ONLY public.oportunidad
 
 
 --
--- TOC entry 5118 (class 2606 OID 67886)
+-- TOC entry 5386 (class 2606 OID 147905)
+-- Name: pago_proveedor pago_proveedor_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_codigo_key UNIQUE (codigo);
+
+
+--
+-- TOC entry 5388 (class 2606 OID 147903)
+-- Name: pago_proveedor pago_proveedor_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5257 (class 2606 OID 67886)
 -- Name: pago_recibido pago_recibido_numero_recibo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13574,7 +16409,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5120 (class 2606 OID 67884)
+-- TOC entry 5259 (class 2606 OID 67884)
 -- Name: pago_recibido pago_recibido_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13583,7 +16418,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 4937 (class 2606 OID 66646)
+-- TOC entry 5062 (class 2606 OID 66646)
 -- Name: pais pais_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13592,7 +16427,7 @@ ALTER TABLE ONLY public.pais
 
 
 --
--- TOC entry 4939 (class 2606 OID 66644)
+-- TOC entry 5064 (class 2606 OID 66644)
 -- Name: pais pais_iso_code_2_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13601,7 +16436,7 @@ ALTER TABLE ONLY public.pais
 
 
 --
--- TOC entry 4941 (class 2606 OID 66642)
+-- TOC entry 5066 (class 2606 OID 66642)
 -- Name: pais pais_iso_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13610,7 +16445,7 @@ ALTER TABLE ONLY public.pais
 
 
 --
--- TOC entry 4943 (class 2606 OID 66640)
+-- TOC entry 5068 (class 2606 OID 66640)
 -- Name: pais pais_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13619,7 +16454,7 @@ ALTER TABLE ONLY public.pais
 
 
 --
--- TOC entry 5099 (class 2606 OID 67726)
+-- TOC entry 5238 (class 2606 OID 67726)
 -- Name: pedido_detalle pedido_detalle_id_pedido_item_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13628,7 +16463,7 @@ ALTER TABLE ONLY public.pedido_detalle
 
 
 --
--- TOC entry 5101 (class 2606 OID 67724)
+-- TOC entry 5240 (class 2606 OID 67724)
 -- Name: pedido_detalle pedido_detalle_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13637,7 +16472,7 @@ ALTER TABLE ONLY public.pedido_detalle
 
 
 --
--- TOC entry 5095 (class 2606 OID 67663)
+-- TOC entry 5234 (class 2606 OID 67663)
 -- Name: pedido pedido_numero_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13646,7 +16481,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5097 (class 2606 OID 67661)
+-- TOC entry 5236 (class 2606 OID 67661)
 -- Name: pedido pedido_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13655,7 +16490,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5069 (class 2606 OID 67367)
+-- TOC entry 5208 (class 2606 OID 67367)
 -- Name: procesamiento_archivo_log procesamiento_archivo_log_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13664,7 +16499,7 @@ ALTER TABLE ONLY public.procesamiento_archivo_log
 
 
 --
--- TOC entry 5034 (class 2606 OID 67101)
+-- TOC entry 5171 (class 2606 OID 67101)
 -- Name: producto producto_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13673,7 +16508,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5036 (class 2606 OID 67099)
+-- TOC entry 5173 (class 2606 OID 67099)
 -- Name: producto producto_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13682,7 +16517,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5188 (class 2606 OID 106233)
+-- TOC entry 5328 (class 2606 OID 106233)
 -- Name: producto_precio_moneda producto_precio_moneda_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13691,7 +16526,7 @@ ALTER TABLE ONLY public.producto_precio_moneda
 
 
 --
--- TOC entry 5046 (class 2606 OID 67169)
+-- TOC entry 5185 (class 2606 OID 67169)
 -- Name: producto_proveedor producto_proveedor_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13700,7 +16535,7 @@ ALTER TABLE ONLY public.producto_proveedor
 
 
 --
--- TOC entry 5048 (class 2606 OID 67171)
+-- TOC entry 5187 (class 2606 OID 67171)
 -- Name: producto_proveedor producto_proveedor_sku_id_proveedor_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13709,7 +16544,7 @@ ALTER TABLE ONLY public.producto_proveedor
 
 
 --
--- TOC entry 5038 (class 2606 OID 67103)
+-- TOC entry 5175 (class 2606 OID 67103)
 -- Name: producto producto_seo_slug_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13718,7 +16553,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5052 (class 2606 OID 67217)
+-- TOC entry 5191 (class 2606 OID 67217)
 -- Name: promocion_descuento promocion_descuento_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13727,7 +16562,7 @@ ALTER TABLE ONLY public.promocion_descuento
 
 
 --
--- TOC entry 5050 (class 2606 OID 67201)
+-- TOC entry 5189 (class 2606 OID 67201)
 -- Name: promocion promocion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13736,7 +16571,7 @@ ALTER TABLE ONLY public.promocion
 
 
 --
--- TOC entry 5054 (class 2606 OID 67231)
+-- TOC entry 5193 (class 2606 OID 67231)
 -- Name: promocion_uso promocion_uso_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13745,7 +16580,7 @@ ALTER TABLE ONLY public.promocion_uso
 
 
 --
--- TOC entry 5024 (class 2606 OID 67062)
+-- TOC entry 5158 (class 2606 OID 67062)
 -- Name: proveedor_categoria proveedor_categoria_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13754,7 +16589,7 @@ ALTER TABLE ONLY public.proveedor_categoria
 
 
 --
--- TOC entry 5004 (class 2606 OID 66928)
+-- TOC entry 5138 (class 2606 OID 66928)
 -- Name: proveedor proveedor_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13763,7 +16598,7 @@ ALTER TABLE ONLY public.proveedor
 
 
 --
--- TOC entry 5006 (class 2606 OID 66930)
+-- TOC entry 5140 (class 2606 OID 66930)
 -- Name: proveedor proveedor_documento_empresa_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13772,7 +16607,7 @@ ALTER TABLE ONLY public.proveedor
 
 
 --
--- TOC entry 5022 (class 2606 OID 67044)
+-- TOC entry 5156 (class 2606 OID 67044)
 -- Name: proveedor_marca proveedor_marca_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13781,7 +16616,7 @@ ALTER TABLE ONLY public.proveedor_marca
 
 
 --
--- TOC entry 5008 (class 2606 OID 66926)
+-- TOC entry 5142 (class 2606 OID 66926)
 -- Name: proveedor proveedor_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13790,7 +16625,16 @@ ALTER TABLE ONLY public.proveedor
 
 
 --
--- TOC entry 5010 (class 2606 OID 66962)
+-- TOC entry 5372 (class 2606 OID 146399)
+-- Name: provincia provincia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.provincia
+    ADD CONSTRAINT provincia_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5144 (class 2606 OID 66962)
 -- Name: recogedores recogedores_correo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13799,7 +16643,7 @@ ALTER TABLE ONLY public.recogedores
 
 
 --
--- TOC entry 5012 (class 2606 OID 66960)
+-- TOC entry 5146 (class 2606 OID 66960)
 -- Name: recogedores recogedores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13808,7 +16652,7 @@ ALTER TABLE ONLY public.recogedores
 
 
 --
--- TOC entry 5212 (class 2606 OID 134228)
+-- TOC entry 5352 (class 2606 OID 134228)
 -- Name: rol_compra rol_compra_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13817,7 +16661,7 @@ ALTER TABLE ONLY public.rol_compra
 
 
 --
--- TOC entry 5214 (class 2606 OID 134226)
+-- TOC entry 5354 (class 2606 OID 134226)
 -- Name: rol_compra rol_compra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13826,7 +16670,7 @@ ALTER TABLE ONLY public.rol_compra
 
 
 --
--- TOC entry 4949 (class 2606 OID 66691)
+-- TOC entry 5079 (class 2606 OID 66691)
 -- Name: rol rol_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13835,7 +16679,7 @@ ALTER TABLE ONLY public.rol
 
 
 --
--- TOC entry 4951 (class 2606 OID 66689)
+-- TOC entry 5081 (class 2606 OID 66689)
 -- Name: rol rol_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13844,7 +16688,7 @@ ALTER TABLE ONLY public.rol
 
 
 --
--- TOC entry 4971 (class 2606 OID 66775)
+-- TOC entry 5101 (class 2606 OID 66775)
 -- Name: rubro rubro_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13853,7 +16697,7 @@ ALTER TABLE ONLY public.rubro
 
 
 --
--- TOC entry 4973 (class 2606 OID 66773)
+-- TOC entry 5103 (class 2606 OID 66773)
 -- Name: rubro rubro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13862,7 +16706,7 @@ ALTER TABLE ONLY public.rubro
 
 
 --
--- TOC entry 5067 (class 2606 OID 67352)
+-- TOC entry 5206 (class 2606 OID 67352)
 -- Name: solicitud_archivo solicitud_archivo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13871,7 +16715,7 @@ ALTER TABLE ONLY public.solicitud_archivo
 
 
 --
--- TOC entry 5061 (class 2606 OID 67306)
+-- TOC entry 5200 (class 2606 OID 67306)
 -- Name: solicitud_cotizacion solicitud_cotizacion_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13880,7 +16724,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion
 
 
 --
--- TOC entry 5063 (class 2606 OID 67304)
+-- TOC entry 5202 (class 2606 OID 67304)
 -- Name: solicitud_cotizacion solicitud_cotizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13889,7 +16733,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion
 
 
 --
--- TOC entry 4953 (class 2606 OID 66699)
+-- TOC entry 5083 (class 2606 OID 66699)
 -- Name: tipo_cliente tipo_cliente_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13898,7 +16742,7 @@ ALTER TABLE ONLY public.tipo_cliente
 
 
 --
--- TOC entry 5151 (class 2606 OID 89072)
+-- TOC entry 5291 (class 2606 OID 89072)
 -- Name: tipo_contacto tipo_contacto_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13907,7 +16751,7 @@ ALTER TABLE ONLY public.tipo_contacto
 
 
 --
--- TOC entry 5153 (class 2606 OID 89070)
+-- TOC entry 5293 (class 2606 OID 89070)
 -- Name: tipo_contacto tipo_contacto_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13916,7 +16760,7 @@ ALTER TABLE ONLY public.tipo_contacto
 
 
 --
--- TOC entry 5161 (class 2606 OID 90356)
+-- TOC entry 5301 (class 2606 OID 90356)
 -- Name: transicion_estado_cotizacion transicion_estado_cotizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13925,7 +16769,7 @@ ALTER TABLE ONLY public.transicion_estado_cotizacion
 
 
 --
--- TOC entry 4959 (class 2606 OID 66727)
+-- TOC entry 5089 (class 2606 OID 66727)
 -- Name: unidad unidad_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13934,7 +16778,7 @@ ALTER TABLE ONLY public.unidad
 
 
 --
--- TOC entry 4961 (class 2606 OID 66725)
+-- TOC entry 5091 (class 2606 OID 66725)
 -- Name: unidad unidad_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13943,7 +16787,16 @@ ALTER TABLE ONLY public.unidad
 
 
 --
--- TOC entry 5210 (class 2606 OID 134207)
+-- TOC entry 5177 (class 2606 OID 147746)
+-- Name: producto unique_sku_producto; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.producto
+    ADD CONSTRAINT unique_sku_producto UNIQUE (sku_producto);
+
+
+--
+-- TOC entry 5350 (class 2606 OID 134207)
 -- Name: contacto_empresa uq_contacto_correo_cliente; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13952,7 +16805,7 @@ ALTER TABLE ONLY public.contacto_empresa
 
 
 --
--- TOC entry 5221 (class 2606 OID 134242)
+-- TOC entry 5361 (class 2606 OID 134242)
 -- Name: contacto_rol uq_contacto_rol; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13961,7 +16814,7 @@ ALTER TABLE ONLY public.contacto_rol
 
 
 --
--- TOC entry 4989 (class 2606 OID 66836)
+-- TOC entry 5119 (class 2606 OID 66836)
 -- Name: usuario usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13970,7 +16823,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 4991 (class 2606 OID 66847)
+-- TOC entry 5121 (class 2606 OID 66847)
 -- Name: usuario_rol usuario_rol_id_usuario_id_rol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13979,7 +16832,7 @@ ALTER TABLE ONLY public.usuario_rol
 
 
 --
--- TOC entry 4993 (class 2606 OID 66845)
+-- TOC entry 5123 (class 2606 OID 66845)
 -- Name: usuario_rol usuario_rol_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13988,7 +16841,7 @@ ALTER TABLE ONLY public.usuario_rol
 
 
 --
--- TOC entry 4981 (class 2606 OID 66810)
+-- TOC entry 5111 (class 2606 OID 66810)
 -- Name: vehicle_types vehicle_types_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13997,7 +16850,7 @@ ALTER TABLE ONLY public.vehicle_types
 
 
 --
--- TOC entry 4983 (class 2606 OID 66808)
+-- TOC entry 5113 (class 2606 OID 66808)
 -- Name: vehicle_types vehicle_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -14006,7 +16859,7 @@ ALTER TABLE ONLY public.vehicle_types
 
 
 --
--- TOC entry 4931 (class 2606 OID 17269)
+-- TOC entry 5056 (class 2606 OID 17269)
 -- Name: messages messages_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -14015,7 +16868,7 @@ ALTER TABLE ONLY realtime.messages
 
 
 --
--- TOC entry 5164 (class 2606 OID 97140)
+-- TOC entry 5304 (class 2606 OID 97140)
 -- Name: messages_2025_09_22 messages_2025_09_22_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14024,7 +16877,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_22
 
 
 --
--- TOC entry 5167 (class 2606 OID 102126)
+-- TOC entry 5307 (class 2606 OID 102126)
 -- Name: messages_2025_09_23 messages_2025_09_23_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14033,7 +16886,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_23
 
 
 --
--- TOC entry 5170 (class 2606 OID 102137)
+-- TOC entry 5310 (class 2606 OID 102137)
 -- Name: messages_2025_09_24 messages_2025_09_24_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14042,7 +16895,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_24
 
 
 --
--- TOC entry 5173 (class 2606 OID 102148)
+-- TOC entry 5313 (class 2606 OID 102148)
 -- Name: messages_2025_09_25 messages_2025_09_25_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14051,7 +16904,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_25
 
 
 --
--- TOC entry 5176 (class 2606 OID 102260)
+-- TOC entry 5316 (class 2606 OID 102260)
 -- Name: messages_2025_09_26 messages_2025_09_26_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14060,7 +16913,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_26
 
 
 --
--- TOC entry 5179 (class 2606 OID 102375)
+-- TOC entry 5319 (class 2606 OID 102375)
 -- Name: messages_2025_09_27 messages_2025_09_27_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14069,7 +16922,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_27
 
 
 --
--- TOC entry 5182 (class 2606 OID 105120)
+-- TOC entry 5322 (class 2606 OID 105120)
 -- Name: messages_2025_09_28 messages_2025_09_28_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14078,7 +16931,7 @@ ALTER TABLE ONLY realtime.messages_2025_09_28
 
 
 --
--- TOC entry 4927 (class 2606 OID 17117)
+-- TOC entry 5052 (class 2606 OID 17117)
 -- Name: subscription pk_subscription; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14087,7 +16940,7 @@ ALTER TABLE ONLY realtime.subscription
 
 
 --
--- TOC entry 4919 (class 2606 OID 17007)
+-- TOC entry 5044 (class 2606 OID 17007)
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
 --
 
@@ -14096,7 +16949,7 @@ ALTER TABLE ONLY realtime.schema_migrations
 
 
 --
--- TOC entry 5139 (class 2606 OID 68476)
+-- TOC entry 5278 (class 2606 OID 156580)
 -- Name: buckets_analytics buckets_analytics_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14105,7 +16958,7 @@ ALTER TABLE ONLY storage.buckets_analytics
 
 
 --
--- TOC entry 4847 (class 2606 OID 16554)
+-- TOC entry 4972 (class 2606 OID 16554)
 -- Name: buckets buckets_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14114,7 +16967,16 @@ ALTER TABLE ONLY storage.buckets
 
 
 --
--- TOC entry 4857 (class 2606 OID 16595)
+-- TOC entry 5390 (class 2606 OID 156556)
+-- Name: buckets_vectors buckets_vectors_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.buckets_vectors
+    ADD CONSTRAINT buckets_vectors_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4982 (class 2606 OID 16595)
 -- Name: migrations migrations_name_key; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14123,7 +16985,7 @@ ALTER TABLE ONLY storage.migrations
 
 
 --
--- TOC entry 4859 (class 2606 OID 16593)
+-- TOC entry 4984 (class 2606 OID 16593)
 -- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14132,7 +16994,7 @@ ALTER TABLE ONLY storage.migrations
 
 
 --
--- TOC entry 4855 (class 2606 OID 16571)
+-- TOC entry 4980 (class 2606 OID 16571)
 -- Name: objects objects_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14141,7 +17003,7 @@ ALTER TABLE ONLY storage.objects
 
 
 --
--- TOC entry 5137 (class 2606 OID 68430)
+-- TOC entry 5276 (class 2606 OID 68430)
 -- Name: prefixes prefixes_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14150,7 +17012,7 @@ ALTER TABLE ONLY storage.prefixes
 
 
 --
--- TOC entry 4924 (class 2606 OID 17063)
+-- TOC entry 5049 (class 2606 OID 17063)
 -- Name: s3_multipart_uploads_parts s3_multipart_uploads_parts_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14159,7 +17021,7 @@ ALTER TABLE ONLY storage.s3_multipart_uploads_parts
 
 
 --
--- TOC entry 4922 (class 2606 OID 17048)
+-- TOC entry 5047 (class 2606 OID 17048)
 -- Name: s3_multipart_uploads s3_multipart_uploads_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -14168,7 +17030,16 @@ ALTER TABLE ONLY storage.s3_multipart_uploads
 
 
 --
--- TOC entry 4842 (class 1259 OID 16532)
+-- TOC entry 5393 (class 2606 OID 156566)
+-- Name: vector_indexes vector_indexes_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.vector_indexes
+    ADD CONSTRAINT vector_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4967 (class 1259 OID 16532)
 -- Name: audit_logs_instance_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14176,7 +17047,7 @@ CREATE INDEX audit_logs_instance_id_idx ON auth.audit_log_entries USING btree (i
 
 
 --
--- TOC entry 4816 (class 1259 OID 16748)
+-- TOC entry 4941 (class 1259 OID 16748)
 -- Name: confirmation_token_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14184,7 +17055,7 @@ CREATE UNIQUE INDEX confirmation_token_idx ON auth.users USING btree (confirmati
 
 
 --
--- TOC entry 4817 (class 1259 OID 16750)
+-- TOC entry 4942 (class 1259 OID 16750)
 -- Name: email_change_token_current_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14192,7 +17063,7 @@ CREATE UNIQUE INDEX email_change_token_current_idx ON auth.users USING btree (em
 
 
 --
--- TOC entry 4818 (class 1259 OID 16751)
+-- TOC entry 4943 (class 1259 OID 16751)
 -- Name: email_change_token_new_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14200,7 +17071,7 @@ CREATE UNIQUE INDEX email_change_token_new_idx ON auth.users USING btree (email_
 
 
 --
--- TOC entry 4875 (class 1259 OID 16829)
+-- TOC entry 5000 (class 1259 OID 16829)
 -- Name: factor_id_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14208,7 +17079,7 @@ CREATE INDEX factor_id_created_at_idx ON auth.mfa_factors USING btree (user_id, 
 
 
 --
--- TOC entry 4908 (class 1259 OID 16937)
+-- TOC entry 5033 (class 1259 OID 16937)
 -- Name: flow_state_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14216,7 +17087,7 @@ CREATE INDEX flow_state_created_at_idx ON auth.flow_state USING btree (created_a
 
 
 --
--- TOC entry 4863 (class 1259 OID 16917)
+-- TOC entry 4988 (class 1259 OID 16917)
 -- Name: identities_email_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14224,8 +17095,8 @@ CREATE INDEX identities_email_idx ON auth.identities USING btree (email text_pat
 
 
 --
--- TOC entry 6334 (class 0 OID 0)
--- Dependencies: 4863
+-- TOC entry 6632 (class 0 OID 0)
+-- Dependencies: 4988
 -- Name: INDEX identities_email_idx; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14233,7 +17104,7 @@ COMMENT ON INDEX auth.identities_email_idx IS 'Auth: Ensures indexed queries on 
 
 
 --
--- TOC entry 4868 (class 1259 OID 16745)
+-- TOC entry 4993 (class 1259 OID 16745)
 -- Name: identities_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14241,7 +17112,7 @@ CREATE INDEX identities_user_id_idx ON auth.identities USING btree (user_id);
 
 
 --
--- TOC entry 4911 (class 1259 OID 16934)
+-- TOC entry 5036 (class 1259 OID 16934)
 -- Name: idx_auth_code; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14249,7 +17120,7 @@ CREATE INDEX idx_auth_code ON auth.flow_state USING btree (auth_code);
 
 
 --
--- TOC entry 4912 (class 1259 OID 16935)
+-- TOC entry 5037 (class 1259 OID 16935)
 -- Name: idx_user_id_auth_method; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14257,7 +17128,7 @@ CREATE INDEX idx_user_id_auth_method ON auth.flow_state USING btree (user_id, au
 
 
 --
--- TOC entry 4883 (class 1259 OID 16940)
+-- TOC entry 5008 (class 1259 OID 16940)
 -- Name: mfa_challenge_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14265,7 +17136,7 @@ CREATE INDEX mfa_challenge_created_at_idx ON auth.mfa_challenges USING btree (cr
 
 
 --
--- TOC entry 4880 (class 1259 OID 16801)
+-- TOC entry 5005 (class 1259 OID 16801)
 -- Name: mfa_factors_user_friendly_name_unique; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14273,7 +17144,7 @@ CREATE UNIQUE INDEX mfa_factors_user_friendly_name_unique ON auth.mfa_factors US
 
 
 --
--- TOC entry 4881 (class 1259 OID 16946)
+-- TOC entry 5006 (class 1259 OID 16946)
 -- Name: mfa_factors_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14281,7 +17152,7 @@ CREATE INDEX mfa_factors_user_id_idx ON auth.mfa_factors USING btree (user_id);
 
 
 --
--- TOC entry 5190 (class 1259 OID 127015)
+-- TOC entry 5330 (class 1259 OID 127015)
 -- Name: oauth_auth_pending_exp_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14289,7 +17160,7 @@ CREATE INDEX oauth_auth_pending_exp_idx ON auth.oauth_authorizations USING btree
 
 
 --
--- TOC entry 5140 (class 1259 OID 77050)
+-- TOC entry 5280 (class 1259 OID 77050)
 -- Name: oauth_clients_deleted_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14297,7 +17168,7 @@ CREATE INDEX oauth_clients_deleted_at_idx ON auth.oauth_clients USING btree (del
 
 
 --
--- TOC entry 5197 (class 1259 OID 127041)
+-- TOC entry 5337 (class 1259 OID 127041)
 -- Name: oauth_consents_active_client_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14305,7 +17176,7 @@ CREATE INDEX oauth_consents_active_client_idx ON auth.oauth_consents USING btree
 
 
 --
--- TOC entry 5198 (class 1259 OID 127039)
+-- TOC entry 5338 (class 1259 OID 127039)
 -- Name: oauth_consents_active_user_client_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14313,7 +17184,7 @@ CREATE INDEX oauth_consents_active_user_client_idx ON auth.oauth_consents USING 
 
 
 --
--- TOC entry 5203 (class 1259 OID 127040)
+-- TOC entry 5343 (class 1259 OID 127040)
 -- Name: oauth_consents_user_order_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14321,7 +17192,7 @@ CREATE INDEX oauth_consents_user_order_idx ON auth.oauth_consents USING btree (u
 
 
 --
--- TOC entry 4915 (class 1259 OID 16993)
+-- TOC entry 5040 (class 1259 OID 16993)
 -- Name: one_time_tokens_relates_to_hash_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14329,7 +17200,7 @@ CREATE INDEX one_time_tokens_relates_to_hash_idx ON auth.one_time_tokens USING h
 
 
 --
--- TOC entry 4916 (class 1259 OID 16992)
+-- TOC entry 5041 (class 1259 OID 16992)
 -- Name: one_time_tokens_token_hash_hash_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14337,7 +17208,7 @@ CREATE INDEX one_time_tokens_token_hash_hash_idx ON auth.one_time_tokens USING h
 
 
 --
--- TOC entry 4917 (class 1259 OID 16994)
+-- TOC entry 5042 (class 1259 OID 16994)
 -- Name: one_time_tokens_user_id_token_type_key; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14345,7 +17216,7 @@ CREATE UNIQUE INDEX one_time_tokens_user_id_token_type_key ON auth.one_time_toke
 
 
 --
--- TOC entry 4819 (class 1259 OID 16752)
+-- TOC entry 4944 (class 1259 OID 16752)
 -- Name: reauthentication_token_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14353,7 +17224,7 @@ CREATE UNIQUE INDEX reauthentication_token_idx ON auth.users USING btree (reauth
 
 
 --
--- TOC entry 4820 (class 1259 OID 16749)
+-- TOC entry 4945 (class 1259 OID 16749)
 -- Name: recovery_token_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14361,7 +17232,7 @@ CREATE UNIQUE INDEX recovery_token_idx ON auth.users USING btree (recovery_token
 
 
 --
--- TOC entry 4829 (class 1259 OID 16515)
+-- TOC entry 4954 (class 1259 OID 16515)
 -- Name: refresh_tokens_instance_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14369,7 +17240,7 @@ CREATE INDEX refresh_tokens_instance_id_idx ON auth.refresh_tokens USING btree (
 
 
 --
--- TOC entry 4830 (class 1259 OID 16516)
+-- TOC entry 4955 (class 1259 OID 16516)
 -- Name: refresh_tokens_instance_id_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14377,7 +17248,7 @@ CREATE INDEX refresh_tokens_instance_id_user_id_idx ON auth.refresh_tokens USING
 
 
 --
--- TOC entry 4831 (class 1259 OID 16744)
+-- TOC entry 4956 (class 1259 OID 16744)
 -- Name: refresh_tokens_parent_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14385,7 +17256,7 @@ CREATE INDEX refresh_tokens_parent_idx ON auth.refresh_tokens USING btree (paren
 
 
 --
--- TOC entry 4834 (class 1259 OID 16831)
+-- TOC entry 4959 (class 1259 OID 16831)
 -- Name: refresh_tokens_session_id_revoked_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14393,7 +17264,7 @@ CREATE INDEX refresh_tokens_session_id_revoked_idx ON auth.refresh_tokens USING 
 
 
 --
--- TOC entry 4837 (class 1259 OID 16936)
+-- TOC entry 4962 (class 1259 OID 16936)
 -- Name: refresh_tokens_updated_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14401,7 +17272,7 @@ CREATE INDEX refresh_tokens_updated_at_idx ON auth.refresh_tokens USING btree (u
 
 
 --
--- TOC entry 4902 (class 1259 OID 16873)
+-- TOC entry 5027 (class 1259 OID 16873)
 -- Name: saml_providers_sso_provider_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14409,7 +17280,7 @@ CREATE INDEX saml_providers_sso_provider_id_idx ON auth.saml_providers USING btr
 
 
 --
--- TOC entry 4903 (class 1259 OID 16938)
+-- TOC entry 5028 (class 1259 OID 16938)
 -- Name: saml_relay_states_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14417,7 +17288,7 @@ CREATE INDEX saml_relay_states_created_at_idx ON auth.saml_relay_states USING bt
 
 
 --
--- TOC entry 4904 (class 1259 OID 16888)
+-- TOC entry 5029 (class 1259 OID 16888)
 -- Name: saml_relay_states_for_email_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14425,7 +17296,7 @@ CREATE INDEX saml_relay_states_for_email_idx ON auth.saml_relay_states USING btr
 
 
 --
--- TOC entry 4907 (class 1259 OID 16887)
+-- TOC entry 5032 (class 1259 OID 16887)
 -- Name: saml_relay_states_sso_provider_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14433,7 +17304,7 @@ CREATE INDEX saml_relay_states_sso_provider_id_idx ON auth.saml_relay_states USI
 
 
 --
--- TOC entry 4869 (class 1259 OID 16939)
+-- TOC entry 4994 (class 1259 OID 16939)
 -- Name: sessions_not_after_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14441,7 +17312,7 @@ CREATE INDEX sessions_not_after_idx ON auth.sessions USING btree (not_after DESC
 
 
 --
--- TOC entry 4870 (class 1259 OID 127053)
+-- TOC entry 4995 (class 1259 OID 127053)
 -- Name: sessions_oauth_client_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14449,7 +17320,7 @@ CREATE INDEX sessions_oauth_client_id_idx ON auth.sessions USING btree (oauth_cl
 
 
 --
--- TOC entry 4873 (class 1259 OID 16830)
+-- TOC entry 4998 (class 1259 OID 16830)
 -- Name: sessions_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14457,7 +17328,7 @@ CREATE INDEX sessions_user_id_idx ON auth.sessions USING btree (user_id);
 
 
 --
--- TOC entry 4894 (class 1259 OID 16855)
+-- TOC entry 5019 (class 1259 OID 16855)
 -- Name: sso_domains_domain_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14465,7 +17336,7 @@ CREATE UNIQUE INDEX sso_domains_domain_idx ON auth.sso_domains USING btree (lowe
 
 
 --
--- TOC entry 4897 (class 1259 OID 16854)
+-- TOC entry 5022 (class 1259 OID 16854)
 -- Name: sso_domains_sso_provider_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14473,7 +17344,7 @@ CREATE INDEX sso_domains_sso_provider_id_idx ON auth.sso_domains USING btree (ss
 
 
 --
--- TOC entry 4892 (class 1259 OID 16840)
+-- TOC entry 5017 (class 1259 OID 16840)
 -- Name: sso_providers_resource_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14481,7 +17352,7 @@ CREATE UNIQUE INDEX sso_providers_resource_id_idx ON auth.sso_providers USING bt
 
 
 --
--- TOC entry 4893 (class 1259 OID 17002)
+-- TOC entry 5018 (class 1259 OID 17002)
 -- Name: sso_providers_resource_id_pattern_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14489,7 +17360,7 @@ CREATE INDEX sso_providers_resource_id_pattern_idx ON auth.sso_providers USING b
 
 
 --
--- TOC entry 4882 (class 1259 OID 16999)
+-- TOC entry 5007 (class 1259 OID 16999)
 -- Name: unique_phone_factor_per_user; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14497,7 +17368,7 @@ CREATE UNIQUE INDEX unique_phone_factor_per_user ON auth.mfa_factors USING btree
 
 
 --
--- TOC entry 4874 (class 1259 OID 16828)
+-- TOC entry 4999 (class 1259 OID 16828)
 -- Name: user_id_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14505,7 +17376,7 @@ CREATE INDEX user_id_created_at_idx ON auth.sessions USING btree (user_id, creat
 
 
 --
--- TOC entry 4821 (class 1259 OID 16908)
+-- TOC entry 4946 (class 1259 OID 16908)
 -- Name: users_email_partial_key; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14513,8 +17384,8 @@ CREATE UNIQUE INDEX users_email_partial_key ON auth.users USING btree (email) WH
 
 
 --
--- TOC entry 6335 (class 0 OID 0)
--- Dependencies: 4821
+-- TOC entry 6633 (class 0 OID 0)
+-- Dependencies: 4946
 -- Name: INDEX users_email_partial_key; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14522,7 +17393,7 @@ COMMENT ON INDEX auth.users_email_partial_key IS 'Auth: A partial unique index t
 
 
 --
--- TOC entry 4822 (class 1259 OID 16746)
+-- TOC entry 4947 (class 1259 OID 16746)
 -- Name: users_instance_id_email_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14530,7 +17401,7 @@ CREATE INDEX users_instance_id_email_idx ON auth.users USING btree (instance_id,
 
 
 --
--- TOC entry 4823 (class 1259 OID 16505)
+-- TOC entry 4948 (class 1259 OID 16505)
 -- Name: users_instance_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14538,7 +17409,7 @@ CREATE INDEX users_instance_id_idx ON auth.users USING btree (instance_id);
 
 
 --
--- TOC entry 4824 (class 1259 OID 16963)
+-- TOC entry 4949 (class 1259 OID 16963)
 -- Name: users_is_anonymous_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -14546,15 +17417,47 @@ CREATE INDEX users_is_anonymous_idx ON auth.users USING btree (is_anonymous);
 
 
 --
--- TOC entry 4996 (class 1259 OID 68160)
--- Name: idx_cliente_email; Type: INDEX; Schema: public; Owner: postgres
+-- TOC entry 5071 (class 1259 OID 146465)
+-- Name: idx_ciudad_id_pais; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_cliente_email ON public.cliente USING btree (correo);
+CREATE INDEX idx_ciudad_id_pais ON public.ciudad USING btree (id_pais);
 
 
 --
--- TOC entry 4997 (class 1259 OID 68162)
+-- TOC entry 5072 (class 1259 OID 146466)
+-- Name: idx_ciudad_nombre; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_ciudad_nombre ON public.ciudad USING btree (nombre);
+
+
+--
+-- TOC entry 5126 (class 1259 OID 146366)
+-- Name: idx_cliente_es_agente_retencion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cliente_es_agente_retencion ON public.cliente USING btree (es_agente_retencion) WHERE ((activo = true) AND (es_agente_retencion = true));
+
+
+--
+-- TOC entry 5127 (class 1259 OID 146365)
+-- Name: idx_cliente_es_buen_contribuyente; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cliente_es_buen_contribuyente ON public.cliente USING btree (es_buen_contribuyente) WHERE ((activo = true) AND (es_buen_contribuyente = true));
+
+
+--
+-- TOC entry 5128 (class 1259 OID 146367)
+-- Name: idx_cliente_estado_condicion_sunat; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cliente_estado_condicion_sunat ON public.cliente USING btree (estado_sunat, condicion_sunat) WHERE (activo = true);
+
+
+--
+-- TOC entry 5129 (class 1259 OID 68162)
 -- Name: idx_cliente_ruc; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14562,7 +17465,7 @@ CREATE INDEX idx_cliente_ruc ON public.cliente USING btree (documento_empresa);
 
 
 --
--- TOC entry 4998 (class 1259 OID 68161)
+-- TOC entry 5130 (class 1259 OID 68161)
 -- Name: idx_cliente_tipo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14570,7 +17473,15 @@ CREATE INDEX idx_cliente_tipo ON public.cliente USING btree (id_tipo_cliente) WH
 
 
 --
--- TOC entry 5206 (class 1259 OID 134214)
+-- TOC entry 5131 (class 1259 OID 146364)
+-- Name: idx_cliente_tipo_empresa; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cliente_tipo_empresa ON public.cliente USING btree (tipo_empresa) WHERE (activo = true);
+
+
+--
+-- TOC entry 5346 (class 1259 OID 134214)
 -- Name: idx_contacto_empresa_activo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14578,7 +17489,7 @@ CREATE INDEX idx_contacto_empresa_activo ON public.contacto_empresa USING btree 
 
 
 --
--- TOC entry 5207 (class 1259 OID 134213)
+-- TOC entry 5347 (class 1259 OID 134213)
 -- Name: idx_contacto_empresa_cliente; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14586,7 +17497,7 @@ CREATE INDEX idx_contacto_empresa_cliente ON public.contacto_empresa USING btree
 
 
 --
--- TOC entry 5208 (class 1259 OID 134215)
+-- TOC entry 5348 (class 1259 OID 134215)
 -- Name: idx_contacto_principal_unico; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14594,7 +17505,7 @@ CREATE UNIQUE INDEX idx_contacto_principal_unico ON public.contacto_empresa USIN
 
 
 --
--- TOC entry 5217 (class 1259 OID 134255)
+-- TOC entry 5357 (class 1259 OID 134255)
 -- Name: idx_contacto_rol_activo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14602,7 +17513,7 @@ CREATE INDEX idx_contacto_rol_activo ON public.contacto_rol USING btree (activo)
 
 
 --
--- TOC entry 5218 (class 1259 OID 134253)
+-- TOC entry 5358 (class 1259 OID 134253)
 -- Name: idx_contacto_rol_contacto; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14610,7 +17521,7 @@ CREATE INDEX idx_contacto_rol_contacto ON public.contacto_rol USING btree (id_co
 
 
 --
--- TOC entry 5219 (class 1259 OID 134254)
+-- TOC entry 5359 (class 1259 OID 134254)
 -- Name: idx_contacto_rol_rol; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14618,7 +17529,7 @@ CREATE INDEX idx_contacto_rol_rol ON public.contacto_rol USING btree (id_rol);
 
 
 --
--- TOC entry 5088 (class 1259 OID 68157)
+-- TOC entry 5227 (class 1259 OID 68157)
 -- Name: idx_cotizacion_cliente; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14626,7 +17537,7 @@ CREATE INDEX idx_cotizacion_cliente ON public.cotizacion USING btree (id_cliente
 
 
 --
--- TOC entry 5089 (class 1259 OID 68158)
+-- TOC entry 5228 (class 1259 OID 68158)
 -- Name: idx_cotizacion_fecha_emision; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14634,7 +17545,7 @@ CREATE INDEX idx_cotizacion_fecha_emision ON public.cotizacion USING btree (fech
 
 
 --
--- TOC entry 5080 (class 1259 OID 68172)
+-- TOC entry 5219 (class 1259 OID 68172)
 -- Name: idx_crm_actividad_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14642,7 +17553,7 @@ CREATE INDEX idx_crm_actividad_fecha ON public.crm_actividad USING btree (fecha_
 
 
 --
--- TOC entry 5081 (class 1259 OID 68171)
+-- TOC entry 5220 (class 1259 OID 68171)
 -- Name: idx_crm_actividad_usuario; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14650,7 +17561,63 @@ CREATE INDEX idx_crm_actividad_usuario ON public.crm_actividad USING btree (id_u
 
 
 --
--- TOC entry 5147 (class 1259 OID 86663)
+-- TOC entry 5377 (class 1259 OID 147885)
+-- Name: idx_cxp_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cxp_estado ON public.cuenta_por_pagar_proveedor USING btree (estado) WHERE (activo = true);
+
+
+--
+-- TOC entry 5378 (class 1259 OID 147887)
+-- Name: idx_cxp_pedido; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cxp_pedido ON public.cuenta_por_pagar_proveedor USING btree (id_pedido) WHERE (activo = true);
+
+
+--
+-- TOC entry 5379 (class 1259 OID 147884)
+-- Name: idx_cxp_proveedor; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cxp_proveedor ON public.cuenta_por_pagar_proveedor USING btree (id_proveedor) WHERE (activo = true);
+
+
+--
+-- TOC entry 5380 (class 1259 OID 147886)
+-- Name: idx_cxp_vencimiento; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cxp_vencimiento ON public.cuenta_por_pagar_proveedor USING btree (fecha_vencimiento) WHERE ((estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PARCIAL'::character varying])::text[]));
+
+
+--
+-- TOC entry 5075 (class 1259 OID 146470)
+-- Name: idx_distrito_codigo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_distrito_codigo ON public.distrito USING btree (codigo);
+
+
+--
+-- TOC entry 5076 (class 1259 OID 146469)
+-- Name: idx_distrito_id_provincia; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_distrito_id_provincia ON public.distrito USING btree (id_provincia);
+
+
+--
+-- TOC entry 5077 (class 1259 OID 146471)
+-- Name: idx_distrito_nombre; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_distrito_nombre ON public.distrito USING btree (nombre);
+
+
+--
+-- TOC entry 5287 (class 1259 OID 86663)
 -- Name: idx_estado_cotizacion_activo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14658,7 +17625,7 @@ CREATE INDEX idx_estado_cotizacion_activo ON public.estado_cotizacion USING btre
 
 
 --
--- TOC entry 5148 (class 1259 OID 89016)
+-- TOC entry 5288 (class 1259 OID 89016)
 -- Name: idx_estado_cotizacion_exitoso; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14666,7 +17633,7 @@ CREATE INDEX idx_estado_cotizacion_exitoso ON public.estado_cotizacion USING btr
 
 
 --
--- TOC entry 5149 (class 1259 OID 89038)
+-- TOC entry 5289 (class 1259 OID 89038)
 -- Name: idx_estado_cotizacion_final; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14674,7 +17641,7 @@ CREATE INDEX idx_estado_cotizacion_final ON public.estado_cotizacion USING btree
 
 
 --
--- TOC entry 5106 (class 1259 OID 68173)
+-- TOC entry 5245 (class 1259 OID 68173)
 -- Name: idx_factura_cliente; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14682,7 +17649,7 @@ CREATE INDEX idx_factura_cliente ON public.factura USING btree (id_cliente) WHER
 
 
 --
--- TOC entry 5107 (class 1259 OID 68175)
+-- TOC entry 5246 (class 1259 OID 68175)
 -- Name: idx_factura_estado; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14690,7 +17657,7 @@ CREATE INDEX idx_factura_estado ON public.factura USING btree (estado_documento)
 
 
 --
--- TOC entry 5108 (class 1259 OID 68174)
+-- TOC entry 5247 (class 1259 OID 68174)
 -- Name: idx_factura_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14698,7 +17665,55 @@ CREATE INDEX idx_factura_fecha ON public.factura USING btree (fecha_emision);
 
 
 --
--- TOC entry 5129 (class 1259 OID 68177)
+-- TOC entry 5396 (class 1259 OID 158851)
+-- Name: idx_historial_cotizacion_fecha; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_historial_cotizacion_fecha ON public.historial_cotizacion USING btree (fecha_cambio DESC);
+
+
+--
+-- TOC entry 5397 (class 1259 OID 158849)
+-- Name: idx_historial_cotizacion_id_cotizacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_historial_cotizacion_id_cotizacion ON public.historial_cotizacion USING btree (id_cotizacion);
+
+
+--
+-- TOC entry 5398 (class 1259 OID 158850)
+-- Name: idx_historial_cotizacion_numero; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_historial_cotizacion_numero ON public.historial_cotizacion USING btree (numero_cotizacion);
+
+
+--
+-- TOC entry 5399 (class 1259 OID 158854)
+-- Name: idx_historial_cotizacion_productos; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_historial_cotizacion_productos ON public.historial_cotizacion USING gin (productos_afectados);
+
+
+--
+-- TOC entry 5400 (class 1259 OID 158852)
+-- Name: idx_historial_cotizacion_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_historial_cotizacion_tipo ON public.historial_cotizacion USING btree (tipo_cambio);
+
+
+--
+-- TOC entry 5401 (class 1259 OID 158853)
+-- Name: idx_historial_cotizacion_usuario; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_historial_cotizacion_usuario ON public.historial_cotizacion USING btree (id_usuario);
+
+
+--
+-- TOC entry 5268 (class 1259 OID 68177)
 -- Name: idx_historial_precios_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14706,7 +17721,7 @@ CREATE INDEX idx_historial_precios_fecha ON public.historial_precios USING btree
 
 
 --
--- TOC entry 5130 (class 1259 OID 68176)
+-- TOC entry 5269 (class 1259 OID 68176)
 -- Name: idx_historial_precios_sku; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14714,7 +17729,7 @@ CREATE INDEX idx_historial_precios_sku ON public.historial_precios USING btree (
 
 
 --
--- TOC entry 5222 (class 1259 OID 141555)
+-- TOC entry 5362 (class 1259 OID 141555)
 -- Name: idx_notificaciones_leida_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14722,7 +17737,7 @@ CREATE INDEX idx_notificaciones_leida_fecha ON public.notificaciones USING btree
 
 
 --
--- TOC entry 5223 (class 1259 OID 141557)
+-- TOC entry 5363 (class 1259 OID 141557)
 -- Name: idx_notificaciones_producto; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14730,7 +17745,7 @@ CREATE INDEX idx_notificaciones_producto ON public.notificaciones USING btree (p
 
 
 --
--- TOC entry 5224 (class 1259 OID 141556)
+-- TOC entry 5364 (class 1259 OID 141556)
 -- Name: idx_notificaciones_rol; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14738,7 +17753,7 @@ CREATE INDEX idx_notificaciones_rol ON public.notificaciones USING btree (rol_de
 
 
 --
--- TOC entry 5225 (class 1259 OID 141559)
+-- TOC entry 5365 (class 1259 OID 141559)
 -- Name: idx_notificaciones_rol_leida_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14746,7 +17761,7 @@ CREATE INDEX idx_notificaciones_rol_leida_fecha ON public.notificaciones USING b
 
 
 --
--- TOC entry 5226 (class 1259 OID 141558)
+-- TOC entry 5366 (class 1259 OID 141558)
 -- Name: idx_notificaciones_usuario; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14754,7 +17769,7 @@ CREATE INDEX idx_notificaciones_usuario ON public.notificaciones USING btree (us
 
 
 --
--- TOC entry 5074 (class 1259 OID 68170)
+-- TOC entry 5213 (class 1259 OID 68170)
 -- Name: idx_oportunidad_asesor; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14762,7 +17777,7 @@ CREATE INDEX idx_oportunidad_asesor ON public.oportunidad USING btree (id_asesor
 
 
 --
--- TOC entry 5075 (class 1259 OID 68169)
+-- TOC entry 5214 (class 1259 OID 68169)
 -- Name: idx_oportunidad_etapa; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14770,7 +17785,39 @@ CREATE INDEX idx_oportunidad_etapa ON public.oportunidad USING btree (id_etapa) 
 
 
 --
--- TOC entry 5025 (class 1259 OID 68153)
+-- TOC entry 5381 (class 1259 OID 147941)
+-- Name: idx_pago_prov_cuenta; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pago_prov_cuenta ON public.pago_proveedor USING btree (id_cuenta_por_pagar) WHERE (activo = true);
+
+
+--
+-- TOC entry 5382 (class 1259 OID 147944)
+-- Name: idx_pago_prov_estado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pago_prov_estado ON public.pago_proveedor USING btree (estado) WHERE (activo = true);
+
+
+--
+-- TOC entry 5383 (class 1259 OID 147943)
+-- Name: idx_pago_prov_fecha; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pago_prov_fecha ON public.pago_proveedor USING btree (fecha_pago) WHERE (activo = true);
+
+
+--
+-- TOC entry 5384 (class 1259 OID 147942)
+-- Name: idx_pago_prov_proveedor; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pago_prov_proveedor ON public.pago_proveedor USING btree (id_proveedor) WHERE (activo = true);
+
+
+--
+-- TOC entry 5159 (class 1259 OID 68153)
 -- Name: idx_producto_categoria; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14778,7 +17825,7 @@ CREATE INDEX idx_producto_categoria ON public.producto USING btree (id_categoria
 
 
 --
--- TOC entry 5026 (class 1259 OID 141565)
+-- TOC entry 5160 (class 1259 OID 141565)
 -- Name: idx_producto_estado; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14786,7 +17833,15 @@ CREATE INDEX idx_producto_estado ON public.producto USING btree (estado_producto
 
 
 --
--- TOC entry 5027 (class 1259 OID 141566)
+-- TOC entry 5161 (class 1259 OID 147679)
+-- Name: idx_producto_galeria_imagenes_seo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_producto_galeria_imagenes_seo ON public.producto USING gin (galeria_imagenes_seo);
+
+
+--
+-- TOC entry 5162 (class 1259 OID 141566)
 -- Name: idx_producto_imagen; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14794,7 +17849,15 @@ CREATE INDEX idx_producto_imagen ON public.producto USING btree (tiene_imagen) W
 
 
 --
--- TOC entry 5028 (class 1259 OID 68154)
+-- TOC entry 5163 (class 1259 OID 147678)
+-- Name: idx_producto_imagen_principal_seo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_producto_imagen_principal_seo ON public.producto USING gin (imagen_principal_seo);
+
+
+--
+-- TOC entry 5164 (class 1259 OID 68154)
 -- Name: idx_producto_marca; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14802,7 +17865,7 @@ CREATE INDEX idx_producto_marca ON public.producto USING btree (id_marca) WHERE 
 
 
 --
--- TOC entry 5029 (class 1259 OID 68156)
+-- TOC entry 5165 (class 1259 OID 68156)
 -- Name: idx_producto_nombre_trgm; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14810,7 +17873,7 @@ CREATE INDEX idx_producto_nombre_trgm ON public.producto USING gin (nombre publi
 
 
 --
--- TOC entry 5183 (class 1259 OID 106313)
+-- TOC entry 5323 (class 1259 OID 106313)
 -- Name: idx_producto_precio_activo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14818,7 +17881,7 @@ CREATE INDEX idx_producto_precio_activo ON public.producto_precio_moneda USING b
 
 
 --
--- TOC entry 5184 (class 1259 OID 106312)
+-- TOC entry 5324 (class 1259 OID 106312)
 -- Name: idx_producto_precio_moneda_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14826,7 +17889,7 @@ CREATE INDEX idx_producto_precio_moneda_id ON public.producto_precio_moneda USIN
 
 
 --
--- TOC entry 5185 (class 1259 OID 106311)
+-- TOC entry 5325 (class 1259 OID 106311)
 -- Name: idx_producto_precio_sku; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14834,7 +17897,7 @@ CREATE INDEX idx_producto_precio_sku ON public.producto_precio_moneda USING btre
 
 
 --
--- TOC entry 5186 (class 1259 OID 123637)
+-- TOC entry 5326 (class 1259 OID 123637)
 -- Name: idx_producto_precio_tipo_cambio; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14842,7 +17905,7 @@ CREATE INDEX idx_producto_precio_tipo_cambio ON public.producto_precio_moneda US
 
 
 --
--- TOC entry 5039 (class 1259 OID 134736)
+-- TOC entry 5178 (class 1259 OID 134736)
 -- Name: idx_producto_proveedor_descuentos; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14850,8 +17913,8 @@ CREATE INDEX idx_producto_proveedor_descuentos ON public.producto_proveedor USIN
 
 
 --
--- TOC entry 6336 (class 0 OID 0)
--- Dependencies: 5039
+-- TOC entry 6634 (class 0 OID 0)
+-- Dependencies: 5178
 -- Name: INDEX idx_producto_proveedor_descuentos; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -14859,7 +17922,7 @@ COMMENT ON INDEX public.idx_producto_proveedor_descuentos IS 'Optimiza consultas
 
 
 --
--- TOC entry 5040 (class 1259 OID 134737)
+-- TOC entry 5179 (class 1259 OID 134737)
 -- Name: idx_producto_proveedor_precio_final; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14867,8 +17930,8 @@ CREATE INDEX idx_producto_proveedor_precio_final ON public.producto_proveedor US
 
 
 --
--- TOC entry 6337 (class 0 OID 0)
--- Dependencies: 5040
+-- TOC entry 6635 (class 0 OID 0)
+-- Dependencies: 5179
 -- Name: INDEX idx_producto_proveedor_precio_final; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -14876,7 +17939,7 @@ COMMENT ON INDEX public.idx_producto_proveedor_precio_final IS 'Optimiza consult
 
 
 --
--- TOC entry 5041 (class 1259 OID 68165)
+-- TOC entry 5180 (class 1259 OID 68165)
 -- Name: idx_producto_proveedor_principal; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14884,7 +17947,7 @@ CREATE INDEX idx_producto_proveedor_principal ON public.producto_proveedor USING
 
 
 --
--- TOC entry 5042 (class 1259 OID 68164)
+-- TOC entry 5181 (class 1259 OID 68164)
 -- Name: idx_producto_proveedor_proveedor; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14892,7 +17955,7 @@ CREATE INDEX idx_producto_proveedor_proveedor ON public.producto_proveedor USING
 
 
 --
--- TOC entry 5043 (class 1259 OID 68163)
+-- TOC entry 5182 (class 1259 OID 68163)
 -- Name: idx_producto_proveedor_sku; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14900,7 +17963,7 @@ CREATE INDEX idx_producto_proveedor_sku ON public.producto_proveedor USING btree
 
 
 --
--- TOC entry 5044 (class 1259 OID 123638)
+-- TOC entry 5183 (class 1259 OID 123638)
 -- Name: idx_producto_proveedor_tc; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14908,7 +17971,7 @@ CREATE INDEX idx_producto_proveedor_tc ON public.producto_proveedor USING btree 
 
 
 --
--- TOC entry 5030 (class 1259 OID 141567)
+-- TOC entry 5166 (class 1259 OID 141567)
 -- Name: idx_producto_seo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14916,7 +17979,15 @@ CREATE INDEX idx_producto_seo ON public.producto USING btree (tiene_seo) WHERE (
 
 
 --
--- TOC entry 5031 (class 1259 OID 68155)
+-- TOC entry 5167 (class 1259 OID 147747)
+-- Name: idx_producto_sku_producto; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_producto_sku_producto ON public.producto USING btree (sku_producto);
+
+
+--
+-- TOC entry 5168 (class 1259 OID 68155)
 -- Name: idx_producto_visible_web; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14924,7 +17995,7 @@ CREATE INDEX idx_producto_visible_web ON public.producto USING btree (visible_we
 
 
 --
--- TOC entry 5032 (class 1259 OID 141568)
+-- TOC entry 5169 (class 1259 OID 141568)
 -- Name: idx_producto_visto_por; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14932,7 +18003,40 @@ CREATE INDEX idx_producto_visto_por ON public.producto USING gin (visto_por);
 
 
 --
--- TOC entry 5057 (class 1259 OID 68167)
+-- TOC entry 5136 (class 1259 OID 147810)
+-- Name: idx_proveedor_operaciones; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_proveedor_operaciones ON public.proveedor USING btree (requiere_epp, es_demorado) WHERE (activo = true);
+
+
+--
+-- TOC entry 6636 (class 0 OID 0)
+-- Dependencies: 5136
+-- Name: INDEX idx_proveedor_operaciones; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON INDEX public.idx_proveedor_operaciones IS 'Índice para optimizar consultas de proveedores según sus características operativas';
+
+
+--
+-- TOC entry 5369 (class 1259 OID 146467)
+-- Name: idx_provincia_id_ciudad; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_provincia_id_ciudad ON public.provincia USING btree (id_ciudad);
+
+
+--
+-- TOC entry 5370 (class 1259 OID 146468)
+-- Name: idx_provincia_nombre; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_provincia_nombre ON public.provincia USING btree (nombre);
+
+
+--
+-- TOC entry 5196 (class 1259 OID 68167)
 -- Name: idx_solicitud_asesor; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14940,7 +18044,7 @@ CREATE INDEX idx_solicitud_asesor ON public.solicitud_cotizacion USING btree (id
 
 
 --
--- TOC entry 5058 (class 1259 OID 68166)
+-- TOC entry 5197 (class 1259 OID 68166)
 -- Name: idx_solicitud_estado; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14948,7 +18052,7 @@ CREATE INDEX idx_solicitud_estado ON public.solicitud_cotizacion USING btree (es
 
 
 --
--- TOC entry 5059 (class 1259 OID 68168)
+-- TOC entry 5198 (class 1259 OID 68168)
 -- Name: idx_solicitud_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14956,7 +18060,7 @@ CREATE INDEX idx_solicitud_fecha ON public.solicitud_cotizacion USING btree (fec
 
 
 --
--- TOC entry 5154 (class 1259 OID 90382)
+-- TOC entry 5294 (class 1259 OID 90382)
 -- Name: idx_transicion_analisis; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14964,7 +18068,7 @@ CREATE INDEX idx_transicion_analisis ON public.transicion_estado_cotizacion USIN
 
 
 --
--- TOC entry 5155 (class 1259 OID 90381)
+-- TOC entry 5295 (class 1259 OID 90381)
 -- Name: idx_transicion_automatico; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14972,7 +18076,7 @@ CREATE INDEX idx_transicion_automatico ON public.transicion_estado_cotizacion US
 
 
 --
--- TOC entry 5156 (class 1259 OID 90377)
+-- TOC entry 5296 (class 1259 OID 90377)
 -- Name: idx_transicion_cotizacion; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14980,7 +18084,7 @@ CREATE INDEX idx_transicion_cotizacion ON public.transicion_estado_cotizacion US
 
 
 --
--- TOC entry 5157 (class 1259 OID 90380)
+-- TOC entry 5297 (class 1259 OID 90380)
 -- Name: idx_transicion_estados; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14988,7 +18092,7 @@ CREATE INDEX idx_transicion_estados ON public.transicion_estado_cotizacion USING
 
 
 --
--- TOC entry 5158 (class 1259 OID 90378)
+-- TOC entry 5298 (class 1259 OID 90378)
 -- Name: idx_transicion_fecha; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14996,7 +18100,7 @@ CREATE INDEX idx_transicion_fecha ON public.transicion_estado_cotizacion USING b
 
 
 --
--- TOC entry 5159 (class 1259 OID 90379)
+-- TOC entry 5299 (class 1259 OID 90379)
 -- Name: idx_transicion_usuario; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -15004,7 +18108,7 @@ CREATE INDEX idx_transicion_usuario ON public.transicion_estado_cotizacion USING
 
 
 --
--- TOC entry 5189 (class 1259 OID 106310)
+-- TOC entry 5329 (class 1259 OID 106310)
 -- Name: unique_sku_moneda_activo_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -15012,7 +18116,7 @@ CREATE UNIQUE INDEX unique_sku_moneda_activo_idx ON public.producto_precio_moned
 
 
 --
--- TOC entry 4925 (class 1259 OID 17270)
+-- TOC entry 5050 (class 1259 OID 17270)
 -- Name: ix_realtime_subscription_entity; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15020,7 +18124,7 @@ CREATE INDEX ix_realtime_subscription_entity ON realtime.subscription USING btre
 
 
 --
--- TOC entry 4929 (class 1259 OID 102358)
+-- TOC entry 5054 (class 1259 OID 102358)
 -- Name: messages_inserted_at_topic_index; Type: INDEX; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15028,7 +18132,7 @@ CREATE INDEX messages_inserted_at_topic_index ON ONLY realtime.messages USING bt
 
 
 --
--- TOC entry 5162 (class 1259 OID 102362)
+-- TOC entry 5302 (class 1259 OID 102362)
 -- Name: messages_2025_09_22_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15036,7 +18140,7 @@ CREATE INDEX messages_2025_09_22_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 5165 (class 1259 OID 102363)
+-- TOC entry 5305 (class 1259 OID 102363)
 -- Name: messages_2025_09_23_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15044,7 +18148,7 @@ CREATE INDEX messages_2025_09_23_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 5168 (class 1259 OID 102364)
+-- TOC entry 5308 (class 1259 OID 102364)
 -- Name: messages_2025_09_24_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15052,7 +18156,7 @@ CREATE INDEX messages_2025_09_24_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 5171 (class 1259 OID 102365)
+-- TOC entry 5311 (class 1259 OID 102365)
 -- Name: messages_2025_09_25_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15060,7 +18164,7 @@ CREATE INDEX messages_2025_09_25_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 5174 (class 1259 OID 102366)
+-- TOC entry 5314 (class 1259 OID 102366)
 -- Name: messages_2025_09_26_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15068,7 +18172,7 @@ CREATE INDEX messages_2025_09_26_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 5177 (class 1259 OID 102376)
+-- TOC entry 5317 (class 1259 OID 102376)
 -- Name: messages_2025_09_27_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15076,7 +18180,7 @@ CREATE INDEX messages_2025_09_27_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 5180 (class 1259 OID 105121)
+-- TOC entry 5320 (class 1259 OID 105121)
 -- Name: messages_2025_09_28_inserted_at_topic_idx; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15084,7 +18188,7 @@ CREATE INDEX messages_2025_09_28_inserted_at_topic_idx ON realtime.messages_2025
 
 
 --
--- TOC entry 4928 (class 1259 OID 17171)
+-- TOC entry 5053 (class 1259 OID 17171)
 -- Name: subscription_subscription_id_entity_filters_key; Type: INDEX; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15092,7 +18196,7 @@ CREATE UNIQUE INDEX subscription_subscription_id_entity_filters_key ON realtime.
 
 
 --
--- TOC entry 4845 (class 1259 OID 16560)
+-- TOC entry 4970 (class 1259 OID 16560)
 -- Name: bname; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15100,7 +18204,7 @@ CREATE UNIQUE INDEX bname ON storage.buckets USING btree (name);
 
 
 --
--- TOC entry 4848 (class 1259 OID 16582)
+-- TOC entry 4973 (class 1259 OID 16582)
 -- Name: bucketid_objname; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15108,7 +18212,15 @@ CREATE UNIQUE INDEX bucketid_objname ON storage.objects USING btree (bucket_id, 
 
 
 --
--- TOC entry 4920 (class 1259 OID 17074)
+-- TOC entry 5279 (class 1259 OID 156581)
+-- Name: buckets_analytics_unique_name_idx; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE UNIQUE INDEX buckets_analytics_unique_name_idx ON storage.buckets_analytics USING btree (name) WHERE (deleted_at IS NULL);
+
+
+--
+-- TOC entry 5045 (class 1259 OID 17074)
 -- Name: idx_multipart_uploads_list; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15116,7 +18228,7 @@ CREATE INDEX idx_multipart_uploads_list ON storage.s3_multipart_uploads USING bt
 
 
 --
--- TOC entry 4849 (class 1259 OID 68448)
+-- TOC entry 4974 (class 1259 OID 68448)
 -- Name: idx_name_bucket_level_unique; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15124,7 +18236,7 @@ CREATE UNIQUE INDEX idx_name_bucket_level_unique ON storage.objects USING btree 
 
 
 --
--- TOC entry 4850 (class 1259 OID 17039)
+-- TOC entry 4975 (class 1259 OID 17039)
 -- Name: idx_objects_bucket_id_name; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15132,7 +18244,7 @@ CREATE INDEX idx_objects_bucket_id_name ON storage.objects USING btree (bucket_i
 
 
 --
--- TOC entry 4851 (class 1259 OID 68450)
+-- TOC entry 4976 (class 1259 OID 68450)
 -- Name: idx_objects_lower_name; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15140,7 +18252,7 @@ CREATE INDEX idx_objects_lower_name ON storage.objects USING btree ((path_tokens
 
 
 --
--- TOC entry 5135 (class 1259 OID 68451)
+-- TOC entry 5274 (class 1259 OID 68451)
 -- Name: idx_prefixes_lower_name; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15148,7 +18260,7 @@ CREATE INDEX idx_prefixes_lower_name ON storage.prefixes USING btree (bucket_id,
 
 
 --
--- TOC entry 4852 (class 1259 OID 16583)
+-- TOC entry 4977 (class 1259 OID 16583)
 -- Name: name_prefix_search; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15156,7 +18268,7 @@ CREATE INDEX name_prefix_search ON storage.objects USING btree (name text_patter
 
 
 --
--- TOC entry 4853 (class 1259 OID 68449)
+-- TOC entry 4978 (class 1259 OID 68449)
 -- Name: objects_bucket_id_level_idx; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15164,7 +18276,15 @@ CREATE UNIQUE INDEX objects_bucket_id_level_idx ON storage.objects USING btree (
 
 
 --
--- TOC entry 5229 (class 0 OID 0)
+-- TOC entry 5391 (class 1259 OID 156572)
+-- Name: vector_indexes_name_bucket_id_idx; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE UNIQUE INDEX vector_indexes_name_bucket_id_idx ON storage.vector_indexes USING btree (name, bucket_id);
+
+
+--
+-- TOC entry 5402 (class 0 OID 0)
 -- Name: messages_2025_09_22_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15172,7 +18292,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5230 (class 0 OID 0)
+-- TOC entry 5403 (class 0 OID 0)
 -- Name: messages_2025_09_22_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15180,7 +18300,7 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_22
 
 
 --
--- TOC entry 5231 (class 0 OID 0)
+-- TOC entry 5404 (class 0 OID 0)
 -- Name: messages_2025_09_23_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15188,7 +18308,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5232 (class 0 OID 0)
+-- TOC entry 5405 (class 0 OID 0)
 -- Name: messages_2025_09_23_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15196,7 +18316,7 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_23
 
 
 --
--- TOC entry 5233 (class 0 OID 0)
+-- TOC entry 5406 (class 0 OID 0)
 -- Name: messages_2025_09_24_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15204,7 +18324,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5234 (class 0 OID 0)
+-- TOC entry 5407 (class 0 OID 0)
 -- Name: messages_2025_09_24_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15212,7 +18332,7 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_24
 
 
 --
--- TOC entry 5235 (class 0 OID 0)
+-- TOC entry 5408 (class 0 OID 0)
 -- Name: messages_2025_09_25_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15220,7 +18340,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5236 (class 0 OID 0)
+-- TOC entry 5409 (class 0 OID 0)
 -- Name: messages_2025_09_25_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15228,7 +18348,7 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_25
 
 
 --
--- TOC entry 5237 (class 0 OID 0)
+-- TOC entry 5410 (class 0 OID 0)
 -- Name: messages_2025_09_26_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15236,7 +18356,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5238 (class 0 OID 0)
+-- TOC entry 5411 (class 0 OID 0)
 -- Name: messages_2025_09_26_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15244,7 +18364,7 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_26
 
 
 --
--- TOC entry 5239 (class 0 OID 0)
+-- TOC entry 5412 (class 0 OID 0)
 -- Name: messages_2025_09_27_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15252,7 +18372,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5240 (class 0 OID 0)
+-- TOC entry 5413 (class 0 OID 0)
 -- Name: messages_2025_09_27_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15260,7 +18380,7 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_27
 
 
 --
--- TOC entry 5241 (class 0 OID 0)
+-- TOC entry 5414 (class 0 OID 0)
 -- Name: messages_2025_09_28_inserted_at_topic_idx; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15268,7 +18388,7 @@ ALTER INDEX realtime.messages_inserted_at_topic_index ATTACH PARTITION realtime.
 
 
 --
--- TOC entry 5242 (class 0 OID 0)
+-- TOC entry 5415 (class 0 OID 0)
 -- Name: messages_2025_09_28_pkey; Type: INDEX ATTACH; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -15276,7 +18396,15 @@ ALTER INDEX realtime.messages_pkey ATTACH PARTITION realtime.messages_2025_09_28
 
 
 --
--- TOC entry 5423 (class 2620 OID 134259)
+-- TOC entry 5602 (class 2620 OID 147743)
+-- Name: producto before_insert_generar_sku_producto; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER before_insert_generar_sku_producto BEFORE INSERT ON public.producto FOR EACH ROW EXECUTE FUNCTION public.trigger_generar_sku_producto();
+
+
+--
+-- TOC entry 5617 (class 2620 OID 134259)
 -- Name: contacto_empresa trg_actualizar_fecha_contacto; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15284,7 +18412,7 @@ CREATE TRIGGER trg_actualizar_fecha_contacto BEFORE UPDATE ON public.contacto_em
 
 
 --
--- TOC entry 5420 (class 2620 OID 68083)
+-- TOC entry 5614 (class 2620 OID 68083)
 -- Name: cuenta_por_cobrar trg_calcular_dias_vencimiento; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15292,7 +18420,7 @@ CREATE TRIGGER trg_calcular_dias_vencimiento BEFORE INSERT OR UPDATE ON public.c
 
 
 --
--- TOC entry 5417 (class 2620 OID 90384)
+-- TOC entry 5609 (class 2620 OID 90384)
 -- Name: cotizacion trg_cotizacion_cambio_estado; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15300,7 +18428,7 @@ CREATE TRIGGER trg_cotizacion_cambio_estado AFTER UPDATE OF id_estado ON public.
 
 
 --
--- TOC entry 5418 (class 2620 OID 68078)
+-- TOC entry 5610 (class 2620 OID 68078)
 -- Name: cotizacion trg_cotizacion_fecha_actualizacion; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15308,7 +18436,7 @@ CREATE TRIGGER trg_cotizacion_fecha_actualizacion BEFORE UPDATE ON public.cotiza
 
 
 --
--- TOC entry 5419 (class 2620 OID 90386)
+-- TOC entry 5611 (class 2620 OID 90386)
 -- Name: cotizacion trg_cotizacion_primera_transicion; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15316,7 +18444,7 @@ CREATE TRIGGER trg_cotizacion_primera_transicion AFTER INSERT ON public.cotizaci
 
 
 --
--- TOC entry 5416 (class 2620 OID 68082)
+-- TOC entry 5608 (class 2620 OID 68082)
 -- Name: solicitud_cotizacion trg_generar_codigo_solicitud; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15324,7 +18452,23 @@ CREATE TRIGGER trg_generar_codigo_solicitud BEFORE INSERT ON public.solicitud_co
 
 
 --
--- TOC entry 5411 (class 2620 OID 68077)
+-- TOC entry 5612 (class 2620 OID 158872)
+-- Name: cotizacion trg_historial_cotizacion; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_historial_cotizacion AFTER INSERT OR UPDATE ON public.cotizacion FOR EACH ROW EXECUTE FUNCTION public.trigger_historial_cotizacion();
+
+
+--
+-- TOC entry 5613 (class 2620 OID 158874)
+-- Name: cotizacion_detalle trg_historial_cotizacion_detalle; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_historial_cotizacion_detalle AFTER INSERT OR DELETE OR UPDATE ON public.cotizacion_detalle FOR EACH ROW EXECUTE FUNCTION public.trigger_historial_cotizacion_detalle();
+
+
+--
+-- TOC entry 5603 (class 2620 OID 68077)
 -- Name: producto trg_producto_fecha_actualizacion; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15332,7 +18476,7 @@ CREATE TRIGGER trg_producto_fecha_actualizacion BEFORE UPDATE ON public.producto
 
 
 --
--- TOC entry 5414 (class 2620 OID 68079)
+-- TOC entry 5606 (class 2620 OID 68079)
 -- Name: producto_proveedor trg_producto_proveedor_fecha_actualizacion; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15340,7 +18484,7 @@ CREATE TRIGGER trg_producto_proveedor_fecha_actualizacion BEFORE UPDATE ON publi
 
 
 --
--- TOC entry 5409 (class 2620 OID 68076)
+-- TOC entry 5600 (class 2620 OID 68076)
 -- Name: usuario trg_usuario_fecha_actualizacion; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15348,7 +18492,7 @@ CREATE TRIGGER trg_usuario_fecha_actualizacion BEFORE UPDATE ON public.usuario F
 
 
 --
--- TOC entry 5424 (class 2620 OID 134257)
+-- TOC entry 5618 (class 2620 OID 134257)
 -- Name: contacto_empresa trg_validar_contacto_empresa; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15356,24 +18500,48 @@ CREATE TRIGGER trg_validar_contacto_empresa BEFORE INSERT ON public.contacto_emp
 
 
 --
--- TOC entry 5415 (class 2620 OID 134728)
+-- TOC entry 5620 (class 2620 OID 147950)
+-- Name: pago_proveedor trigger_actualizar_estado_cxp; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_actualizar_estado_cxp AFTER INSERT ON public.pago_proveedor FOR EACH ROW EXECUTE FUNCTION public.actualizar_estado_cxp();
+
+
+--
+-- TOC entry 5607 (class 2620 OID 158916)
 -- Name: producto_proveedor trigger_calcular_costos_proveedor; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trigger_calcular_costos_proveedor BEFORE INSERT OR UPDATE OF precio_cotizado, cotizacion_incluye_igv, descuento_1, descuento_2, descuento_3 ON public.producto_proveedor FOR EACH ROW EXECUTE FUNCTION public.calcular_costos_producto_proveedor();
+CREATE TRIGGER trigger_calcular_costos_proveedor BEFORE INSERT OR UPDATE OF precio_cotizado, cotizacion_incluye_igv, descuento_1, descuento_2, descuento_3, solo_relacion ON public.producto_proveedor FOR EACH ROW EXECUTE FUNCTION public.calcular_costos_producto_proveedor();
 
 
 --
--- TOC entry 6338 (class 0 OID 0)
--- Dependencies: 5415
+-- TOC entry 6637 (class 0 OID 0)
+-- Dependencies: 5607
 -- Name: TRIGGER trigger_calcular_costos_proveedor ON producto_proveedor; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TRIGGER trigger_calcular_costos_proveedor ON public.producto_proveedor IS 'Recalcula automáticamente cuando cambian precio, IGV o descuentos';
+COMMENT ON TRIGGER trigger_calcular_costos_proveedor ON public.producto_proveedor IS 'Recalcula automáticamente cuando cambian precio, IGV, descuentos o solo_relacion';
 
 
 --
--- TOC entry 5412 (class 2620 OID 141572)
+-- TOC entry 5619 (class 2620 OID 147946)
+-- Name: cuenta_por_pagar_proveedor trigger_generar_codigo_cxp; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_generar_codigo_cxp BEFORE INSERT ON public.cuenta_por_pagar_proveedor FOR EACH ROW EXECUTE FUNCTION public.generar_codigo_cxp();
+
+
+--
+-- TOC entry 5621 (class 2620 OID 147948)
+-- Name: pago_proveedor trigger_generar_codigo_pago_proveedor; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_generar_codigo_pago_proveedor BEFORE INSERT ON public.pago_proveedor FOR EACH ROW EXECUTE FUNCTION public.generar_codigo_pago_proveedor();
+
+
+--
+-- TOC entry 5604 (class 2620 OID 141572)
 -- Name: producto trigger_notificar_producto_nuevo; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15381,7 +18549,7 @@ CREATE TRIGGER trigger_notificar_producto_nuevo AFTER INSERT ON public.producto 
 
 
 --
--- TOC entry 5413 (class 2620 OID 141570)
+-- TOC entry 5605 (class 2620 OID 141570)
 -- Name: producto trigger_verificar_producto_completo; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15389,7 +18557,7 @@ CREATE TRIGGER trigger_verificar_producto_completo BEFORE INSERT OR UPDATE OF im
 
 
 --
--- TOC entry 5410 (class 2620 OID 68080)
+-- TOC entry 5601 (class 2620 OID 68080)
 -- Name: recogedores update_recogedores_modtime; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15397,7 +18565,7 @@ CREATE TRIGGER update_recogedores_modtime BEFORE UPDATE ON public.recogedores FO
 
 
 --
--- TOC entry 5408 (class 2620 OID 68081)
+-- TOC entry 5599 (class 2620 OID 68081)
 -- Name: vehicle_types update_vehicle_types_modtime; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -15405,7 +18573,7 @@ CREATE TRIGGER update_vehicle_types_modtime BEFORE UPDATE ON public.vehicle_type
 
 
 --
--- TOC entry 5407 (class 2620 OID 17126)
+-- TOC entry 5598 (class 2620 OID 17126)
 -- Name: subscription tr_check_filters; Type: TRIGGER; Schema: realtime; Owner: supabase_admin
 --
 
@@ -15413,7 +18581,7 @@ CREATE TRIGGER tr_check_filters BEFORE INSERT OR UPDATE ON realtime.subscription
 
 
 --
--- TOC entry 5402 (class 2620 OID 68458)
+-- TOC entry 5593 (class 2620 OID 68458)
 -- Name: buckets enforce_bucket_name_length_trigger; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15421,7 +18589,7 @@ CREATE TRIGGER enforce_bucket_name_length_trigger BEFORE INSERT OR UPDATE OF nam
 
 
 --
--- TOC entry 5403 (class 2620 OID 110923)
+-- TOC entry 5594 (class 2620 OID 110923)
 -- Name: objects objects_delete_delete_prefix; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15429,7 +18597,7 @@ CREATE TRIGGER objects_delete_delete_prefix AFTER DELETE ON storage.objects FOR 
 
 
 --
--- TOC entry 5404 (class 2620 OID 68444)
+-- TOC entry 5595 (class 2620 OID 68444)
 -- Name: objects objects_insert_create_prefix; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15437,7 +18605,7 @@ CREATE TRIGGER objects_insert_create_prefix BEFORE INSERT ON storage.objects FOR
 
 
 --
--- TOC entry 5405 (class 2620 OID 110922)
+-- TOC entry 5596 (class 2620 OID 110922)
 -- Name: objects objects_update_create_prefix; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15445,7 +18613,7 @@ CREATE TRIGGER objects_update_create_prefix BEFORE UPDATE ON storage.objects FOR
 
 
 --
--- TOC entry 5421 (class 2620 OID 68454)
+-- TOC entry 5615 (class 2620 OID 68454)
 -- Name: prefixes prefixes_create_hierarchy; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15453,7 +18621,7 @@ CREATE TRIGGER prefixes_create_hierarchy BEFORE INSERT ON storage.prefixes FOR E
 
 
 --
--- TOC entry 5422 (class 2620 OID 110924)
+-- TOC entry 5616 (class 2620 OID 110924)
 -- Name: prefixes prefixes_delete_hierarchy; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15461,7 +18629,7 @@ CREATE TRIGGER prefixes_delete_hierarchy AFTER DELETE ON storage.prefixes FOR EA
 
 
 --
--- TOC entry 5406 (class 2620 OID 17027)
+-- TOC entry 5597 (class 2620 OID 17027)
 -- Name: objects update_objects_updated_at; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -15469,7 +18637,7 @@ CREATE TRIGGER update_objects_updated_at BEFORE UPDATE ON storage.objects FOR EA
 
 
 --
--- TOC entry 5245 (class 2606 OID 16732)
+-- TOC entry 5418 (class 2606 OID 16732)
 -- Name: identities identities_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15478,7 +18646,7 @@ ALTER TABLE ONLY auth.identities
 
 
 --
--- TOC entry 5250 (class 2606 OID 16821)
+-- TOC entry 5423 (class 2606 OID 16821)
 -- Name: mfa_amr_claims mfa_amr_claims_session_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15487,7 +18655,7 @@ ALTER TABLE ONLY auth.mfa_amr_claims
 
 
 --
--- TOC entry 5249 (class 2606 OID 16809)
+-- TOC entry 5422 (class 2606 OID 16809)
 -- Name: mfa_challenges mfa_challenges_auth_factor_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15496,7 +18664,7 @@ ALTER TABLE ONLY auth.mfa_challenges
 
 
 --
--- TOC entry 5248 (class 2606 OID 16796)
+-- TOC entry 5421 (class 2606 OID 16796)
 -- Name: mfa_factors mfa_factors_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15505,7 +18673,7 @@ ALTER TABLE ONLY auth.mfa_factors
 
 
 --
--- TOC entry 5394 (class 2606 OID 127005)
+-- TOC entry 5568 (class 2606 OID 127005)
 -- Name: oauth_authorizations oauth_authorizations_client_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15514,7 +18682,7 @@ ALTER TABLE ONLY auth.oauth_authorizations
 
 
 --
--- TOC entry 5395 (class 2606 OID 127010)
+-- TOC entry 5569 (class 2606 OID 127010)
 -- Name: oauth_authorizations oauth_authorizations_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15523,7 +18691,7 @@ ALTER TABLE ONLY auth.oauth_authorizations
 
 
 --
--- TOC entry 5396 (class 2606 OID 127034)
+-- TOC entry 5570 (class 2606 OID 127034)
 -- Name: oauth_consents oauth_consents_client_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15532,7 +18700,7 @@ ALTER TABLE ONLY auth.oauth_consents
 
 
 --
--- TOC entry 5397 (class 2606 OID 127029)
+-- TOC entry 5571 (class 2606 OID 127029)
 -- Name: oauth_consents oauth_consents_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15541,7 +18709,7 @@ ALTER TABLE ONLY auth.oauth_consents
 
 
 --
--- TOC entry 5255 (class 2606 OID 16987)
+-- TOC entry 5428 (class 2606 OID 16987)
 -- Name: one_time_tokens one_time_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15550,7 +18718,7 @@ ALTER TABLE ONLY auth.one_time_tokens
 
 
 --
--- TOC entry 5243 (class 2606 OID 16765)
+-- TOC entry 5416 (class 2606 OID 16765)
 -- Name: refresh_tokens refresh_tokens_session_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15559,7 +18727,7 @@ ALTER TABLE ONLY auth.refresh_tokens
 
 
 --
--- TOC entry 5252 (class 2606 OID 16868)
+-- TOC entry 5425 (class 2606 OID 16868)
 -- Name: saml_providers saml_providers_sso_provider_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15568,7 +18736,7 @@ ALTER TABLE ONLY auth.saml_providers
 
 
 --
--- TOC entry 5253 (class 2606 OID 16941)
+-- TOC entry 5426 (class 2606 OID 16941)
 -- Name: saml_relay_states saml_relay_states_flow_state_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15577,7 +18745,7 @@ ALTER TABLE ONLY auth.saml_relay_states
 
 
 --
--- TOC entry 5254 (class 2606 OID 16882)
+-- TOC entry 5427 (class 2606 OID 16882)
 -- Name: saml_relay_states saml_relay_states_sso_provider_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15586,7 +18754,7 @@ ALTER TABLE ONLY auth.saml_relay_states
 
 
 --
--- TOC entry 5246 (class 2606 OID 127048)
+-- TOC entry 5419 (class 2606 OID 127048)
 -- Name: sessions sessions_oauth_client_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15595,7 +18763,7 @@ ALTER TABLE ONLY auth.sessions
 
 
 --
--- TOC entry 5247 (class 2606 OID 16760)
+-- TOC entry 5420 (class 2606 OID 16760)
 -- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15604,7 +18772,7 @@ ALTER TABLE ONLY auth.sessions
 
 
 --
--- TOC entry 5251 (class 2606 OID 16849)
+-- TOC entry 5424 (class 2606 OID 16849)
 -- Name: sso_domains sso_domains_sso_provider_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -15613,7 +18781,7 @@ ALTER TABLE ONLY auth.sso_domains
 
 
 --
--- TOC entry 5374 (class 2606 OID 67975)
+-- TOC entry 5548 (class 2606 OID 67975)
 -- Name: carrito_compra carrito_compra_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15622,7 +18790,7 @@ ALTER TABLE ONLY public.carrito_compra
 
 
 --
--- TOC entry 5375 (class 2606 OID 67985)
+-- TOC entry 5549 (class 2606 OID 67985)
 -- Name: carrito_compra carrito_compra_id_moneda_precio_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15631,7 +18799,7 @@ ALTER TABLE ONLY public.carrito_compra
 
 
 --
--- TOC entry 5376 (class 2606 OID 67980)
+-- TOC entry 5550 (class 2606 OID 67980)
 -- Name: carrito_compra carrito_compra_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15640,7 +18808,7 @@ ALTER TABLE ONLY public.carrito_compra
 
 
 --
--- TOC entry 5260 (class 2606 OID 66661)
+-- TOC entry 5433 (class 2606 OID 66661)
 -- Name: ciudad ciudad_id_pais_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15649,7 +18817,7 @@ ALTER TABLE ONLY public.ciudad
 
 
 --
--- TOC entry 5267 (class 2606 OID 66885)
+-- TOC entry 5440 (class 2606 OID 66885)
 -- Name: cliente cliente_id_pais_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15658,7 +18826,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 5268 (class 2606 OID 66875)
+-- TOC entry 5441 (class 2606 OID 66875)
 -- Name: cliente cliente_id_rubro_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15667,7 +18835,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 5269 (class 2606 OID 66880)
+-- TOC entry 5442 (class 2606 OID 66880)
 -- Name: cliente cliente_id_tipo_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15676,7 +18844,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 5270 (class 2606 OID 89074)
+-- TOC entry 5443 (class 2606 OID 89074)
 -- Name: cliente cliente_id_tipo_contacto_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15685,7 +18853,7 @@ ALTER TABLE ONLY public.cliente
 
 
 --
--- TOC entry 5305 (class 2606 OID 67335)
+-- TOC entry 5479 (class 2606 OID 67335)
 -- Name: comunicacion_solicitud comunicacion_solicitud_id_solicitud_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15694,7 +18862,7 @@ ALTER TABLE ONLY public.comunicacion_solicitud
 
 
 --
--- TOC entry 5306 (class 2606 OID 67340)
+-- TOC entry 5480 (class 2606 OID 67340)
 -- Name: comunicacion_solicitud comunicacion_solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15703,7 +18871,7 @@ ALTER TABLE ONLY public.comunicacion_solicitud
 
 
 --
--- TOC entry 5262 (class 2606 OID 66758)
+-- TOC entry 5435 (class 2606 OID 66758)
 -- Name: condiciones_comerciales condiciones_comerciales_id_moneda_min_pedido_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15712,7 +18880,7 @@ ALTER TABLE ONLY public.condiciones_comerciales
 
 
 --
--- TOC entry 5276 (class 2606 OID 67013)
+-- TOC entry 5450 (class 2606 OID 67013)
 -- Name: configuracion_fe configuracion_fe_configurado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15721,7 +18889,7 @@ ALTER TABLE ONLY public.configuracion_fe
 
 
 --
--- TOC entry 5277 (class 2606 OID 67008)
+-- TOC entry 5451 (class 2606 OID 67008)
 -- Name: configuracion_fe configuracion_fe_id_pais_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15730,7 +18898,7 @@ ALTER TABLE ONLY public.configuracion_fe
 
 
 --
--- TOC entry 5383 (class 2606 OID 68047)
+-- TOC entry 5557 (class 2606 OID 68047)
 -- Name: costos_operativos costos_operativos_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15739,7 +18907,7 @@ ALTER TABLE ONLY public.costos_operativos
 
 
 --
--- TOC entry 5384 (class 2606 OID 68052)
+-- TOC entry 5558 (class 2606 OID 68052)
 -- Name: costos_operativos costos_operativos_responsable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15748,7 +18916,7 @@ ALTER TABLE ONLY public.costos_operativos
 
 
 --
--- TOC entry 5326 (class 2606 OID 67585)
+-- TOC entry 5500 (class 2606 OID 67585)
 -- Name: cotizacion cotizacion_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15757,7 +18925,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5334 (class 2606 OID 67614)
+-- TOC entry 5508 (class 2606 OID 67614)
 -- Name: cotizacion_detalle cotizacion_detalle_id_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15766,7 +18934,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5335 (class 2606 OID 67634)
+-- TOC entry 5509 (class 2606 OID 67634)
 -- Name: cotizacion_detalle cotizacion_detalle_id_moneda_costo_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15775,7 +18943,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5336 (class 2606 OID 67629)
+-- TOC entry 5510 (class 2606 OID 67629)
 -- Name: cotizacion_detalle cotizacion_detalle_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15784,7 +18952,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5337 (class 2606 OID 67624)
+-- TOC entry 5511 (class 2606 OID 67624)
 -- Name: cotizacion_detalle cotizacion_detalle_id_proveedor_principal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15793,7 +18961,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5338 (class 2606 OID 67619)
+-- TOC entry 5512 (class 2606 OID 67619)
 -- Name: cotizacion_detalle cotizacion_detalle_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15802,7 +18970,7 @@ ALTER TABLE ONLY public.cotizacion_detalle
 
 
 --
--- TOC entry 5327 (class 2606 OID 67565)
+-- TOC entry 5501 (class 2606 OID 67565)
 -- Name: cotizacion cotizacion_id_asesor_ventas_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15811,7 +18979,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5328 (class 2606 OID 67560)
+-- TOC entry 5502 (class 2606 OID 67560)
 -- Name: cotizacion cotizacion_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15820,7 +18988,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5329 (class 2606 OID 67575)
+-- TOC entry 5503 (class 2606 OID 67575)
 -- Name: cotizacion cotizacion_id_condiciones_comerciales_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15829,7 +18997,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5330 (class 2606 OID 86707)
+-- TOC entry 5504 (class 2606 OID 86707)
 -- Name: cotizacion cotizacion_id_disponibilidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15838,7 +19006,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5331 (class 2606 OID 86658)
+-- TOC entry 5505 (class 2606 OID 86658)
 -- Name: cotizacion cotizacion_id_estado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15847,7 +19015,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5332 (class 2606 OID 67570)
+-- TOC entry 5506 (class 2606 OID 67570)
 -- Name: cotizacion cotizacion_id_forma_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15856,7 +19024,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5333 (class 2606 OID 67580)
+-- TOC entry 5507 (class 2606 OID 67580)
 -- Name: cotizacion cotizacion_id_moneda_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15865,7 +19033,7 @@ ALTER TABLE ONLY public.cotizacion
 
 
 --
--- TOC entry 5315 (class 2606 OID 67484)
+-- TOC entry 5489 (class 2606 OID 67484)
 -- Name: crm_actividad crm_actividad_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15874,7 +19042,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 5316 (class 2606 OID 67459)
+-- TOC entry 5490 (class 2606 OID 67459)
 -- Name: crm_actividad crm_actividad_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15883,7 +19051,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 5317 (class 2606 OID 67464)
+-- TOC entry 5491 (class 2606 OID 67464)
 -- Name: crm_actividad crm_actividad_id_oportunidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15892,7 +19060,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 5318 (class 2606 OID 67469)
+-- TOC entry 5492 (class 2606 OID 67469)
 -- Name: crm_actividad crm_actividad_id_solicitud_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15901,7 +19069,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 5319 (class 2606 OID 67474)
+-- TOC entry 5493 (class 2606 OID 67474)
 -- Name: crm_actividad crm_actividad_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15910,7 +19078,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 5320 (class 2606 OID 67479)
+-- TOC entry 5494 (class 2606 OID 67479)
 -- Name: crm_actividad crm_actividad_id_usuario_responsable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15919,7 +19087,7 @@ ALTER TABLE ONLY public.crm_actividad
 
 
 --
--- TOC entry 5321 (class 2606 OID 67516)
+-- TOC entry 5495 (class 2606 OID 67516)
 -- Name: crm_nota crm_nota_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15928,7 +19096,7 @@ ALTER TABLE ONLY public.crm_nota
 
 
 --
--- TOC entry 5322 (class 2606 OID 67511)
+-- TOC entry 5496 (class 2606 OID 67511)
 -- Name: crm_nota crm_nota_id_actividad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15937,7 +19105,7 @@ ALTER TABLE ONLY public.crm_nota
 
 
 --
--- TOC entry 5323 (class 2606 OID 67501)
+-- TOC entry 5497 (class 2606 OID 67501)
 -- Name: crm_nota crm_nota_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15946,7 +19114,7 @@ ALTER TABLE ONLY public.crm_nota
 
 
 --
--- TOC entry 5324 (class 2606 OID 67506)
+-- TOC entry 5498 (class 2606 OID 67506)
 -- Name: crm_nota crm_nota_id_oportunidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15955,7 +19123,7 @@ ALTER TABLE ONLY public.crm_nota
 
 
 --
--- TOC entry 5325 (class 2606 OID 67521)
+-- TOC entry 5499 (class 2606 OID 67521)
 -- Name: crm_nota crm_nota_modificado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15964,7 +19132,7 @@ ALTER TABLE ONLY public.crm_nota
 
 
 --
--- TOC entry 5372 (class 2606 OID 67956)
+-- TOC entry 5546 (class 2606 OID 67956)
 -- Name: crowdlending_operacion crowdlending_operacion_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15973,7 +19141,7 @@ ALTER TABLE ONLY public.crowdlending_operacion
 
 
 --
--- TOC entry 5373 (class 2606 OID 67951)
+-- TOC entry 5547 (class 2606 OID 67951)
 -- Name: crowdlending_operacion crowdlending_operacion_id_pedido_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15982,7 +19150,7 @@ ALTER TABLE ONLY public.crowdlending_operacion
 
 
 --
--- TOC entry 5360 (class 2606 OID 67866)
+-- TOC entry 5534 (class 2606 OID 67866)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_gestor_cobranza_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15991,7 +19159,7 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5361 (class 2606 OID 67851)
+-- TOC entry 5535 (class 2606 OID 67851)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16000,7 +19168,7 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5362 (class 2606 OID 67846)
+-- TOC entry 5536 (class 2606 OID 67846)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16009,7 +19177,7 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5363 (class 2606 OID 67861)
+-- TOC entry 5537 (class 2606 OID 67861)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_id_gestor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16018,7 +19186,7 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5364 (class 2606 OID 67856)
+-- TOC entry 5538 (class 2606 OID 67856)
 -- Name: cuenta_por_cobrar cuenta_por_cobrar_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16027,7 +19195,52 @@ ALTER TABLE ONLY public.cuenta_por_cobrar
 
 
 --
--- TOC entry 5308 (class 2606 OID 67383)
+-- TOC entry 5577 (class 2606 OID 147879)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_actualizado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_actualizado_por_fkey FOREIGN KEY (actualizado_por) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5578 (class 2606 OID 147874)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_creado_por_fkey FOREIGN KEY (creado_por) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5579 (class 2606 OID 147869)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_id_moneda_fkey FOREIGN KEY (id_moneda) REFERENCES public.moneda(id);
+
+
+--
+-- TOC entry 5580 (class 2606 OID 147864)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_id_pedido_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_id_pedido_fkey FOREIGN KEY (id_pedido) REFERENCES public.pedido(id);
+
+
+--
+-- TOC entry 5581 (class 2606 OID 147859)
+-- Name: cuenta_por_pagar_proveedor cuenta_por_pagar_proveedor_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cuenta_por_pagar_proveedor
+    ADD CONSTRAINT cuenta_por_pagar_proveedor_id_proveedor_fkey FOREIGN KEY (id_proveedor) REFERENCES public.proveedor(id);
+
+
+--
+-- TOC entry 5482 (class 2606 OID 67383)
 -- Name: detalle_solicitud_cotizacion detalle_solicitud_cotizacion_id_solicitud_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16036,7 +19249,7 @@ ALTER TABLE ONLY public.detalle_solicitud_cotizacion
 
 
 --
--- TOC entry 5309 (class 2606 OID 67388)
+-- TOC entry 5483 (class 2606 OID 67388)
 -- Name: detalle_solicitud_cotizacion detalle_solicitud_cotizacion_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16045,7 +19258,7 @@ ALTER TABLE ONLY public.detalle_solicitud_cotizacion
 
 
 --
--- TOC entry 5297 (class 2606 OID 67262)
+-- TOC entry 5471 (class 2606 OID 67262)
 -- Name: direccion_cliente direccion_cliente_id_ciudad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16054,7 +19267,7 @@ ALTER TABLE ONLY public.direccion_cliente
 
 
 --
--- TOC entry 5298 (class 2606 OID 67257)
+-- TOC entry 5472 (class 2606 OID 67257)
 -- Name: direccion_cliente direccion_cliente_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16063,7 +19276,7 @@ ALTER TABLE ONLY public.direccion_cliente
 
 
 --
--- TOC entry 5299 (class 2606 OID 67267)
+-- TOC entry 5473 (class 2606 OID 67267)
 -- Name: direccion_cliente direccion_cliente_id_distrito_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16072,7 +19285,7 @@ ALTER TABLE ONLY public.direccion_cliente
 
 
 --
--- TOC entry 5300 (class 2606 OID 67272)
+-- TOC entry 5474 (class 2606 OID 67272)
 -- Name: direccion_cliente direccion_cliente_id_pais_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16081,16 +19294,16 @@ ALTER TABLE ONLY public.direccion_cliente
 
 
 --
--- TOC entry 5261 (class 2606 OID 66676)
--- Name: distrito distrito_id_ciudad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 5434 (class 2606 OID 146460)
+-- Name: distrito distrito_id_provincia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.distrito
-    ADD CONSTRAINT distrito_id_ciudad_fkey FOREIGN KEY (id_ciudad) REFERENCES public.ciudad(id);
+    ADD CONSTRAINT distrito_id_provincia_fkey FOREIGN KEY (id_provincia) REFERENCES public.provincia(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
--- TOC entry 5271 (class 2606 OID 66903)
+-- TOC entry 5444 (class 2606 OID 66903)
 -- Name: empresa_emisora empresa_emisora_id_pais_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16099,7 +19312,7 @@ ALTER TABLE ONLY public.empresa_emisora
 
 
 --
--- TOC entry 5371 (class 2606 OID 67930)
+-- TOC entry 5545 (class 2606 OID 67930)
 -- Name: factoring_operacion factoring_operacion_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16108,7 +19321,7 @@ ALTER TABLE ONLY public.factoring_operacion
 
 
 --
--- TOC entry 5351 (class 2606 OID 67796)
+-- TOC entry 5525 (class 2606 OID 67796)
 -- Name: factura factura_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16117,7 +19330,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5358 (class 2606 OID 67817)
+-- TOC entry 5532 (class 2606 OID 67817)
 -- Name: factura_detalle factura_detalle_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16126,7 +19339,7 @@ ALTER TABLE ONLY public.factura_detalle
 
 
 --
--- TOC entry 5359 (class 2606 OID 67822)
+-- TOC entry 5533 (class 2606 OID 67822)
 -- Name: factura_detalle factura_detalle_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16135,7 +19348,7 @@ ALTER TABLE ONLY public.factura_detalle
 
 
 --
--- TOC entry 5352 (class 2606 OID 67791)
+-- TOC entry 5526 (class 2606 OID 67791)
 -- Name: factura factura_facturado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16144,7 +19357,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5353 (class 2606 OID 67776)
+-- TOC entry 5527 (class 2606 OID 67776)
 -- Name: factura factura_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16153,7 +19366,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5354 (class 2606 OID 67766)
+-- TOC entry 5528 (class 2606 OID 67766)
 -- Name: factura factura_id_empresa_emisora_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16162,7 +19375,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5355 (class 2606 OID 67781)
+-- TOC entry 5529 (class 2606 OID 67781)
 -- Name: factura factura_id_forma_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16171,7 +19384,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5356 (class 2606 OID 67786)
+-- TOC entry 5530 (class 2606 OID 67786)
 -- Name: factura factura_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16180,7 +19393,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5357 (class 2606 OID 67771)
+-- TOC entry 5531 (class 2606 OID 67771)
 -- Name: factura factura_id_pedido_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16189,7 +19402,7 @@ ALTER TABLE ONLY public.factura
 
 
 --
--- TOC entry 5398 (class 2606 OID 134208)
+-- TOC entry 5572 (class 2606 OID 134208)
 -- Name: contacto_empresa fk_contacto_cliente; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16198,7 +19411,7 @@ ALTER TABLE ONLY public.contacto_empresa
 
 
 --
--- TOC entry 5399 (class 2606 OID 134243)
+-- TOC entry 5573 (class 2606 OID 134243)
 -- Name: contacto_rol fk_contacto_rol_contacto; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16207,7 +19420,7 @@ ALTER TABLE ONLY public.contacto_rol
 
 
 --
--- TOC entry 5400 (class 2606 OID 134248)
+-- TOC entry 5574 (class 2606 OID 134248)
 -- Name: contacto_rol fk_contacto_rol_rol; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16216,7 +19429,34 @@ ALTER TABLE ONLY public.contacto_rol
 
 
 --
--- TOC entry 5401 (class 2606 OID 141550)
+-- TOC entry 5590 (class 2606 OID 158865)
+-- Name: historial_cotizacion fk_historial_cotizacion_aprobador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.historial_cotizacion
+    ADD CONSTRAINT fk_historial_cotizacion_aprobador FOREIGN KEY (aprobado_por) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5591 (class 2606 OID 158855)
+-- Name: historial_cotizacion fk_historial_cotizacion_cotizacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.historial_cotizacion
+    ADD CONSTRAINT fk_historial_cotizacion_cotizacion FOREIGN KEY (id_cotizacion) REFERENCES public.cotizacion(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5592 (class 2606 OID 158860)
+-- Name: historial_cotizacion fk_historial_cotizacion_usuario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.historial_cotizacion
+    ADD CONSTRAINT fk_historial_cotizacion_usuario FOREIGN KEY (id_usuario) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5575 (class 2606 OID 141550)
 -- Name: notificaciones fk_producto; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16225,7 +19465,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5301 (class 2606 OID 67590)
+-- TOC entry 5475 (class 2606 OID 67590)
 -- Name: solicitud_cotizacion fk_solicitud_cotizacion_generada; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16234,7 +19474,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion
 
 
 --
--- TOC entry 5377 (class 2606 OID 68015)
+-- TOC entry 5551 (class 2606 OID 68015)
 -- Name: historial_precios historial_precios_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16243,7 +19483,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5378 (class 2606 OID 68010)
+-- TOC entry 5552 (class 2606 OID 68010)
 -- Name: historial_precios historial_precios_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16252,7 +19492,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5379 (class 2606 OID 68025)
+-- TOC entry 5553 (class 2606 OID 68025)
 -- Name: historial_precios historial_precios_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16261,7 +19501,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5380 (class 2606 OID 68030)
+-- TOC entry 5554 (class 2606 OID 68030)
 -- Name: historial_precios historial_precios_referencia_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16270,7 +19510,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5381 (class 2606 OID 68005)
+-- TOC entry 5555 (class 2606 OID 68005)
 -- Name: historial_precios historial_precios_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16279,7 +19519,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5382 (class 2606 OID 68020)
+-- TOC entry 5556 (class 2606 OID 68020)
 -- Name: historial_precios historial_precios_usuario_responsable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16288,7 +19528,7 @@ ALTER TABLE ONLY public.historial_precios
 
 
 --
--- TOC entry 5385 (class 2606 OID 68066)
+-- TOC entry 5559 (class 2606 OID 68066)
 -- Name: inversion_categoria inversion_categoria_id_categoria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16297,7 +19537,7 @@ ALTER TABLE ONLY public.inversion_categoria
 
 
 --
--- TOC entry 5386 (class 2606 OID 68071)
+-- TOC entry 5560 (class 2606 OID 68071)
 -- Name: inversion_categoria inversion_categoria_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16306,7 +19546,7 @@ ALTER TABLE ONLY public.inversion_categoria
 
 
 --
--- TOC entry 5278 (class 2606 OID 67031)
+-- TOC entry 5452 (class 2606 OID 67031)
 -- Name: marca_categoria marca_categoria_id_categoria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16315,7 +19555,7 @@ ALTER TABLE ONLY public.marca_categoria
 
 
 --
--- TOC entry 5279 (class 2606 OID 67026)
+-- TOC entry 5453 (class 2606 OID 67026)
 -- Name: marca_categoria marca_categoria_id_marca_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16324,7 +19564,7 @@ ALTER TABLE ONLY public.marca_categoria
 
 
 --
--- TOC entry 5310 (class 2606 OID 67424)
+-- TOC entry 5484 (class 2606 OID 67424)
 -- Name: oportunidad oportunidad_id_asesor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16333,7 +19573,7 @@ ALTER TABLE ONLY public.oportunidad
 
 
 --
--- TOC entry 5311 (class 2606 OID 67414)
+-- TOC entry 5485 (class 2606 OID 67414)
 -- Name: oportunidad oportunidad_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16342,7 +19582,7 @@ ALTER TABLE ONLY public.oportunidad
 
 
 --
--- TOC entry 5312 (class 2606 OID 67429)
+-- TOC entry 5486 (class 2606 OID 67429)
 -- Name: oportunidad oportunidad_id_etapa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16351,7 +19591,7 @@ ALTER TABLE ONLY public.oportunidad
 
 
 --
--- TOC entry 5313 (class 2606 OID 67434)
+-- TOC entry 5487 (class 2606 OID 67434)
 -- Name: oportunidad oportunidad_id_moneda_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16360,7 +19600,7 @@ ALTER TABLE ONLY public.oportunidad
 
 
 --
--- TOC entry 5314 (class 2606 OID 67419)
+-- TOC entry 5488 (class 2606 OID 67419)
 -- Name: oportunidad oportunidad_id_solicitud_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16369,7 +19609,70 @@ ALTER TABLE ONLY public.oportunidad
 
 
 --
--- TOC entry 5365 (class 2606 OID 67892)
+-- TOC entry 5582 (class 2606 OID 147936)
+-- Name: pago_proveedor pago_proveedor_anulado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_anulado_por_fkey FOREIGN KEY (anulado_por) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5583 (class 2606 OID 147906)
+-- Name: pago_proveedor pago_proveedor_id_cuenta_por_pagar_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_id_cuenta_por_pagar_fkey FOREIGN KEY (id_cuenta_por_pagar) REFERENCES public.cuenta_por_pagar_proveedor(id);
+
+
+--
+-- TOC entry 5584 (class 2606 OID 147916)
+-- Name: pago_proveedor pago_proveedor_id_forma_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_id_forma_pago_fkey FOREIGN KEY (id_forma_pago) REFERENCES public.forma_pago(id);
+
+
+--
+-- TOC entry 5585 (class 2606 OID 147921)
+-- Name: pago_proveedor pago_proveedor_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_id_moneda_fkey FOREIGN KEY (id_moneda) REFERENCES public.moneda(id);
+
+
+--
+-- TOC entry 5586 (class 2606 OID 147911)
+-- Name: pago_proveedor pago_proveedor_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_id_proveedor_fkey FOREIGN KEY (id_proveedor) REFERENCES public.proveedor(id);
+
+
+--
+-- TOC entry 5587 (class 2606 OID 147931)
+-- Name: pago_proveedor pago_proveedor_registrado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_registrado_por_fkey FOREIGN KEY (registrado_por) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5588 (class 2606 OID 147926)
+-- Name: pago_proveedor pago_proveedor_validado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago_proveedor
+    ADD CONSTRAINT pago_proveedor_validado_por_fkey FOREIGN KEY (validado_por) REFERENCES public.usuario(id);
+
+
+--
+-- TOC entry 5539 (class 2606 OID 67892)
 -- Name: pago_recibido pago_recibido_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16378,7 +19681,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5366 (class 2606 OID 67887)
+-- TOC entry 5540 (class 2606 OID 67887)
 -- Name: pago_recibido pago_recibido_id_cuenta_por_cobrar_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16387,7 +19690,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5367 (class 2606 OID 67897)
+-- TOC entry 5541 (class 2606 OID 67897)
 -- Name: pago_recibido pago_recibido_id_forma_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16396,7 +19699,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5368 (class 2606 OID 67902)
+-- TOC entry 5542 (class 2606 OID 67902)
 -- Name: pago_recibido pago_recibido_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16405,7 +19708,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5369 (class 2606 OID 67912)
+-- TOC entry 5543 (class 2606 OID 67912)
 -- Name: pago_recibido pago_recibido_recibido_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16414,7 +19717,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5370 (class 2606 OID 67907)
+-- TOC entry 5544 (class 2606 OID 67907)
 -- Name: pago_recibido pago_recibido_registrado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16423,7 +19726,7 @@ ALTER TABLE ONLY public.pago_recibido
 
 
 --
--- TOC entry 5259 (class 2606 OID 66647)
+-- TOC entry 5432 (class 2606 OID 66647)
 -- Name: pais pais_id_moneda_principal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16432,7 +19735,7 @@ ALTER TABLE ONLY public.pais
 
 
 --
--- TOC entry 5348 (class 2606 OID 67727)
+-- TOC entry 5522 (class 2606 OID 67727)
 -- Name: pedido_detalle pedido_detalle_id_pedido_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16441,7 +19744,7 @@ ALTER TABLE ONLY public.pedido_detalle
 
 
 --
--- TOC entry 5349 (class 2606 OID 67737)
+-- TOC entry 5523 (class 2606 OID 67737)
 -- Name: pedido_detalle pedido_detalle_id_proveedor_asignado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16450,7 +19753,7 @@ ALTER TABLE ONLY public.pedido_detalle
 
 
 --
--- TOC entry 5350 (class 2606 OID 67732)
+-- TOC entry 5524 (class 2606 OID 67732)
 -- Name: pedido_detalle pedido_detalle_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16459,7 +19762,7 @@ ALTER TABLE ONLY public.pedido_detalle
 
 
 --
--- TOC entry 5339 (class 2606 OID 67689)
+-- TOC entry 5513 (class 2606 OID 67689)
 -- Name: pedido pedido_id_asesor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16468,7 +19771,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5340 (class 2606 OID 67684)
+-- TOC entry 5514 (class 2606 OID 67684)
 -- Name: pedido pedido_id_asesor_ventas_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16477,7 +19780,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5341 (class 2606 OID 67669)
+-- TOC entry 5515 (class 2606 OID 67669)
 -- Name: pedido pedido_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16486,7 +19789,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5342 (class 2606 OID 67699)
+-- TOC entry 5516 (class 2606 OID 67699)
 -- Name: pedido pedido_id_condiciones_comerciales_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16495,7 +19798,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5343 (class 2606 OID 67664)
+-- TOC entry 5517 (class 2606 OID 67664)
 -- Name: pedido pedido_id_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16504,7 +19807,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5344 (class 2606 OID 67674)
+-- TOC entry 5518 (class 2606 OID 67674)
 -- Name: pedido pedido_id_direccion_envio_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16513,7 +19816,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5345 (class 2606 OID 67679)
+-- TOC entry 5519 (class 2606 OID 67679)
 -- Name: pedido pedido_id_direccion_facturacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16522,7 +19825,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5346 (class 2606 OID 67694)
+-- TOC entry 5520 (class 2606 OID 67694)
 -- Name: pedido pedido_id_forma_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16531,7 +19834,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5347 (class 2606 OID 67704)
+-- TOC entry 5521 (class 2606 OID 67704)
 -- Name: pedido pedido_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16540,7 +19843,7 @@ ALTER TABLE ONLY public.pedido
 
 
 --
--- TOC entry 5284 (class 2606 OID 67149)
+-- TOC entry 5458 (class 2606 OID 67149)
 -- Name: producto producto_actualizado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16549,7 +19852,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5285 (class 2606 OID 67144)
+-- TOC entry 5459 (class 2606 OID 67144)
 -- Name: producto producto_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16558,7 +19861,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5286 (class 2606 OID 67104)
+-- TOC entry 5460 (class 2606 OID 67104)
 -- Name: producto producto_id_categoria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16567,7 +19870,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5287 (class 2606 OID 67119)
+-- TOC entry 5461 (class 2606 OID 67119)
 -- Name: producto producto_id_disponibilidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16576,7 +19879,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5288 (class 2606 OID 67109)
+-- TOC entry 5462 (class 2606 OID 67109)
 -- Name: producto producto_id_marca_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16585,7 +19888,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5289 (class 2606 OID 67114)
+-- TOC entry 5463 (class 2606 OID 67114)
 -- Name: producto producto_id_unidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16594,7 +19897,7 @@ ALTER TABLE ONLY public.producto
 
 
 --
--- TOC entry 5392 (class 2606 OID 106239)
+-- TOC entry 5566 (class 2606 OID 106239)
 -- Name: producto_precio_moneda producto_precio_moneda_id_moneda_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16603,7 +19906,7 @@ ALTER TABLE ONLY public.producto_precio_moneda
 
 
 --
--- TOC entry 5393 (class 2606 OID 106234)
+-- TOC entry 5567 (class 2606 OID 106234)
 -- Name: producto_precio_moneda producto_precio_moneda_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16612,7 +19915,7 @@ ALTER TABLE ONLY public.producto_precio_moneda
 
 
 --
--- TOC entry 5290 (class 2606 OID 67182)
+-- TOC entry 5464 (class 2606 OID 67182)
 -- Name: producto_proveedor producto_proveedor_id_moneda_costo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16621,7 +19924,7 @@ ALTER TABLE ONLY public.producto_proveedor
 
 
 --
--- TOC entry 5291 (class 2606 OID 67177)
+-- TOC entry 5465 (class 2606 OID 67177)
 -- Name: producto_proveedor producto_proveedor_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16630,7 +19933,7 @@ ALTER TABLE ONLY public.producto_proveedor
 
 
 --
--- TOC entry 5292 (class 2606 OID 67172)
+-- TOC entry 5466 (class 2606 OID 67172)
 -- Name: producto_proveedor producto_proveedor_sku_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16639,7 +19942,7 @@ ALTER TABLE ONLY public.producto_proveedor
 
 
 --
--- TOC entry 5293 (class 2606 OID 67202)
+-- TOC entry 5467 (class 2606 OID 67202)
 -- Name: promocion promocion_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16648,7 +19951,7 @@ ALTER TABLE ONLY public.promocion
 
 
 --
--- TOC entry 5294 (class 2606 OID 67218)
+-- TOC entry 5468 (class 2606 OID 67218)
 -- Name: promocion_descuento promocion_descuento_id_promocion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16657,7 +19960,7 @@ ALTER TABLE ONLY public.promocion_descuento
 
 
 --
--- TOC entry 5295 (class 2606 OID 67237)
+-- TOC entry 5469 (class 2606 OID 67237)
 -- Name: promocion_uso promocion_uso_id_cliente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16666,7 +19969,7 @@ ALTER TABLE ONLY public.promocion_uso
 
 
 --
--- TOC entry 5296 (class 2606 OID 67232)
+-- TOC entry 5470 (class 2606 OID 67232)
 -- Name: promocion_uso promocion_uso_id_promocion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16675,7 +19978,7 @@ ALTER TABLE ONLY public.promocion_uso
 
 
 --
--- TOC entry 5282 (class 2606 OID 67068)
+-- TOC entry 5456 (class 2606 OID 67068)
 -- Name: proveedor_categoria proveedor_categoria_id_categoria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16684,7 +19987,7 @@ ALTER TABLE ONLY public.proveedor_categoria
 
 
 --
--- TOC entry 5283 (class 2606 OID 67063)
+-- TOC entry 5457 (class 2606 OID 67063)
 -- Name: proveedor_categoria proveedor_categoria_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16693,7 +19996,7 @@ ALTER TABLE ONLY public.proveedor_categoria
 
 
 --
--- TOC entry 5272 (class 2606 OID 66931)
+-- TOC entry 5445 (class 2606 OID 66931)
 -- Name: proveedor proveedor_id_ciudad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16702,7 +20005,7 @@ ALTER TABLE ONLY public.proveedor
 
 
 --
--- TOC entry 5273 (class 2606 OID 66941)
+-- TOC entry 5446 (class 2606 OID 66941)
 -- Name: proveedor proveedor_id_condiciones_comerciales_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16711,7 +20014,7 @@ ALTER TABLE ONLY public.proveedor
 
 
 --
--- TOC entry 5274 (class 2606 OID 66936)
+-- TOC entry 5447 (class 2606 OID 66936)
 -- Name: proveedor proveedor_id_pais_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16720,7 +20023,16 @@ ALTER TABLE ONLY public.proveedor
 
 
 --
--- TOC entry 5280 (class 2606 OID 67050)
+-- TOC entry 5448 (class 2606 OID 150980)
+-- Name: proveedor proveedor_id_provincia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proveedor
+    ADD CONSTRAINT proveedor_id_provincia_fkey FOREIGN KEY (id_provincia) REFERENCES public.provincia(id);
+
+
+--
+-- TOC entry 5454 (class 2606 OID 67050)
 -- Name: proveedor_marca proveedor_marca_id_marca_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16729,7 +20041,7 @@ ALTER TABLE ONLY public.proveedor_marca
 
 
 --
--- TOC entry 5281 (class 2606 OID 67045)
+-- TOC entry 5455 (class 2606 OID 67045)
 -- Name: proveedor_marca proveedor_marca_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16738,7 +20050,16 @@ ALTER TABLE ONLY public.proveedor_marca
 
 
 --
--- TOC entry 5275 (class 2606 OID 66963)
+-- TOC entry 5576 (class 2606 OID 146400)
+-- Name: provincia provincia_id_ciudad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.provincia
+    ADD CONSTRAINT provincia_id_ciudad_fkey FOREIGN KEY (id_ciudad) REFERENCES public.ciudad(id);
+
+
+--
+-- TOC entry 5449 (class 2606 OID 66963)
 -- Name: recogedores recogedores_id_vehicle_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16747,7 +20068,7 @@ ALTER TABLE ONLY public.recogedores
 
 
 --
--- TOC entry 5307 (class 2606 OID 67353)
+-- TOC entry 5481 (class 2606 OID 67353)
 -- Name: solicitud_archivo solicitud_archivo_id_solicitud_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16756,7 +20077,7 @@ ALTER TABLE ONLY public.solicitud_archivo
 
 
 --
--- TOC entry 5302 (class 2606 OID 67317)
+-- TOC entry 5476 (class 2606 OID 67317)
 -- Name: solicitud_cotizacion solicitud_cotizacion_creado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16765,7 +20086,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion
 
 
 --
--- TOC entry 5303 (class 2606 OID 67307)
+-- TOC entry 5477 (class 2606 OID 67307)
 -- Name: solicitud_cotizacion solicitud_cotizacion_id_asesor_asignado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16774,7 +20095,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion
 
 
 --
--- TOC entry 5304 (class 2606 OID 67312)
+-- TOC entry 5478 (class 2606 OID 67312)
 -- Name: solicitud_cotizacion solicitud_cotizacion_id_cliente_creado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16783,7 +20104,7 @@ ALTER TABLE ONLY public.solicitud_cotizacion
 
 
 --
--- TOC entry 5388 (class 2606 OID 90362)
+-- TOC entry 5562 (class 2606 OID 90362)
 -- Name: transicion_estado_cotizacion transicion_estado_cotizacion_estado_anterior_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16792,7 +20113,7 @@ ALTER TABLE ONLY public.transicion_estado_cotizacion
 
 
 --
--- TOC entry 5389 (class 2606 OID 90367)
+-- TOC entry 5563 (class 2606 OID 90367)
 -- Name: transicion_estado_cotizacion transicion_estado_cotizacion_estado_nuevo_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16801,7 +20122,7 @@ ALTER TABLE ONLY public.transicion_estado_cotizacion
 
 
 --
--- TOC entry 5390 (class 2606 OID 90357)
+-- TOC entry 5564 (class 2606 OID 90357)
 -- Name: transicion_estado_cotizacion transicion_estado_cotizacion_id_cotizacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16810,7 +20131,7 @@ ALTER TABLE ONLY public.transicion_estado_cotizacion
 
 
 --
--- TOC entry 5391 (class 2606 OID 90372)
+-- TOC entry 5565 (class 2606 OID 90372)
 -- Name: transicion_estado_cotizacion transicion_estado_cotizacion_usuario_responsable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16819,7 +20140,7 @@ ALTER TABLE ONLY public.transicion_estado_cotizacion
 
 
 --
--- TOC entry 5263 (class 2606 OID 68230)
+-- TOC entry 5436 (class 2606 OID 68230)
 -- Name: usuario usuario_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16828,7 +20149,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 5264 (class 2606 OID 66858)
+-- TOC entry 5437 (class 2606 OID 66858)
 -- Name: usuario_rol usuario_rol_asignado_por_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16837,7 +20158,7 @@ ALTER TABLE ONLY public.usuario_rol
 
 
 --
--- TOC entry 5265 (class 2606 OID 66853)
+-- TOC entry 5438 (class 2606 OID 66853)
 -- Name: usuario_rol usuario_rol_id_rol_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16846,7 +20167,7 @@ ALTER TABLE ONLY public.usuario_rol
 
 
 --
--- TOC entry 5266 (class 2606 OID 66848)
+-- TOC entry 5439 (class 2606 OID 66848)
 -- Name: usuario_rol usuario_rol_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16855,7 +20176,7 @@ ALTER TABLE ONLY public.usuario_rol
 
 
 --
--- TOC entry 5244 (class 2606 OID 16572)
+-- TOC entry 5417 (class 2606 OID 16572)
 -- Name: objects objects_bucketId_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -16864,7 +20185,7 @@ ALTER TABLE ONLY storage.objects
 
 
 --
--- TOC entry 5387 (class 2606 OID 68431)
+-- TOC entry 5561 (class 2606 OID 68431)
 -- Name: prefixes prefixes_bucketId_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -16873,7 +20194,7 @@ ALTER TABLE ONLY storage.prefixes
 
 
 --
--- TOC entry 5256 (class 2606 OID 17049)
+-- TOC entry 5429 (class 2606 OID 17049)
 -- Name: s3_multipart_uploads s3_multipart_uploads_bucket_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -16882,7 +20203,7 @@ ALTER TABLE ONLY storage.s3_multipart_uploads
 
 
 --
--- TOC entry 5257 (class 2606 OID 17069)
+-- TOC entry 5430 (class 2606 OID 17069)
 -- Name: s3_multipart_uploads_parts s3_multipart_uploads_parts_bucket_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -16891,7 +20212,7 @@ ALTER TABLE ONLY storage.s3_multipart_uploads_parts
 
 
 --
--- TOC entry 5258 (class 2606 OID 17064)
+-- TOC entry 5431 (class 2606 OID 17064)
 -- Name: s3_multipart_uploads_parts s3_multipart_uploads_parts_upload_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -16900,7 +20221,16 @@ ALTER TABLE ONLY storage.s3_multipart_uploads_parts
 
 
 --
--- TOC entry 5588 (class 0 OID 16525)
+-- TOC entry 5589 (class 2606 OID 156567)
+-- Name: vector_indexes vector_indexes_bucket_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.vector_indexes
+    ADD CONSTRAINT vector_indexes_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets_vectors(id);
+
+
+--
+-- TOC entry 5793 (class 0 OID 16525)
 -- Dependencies: 356
 -- Name: audit_log_entries; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16908,7 +20238,7 @@ ALTER TABLE ONLY storage.s3_multipart_uploads_parts
 ALTER TABLE auth.audit_log_entries ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5602 (class 0 OID 16927)
+-- TOC entry 5807 (class 0 OID 16927)
 -- Dependencies: 373
 -- Name: flow_state; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16916,7 +20246,7 @@ ALTER TABLE auth.audit_log_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.flow_state ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5593 (class 0 OID 16725)
+-- TOC entry 5798 (class 0 OID 16725)
 -- Dependencies: 364
 -- Name: identities; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16924,7 +20254,7 @@ ALTER TABLE auth.flow_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.identities ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5587 (class 0 OID 16518)
+-- TOC entry 5792 (class 0 OID 16518)
 -- Dependencies: 355
 -- Name: instances; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16932,7 +20262,7 @@ ALTER TABLE auth.identities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.instances ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5597 (class 0 OID 16814)
+-- TOC entry 5802 (class 0 OID 16814)
 -- Dependencies: 368
 -- Name: mfa_amr_claims; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16940,7 +20270,7 @@ ALTER TABLE auth.instances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.mfa_amr_claims ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5596 (class 0 OID 16802)
+-- TOC entry 5801 (class 0 OID 16802)
 -- Dependencies: 367
 -- Name: mfa_challenges; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16948,7 +20278,7 @@ ALTER TABLE auth.mfa_amr_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.mfa_challenges ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5595 (class 0 OID 16789)
+-- TOC entry 5800 (class 0 OID 16789)
 -- Dependencies: 366
 -- Name: mfa_factors; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16956,7 +20286,7 @@ ALTER TABLE auth.mfa_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.mfa_factors ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5603 (class 0 OID 16977)
+-- TOC entry 5808 (class 0 OID 16977)
 -- Dependencies: 374
 -- Name: one_time_tokens; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16964,7 +20294,7 @@ ALTER TABLE auth.mfa_factors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.one_time_tokens ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5586 (class 0 OID 16507)
+-- TOC entry 5791 (class 0 OID 16507)
 -- Dependencies: 354
 -- Name: refresh_tokens; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16972,7 +20302,7 @@ ALTER TABLE auth.one_time_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.refresh_tokens ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5600 (class 0 OID 16856)
+-- TOC entry 5805 (class 0 OID 16856)
 -- Dependencies: 371
 -- Name: saml_providers; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16980,7 +20310,7 @@ ALTER TABLE auth.refresh_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.saml_providers ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5601 (class 0 OID 16874)
+-- TOC entry 5806 (class 0 OID 16874)
 -- Dependencies: 372
 -- Name: saml_relay_states; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16988,7 +20318,7 @@ ALTER TABLE auth.saml_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.saml_relay_states ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5589 (class 0 OID 16533)
+-- TOC entry 5794 (class 0 OID 16533)
 -- Dependencies: 357
 -- Name: schema_migrations; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -16996,7 +20326,7 @@ ALTER TABLE auth.saml_relay_states ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.schema_migrations ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5594 (class 0 OID 16755)
+-- TOC entry 5799 (class 0 OID 16755)
 -- Dependencies: 365
 -- Name: sessions; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -17004,7 +20334,7 @@ ALTER TABLE auth.schema_migrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.sessions ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5599 (class 0 OID 16841)
+-- TOC entry 5804 (class 0 OID 16841)
 -- Dependencies: 370
 -- Name: sso_domains; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -17012,7 +20342,7 @@ ALTER TABLE auth.sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.sso_domains ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5598 (class 0 OID 16832)
+-- TOC entry 5803 (class 0 OID 16832)
 -- Dependencies: 369
 -- Name: sso_providers; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -17020,7 +20350,7 @@ ALTER TABLE auth.sso_domains ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.sso_providers ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5585 (class 0 OID 16495)
+-- TOC entry 5790 (class 0 OID 16495)
 -- Dependencies: 352
 -- Name: users; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
 --
@@ -17028,7 +20358,7 @@ ALTER TABLE auth.sso_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5685 (class 3256 OID 141575)
+-- TOC entry 5893 (class 3256 OID 141575)
 -- Name: notificaciones Actualizar notificaciones; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17036,7 +20366,7 @@ CREATE POLICY "Actualizar notificaciones" ON public.notificaciones FOR UPDATE US
 
 
 --
--- TOC entry 5652 (class 3256 OID 70385)
+-- TOC entry 5860 (class 3256 OID 70385)
 -- Name: marca Allow public read access to marca; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17044,7 +20374,7 @@ CREATE POLICY "Allow public read access to marca" ON public.marca FOR SELECT USI
 
 
 --
--- TOC entry 5681 (class 3256 OID 134298)
+-- TOC entry 5889 (class 3256 OID 134298)
 -- Name: rol_compra Allow public read access to marca; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17052,7 +20382,7 @@ CREATE POLICY "Allow public read access to marca" ON public.rol_compra FOR SELEC
 
 
 --
--- TOC entry 5682 (class 3256 OID 134299)
+-- TOC entry 5890 (class 3256 OID 134299)
 -- Name: contacto_rol Allow public read access to moneda; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17060,7 +20390,7 @@ CREATE POLICY "Allow public read access to moneda" ON public.contacto_rol FOR SE
 
 
 --
--- TOC entry 5653 (class 3256 OID 70386)
+-- TOC entry 5861 (class 3256 OID 70386)
 -- Name: moneda Allow public read access to moneda; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17068,7 +20398,7 @@ CREATE POLICY "Allow public read access to moneda" ON public.moneda FOR SELECT U
 
 
 --
--- TOC entry 5680 (class 3256 OID 134297)
+-- TOC entry 5888 (class 3256 OID 134297)
 -- Name: contacto_empresa Allow public read access to pais; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17076,7 +20406,7 @@ CREATE POLICY "Allow public read access to pais" ON public.contacto_empresa FOR 
 
 
 --
--- TOC entry 5651 (class 3256 OID 70384)
+-- TOC entry 5859 (class 3256 OID 70384)
 -- Name: pais Allow public read access to pais; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17084,7 +20414,7 @@ CREATE POLICY "Allow public read access to pais" ON public.pais FOR SELECT USING
 
 
 --
--- TOC entry 5686 (class 3256 OID 141576)
+-- TOC entry 5894 (class 3256 OID 141576)
 -- Name: notificaciones Eliminar notificaciones; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17092,7 +20422,7 @@ CREATE POLICY "Eliminar notificaciones" ON public.notificaciones FOR DELETE USIN
 
 
 --
--- TOC entry 5684 (class 3256 OID 141574)
+-- TOC entry 5892 (class 3256 OID 141574)
 -- Name: notificaciones Insertar notificaciones; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17100,7 +20430,7 @@ CREATE POLICY "Insertar notificaciones" ON public.notificaciones FOR INSERT WITH
 
 
 --
--- TOC entry 5678 (class 3256 OID 134274)
+-- TOC entry 5886 (class 3256 OID 134274)
 -- Name: rol_compra Lectura pública de roles de compra; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17108,7 +20438,7 @@ CREATE POLICY "Lectura pública de roles de compra" ON public.rol_compra FOR SEL
 
 
 --
--- TOC entry 5679 (class 3256 OID 134275)
+-- TOC entry 5887 (class 3256 OID 134275)
 -- Name: contacto_rol Usuarios autenticados gestionan contacto_rol; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17116,7 +20446,7 @@ CREATE POLICY "Usuarios autenticados gestionan contacto_rol" ON public.contacto_
 
 
 --
--- TOC entry 5676 (class 3256 OID 134272)
+-- TOC entry 5884 (class 3256 OID 134272)
 -- Name: contacto_empresa Usuarios autenticados pueden actualizar contactos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17124,7 +20454,7 @@ CREATE POLICY "Usuarios autenticados pueden actualizar contactos" ON public.cont
 
 
 --
--- TOC entry 5636 (class 3256 OID 68760)
+-- TOC entry 5844 (class 3256 OID 68760)
 -- Name: producto Usuarios autenticados pueden actualizar productos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17132,7 +20462,7 @@ CREATE POLICY "Usuarios autenticados pueden actualizar productos" ON public.prod
 
 
 --
--- TOC entry 5645 (class 3256 OID 68769)
+-- TOC entry 5853 (class 3256 OID 68769)
 -- Name: usuario Usuarios autenticados pueden actualizar usuarios; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17140,7 +20470,7 @@ CREATE POLICY "Usuarios autenticados pueden actualizar usuarios" ON public.usuar
 
 
 --
--- TOC entry 5638 (class 3256 OID 68762)
+-- TOC entry 5846 (class 3256 OID 68762)
 -- Name: categoria Usuarios autenticados pueden crear categorias; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17148,7 +20478,7 @@ CREATE POLICY "Usuarios autenticados pueden crear categorias" ON public.categori
 
 
 --
--- TOC entry 5650 (class 3256 OID 68775)
+-- TOC entry 5858 (class 3256 OID 68775)
 -- Name: cliente Usuarios autenticados pueden crear clientes; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17156,7 +20486,7 @@ CREATE POLICY "Usuarios autenticados pueden crear clientes" ON public.cliente FO
 
 
 --
--- TOC entry 5675 (class 3256 OID 134271)
+-- TOC entry 5883 (class 3256 OID 134271)
 -- Name: contacto_empresa Usuarios autenticados pueden crear contactos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17164,7 +20494,7 @@ CREATE POLICY "Usuarios autenticados pueden crear contactos" ON public.contacto_
 
 
 --
--- TOC entry 5640 (class 3256 OID 68764)
+-- TOC entry 5848 (class 3256 OID 68764)
 -- Name: marca Usuarios autenticados pueden crear marcas; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17172,7 +20502,7 @@ CREATE POLICY "Usuarios autenticados pueden crear marcas" ON public.marca FOR IN
 
 
 --
--- TOC entry 5635 (class 3256 OID 68759)
+-- TOC entry 5843 (class 3256 OID 68759)
 -- Name: producto Usuarios autenticados pueden crear productos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17180,7 +20510,7 @@ CREATE POLICY "Usuarios autenticados pueden crear productos" ON public.producto 
 
 
 --
--- TOC entry 5642 (class 3256 OID 68766)
+-- TOC entry 5850 (class 3256 OID 68766)
 -- Name: proveedor Usuarios autenticados pueden crear proveedores; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17188,7 +20518,7 @@ CREATE POLICY "Usuarios autenticados pueden crear proveedores" ON public.proveed
 
 
 --
--- TOC entry 5677 (class 3256 OID 134273)
+-- TOC entry 5885 (class 3256 OID 134273)
 -- Name: contacto_empresa Usuarios autenticados pueden eliminar contactos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17196,7 +20526,7 @@ CREATE POLICY "Usuarios autenticados pueden eliminar contactos" ON public.contac
 
 
 --
--- TOC entry 5637 (class 3256 OID 68761)
+-- TOC entry 5845 (class 3256 OID 68761)
 -- Name: categoria Usuarios autenticados pueden leer categorias; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17204,7 +20534,7 @@ CREATE POLICY "Usuarios autenticados pueden leer categorias" ON public.categoria
 
 
 --
--- TOC entry 5649 (class 3256 OID 68774)
+-- TOC entry 5857 (class 3256 OID 68774)
 -- Name: cliente Usuarios autenticados pueden leer clientes; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17212,7 +20542,7 @@ CREATE POLICY "Usuarios autenticados pueden leer clientes" ON public.cliente FOR
 
 
 --
--- TOC entry 5674 (class 3256 OID 134270)
+-- TOC entry 5882 (class 3256 OID 134270)
 -- Name: contacto_empresa Usuarios autenticados pueden leer contactos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17220,7 +20550,7 @@ CREATE POLICY "Usuarios autenticados pueden leer contactos" ON public.contacto_e
 
 
 --
--- TOC entry 5647 (class 3256 OID 68772)
+-- TOC entry 5855 (class 3256 OID 68772)
 -- Name: disponibilidad Usuarios autenticados pueden leer disponibilidad; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17228,7 +20558,7 @@ CREATE POLICY "Usuarios autenticados pueden leer disponibilidad" ON public.dispo
 
 
 --
--- TOC entry 5639 (class 3256 OID 68763)
+-- TOC entry 5847 (class 3256 OID 68763)
 -- Name: marca Usuarios autenticados pueden leer marcas; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17236,7 +20566,7 @@ CREATE POLICY "Usuarios autenticados pueden leer marcas" ON public.marca FOR SEL
 
 
 --
--- TOC entry 5648 (class 3256 OID 68773)
+-- TOC entry 5856 (class 3256 OID 68773)
 -- Name: moneda Usuarios autenticados pueden leer monedas; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17244,7 +20574,7 @@ CREATE POLICY "Usuarios autenticados pueden leer monedas" ON public.moneda FOR S
 
 
 --
--- TOC entry 5634 (class 3256 OID 68758)
+-- TOC entry 5842 (class 3256 OID 68758)
 -- Name: producto Usuarios autenticados pueden leer productos; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17252,7 +20582,7 @@ CREATE POLICY "Usuarios autenticados pueden leer productos" ON public.producto F
 
 
 --
--- TOC entry 5641 (class 3256 OID 68765)
+-- TOC entry 5849 (class 3256 OID 68765)
 -- Name: proveedor Usuarios autenticados pueden leer proveedores; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17260,7 +20590,7 @@ CREATE POLICY "Usuarios autenticados pueden leer proveedores" ON public.proveedo
 
 
 --
--- TOC entry 5643 (class 3256 OID 68767)
+-- TOC entry 5851 (class 3256 OID 68767)
 -- Name: rol Usuarios autenticados pueden leer roles; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17268,7 +20598,7 @@ CREATE POLICY "Usuarios autenticados pueden leer roles" ON public.rol FOR SELECT
 
 
 --
--- TOC entry 5626 (class 3256 OID 68771)
+-- TOC entry 5834 (class 3256 OID 68771)
 -- Name: unidad Usuarios autenticados pueden leer unidades; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17276,7 +20606,7 @@ CREATE POLICY "Usuarios autenticados pueden leer unidades" ON public.unidad FOR 
 
 
 --
--- TOC entry 5646 (class 3256 OID 68770)
+-- TOC entry 5854 (class 3256 OID 68770)
 -- Name: usuario_rol Usuarios autenticados pueden leer usuario_rol; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17284,7 +20614,7 @@ CREATE POLICY "Usuarios autenticados pueden leer usuario_rol" ON public.usuario_
 
 
 --
--- TOC entry 5644 (class 3256 OID 68768)
+-- TOC entry 5852 (class 3256 OID 68768)
 -- Name: usuario Usuarios autenticados pueden leer usuarios; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17292,7 +20622,7 @@ CREATE POLICY "Usuarios autenticados pueden leer usuarios" ON public.usuario FOR
 
 
 --
--- TOC entry 5683 (class 3256 OID 141573)
+-- TOC entry 5891 (class 3256 OID 141573)
 -- Name: notificaciones Ver notificaciones; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17300,7 +20630,7 @@ CREATE POLICY "Ver notificaciones" ON public.notificaciones FOR SELECT USING ((a
 
 
 --
--- TOC entry 5613 (class 3256 OID 68578)
+-- TOC entry 5821 (class 3256 OID 68578)
 -- Name: categoria authenticated_users_can_read_categoria; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17308,7 +20638,7 @@ CREATE POLICY authenticated_users_can_read_categoria ON public.categoria FOR SEL
 
 
 --
--- TOC entry 5625 (class 3256 OID 68590)
+-- TOC entry 5833 (class 3256 OID 68590)
 -- Name: disponibilidad authenticated_users_can_read_disponibilidad; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17316,7 +20646,7 @@ CREATE POLICY authenticated_users_can_read_disponibilidad ON public.disponibilid
 
 
 --
--- TOC entry 5615 (class 3256 OID 68580)
+-- TOC entry 5823 (class 3256 OID 68580)
 -- Name: marca authenticated_users_can_read_marca; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17324,7 +20654,7 @@ CREATE POLICY authenticated_users_can_read_marca ON public.marca FOR SELECT USIN
 
 
 --
--- TOC entry 5621 (class 3256 OID 68586)
+-- TOC entry 5829 (class 3256 OID 68586)
 -- Name: moneda authenticated_users_can_read_moneda; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17332,7 +20662,7 @@ CREATE POLICY authenticated_users_can_read_moneda ON public.moneda FOR SELECT US
 
 
 --
--- TOC entry 5628 (class 3256 OID 68592)
+-- TOC entry 5836 (class 3256 OID 68592)
 -- Name: producto authenticated_users_can_read_producto; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17340,7 +20670,7 @@ CREATE POLICY authenticated_users_can_read_producto ON public.producto FOR SELEC
 
 
 --
--- TOC entry 5617 (class 3256 OID 68582)
+-- TOC entry 5825 (class 3256 OID 68582)
 -- Name: proveedor authenticated_users_can_read_proveedor; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17348,7 +20678,7 @@ CREATE POLICY authenticated_users_can_read_proveedor ON public.proveedor FOR SEL
 
 
 --
--- TOC entry 5619 (class 3256 OID 68584)
+-- TOC entry 5827 (class 3256 OID 68584)
 -- Name: rol authenticated_users_can_read_rol; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17356,7 +20686,7 @@ CREATE POLICY authenticated_users_can_read_rol ON public.rol FOR SELECT USING ((
 
 
 --
--- TOC entry 5623 (class 3256 OID 68588)
+-- TOC entry 5831 (class 3256 OID 68588)
 -- Name: unidad authenticated_users_can_read_unidad; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17364,7 +20694,7 @@ CREATE POLICY authenticated_users_can_read_unidad ON public.unidad FOR SELECT US
 
 
 --
--- TOC entry 5630 (class 3256 OID 68594)
+-- TOC entry 5838 (class 3256 OID 68594)
 -- Name: usuario authenticated_users_can_read_usuario; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17372,7 +20702,7 @@ CREATE POLICY authenticated_users_can_read_usuario ON public.usuario FOR SELECT 
 
 
 --
--- TOC entry 5632 (class 3256 OID 68596)
+-- TOC entry 5840 (class 3256 OID 68596)
 -- Name: usuario_rol authenticated_users_can_read_usuario_rol; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17380,7 +20710,7 @@ CREATE POLICY authenticated_users_can_read_usuario_rol ON public.usuario_rol FOR
 
 
 --
--- TOC entry 5614 (class 3256 OID 68579)
+-- TOC entry 5822 (class 3256 OID 68579)
 -- Name: categoria authenticated_users_can_write_categoria; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17388,7 +20718,7 @@ CREATE POLICY authenticated_users_can_write_categoria ON public.categoria USING 
 
 
 --
--- TOC entry 5627 (class 3256 OID 68591)
+-- TOC entry 5835 (class 3256 OID 68591)
 -- Name: disponibilidad authenticated_users_can_write_disponibilidad; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17396,7 +20726,7 @@ CREATE POLICY authenticated_users_can_write_disponibilidad ON public.disponibili
 
 
 --
--- TOC entry 5616 (class 3256 OID 68581)
+-- TOC entry 5824 (class 3256 OID 68581)
 -- Name: marca authenticated_users_can_write_marca; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17404,7 +20734,7 @@ CREATE POLICY authenticated_users_can_write_marca ON public.marca USING ((auth.r
 
 
 --
--- TOC entry 5622 (class 3256 OID 68587)
+-- TOC entry 5830 (class 3256 OID 68587)
 -- Name: moneda authenticated_users_can_write_moneda; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17412,7 +20742,7 @@ CREATE POLICY authenticated_users_can_write_moneda ON public.moneda USING ((auth
 
 
 --
--- TOC entry 5629 (class 3256 OID 68593)
+-- TOC entry 5837 (class 3256 OID 68593)
 -- Name: producto authenticated_users_can_write_producto; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17420,7 +20750,7 @@ CREATE POLICY authenticated_users_can_write_producto ON public.producto USING ((
 
 
 --
--- TOC entry 5618 (class 3256 OID 68583)
+-- TOC entry 5826 (class 3256 OID 68583)
 -- Name: proveedor authenticated_users_can_write_proveedor; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17428,7 +20758,7 @@ CREATE POLICY authenticated_users_can_write_proveedor ON public.proveedor USING 
 
 
 --
--- TOC entry 5620 (class 3256 OID 68585)
+-- TOC entry 5828 (class 3256 OID 68585)
 -- Name: rol authenticated_users_can_write_rol; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17436,7 +20766,7 @@ CREATE POLICY authenticated_users_can_write_rol ON public.rol USING ((auth.role(
 
 
 --
--- TOC entry 5624 (class 3256 OID 68589)
+-- TOC entry 5832 (class 3256 OID 68589)
 -- Name: unidad authenticated_users_can_write_unidad; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17444,7 +20774,7 @@ CREATE POLICY authenticated_users_can_write_unidad ON public.unidad USING ((auth
 
 
 --
--- TOC entry 5631 (class 3256 OID 68595)
+-- TOC entry 5839 (class 3256 OID 68595)
 -- Name: usuario authenticated_users_can_write_usuario; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17452,7 +20782,7 @@ CREATE POLICY authenticated_users_can_write_usuario ON public.usuario USING ((au
 
 
 --
--- TOC entry 5633 (class 3256 OID 68597)
+-- TOC entry 5841 (class 3256 OID 68597)
 -- Name: usuario_rol authenticated_users_can_write_usuario_rol; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17460,7 +20790,7 @@ CREATE POLICY authenticated_users_can_write_usuario_rol ON public.usuario_rol US
 
 
 --
--- TOC entry 5609 (class 0 OID 134194)
+-- TOC entry 5814 (class 0 OID 134194)
 -- Dependencies: 518
 -- Name: contacto_empresa; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
@@ -17468,7 +20798,7 @@ CREATE POLICY authenticated_users_can_write_usuario_rol ON public.usuario_rol US
 ALTER TABLE public.contacto_empresa ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5611 (class 0 OID 134230)
+-- TOC entry 5816 (class 0 OID 134230)
 -- Dependencies: 522
 -- Name: contacto_rol; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
@@ -17476,15 +20806,23 @@ ALTER TABLE public.contacto_empresa ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contacto_rol ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5612 (class 0 OID 141537)
--- Dependencies: 527
+-- TOC entry 5817 (class 0 OID 141537)
+-- Dependencies: 525
 -- Name: notificaciones; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.notificaciones ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5610 (class 0 OID 134217)
+-- TOC entry 5818 (class 0 OID 146388)
+-- Dependencies: 526
+-- Name: provincia; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.provincia ENABLE ROW LEVEL SECURITY;
+
+--
+-- TOC entry 5815 (class 0 OID 134217)
 -- Dependencies: 520
 -- Name: rol_compra; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
@@ -17492,7 +20830,7 @@ ALTER TABLE public.notificaciones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rol_compra ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5606 (class 0 OID 17255)
+-- TOC entry 5811 (class 0 OID 17255)
 -- Dependencies: 383
 -- Name: messages; Type: ROW SECURITY; Schema: realtime; Owner: supabase_realtime_admin
 --
@@ -17500,7 +20838,7 @@ ALTER TABLE public.rol_compra ENABLE ROW LEVEL SECURITY;
 ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5656 (class 3256 OID 94784)
+-- TOC entry 5864 (class 3256 OID 94784)
 -- Name: objects Actualizar imágenes productos - propietario; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17508,7 +20846,7 @@ CREATE POLICY "Actualizar imágenes productos - propietario" ON storage.objects 
 
 
 --
--- TOC entry 5671 (class 3256 OID 97157)
+-- TOC entry 5879 (class 3256 OID 97157)
 -- Name: objects Authenticated delete for brand images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17516,7 +20854,7 @@ CREATE POLICY "Authenticated delete for brand images" ON storage.objects FOR DEL
 
 
 --
--- TOC entry 5672 (class 3256 OID 97158)
+-- TOC entry 5880 (class 3256 OID 97158)
 -- Name: objects Authenticated delete for category images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17524,7 +20862,7 @@ CREATE POLICY "Authenticated delete for category images" ON storage.objects FOR 
 
 
 --
--- TOC entry 5670 (class 3256 OID 97156)
+-- TOC entry 5878 (class 3256 OID 97156)
 -- Name: objects Authenticated delete for product images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17532,7 +20870,7 @@ CREATE POLICY "Authenticated delete for product images" ON storage.objects FOR D
 
 
 --
--- TOC entry 5673 (class 3256 OID 97159)
+-- TOC entry 5881 (class 3256 OID 97159)
 -- Name: objects Authenticated delete for user avatars; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17540,7 +20878,7 @@ CREATE POLICY "Authenticated delete for user avatars" ON storage.objects FOR DEL
 
 
 --
--- TOC entry 5668 (class 3256 OID 97153)
+-- TOC entry 5876 (class 3256 OID 97153)
 -- Name: objects Authenticated update for brand images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17548,7 +20886,7 @@ CREATE POLICY "Authenticated update for brand images" ON storage.objects FOR UPD
 
 
 --
--- TOC entry 5669 (class 3256 OID 97154)
+-- TOC entry 5877 (class 3256 OID 97154)
 -- Name: objects Authenticated update for category images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17556,7 +20894,7 @@ CREATE POLICY "Authenticated update for category images" ON storage.objects FOR 
 
 
 --
--- TOC entry 5667 (class 3256 OID 97152)
+-- TOC entry 5875 (class 3256 OID 97152)
 -- Name: objects Authenticated update for product images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17564,7 +20902,7 @@ CREATE POLICY "Authenticated update for product images" ON storage.objects FOR U
 
 
 --
--- TOC entry 5657 (class 3256 OID 97155)
+-- TOC entry 5865 (class 3256 OID 97155)
 -- Name: objects Authenticated update for user avatars; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17572,7 +20910,7 @@ CREATE POLICY "Authenticated update for user avatars" ON storage.objects FOR UPD
 
 
 --
--- TOC entry 5664 (class 3256 OID 97149)
+-- TOC entry 5872 (class 3256 OID 97149)
 -- Name: objects Authenticated upload for brand images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17580,7 +20918,7 @@ CREATE POLICY "Authenticated upload for brand images" ON storage.objects FOR INS
 
 
 --
--- TOC entry 5665 (class 3256 OID 97150)
+-- TOC entry 5873 (class 3256 OID 97150)
 -- Name: objects Authenticated upload for category images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17588,7 +20926,7 @@ CREATE POLICY "Authenticated upload for category images" ON storage.objects FOR 
 
 
 --
--- TOC entry 5663 (class 3256 OID 97148)
+-- TOC entry 5871 (class 3256 OID 97148)
 -- Name: objects Authenticated upload for product images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17596,7 +20934,7 @@ CREATE POLICY "Authenticated upload for product images" ON storage.objects FOR I
 
 
 --
--- TOC entry 5666 (class 3256 OID 97151)
+-- TOC entry 5874 (class 3256 OID 97151)
 -- Name: objects Authenticated upload for user avatars; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17604,7 +20942,7 @@ CREATE POLICY "Authenticated upload for user avatars" ON storage.objects FOR INS
 
 
 --
--- TOC entry 5658 (class 3256 OID 94785)
+-- TOC entry 5866 (class 3256 OID 94785)
 -- Name: objects Eliminar imágenes productos - autenticado; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17612,7 +20950,7 @@ CREATE POLICY "Eliminar imágenes productos - autenticado" ON storage.objects FO
 
 
 --
--- TOC entry 5654 (class 3256 OID 94782)
+-- TOC entry 5862 (class 3256 OID 94782)
 -- Name: objects Lectura pública de imágenes de productos; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17620,7 +20958,7 @@ CREATE POLICY "Lectura pública de imágenes de productos" ON storage.objects FO
 
 
 --
--- TOC entry 5660 (class 3256 OID 97145)
+-- TOC entry 5868 (class 3256 OID 97145)
 -- Name: objects Public read access for brand images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17628,7 +20966,7 @@ CREATE POLICY "Public read access for brand images" ON storage.objects FOR SELEC
 
 
 --
--- TOC entry 5661 (class 3256 OID 97146)
+-- TOC entry 5869 (class 3256 OID 97146)
 -- Name: objects Public read access for category images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17636,7 +20974,7 @@ CREATE POLICY "Public read access for category images" ON storage.objects FOR SE
 
 
 --
--- TOC entry 5659 (class 3256 OID 97144)
+-- TOC entry 5867 (class 3256 OID 97144)
 -- Name: objects Public read access for product images; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17644,7 +20982,7 @@ CREATE POLICY "Public read access for product images" ON storage.objects FOR SEL
 
 
 --
--- TOC entry 5662 (class 3256 OID 97147)
+-- TOC entry 5870 (class 3256 OID 97147)
 -- Name: objects Public read access for user avatars; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17652,7 +20990,7 @@ CREATE POLICY "Public read access for user avatars" ON storage.objects FOR SELEC
 
 
 --
--- TOC entry 5655 (class 3256 OID 94783)
+-- TOC entry 5863 (class 3256 OID 94783)
 -- Name: objects Upload imágenes productos - usuarios autenticados; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
 --
 
@@ -17660,7 +20998,7 @@ CREATE POLICY "Upload imágenes productos - usuarios autenticados" ON storage.ob
 
 
 --
--- TOC entry 5590 (class 0 OID 16546)
+-- TOC entry 5795 (class 0 OID 16546)
 -- Dependencies: 358
 -- Name: buckets; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17668,7 +21006,7 @@ CREATE POLICY "Upload imágenes productos - usuarios autenticados" ON storage.ob
 ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5608 (class 0 OID 68466)
+-- TOC entry 5813 (class 0 OID 68466)
 -- Dependencies: 494
 -- Name: buckets_analytics; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17676,7 +21014,15 @@ ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.buckets_analytics ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5592 (class 0 OID 16588)
+-- TOC entry 5819 (class 0 OID 156547)
+-- Dependencies: 536
+-- Name: buckets_vectors; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.buckets_vectors ENABLE ROW LEVEL SECURITY;
+
+--
+-- TOC entry 5797 (class 0 OID 16588)
 -- Dependencies: 360
 -- Name: migrations; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17684,7 +21030,7 @@ ALTER TABLE storage.buckets_analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.migrations ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5591 (class 0 OID 16561)
+-- TOC entry 5796 (class 0 OID 16561)
 -- Dependencies: 359
 -- Name: objects; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17692,7 +21038,7 @@ ALTER TABLE storage.migrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5607 (class 0 OID 68421)
+-- TOC entry 5812 (class 0 OID 68421)
 -- Dependencies: 493
 -- Name: prefixes; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17700,7 +21046,7 @@ ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.prefixes ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5604 (class 0 OID 17040)
+-- TOC entry 5809 (class 0 OID 17040)
 -- Dependencies: 376
 -- Name: s3_multipart_uploads; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17708,7 +21054,7 @@ ALTER TABLE storage.prefixes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.s3_multipart_uploads ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5605 (class 0 OID 17054)
+-- TOC entry 5810 (class 0 OID 17054)
 -- Dependencies: 377
 -- Name: s3_multipart_uploads_parts; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
 --
@@ -17716,7 +21062,15 @@ ALTER TABLE storage.s3_multipart_uploads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.s3_multipart_uploads_parts ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5687 (class 6104 OID 16426)
+-- TOC entry 5820 (class 0 OID 156557)
+-- Dependencies: 537
+-- Name: vector_indexes; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.vector_indexes ENABLE ROW LEVEL SECURITY;
+
+--
+-- TOC entry 5895 (class 6104 OID 16426)
 -- Name: supabase_realtime; Type: PUBLICATION; Schema: -; Owner: postgres
 --
 
@@ -17726,7 +21080,7 @@ CREATE PUBLICATION supabase_realtime WITH (publish = 'insert, update, delete, tr
 ALTER PUBLICATION supabase_realtime OWNER TO postgres;
 
 --
--- TOC entry 5688 (class 6104 OID 90485)
+-- TOC entry 5896 (class 6104 OID 90485)
 -- Name: supabase_realtime_messages_publication; Type: PUBLICATION; Schema: -; Owner: supabase_admin
 --
 
@@ -17736,7 +21090,7 @@ CREATE PUBLICATION supabase_realtime_messages_publication WITH (publish = 'inser
 ALTER PUBLICATION supabase_realtime_messages_publication OWNER TO supabase_admin;
 
 --
--- TOC entry 5689 (class 6106 OID 90486)
+-- TOC entry 5897 (class 6106 OID 90486)
 -- Name: supabase_realtime_messages_publication messages; Type: PUBLICATION TABLE; Schema: realtime; Owner: supabase_admin
 --
 
@@ -17744,7 +21098,7 @@ ALTER PUBLICATION supabase_realtime_messages_publication ADD TABLE ONLY realtime
 
 
 --
--- TOC entry 5852 (class 0 OID 0)
+-- TOC entry 6070 (class 0 OID 0)
 -- Dependencies: 134
 -- Name: SCHEMA auth; Type: ACL; Schema: -; Owner: supabase_admin
 --
@@ -17758,7 +21112,7 @@ GRANT USAGE ON SCHEMA auth TO postgres;
 
 
 --
--- TOC entry 5853 (class 0 OID 0)
+-- TOC entry 6071 (class 0 OID 0)
 -- Dependencies: 24
 -- Name: SCHEMA extensions; Type: ACL; Schema: -; Owner: postgres
 --
@@ -17770,7 +21124,7 @@ GRANT ALL ON SCHEMA extensions TO dashboard_user;
 
 
 --
--- TOC entry 5855 (class 0 OID 0)
+-- TOC entry 6073 (class 0 OID 0)
 -- Dependencies: 138
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
 --
@@ -17782,7 +21136,7 @@ GRANT ALL ON SCHEMA public TO service_role;
 
 
 --
--- TOC entry 5856 (class 0 OID 0)
+-- TOC entry 6074 (class 0 OID 0)
 -- Dependencies: 11
 -- Name: SCHEMA realtime; Type: ACL; Schema: -; Owner: supabase_admin
 --
@@ -17795,7 +21149,7 @@ GRANT ALL ON SCHEMA realtime TO supabase_realtime_admin;
 
 
 --
--- TOC entry 5857 (class 0 OID 0)
+-- TOC entry 6075 (class 0 OID 0)
 -- Dependencies: 135
 -- Name: SCHEMA storage; Type: ACL; Schema: -; Owner: supabase_admin
 --
@@ -17809,7 +21163,7 @@ GRANT ALL ON SCHEMA storage TO dashboard_user;
 
 
 --
--- TOC entry 5858 (class 0 OID 0)
+-- TOC entry 6076 (class 0 OID 0)
 -- Dependencies: 33
 -- Name: SCHEMA vault; Type: ACL; Schema: -; Owner: supabase_admin
 --
@@ -17819,8 +21173,8 @@ GRANT USAGE ON SCHEMA vault TO service_role;
 
 
 --
--- TOC entry 5867 (class 0 OID 0)
--- Dependencies: 635
+-- TOC entry 6085 (class 0 OID 0)
+-- Dependencies: 664
 -- Name: FUNCTION email(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -17828,8 +21182,8 @@ GRANT ALL ON FUNCTION auth.email() TO dashboard_user;
 
 
 --
--- TOC entry 5868 (class 0 OID 0)
--- Dependencies: 683
+-- TOC entry 6086 (class 0 OID 0)
+-- Dependencies: 712
 -- Name: FUNCTION jwt(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -17838,8 +21192,8 @@ GRANT ALL ON FUNCTION auth.jwt() TO dashboard_user;
 
 
 --
--- TOC entry 5870 (class 0 OID 0)
--- Dependencies: 548
+-- TOC entry 6088 (class 0 OID 0)
+-- Dependencies: 566
 -- Name: FUNCTION role(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -17847,8 +21201,8 @@ GRANT ALL ON FUNCTION auth.role() TO dashboard_user;
 
 
 --
--- TOC entry 5872 (class 0 OID 0)
--- Dependencies: 585
+-- TOC entry 6090 (class 0 OID 0)
+-- Dependencies: 604
 -- Name: FUNCTION uid(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -17856,8 +21210,8 @@ GRANT ALL ON FUNCTION auth.uid() TO dashboard_user;
 
 
 --
--- TOC entry 5873 (class 0 OID 0)
--- Dependencies: 645
+-- TOC entry 6091 (class 0 OID 0)
+-- Dependencies: 674
 -- Name: FUNCTION armor(bytea); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17867,8 +21221,8 @@ GRANT ALL ON FUNCTION extensions.armor(bytea) TO dashboard_user;
 
 
 --
--- TOC entry 5874 (class 0 OID 0)
--- Dependencies: 732
+-- TOC entry 6092 (class 0 OID 0)
+-- Dependencies: 764
 -- Name: FUNCTION armor(bytea, text[], text[]); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17878,8 +21232,8 @@ GRANT ALL ON FUNCTION extensions.armor(bytea, text[], text[]) TO dashboard_user;
 
 
 --
--- TOC entry 5875 (class 0 OID 0)
--- Dependencies: 703
+-- TOC entry 6093 (class 0 OID 0)
+-- Dependencies: 733
 -- Name: FUNCTION crypt(text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17889,8 +21243,8 @@ GRANT ALL ON FUNCTION extensions.crypt(text, text) TO dashboard_user;
 
 
 --
--- TOC entry 5876 (class 0 OID 0)
--- Dependencies: 675
+-- TOC entry 6094 (class 0 OID 0)
+-- Dependencies: 704
 -- Name: FUNCTION dearmor(text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17900,8 +21254,8 @@ GRANT ALL ON FUNCTION extensions.dearmor(text) TO dashboard_user;
 
 
 --
--- TOC entry 5877 (class 0 OID 0)
--- Dependencies: 681
+-- TOC entry 6095 (class 0 OID 0)
+-- Dependencies: 710
 -- Name: FUNCTION decrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17911,8 +21265,8 @@ GRANT ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) TO dashboard_user;
 
 
 --
--- TOC entry 5878 (class 0 OID 0)
--- Dependencies: 623
+-- TOC entry 6096 (class 0 OID 0)
+-- Dependencies: 649
 -- Name: FUNCTION decrypt_iv(bytea, bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17922,8 +21276,8 @@ GRANT ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) TO dashbo
 
 
 --
--- TOC entry 5879 (class 0 OID 0)
--- Dependencies: 762
+-- TOC entry 6097 (class 0 OID 0)
+-- Dependencies: 797
 -- Name: FUNCTION digest(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17933,8 +21287,8 @@ GRANT ALL ON FUNCTION extensions.digest(bytea, text) TO dashboard_user;
 
 
 --
--- TOC entry 5880 (class 0 OID 0)
--- Dependencies: 713
+-- TOC entry 6098 (class 0 OID 0)
+-- Dependencies: 744
 -- Name: FUNCTION digest(text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17944,8 +21298,8 @@ GRANT ALL ON FUNCTION extensions.digest(text, text) TO dashboard_user;
 
 
 --
--- TOC entry 5881 (class 0 OID 0)
--- Dependencies: 608
+-- TOC entry 6099 (class 0 OID 0)
+-- Dependencies: 632
 -- Name: FUNCTION encrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17955,8 +21309,8 @@ GRANT ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) TO dashboard_user;
 
 
 --
--- TOC entry 5882 (class 0 OID 0)
--- Dependencies: 569
+-- TOC entry 6100 (class 0 OID 0)
+-- Dependencies: 587
 -- Name: FUNCTION encrypt_iv(bytea, bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17966,8 +21320,8 @@ GRANT ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) TO dashbo
 
 
 --
--- TOC entry 5883 (class 0 OID 0)
--- Dependencies: 725
+-- TOC entry 6101 (class 0 OID 0)
+-- Dependencies: 757
 -- Name: FUNCTION gen_random_bytes(integer); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17977,8 +21331,8 @@ GRANT ALL ON FUNCTION extensions.gen_random_bytes(integer) TO dashboard_user;
 
 
 --
--- TOC entry 5884 (class 0 OID 0)
--- Dependencies: 557
+-- TOC entry 6102 (class 0 OID 0)
+-- Dependencies: 575
 -- Name: FUNCTION gen_random_uuid(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17988,8 +21342,8 @@ GRANT ALL ON FUNCTION extensions.gen_random_uuid() TO dashboard_user;
 
 
 --
--- TOC entry 5885 (class 0 OID 0)
--- Dependencies: 806
+-- TOC entry 6103 (class 0 OID 0)
+-- Dependencies: 843
 -- Name: FUNCTION gen_salt(text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -17999,8 +21353,8 @@ GRANT ALL ON FUNCTION extensions.gen_salt(text) TO dashboard_user;
 
 
 --
--- TOC entry 5886 (class 0 OID 0)
--- Dependencies: 802
+-- TOC entry 6104 (class 0 OID 0)
+-- Dependencies: 839
 -- Name: FUNCTION gen_salt(text, integer); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18010,8 +21364,8 @@ GRANT ALL ON FUNCTION extensions.gen_salt(text, integer) TO dashboard_user;
 
 
 --
--- TOC entry 5888 (class 0 OID 0)
--- Dependencies: 711
+-- TOC entry 6106 (class 0 OID 0)
+-- Dependencies: 742
 -- Name: FUNCTION grant_pg_cron_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -18021,8 +21375,8 @@ GRANT ALL ON FUNCTION extensions.grant_pg_cron_access() TO dashboard_user;
 
 
 --
--- TOC entry 5890 (class 0 OID 0)
--- Dependencies: 674
+-- TOC entry 6108 (class 0 OID 0)
+-- Dependencies: 703
 -- Name: FUNCTION grant_pg_graphql_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -18030,8 +21384,8 @@ GRANT ALL ON FUNCTION extensions.grant_pg_graphql_access() TO postgres WITH GRAN
 
 
 --
--- TOC entry 5892 (class 0 OID 0)
--- Dependencies: 621
+-- TOC entry 6110 (class 0 OID 0)
+-- Dependencies: 646
 -- Name: FUNCTION grant_pg_net_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -18041,8 +21395,8 @@ GRANT ALL ON FUNCTION extensions.grant_pg_net_access() TO dashboard_user;
 
 
 --
--- TOC entry 5893 (class 0 OID 0)
--- Dependencies: 568
+-- TOC entry 6111 (class 0 OID 0)
+-- Dependencies: 586
 -- Name: FUNCTION hmac(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18052,8 +21406,8 @@ GRANT ALL ON FUNCTION extensions.hmac(bytea, bytea, text) TO dashboard_user;
 
 
 --
--- TOC entry 5894 (class 0 OID 0)
--- Dependencies: 780
+-- TOC entry 6112 (class 0 OID 0)
+-- Dependencies: 817
 -- Name: FUNCTION hmac(text, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18063,8 +21417,8 @@ GRANT ALL ON FUNCTION extensions.hmac(text, text, text) TO dashboard_user;
 
 
 --
--- TOC entry 5895 (class 0 OID 0)
--- Dependencies: 740
+-- TOC entry 6113 (class 0 OID 0)
+-- Dependencies: 772
 -- Name: FUNCTION pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18074,8 +21428,8 @@ GRANT ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid
 
 
 --
--- TOC entry 5896 (class 0 OID 0)
--- Dependencies: 799
+-- TOC entry 6114 (class 0 OID 0)
+-- Dependencies: 836
 -- Name: FUNCTION pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18085,8 +21439,8 @@ GRANT ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT
 
 
 --
--- TOC entry 5897 (class 0 OID 0)
--- Dependencies: 720
+-- TOC entry 6115 (class 0 OID 0)
+-- Dependencies: 751
 -- Name: FUNCTION pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18096,8 +21450,8 @@ GRANT ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, 
 
 
 --
--- TOC entry 5898 (class 0 OID 0)
--- Dependencies: 631
+-- TOC entry 6116 (class 0 OID 0)
+-- Dependencies: 660
 -- Name: FUNCTION pgp_armor_headers(text, OUT key text, OUT value text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18107,8 +21461,8 @@ GRANT ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value
 
 
 --
--- TOC entry 5899 (class 0 OID 0)
--- Dependencies: 625
+-- TOC entry 6117 (class 0 OID 0)
+-- Dependencies: 651
 -- Name: FUNCTION pgp_key_id(bytea); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18118,8 +21472,8 @@ GRANT ALL ON FUNCTION extensions.pgp_key_id(bytea) TO dashboard_user;
 
 
 --
--- TOC entry 5900 (class 0 OID 0)
--- Dependencies: 774
+-- TOC entry 6118 (class 0 OID 0)
+-- Dependencies: 810
 -- Name: FUNCTION pgp_pub_decrypt(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18129,8 +21483,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) TO dashboard_user
 
 
 --
--- TOC entry 5901 (class 0 OID 0)
--- Dependencies: 534
+-- TOC entry 6119 (class 0 OID 0)
+-- Dependencies: 552
 -- Name: FUNCTION pgp_pub_decrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18140,8 +21494,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) TO dashboar
 
 
 --
--- TOC entry 5902 (class 0 OID 0)
--- Dependencies: 776
+-- TOC entry 6120 (class 0 OID 0)
+-- Dependencies: 813
 -- Name: FUNCTION pgp_pub_decrypt(bytea, bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18151,8 +21505,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) TO da
 
 
 --
--- TOC entry 5903 (class 0 OID 0)
--- Dependencies: 573
+-- TOC entry 6121 (class 0 OID 0)
+-- Dependencies: 592
 -- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18162,8 +21516,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) TO dashboar
 
 
 --
--- TOC entry 5904 (class 0 OID 0)
--- Dependencies: 788
+-- TOC entry 6122 (class 0 OID 0)
+-- Dependencies: 825
 -- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18173,8 +21527,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) TO da
 
 
 --
--- TOC entry 5905 (class 0 OID 0)
--- Dependencies: 783
+-- TOC entry 6123 (class 0 OID 0)
+-- Dependencies: 820
 -- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18184,8 +21538,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text)
 
 
 --
--- TOC entry 5906 (class 0 OID 0)
--- Dependencies: 640
+-- TOC entry 6124 (class 0 OID 0)
+-- Dependencies: 669
 -- Name: FUNCTION pgp_pub_encrypt(text, bytea); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18195,8 +21549,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) TO dashboard_user;
 
 
 --
--- TOC entry 5907 (class 0 OID 0)
--- Dependencies: 632
+-- TOC entry 6125 (class 0 OID 0)
+-- Dependencies: 661
 -- Name: FUNCTION pgp_pub_encrypt(text, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18206,8 +21560,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) TO dashboard
 
 
 --
--- TOC entry 5908 (class 0 OID 0)
--- Dependencies: 606
+-- TOC entry 6126 (class 0 OID 0)
+-- Dependencies: 630
 -- Name: FUNCTION pgp_pub_encrypt_bytea(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18217,8 +21571,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) TO dashboar
 
 
 --
--- TOC entry 5909 (class 0 OID 0)
--- Dependencies: 766
+-- TOC entry 6127 (class 0 OID 0)
+-- Dependencies: 802
 -- Name: FUNCTION pgp_pub_encrypt_bytea(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18228,8 +21582,8 @@ GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) TO da
 
 
 --
--- TOC entry 5910 (class 0 OID 0)
--- Dependencies: 771
+-- TOC entry 6128 (class 0 OID 0)
+-- Dependencies: 807
 -- Name: FUNCTION pgp_sym_decrypt(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18239,8 +21593,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) TO dashboard_user;
 
 
 --
--- TOC entry 5911 (class 0 OID 0)
--- Dependencies: 636
+-- TOC entry 6129 (class 0 OID 0)
+-- Dependencies: 665
 -- Name: FUNCTION pgp_sym_decrypt(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18250,8 +21604,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) TO dashboard
 
 
 --
--- TOC entry 5912 (class 0 OID 0)
--- Dependencies: 775
+-- TOC entry 6130 (class 0 OID 0)
+-- Dependencies: 811
 -- Name: FUNCTION pgp_sym_decrypt_bytea(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18261,8 +21615,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) TO dashboard
 
 
 --
--- TOC entry 5913 (class 0 OID 0)
--- Dependencies: 770
+-- TOC entry 6131 (class 0 OID 0)
+-- Dependencies: 806
 -- Name: FUNCTION pgp_sym_decrypt_bytea(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18272,8 +21626,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) TO das
 
 
 --
--- TOC entry 5914 (class 0 OID 0)
--- Dependencies: 804
+-- TOC entry 6132 (class 0 OID 0)
+-- Dependencies: 841
 -- Name: FUNCTION pgp_sym_encrypt(text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18283,8 +21637,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) TO dashboard_user;
 
 
 --
--- TOC entry 5915 (class 0 OID 0)
--- Dependencies: 658
+-- TOC entry 6133 (class 0 OID 0)
+-- Dependencies: 687
 -- Name: FUNCTION pgp_sym_encrypt(text, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18294,8 +21648,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) TO dashboard_
 
 
 --
--- TOC entry 5916 (class 0 OID 0)
--- Dependencies: 584
+-- TOC entry 6134 (class 0 OID 0)
+-- Dependencies: 603
 -- Name: FUNCTION pgp_sym_encrypt_bytea(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18305,8 +21659,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) TO dashboard
 
 
 --
--- TOC entry 5917 (class 0 OID 0)
--- Dependencies: 777
+-- TOC entry 6135 (class 0 OID 0)
+-- Dependencies: 814
 -- Name: FUNCTION pgp_sym_encrypt_bytea(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18316,8 +21670,8 @@ GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) TO das
 
 
 --
--- TOC entry 5918 (class 0 OID 0)
--- Dependencies: 532
+-- TOC entry 6136 (class 0 OID 0)
+-- Dependencies: 550
 -- Name: FUNCTION pgrst_ddl_watch(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -18325,8 +21679,8 @@ GRANT ALL ON FUNCTION extensions.pgrst_ddl_watch() TO postgres WITH GRANT OPTION
 
 
 --
--- TOC entry 5919 (class 0 OID 0)
--- Dependencies: 742
+-- TOC entry 6137 (class 0 OID 0)
+-- Dependencies: 774
 -- Name: FUNCTION pgrst_drop_watch(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -18334,8 +21688,8 @@ GRANT ALL ON FUNCTION extensions.pgrst_drop_watch() TO postgres WITH GRANT OPTIO
 
 
 --
--- TOC entry 5921 (class 0 OID 0)
--- Dependencies: 562
+-- TOC entry 6139 (class 0 OID 0)
+-- Dependencies: 580
 -- Name: FUNCTION set_graphql_placeholder(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -18343,8 +21697,8 @@ GRANT ALL ON FUNCTION extensions.set_graphql_placeholder() TO postgres WITH GRAN
 
 
 --
--- TOC entry 5922 (class 0 OID 0)
--- Dependencies: 642
+-- TOC entry 6140 (class 0 OID 0)
+-- Dependencies: 671
 -- Name: FUNCTION uuid_generate_v1(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18354,8 +21708,8 @@ GRANT ALL ON FUNCTION extensions.uuid_generate_v1() TO dashboard_user;
 
 
 --
--- TOC entry 5923 (class 0 OID 0)
--- Dependencies: 752
+-- TOC entry 6141 (class 0 OID 0)
+-- Dependencies: 784
 -- Name: FUNCTION uuid_generate_v1mc(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18365,8 +21719,8 @@ GRANT ALL ON FUNCTION extensions.uuid_generate_v1mc() TO dashboard_user;
 
 
 --
--- TOC entry 5924 (class 0 OID 0)
--- Dependencies: 533
+-- TOC entry 6142 (class 0 OID 0)
+-- Dependencies: 551
 -- Name: FUNCTION uuid_generate_v3(namespace uuid, name text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18376,8 +21730,8 @@ GRANT ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) TO 
 
 
 --
--- TOC entry 5925 (class 0 OID 0)
--- Dependencies: 580
+-- TOC entry 6143 (class 0 OID 0)
+-- Dependencies: 599
 -- Name: FUNCTION uuid_generate_v4(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18387,8 +21741,8 @@ GRANT ALL ON FUNCTION extensions.uuid_generate_v4() TO dashboard_user;
 
 
 --
--- TOC entry 5926 (class 0 OID 0)
--- Dependencies: 602
+-- TOC entry 6144 (class 0 OID 0)
+-- Dependencies: 626
 -- Name: FUNCTION uuid_generate_v5(namespace uuid, name text); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18398,8 +21752,8 @@ GRANT ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) TO 
 
 
 --
--- TOC entry 5927 (class 0 OID 0)
--- Dependencies: 705
+-- TOC entry 6145 (class 0 OID 0)
+-- Dependencies: 735
 -- Name: FUNCTION uuid_nil(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18409,8 +21763,8 @@ GRANT ALL ON FUNCTION extensions.uuid_nil() TO dashboard_user;
 
 
 --
--- TOC entry 5928 (class 0 OID 0)
--- Dependencies: 607
+-- TOC entry 6146 (class 0 OID 0)
+-- Dependencies: 631
 -- Name: FUNCTION uuid_ns_dns(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18420,8 +21774,8 @@ GRANT ALL ON FUNCTION extensions.uuid_ns_dns() TO dashboard_user;
 
 
 --
--- TOC entry 5929 (class 0 OID 0)
--- Dependencies: 779
+-- TOC entry 6147 (class 0 OID 0)
+-- Dependencies: 816
 -- Name: FUNCTION uuid_ns_oid(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18431,8 +21785,8 @@ GRANT ALL ON FUNCTION extensions.uuid_ns_oid() TO dashboard_user;
 
 
 --
--- TOC entry 5930 (class 0 OID 0)
--- Dependencies: 693
+-- TOC entry 6148 (class 0 OID 0)
+-- Dependencies: 723
 -- Name: FUNCTION uuid_ns_url(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18442,8 +21796,8 @@ GRANT ALL ON FUNCTION extensions.uuid_ns_url() TO dashboard_user;
 
 
 --
--- TOC entry 5931 (class 0 OID 0)
--- Dependencies: 708
+-- TOC entry 6149 (class 0 OID 0)
+-- Dependencies: 739
 -- Name: FUNCTION uuid_ns_x500(); Type: ACL; Schema: extensions; Owner: postgres
 --
 
@@ -18453,8 +21807,8 @@ GRANT ALL ON FUNCTION extensions.uuid_ns_x500() TO dashboard_user;
 
 
 --
--- TOC entry 5932 (class 0 OID 0)
--- Dependencies: 781
+-- TOC entry 6150 (class 0 OID 0)
+-- Dependencies: 818
 -- Name: FUNCTION graphql("operationName" text, query text, variables jsonb, extensions jsonb); Type: ACL; Schema: graphql_public; Owner: supabase_admin
 --
 
@@ -18465,8 +21819,8 @@ GRANT ALL ON FUNCTION graphql_public.graphql("operationName" text, query text, v
 
 
 --
--- TOC entry 5933 (class 0 OID 0)
--- Dependencies: 637
+-- TOC entry 6151 (class 0 OID 0)
+-- Dependencies: 666
 -- Name: FUNCTION get_auth(p_usename text); Type: ACL; Schema: pgbouncer; Owner: supabase_admin
 --
 
@@ -18476,8 +21830,19 @@ GRANT ALL ON FUNCTION pgbouncer.get_auth(p_usename text) TO postgres;
 
 
 --
--- TOC entry 5934 (class 0 OID 0)
--- Dependencies: 617
+-- TOC entry 6153 (class 0 OID 0)
+-- Dependencies: 657
+-- Name: FUNCTION actualizar_cuentas_vencidas(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.actualizar_cuentas_vencidas() TO anon;
+GRANT ALL ON FUNCTION public.actualizar_cuentas_vencidas() TO authenticated;
+GRANT ALL ON FUNCTION public.actualizar_cuentas_vencidas() TO service_role;
+
+
+--
+-- TOC entry 6154 (class 0 OID 0)
+-- Dependencies: 641
 -- Name: FUNCTION actualizar_dias_pipeline(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18487,8 +21852,19 @@ GRANT ALL ON FUNCTION public.actualizar_dias_pipeline() TO service_role;
 
 
 --
--- TOC entry 5935 (class 0 OID 0)
--- Dependencies: 589
+-- TOC entry 6155 (class 0 OID 0)
+-- Dependencies: 653
+-- Name: FUNCTION actualizar_estado_cxp(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.actualizar_estado_cxp() TO anon;
+GRANT ALL ON FUNCTION public.actualizar_estado_cxp() TO authenticated;
+GRANT ALL ON FUNCTION public.actualizar_estado_cxp() TO service_role;
+
+
+--
+-- TOC entry 6156 (class 0 OID 0)
+-- Dependencies: 610
 -- Name: FUNCTION actualizar_fecha_contacto(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18498,8 +21874,8 @@ GRANT ALL ON FUNCTION public.actualizar_fecha_contacto() TO service_role;
 
 
 --
--- TOC entry 5936 (class 0 OID 0)
--- Dependencies: 566
+-- TOC entry 6157 (class 0 OID 0)
+-- Dependencies: 584
 -- Name: FUNCTION actualizar_fecha_modificacion(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18509,8 +21885,8 @@ GRANT ALL ON FUNCTION public.actualizar_fecha_modificacion() TO service_role;
 
 
 --
--- TOC entry 5937 (class 0 OID 0)
--- Dependencies: 719
+-- TOC entry 6158 (class 0 OID 0)
+-- Dependencies: 750
 -- Name: FUNCTION actualizar_stock_pedido(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18520,8 +21896,8 @@ GRANT ALL ON FUNCTION public.actualizar_stock_pedido() TO service_role;
 
 
 --
--- TOC entry 5938 (class 0 OID 0)
--- Dependencies: 595
+-- TOC entry 6159 (class 0 OID 0)
+-- Dependencies: 617
 -- Name: FUNCTION actualizar_timestamp_cotizacion(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18531,8 +21907,19 @@ GRANT ALL ON FUNCTION public.actualizar_timestamp_cotizacion() TO service_role;
 
 
 --
--- TOC entry 5939 (class 0 OID 0)
--- Dependencies: 757
+-- TOC entry 6161 (class 0 OID 0)
+-- Dependencies: 614
+-- Name: FUNCTION actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint) TO anon;
+GRANT ALL ON FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.actualizar_tipo_cambio_manual(p_moneda character varying, p_tipo character varying, p_nuevo_valor numeric, p_usuario_id bigint) TO service_role;
+
+
+--
+-- TOC entry 6162 (class 0 OID 0)
+-- Dependencies: 791
 -- Name: FUNCTION asegurar_principal_unico(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18542,8 +21929,8 @@ GRANT ALL ON FUNCTION public.asegurar_principal_unico() TO service_role;
 
 
 --
--- TOC entry 5940 (class 0 OID 0)
--- Dependencies: 721
+-- TOC entry 6163 (class 0 OID 0)
+-- Dependencies: 752
 -- Name: FUNCTION asociar_marca_categoria(p_id_marca bigint, p_id_categoria bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18553,8 +21940,8 @@ GRANT ALL ON FUNCTION public.asociar_marca_categoria(p_id_marca bigint, p_id_cat
 
 
 --
--- TOC entry 5941 (class 0 OID 0)
--- Dependencies: 709
+-- TOC entry 6164 (class 0 OID 0)
+-- Dependencies: 740
 -- Name: FUNCTION auditar_cambio_descuentos(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18564,8 +21951,8 @@ GRANT ALL ON FUNCTION public.auditar_cambio_descuentos() TO service_role;
 
 
 --
--- TOC entry 5942 (class 0 OID 0)
--- Dependencies: 649
+-- TOC entry 6165 (class 0 OID 0)
+-- Dependencies: 678
 -- Name: FUNCTION auto_generar_numero_factura(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18575,8 +21962,8 @@ GRANT ALL ON FUNCTION public.auto_generar_numero_factura() TO service_role;
 
 
 --
--- TOC entry 5944 (class 0 OID 0)
--- Dependencies: 768
+-- TOC entry 6167 (class 0 OID 0)
+-- Dependencies: 804
 -- Name: FUNCTION calcular_costos_producto_proveedor(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18586,8 +21973,8 @@ GRANT ALL ON FUNCTION public.calcular_costos_producto_proveedor() TO service_rol
 
 
 --
--- TOC entry 5945 (class 0 OID 0)
--- Dependencies: 765
+-- TOC entry 6168 (class 0 OID 0)
+-- Dependencies: 800
 -- Name: FUNCTION calcular_dias_vencimiento(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18597,8 +21984,8 @@ GRANT ALL ON FUNCTION public.calcular_dias_vencimiento() TO service_role;
 
 
 --
--- TOC entry 5946 (class 0 OID 0)
--- Dependencies: 669
+-- TOC entry 6169 (class 0 OID 0)
+-- Dependencies: 698
 -- Name: FUNCTION calcular_precio_multimoneda_automatico(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18608,8 +21995,8 @@ GRANT ALL ON FUNCTION public.calcular_precio_multimoneda_automatico() TO service
 
 
 --
--- TOC entry 5947 (class 0 OID 0)
--- Dependencies: 633
+-- TOC entry 6170 (class 0 OID 0)
+-- Dependencies: 662
 -- Name: FUNCTION calcular_precio_venta_automatico(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18619,8 +22006,8 @@ GRANT ALL ON FUNCTION public.calcular_precio_venta_automatico() TO service_role;
 
 
 --
--- TOC entry 5948 (class 0 OID 0)
--- Dependencies: 618
+-- TOC entry 6171 (class 0 OID 0)
+-- Dependencies: 643
 -- Name: FUNCTION calcular_precio_venta_soles(p_costo numeric, p_id_moneda bigint, p_margen numeric); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18630,8 +22017,8 @@ GRANT ALL ON FUNCTION public.calcular_precio_venta_soles(p_costo numeric, p_id_m
 
 
 --
--- TOC entry 5949 (class 0 OID 0)
--- Dependencies: 552
+-- TOC entry 6172 (class 0 OID 0)
+-- Dependencies: 570
 -- Name: FUNCTION calcular_precio_venta_usd(p_precio_soles numeric, p_tipo_cambio_bajo numeric); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18641,8 +22028,19 @@ GRANT ALL ON FUNCTION public.calcular_precio_venta_usd(p_precio_soles numeric, p
 
 
 --
--- TOC entry 5950 (class 0 OID 0)
--- Dependencies: 551
+-- TOC entry 6174 (class 0 OID 0)
+-- Dependencies: 605
+-- Name: FUNCTION comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint) TO anon;
+GRANT ALL ON FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.comercial_completar_datos_proveedor(p_sku bigint, p_id_moneda bigint, p_precio_proveedor numeric, p_tipo_cambio numeric, p_usuario_id bigint) TO service_role;
+
+
+--
+-- TOC entry 6175 (class 0 OID 0)
+-- Dependencies: 569
 -- Name: FUNCTION cotizaciones_en_riesgo(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18652,8 +22050,8 @@ GRANT ALL ON FUNCTION public.cotizaciones_en_riesgo() TO service_role;
 
 
 --
--- TOC entry 5951 (class 0 OID 0)
--- Dependencies: 792
+-- TOC entry 6176 (class 0 OID 0)
+-- Dependencies: 829
 -- Name: FUNCTION crear_notificacion_producto_nuevo(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18663,8 +22061,8 @@ GRANT ALL ON FUNCTION public.crear_notificacion_producto_nuevo() TO service_role
 
 
 --
--- TOC entry 5952 (class 0 OID 0)
--- Dependencies: 665
+-- TOC entry 6177 (class 0 OID 0)
+-- Dependencies: 694
 -- Name: FUNCTION establecer_precio_producto(p_sku bigint, p_id_moneda bigint, p_precio_venta numeric, p_margen_aplicado numeric, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18674,8 +22072,8 @@ GRANT ALL ON FUNCTION public.establecer_precio_producto(p_sku bigint, p_id_moned
 
 
 --
--- TOC entry 5953 (class 0 OID 0)
--- Dependencies: 746
+-- TOC entry 6178 (class 0 OID 0)
+-- Dependencies: 778
 -- Name: FUNCTION fn_registrar_primera_transicion(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18685,8 +22083,8 @@ GRANT ALL ON FUNCTION public.fn_registrar_primera_transicion() TO service_role;
 
 
 --
--- TOC entry 5954 (class 0 OID 0)
--- Dependencies: 723
+-- TOC entry 6179 (class 0 OID 0)
+-- Dependencies: 755
 -- Name: FUNCTION fn_registrar_transicion_estado_cotizacion(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18696,8 +22094,30 @@ GRANT ALL ON FUNCTION public.fn_registrar_transicion_estado_cotizacion() TO serv
 
 
 --
--- TOC entry 5955 (class 0 OID 0)
--- Dependencies: 751
+-- TOC entry 6180 (class 0 OID 0)
+-- Dependencies: 796
+-- Name: FUNCTION generar_codigo_cxp(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.generar_codigo_cxp() TO anon;
+GRANT ALL ON FUNCTION public.generar_codigo_cxp() TO authenticated;
+GRANT ALL ON FUNCTION public.generar_codigo_cxp() TO service_role;
+
+
+--
+-- TOC entry 6181 (class 0 OID 0)
+-- Dependencies: 738
+-- Name: FUNCTION generar_codigo_pago_proveedor(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.generar_codigo_pago_proveedor() TO anon;
+GRANT ALL ON FUNCTION public.generar_codigo_pago_proveedor() TO authenticated;
+GRANT ALL ON FUNCTION public.generar_codigo_pago_proveedor() TO service_role;
+
+
+--
+-- TOC entry 6182 (class 0 OID 0)
+-- Dependencies: 783
 -- Name: FUNCTION generar_codigo_solicitud(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18707,8 +22127,19 @@ GRANT ALL ON FUNCTION public.generar_codigo_solicitud() TO service_role;
 
 
 --
--- TOC entry 5956 (class 0 OID 0)
--- Dependencies: 678
+-- TOC entry 6183 (class 0 OID 0)
+-- Dependencies: 642
+-- Name: FUNCTION generar_sku_producto(p_id_categoria bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.generar_sku_producto(p_id_categoria bigint) TO anon;
+GRANT ALL ON FUNCTION public.generar_sku_producto(p_id_categoria bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.generar_sku_producto(p_id_categoria bigint) TO service_role;
+
+
+--
+-- TOC entry 6184 (class 0 OID 0)
+-- Dependencies: 707
 -- Name: FUNCTION get_auth_info(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18718,8 +22149,8 @@ GRANT ALL ON FUNCTION public.get_auth_info() TO service_role;
 
 
 --
--- TOC entry 5957 (class 0 OID 0)
--- Dependencies: 599
+-- TOC entry 6185 (class 0 OID 0)
+-- Dependencies: 621
 -- Name: FUNCTION get_margen_principal(p_sku bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18729,8 +22160,8 @@ GRANT ALL ON FUNCTION public.get_margen_principal(p_sku bigint) TO service_role;
 
 
 --
--- TOC entry 5958 (class 0 OID 0)
--- Dependencies: 650
+-- TOC entry 6186 (class 0 OID 0)
+-- Dependencies: 679
 -- Name: FUNCTION get_precio_principal(p_sku bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18740,8 +22171,8 @@ GRANT ALL ON FUNCTION public.get_precio_principal(p_sku bigint) TO service_role;
 
 
 --
--- TOC entry 5959 (class 0 OID 0)
--- Dependencies: 554
+-- TOC entry 6187 (class 0 OID 0)
+-- Dependencies: 572
 -- Name: FUNCTION limpiar_notificaciones_antiguas(dias_antiguedad integer); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18751,8 +22182,8 @@ GRANT ALL ON FUNCTION public.limpiar_notificaciones_antiguas(dias_antiguedad int
 
 
 --
--- TOC entry 5960 (class 0 OID 0)
--- Dependencies: 605
+-- TOC entry 6188 (class 0 OID 0)
+-- Dependencies: 629
 -- Name: FUNCTION marcar_producto_visto(p_producto_id bigint, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18762,8 +22193,63 @@ GRANT ALL ON FUNCTION public.marcar_producto_visto(p_producto_id bigint, p_usuar
 
 
 --
--- TOC entry 5961 (class 0 OID 0)
--- Dependencies: 755
+-- TOC entry 6190 (class 0 OID 0)
+-- Dependencies: 648
+-- Name: FUNCTION marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) TO anon;
+GRANT ALL ON FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.marketing_crear_promocion_precio(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) TO service_role;
+
+
+--
+-- TOC entry 6192 (class 0 OID 0)
+-- Dependencies: 622
+-- Name: FUNCTION marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) TO anon;
+GRANT ALL ON FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.marketing_crear_promocion_precio_multimoneda(p_sku bigint, p_nombre_promocion character varying, p_precio_promocional_pen numeric, p_precio_promocional_usd numeric, p_tipo_cambio numeric, p_fecha_inicio timestamp without time zone, p_fecha_fin timestamp without time zone, p_usuario_id bigint) TO service_role;
+
+
+--
+-- TOC entry 6194 (class 0 OID 0)
+-- Dependencies: 608
+-- Name: FUNCTION marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint) TO anon;
+GRANT ALL ON FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.marketing_establecer_precio_venta(p_sku bigint, p_precio_venta_pen numeric, p_precio_venta_usd numeric, p_tipo_cambio_manual numeric, p_notas text, p_usuario_id bigint) TO service_role;
+
+
+--
+-- TOC entry 6196 (class 0 OID 0)
+-- Dependencies: 753
+-- Name: FUNCTION obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying) TO anon;
+GRANT ALL ON FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying) TO authenticated;
+GRANT ALL ON FUNCTION public.obtener_historial_cotizacion(p_numero_cotizacion character varying, p_id_cotizacion bigint, p_desde date, p_hasta date, p_tipo_cambio character varying) TO service_role;
+
+
+--
+-- TOC entry 6198 (class 0 OID 0)
+-- Dependencies: 812
+-- Name: FUNCTION obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer) TO anon;
+GRANT ALL ON FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer) TO authenticated;
+GRANT ALL ON FUNCTION public.obtener_precio_con_promociones(p_sku bigint, p_id_moneda bigint, p_id_cliente bigint, p_fecha timestamp without time zone, p_cantidad integer) TO service_role;
+
+
+--
+-- TOC entry 6199 (class 0 OID 0)
+-- Dependencies: 789
 -- Name: FUNCTION obtener_precio_producto(p_sku bigint, p_id_moneda bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18773,8 +22259,8 @@ GRANT ALL ON FUNCTION public.obtener_precio_producto(p_sku bigint, p_id_moneda b
 
 
 --
--- TOC entry 5963 (class 0 OID 0)
--- Dependencies: 540
+-- TOC entry 6201 (class 0 OID 0)
+-- Dependencies: 558
 -- Name: FUNCTION obtener_precio_proveedor_con_descuentos(p_sku bigint, p_id_proveedor bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18784,8 +22270,8 @@ GRANT ALL ON FUNCTION public.obtener_precio_proveedor_con_descuentos(p_sku bigin
 
 
 --
--- TOC entry 5964 (class 0 OID 0)
--- Dependencies: 701
+-- TOC entry 6202 (class 0 OID 0)
+-- Dependencies: 731
 -- Name: FUNCTION obtener_precios_producto_multimoneda(p_sku bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18795,8 +22281,19 @@ GRANT ALL ON FUNCTION public.obtener_precios_producto_multimoneda(p_sku bigint) 
 
 
 --
--- TOC entry 5965 (class 0 OID 0)
--- Dependencies: 646
+-- TOC entry 6203 (class 0 OID 0)
+-- Dependencies: 787
+-- Name: FUNCTION obtener_prefijo_categoria(p_id_categoria bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.obtener_prefijo_categoria(p_id_categoria bigint) TO anon;
+GRANT ALL ON FUNCTION public.obtener_prefijo_categoria(p_id_categoria bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.obtener_prefijo_categoria(p_id_categoria bigint) TO service_role;
+
+
+--
+-- TOC entry 6204 (class 0 OID 0)
+-- Dependencies: 675
 -- Name: FUNCTION obtener_tasa_conversion(estado_origen_codigo character varying, estado_destino_codigo character varying, fecha_desde date); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18806,8 +22303,8 @@ GRANT ALL ON FUNCTION public.obtener_tasa_conversion(estado_origen_codigo charac
 
 
 --
--- TOC entry 5966 (class 0 OID 0)
--- Dependencies: 536
+-- TOC entry 6205 (class 0 OID 0)
+-- Dependencies: 554
 -- Name: FUNCTION obtener_tipo_cambio_vigente(p_moneda character varying); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18817,8 +22314,8 @@ GRANT ALL ON FUNCTION public.obtener_tipo_cambio_vigente(p_moneda character vary
 
 
 --
--- TOC entry 5967 (class 0 OID 0)
--- Dependencies: 639
+-- TOC entry 6206 (class 0 OID 0)
+-- Dependencies: 668
 -- Name: FUNCTION recalcular_precios_masivo(p_filtro_categoria bigint, p_filtro_proveedor bigint, p_nuevo_tipo_cambio numeric, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18828,8 +22325,41 @@ GRANT ALL ON FUNCTION public.recalcular_precios_masivo(p_filtro_categoria bigint
 
 
 --
--- TOC entry 5969 (class 0 OID 0)
--- Dependencies: 579
+-- TOC entry 6207 (class 0 OID 0)
+-- Dependencies: 624
+-- Name: FUNCTION regenerar_sku_productos_sin_codigo(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.regenerar_sku_productos_sin_codigo() TO anon;
+GRANT ALL ON FUNCTION public.regenerar_sku_productos_sin_codigo() TO authenticated;
+GRANT ALL ON FUNCTION public.regenerar_sku_productos_sin_codigo() TO service_role;
+
+
+--
+-- TOC entry 6209 (class 0 OID 0)
+-- Dependencies: 788
+-- Name: FUNCTION registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint) TO anon;
+GRANT ALL ON FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.registrar_cambio_cotizacion(p_id_cotizacion bigint, p_tipo_cambio character varying, p_descripcion text, p_campo_modificado character varying, p_valor_anterior text, p_valor_nuevo text, p_productos_afectados jsonb, p_motivo text, p_usuario_id bigint) TO service_role;
+
+
+--
+-- TOC entry 6211 (class 0 OID 0)
+-- Dependencies: 588
+-- Name: FUNCTION reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint) TO anon;
+GRANT ALL ON FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint) TO authenticated;
+GRANT ALL ON FUNCTION public.reporte_cuentas_por_pagar_periodo(p_fecha_inicio date, p_fecha_fin date, p_id_proveedor bigint) TO service_role;
+
+
+--
+-- TOC entry 6213 (class 0 OID 0)
+-- Dependencies: 598
 -- Name: FUNCTION reporte_descuentos_por_proveedor(p_id_proveedor bigint, p_fecha_desde date, p_fecha_hasta date); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18839,8 +22369,8 @@ GRANT ALL ON FUNCTION public.reporte_descuentos_por_proveedor(p_id_proveedor big
 
 
 --
--- TOC entry 5971 (class 0 OID 0)
--- Dependencies: 707
+-- TOC entry 6215 (class 0 OID 0)
+-- Dependencies: 737
 -- Name: FUNCTION sugerir_descuento_proveedor(p_id_proveedor bigint, p_id_categoria bigint); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18850,8 +22380,41 @@ GRANT ALL ON FUNCTION public.sugerir_descuento_proveedor(p_id_proveedor bigint, 
 
 
 --
--- TOC entry 5972 (class 0 OID 0)
--- Dependencies: 679
+-- TOC entry 6216 (class 0 OID 0)
+-- Dependencies: 659
+-- Name: FUNCTION trigger_generar_sku_producto(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trigger_generar_sku_producto() TO anon;
+GRANT ALL ON FUNCTION public.trigger_generar_sku_producto() TO authenticated;
+GRANT ALL ON FUNCTION public.trigger_generar_sku_producto() TO service_role;
+
+
+--
+-- TOC entry 6217 (class 0 OID 0)
+-- Dependencies: 801
+-- Name: FUNCTION trigger_historial_cotizacion(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trigger_historial_cotizacion() TO anon;
+GRANT ALL ON FUNCTION public.trigger_historial_cotizacion() TO authenticated;
+GRANT ALL ON FUNCTION public.trigger_historial_cotizacion() TO service_role;
+
+
+--
+-- TOC entry 6218 (class 0 OID 0)
+-- Dependencies: 720
+-- Name: FUNCTION trigger_historial_cotizacion_detalle(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trigger_historial_cotizacion_detalle() TO anon;
+GRANT ALL ON FUNCTION public.trigger_historial_cotizacion_detalle() TO authenticated;
+GRANT ALL ON FUNCTION public.trigger_historial_cotizacion_detalle() TO service_role;
+
+
+--
+-- TOC entry 6219 (class 0 OID 0)
+-- Dependencies: 708
 -- Name: FUNCTION update_updated_at_column(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18861,8 +22424,8 @@ GRANT ALL ON FUNCTION public.update_updated_at_column() TO service_role;
 
 
 --
--- TOC entry 5973 (class 0 OID 0)
--- Dependencies: 789
+-- TOC entry 6220 (class 0 OID 0)
+-- Dependencies: 826
 -- Name: FUNCTION validar_contacto_es_empresa(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18872,8 +22435,8 @@ GRANT ALL ON FUNCTION public.validar_contacto_es_empresa() TO service_role;
 
 
 --
--- TOC entry 5974 (class 0 OID 0)
--- Dependencies: 785
+-- TOC entry 6221 (class 0 OID 0)
+-- Dependencies: 822
 -- Name: FUNCTION validar_margen_producto(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18883,8 +22446,8 @@ GRANT ALL ON FUNCTION public.validar_margen_producto() TO service_role;
 
 
 --
--- TOC entry 5975 (class 0 OID 0)
--- Dependencies: 710
+-- TOC entry 6222 (class 0 OID 0)
+-- Dependencies: 741
 -- Name: FUNCTION verificar_producto_completo(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18894,8 +22457,8 @@ GRANT ALL ON FUNCTION public.verificar_producto_completo() TO service_role;
 
 
 --
--- TOC entry 5976 (class 0 OID 0)
--- Dependencies: 529
+-- TOC entry 6223 (class 0 OID 0)
+-- Dependencies: 547
 -- Name: FUNCTION apply_rls(wal jsonb, max_record_bytes integer); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18908,8 +22471,8 @@ GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO
 
 
 --
--- TOC entry 5977 (class 0 OID 0)
--- Dependencies: 794
+-- TOC entry 6224 (class 0 OID 0)
+-- Dependencies: 831
 -- Name: FUNCTION broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18918,8 +22481,8 @@ GRANT ALL ON FUNCTION realtime.broadcast_changes(topic_name text, event_name tex
 
 
 --
--- TOC entry 5978 (class 0 OID 0)
--- Dependencies: 638
+-- TOC entry 6225 (class 0 OID 0)
+-- Dependencies: 667
 -- Name: FUNCTION build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18932,8 +22495,8 @@ GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_n
 
 
 --
--- TOC entry 5979 (class 0 OID 0)
--- Dependencies: 759
+-- TOC entry 6226 (class 0 OID 0)
+-- Dependencies: 793
 -- Name: FUNCTION "cast"(val text, type_ regtype); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18946,8 +22509,8 @@ GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO supabase_realt
 
 
 --
--- TOC entry 5980 (class 0 OID 0)
--- Dependencies: 581
+-- TOC entry 6227 (class 0 OID 0)
+-- Dependencies: 600
 -- Name: FUNCTION check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18960,8 +22523,8 @@ GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ 
 
 
 --
--- TOC entry 5981 (class 0 OID 0)
--- Dependencies: 597
+-- TOC entry 6228 (class 0 OID 0)
+-- Dependencies: 619
 -- Name: FUNCTION is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18974,8 +22537,8 @@ GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_c
 
 
 --
--- TOC entry 5982 (class 0 OID 0)
--- Dependencies: 576
+-- TOC entry 6229 (class 0 OID 0)
+-- Dependencies: 595
 -- Name: FUNCTION list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -18988,8 +22551,8 @@ GRANT ALL ON FUNCTION realtime.list_changes(publication name, slot_name name, ma
 
 
 --
--- TOC entry 5983 (class 0 OID 0)
--- Dependencies: 796
+-- TOC entry 6230 (class 0 OID 0)
+-- Dependencies: 833
 -- Name: FUNCTION quote_wal2json(entity regclass); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -19002,8 +22565,8 @@ GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO supabase_realt
 
 
 --
--- TOC entry 5984 (class 0 OID 0)
--- Dependencies: 591
+-- TOC entry 6231 (class 0 OID 0)
+-- Dependencies: 612
 -- Name: FUNCTION send(payload jsonb, event text, topic text, private boolean); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -19012,8 +22575,8 @@ GRANT ALL ON FUNCTION realtime.send(payload jsonb, event text, topic text, priva
 
 
 --
--- TOC entry 5985 (class 0 OID 0)
--- Dependencies: 738
+-- TOC entry 6232 (class 0 OID 0)
+-- Dependencies: 770
 -- Name: FUNCTION subscription_check_filters(); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -19026,8 +22589,8 @@ GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO supabase_realtime
 
 
 --
--- TOC entry 5986 (class 0 OID 0)
--- Dependencies: 546
+-- TOC entry 6233 (class 0 OID 0)
+-- Dependencies: 564
 -- Name: FUNCTION to_regrole(role_name text); Type: ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -19040,8 +22603,8 @@ GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO supabase_realtime_a
 
 
 --
--- TOC entry 5987 (class 0 OID 0)
--- Dependencies: 706
+-- TOC entry 6234 (class 0 OID 0)
+-- Dependencies: 736
 -- Name: FUNCTION topic(); Type: ACL; Schema: realtime; Owner: supabase_realtime_admin
 --
 
@@ -19050,8 +22613,8 @@ GRANT ALL ON FUNCTION realtime.topic() TO dashboard_user;
 
 
 --
--- TOC entry 5988 (class 0 OID 0)
--- Dependencies: 588
+-- TOC entry 6235 (class 0 OID 0)
+-- Dependencies: 609
 -- Name: FUNCTION _crypto_aead_det_decrypt(message bytea, additional bytea, key_id bigint, context bytea, nonce bytea); Type: ACL; Schema: vault; Owner: supabase_admin
 --
 
@@ -19060,8 +22623,8 @@ GRANT ALL ON FUNCTION vault._crypto_aead_det_decrypt(message bytea, additional b
 
 
 --
--- TOC entry 5989 (class 0 OID 0)
--- Dependencies: 561
+-- TOC entry 6236 (class 0 OID 0)
+-- Dependencies: 579
 -- Name: FUNCTION create_secret(new_secret text, new_name text, new_description text, new_key_id uuid); Type: ACL; Schema: vault; Owner: supabase_admin
 --
 
@@ -19070,8 +22633,8 @@ GRANT ALL ON FUNCTION vault.create_secret(new_secret text, new_name text, new_de
 
 
 --
--- TOC entry 5990 (class 0 OID 0)
--- Dependencies: 673
+-- TOC entry 6237 (class 0 OID 0)
+-- Dependencies: 702
 -- Name: FUNCTION update_secret(secret_id uuid, new_secret text, new_name text, new_description text, new_key_id uuid); Type: ACL; Schema: vault; Owner: supabase_admin
 --
 
@@ -19080,7 +22643,7 @@ GRANT ALL ON FUNCTION vault.update_secret(secret_id uuid, new_secret text, new_n
 
 
 --
--- TOC entry 5992 (class 0 OID 0)
+-- TOC entry 6239 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: TABLE audit_log_entries; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19091,7 +22654,7 @@ GRANT SELECT ON TABLE auth.audit_log_entries TO postgres WITH GRANT OPTION;
 
 
 --
--- TOC entry 5994 (class 0 OID 0)
+-- TOC entry 6241 (class 0 OID 0)
 -- Dependencies: 373
 -- Name: TABLE flow_state; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19102,7 +22665,7 @@ GRANT ALL ON TABLE auth.flow_state TO dashboard_user;
 
 
 --
--- TOC entry 5997 (class 0 OID 0)
+-- TOC entry 6244 (class 0 OID 0)
 -- Dependencies: 364
 -- Name: TABLE identities; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19113,7 +22676,7 @@ GRANT ALL ON TABLE auth.identities TO dashboard_user;
 
 
 --
--- TOC entry 5999 (class 0 OID 0)
+-- TOC entry 6246 (class 0 OID 0)
 -- Dependencies: 355
 -- Name: TABLE instances; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19124,7 +22687,7 @@ GRANT SELECT ON TABLE auth.instances TO postgres WITH GRANT OPTION;
 
 
 --
--- TOC entry 6001 (class 0 OID 0)
+-- TOC entry 6248 (class 0 OID 0)
 -- Dependencies: 368
 -- Name: TABLE mfa_amr_claims; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19135,7 +22698,7 @@ GRANT ALL ON TABLE auth.mfa_amr_claims TO dashboard_user;
 
 
 --
--- TOC entry 6003 (class 0 OID 0)
+-- TOC entry 6250 (class 0 OID 0)
 -- Dependencies: 367
 -- Name: TABLE mfa_challenges; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19146,7 +22709,7 @@ GRANT ALL ON TABLE auth.mfa_challenges TO dashboard_user;
 
 
 --
--- TOC entry 6005 (class 0 OID 0)
+-- TOC entry 6253 (class 0 OID 0)
 -- Dependencies: 366
 -- Name: TABLE mfa_factors; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19157,7 +22720,7 @@ GRANT ALL ON TABLE auth.mfa_factors TO dashboard_user;
 
 
 --
--- TOC entry 6006 (class 0 OID 0)
+-- TOC entry 6254 (class 0 OID 0)
 -- Dependencies: 515
 -- Name: TABLE oauth_authorizations; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19167,7 +22730,7 @@ GRANT ALL ON TABLE auth.oauth_authorizations TO dashboard_user;
 
 
 --
--- TOC entry 6007 (class 0 OID 0)
+-- TOC entry 6255 (class 0 OID 0)
 -- Dependencies: 495
 -- Name: TABLE oauth_clients; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19177,7 +22740,7 @@ GRANT ALL ON TABLE auth.oauth_clients TO dashboard_user;
 
 
 --
--- TOC entry 6008 (class 0 OID 0)
+-- TOC entry 6256 (class 0 OID 0)
 -- Dependencies: 516
 -- Name: TABLE oauth_consents; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19187,7 +22750,7 @@ GRANT ALL ON TABLE auth.oauth_consents TO dashboard_user;
 
 
 --
--- TOC entry 6009 (class 0 OID 0)
+-- TOC entry 6257 (class 0 OID 0)
 -- Dependencies: 374
 -- Name: TABLE one_time_tokens; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19198,7 +22761,7 @@ GRANT ALL ON TABLE auth.one_time_tokens TO dashboard_user;
 
 
 --
--- TOC entry 6011 (class 0 OID 0)
+-- TOC entry 6259 (class 0 OID 0)
 -- Dependencies: 354
 -- Name: TABLE refresh_tokens; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19209,7 +22772,7 @@ GRANT SELECT ON TABLE auth.refresh_tokens TO postgres WITH GRANT OPTION;
 
 
 --
--- TOC entry 6013 (class 0 OID 0)
+-- TOC entry 6261 (class 0 OID 0)
 -- Dependencies: 353
 -- Name: SEQUENCE refresh_tokens_id_seq; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19219,7 +22782,7 @@ GRANT ALL ON SEQUENCE auth.refresh_tokens_id_seq TO postgres;
 
 
 --
--- TOC entry 6015 (class 0 OID 0)
+-- TOC entry 6263 (class 0 OID 0)
 -- Dependencies: 371
 -- Name: TABLE saml_providers; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19230,7 +22793,7 @@ GRANT ALL ON TABLE auth.saml_providers TO dashboard_user;
 
 
 --
--- TOC entry 6017 (class 0 OID 0)
+-- TOC entry 6265 (class 0 OID 0)
 -- Dependencies: 372
 -- Name: TABLE saml_relay_states; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19241,7 +22804,7 @@ GRANT ALL ON TABLE auth.saml_relay_states TO dashboard_user;
 
 
 --
--- TOC entry 6021 (class 0 OID 0)
+-- TOC entry 6271 (class 0 OID 0)
 -- Dependencies: 365
 -- Name: TABLE sessions; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19252,7 +22815,7 @@ GRANT ALL ON TABLE auth.sessions TO dashboard_user;
 
 
 --
--- TOC entry 6023 (class 0 OID 0)
+-- TOC entry 6273 (class 0 OID 0)
 -- Dependencies: 370
 -- Name: TABLE sso_domains; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19263,7 +22826,7 @@ GRANT ALL ON TABLE auth.sso_domains TO dashboard_user;
 
 
 --
--- TOC entry 6026 (class 0 OID 0)
+-- TOC entry 6276 (class 0 OID 0)
 -- Dependencies: 369
 -- Name: TABLE sso_providers; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19274,7 +22837,7 @@ GRANT ALL ON TABLE auth.sso_providers TO dashboard_user;
 
 
 --
--- TOC entry 6029 (class 0 OID 0)
+-- TOC entry 6279 (class 0 OID 0)
 -- Dependencies: 352
 -- Name: TABLE users; Type: ACL; Schema: auth; Owner: supabase_auth_admin
 --
@@ -19285,7 +22848,7 @@ GRANT SELECT ON TABLE auth.users TO postgres WITH GRANT OPTION;
 
 
 --
--- TOC entry 6030 (class 0 OID 0)
+-- TOC entry 6280 (class 0 OID 0)
 -- Dependencies: 351
 -- Name: TABLE pg_stat_statements; Type: ACL; Schema: extensions; Owner: postgres
 --
@@ -19296,7 +22859,7 @@ GRANT ALL ON TABLE extensions.pg_stat_statements TO dashboard_user;
 
 
 --
--- TOC entry 6031 (class 0 OID 0)
+-- TOC entry 6281 (class 0 OID 0)
 -- Dependencies: 350
 -- Name: TABLE pg_stat_statements_info; Type: ACL; Schema: extensions; Owner: postgres
 --
@@ -19307,7 +22870,7 @@ GRANT ALL ON TABLE extensions.pg_stat_statements_info TO dashboard_user;
 
 
 --
--- TOC entry 6032 (class 0 OID 0)
+-- TOC entry 6282 (class 0 OID 0)
 -- Dependencies: 481
 -- Name: TABLE carrito_compra; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19318,7 +22881,7 @@ GRANT ALL ON TABLE public.carrito_compra TO service_role;
 
 
 --
--- TOC entry 6034 (class 0 OID 0)
+-- TOC entry 6284 (class 0 OID 0)
 -- Dependencies: 480
 -- Name: SEQUENCE carrito_compra_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19329,7 +22892,7 @@ GRANT ALL ON SEQUENCE public.carrito_compra_id_seq TO service_role;
 
 
 --
--- TOC entry 6035 (class 0 OID 0)
+-- TOC entry 6285 (class 0 OID 0)
 -- Dependencies: 408
 -- Name: TABLE categoria; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19340,7 +22903,7 @@ GRANT ALL ON TABLE public.categoria TO service_role;
 
 
 --
--- TOC entry 6037 (class 0 OID 0)
+-- TOC entry 6287 (class 0 OID 0)
 -- Dependencies: 407
 -- Name: SEQUENCE categoria_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19351,7 +22914,7 @@ GRANT ALL ON SEQUENCE public.categoria_id_seq TO service_role;
 
 
 --
--- TOC entry 6038 (class 0 OID 0)
+-- TOC entry 6288 (class 0 OID 0)
 -- Dependencies: 390
 -- Name: TABLE ciudad; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19362,7 +22925,7 @@ GRANT ALL ON TABLE public.ciudad TO service_role;
 
 
 --
--- TOC entry 6040 (class 0 OID 0)
+-- TOC entry 6290 (class 0 OID 0)
 -- Dependencies: 389
 -- Name: SEQUENCE ciudad_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19373,7 +22936,7 @@ GRANT ALL ON SEQUENCE public.ciudad_id_seq TO service_role;
 
 
 --
--- TOC entry 6046 (class 0 OID 0)
+-- TOC entry 6300 (class 0 OID 0)
 -- Dependencies: 419
 -- Name: TABLE cliente; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19384,7 +22947,7 @@ GRANT ALL ON TABLE public.cliente TO service_role;
 
 
 --
--- TOC entry 6048 (class 0 OID 0)
+-- TOC entry 6302 (class 0 OID 0)
 -- Dependencies: 418
 -- Name: SEQUENCE cliente_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19395,7 +22958,7 @@ GRANT ALL ON SEQUENCE public.cliente_id_seq TO service_role;
 
 
 --
--- TOC entry 6049 (class 0 OID 0)
+-- TOC entry 6303 (class 0 OID 0)
 -- Dependencies: 425
 -- Name: TABLE recogedores; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19406,7 +22969,7 @@ GRANT ALL ON TABLE public.recogedores TO service_role;
 
 
 --
--- TOC entry 6050 (class 0 OID 0)
+-- TOC entry 6304 (class 0 OID 0)
 -- Dependencies: 412
 -- Name: TABLE vehicle_types; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19417,7 +22980,7 @@ GRANT ALL ON TABLE public.vehicle_types TO service_role;
 
 
 --
--- TOC entry 6051 (class 0 OID 0)
+-- TOC entry 6305 (class 0 OID 0)
 -- Dependencies: 488
 -- Name: TABLE collector_details; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19428,7 +22991,7 @@ GRANT ALL ON TABLE public.collector_details TO service_role;
 
 
 --
--- TOC entry 6052 (class 0 OID 0)
+-- TOC entry 6306 (class 0 OID 0)
 -- Dependencies: 448
 -- Name: TABLE comunicacion_solicitud; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19439,7 +23002,7 @@ GRANT ALL ON TABLE public.comunicacion_solicitud TO service_role;
 
 
 --
--- TOC entry 6054 (class 0 OID 0)
+-- TOC entry 6308 (class 0 OID 0)
 -- Dependencies: 447
 -- Name: SEQUENCE comunicacion_solicitud_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19450,7 +23013,7 @@ GRANT ALL ON SEQUENCE public.comunicacion_solicitud_id_seq TO service_role;
 
 
 --
--- TOC entry 6055 (class 0 OID 0)
+-- TOC entry 6309 (class 0 OID 0)
 -- Dependencies: 404
 -- Name: TABLE condiciones_comerciales; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19461,7 +23024,7 @@ GRANT ALL ON TABLE public.condiciones_comerciales TO service_role;
 
 
 --
--- TOC entry 6057 (class 0 OID 0)
+-- TOC entry 6311 (class 0 OID 0)
 -- Dependencies: 403
 -- Name: SEQUENCE condiciones_comerciales_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19472,7 +23035,7 @@ GRANT ALL ON SEQUENCE public.condiciones_comerciales_id_seq TO service_role;
 
 
 --
--- TOC entry 6058 (class 0 OID 0)
+-- TOC entry 6312 (class 0 OID 0)
 -- Dependencies: 427
 -- Name: TABLE configuracion_archivos; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19483,7 +23046,7 @@ GRANT ALL ON TABLE public.configuracion_archivos TO service_role;
 
 
 --
--- TOC entry 6059 (class 0 OID 0)
+-- TOC entry 6313 (class 0 OID 0)
 -- Dependencies: 429
 -- Name: TABLE configuracion_fe; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19494,7 +23057,7 @@ GRANT ALL ON TABLE public.configuracion_fe TO service_role;
 
 
 --
--- TOC entry 6061 (class 0 OID 0)
+-- TOC entry 6315 (class 0 OID 0)
 -- Dependencies: 428
 -- Name: SEQUENCE configuracion_fe_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19505,7 +23068,7 @@ GRANT ALL ON SEQUENCE public.configuracion_fe_id_seq TO service_role;
 
 
 --
--- TOC entry 6062 (class 0 OID 0)
+-- TOC entry 6316 (class 0 OID 0)
 -- Dependencies: 426
 -- Name: TABLE configuracion_sistema; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19516,7 +23079,7 @@ GRANT ALL ON TABLE public.configuracion_sistema TO service_role;
 
 
 --
--- TOC entry 6066 (class 0 OID 0)
+-- TOC entry 6320 (class 0 OID 0)
 -- Dependencies: 518
 -- Name: TABLE contacto_empresa; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19527,7 +23090,7 @@ GRANT ALL ON TABLE public.contacto_empresa TO service_role;
 
 
 --
--- TOC entry 6068 (class 0 OID 0)
+-- TOC entry 6322 (class 0 OID 0)
 -- Dependencies: 517
 -- Name: SEQUENCE contacto_empresa_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19538,7 +23101,7 @@ GRANT ALL ON SEQUENCE public.contacto_empresa_id_seq TO service_role;
 
 
 --
--- TOC entry 6071 (class 0 OID 0)
+-- TOC entry 6325 (class 0 OID 0)
 -- Dependencies: 522
 -- Name: TABLE contacto_rol; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19549,7 +23112,7 @@ GRANT ALL ON TABLE public.contacto_rol TO service_role;
 
 
 --
--- TOC entry 6073 (class 0 OID 0)
+-- TOC entry 6327 (class 0 OID 0)
 -- Dependencies: 521
 -- Name: SEQUENCE contacto_rol_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19560,7 +23123,7 @@ GRANT ALL ON SEQUENCE public.contacto_rol_id_seq TO service_role;
 
 
 --
--- TOC entry 6074 (class 0 OID 0)
+-- TOC entry 6328 (class 0 OID 0)
 -- Dependencies: 485
 -- Name: TABLE costos_operativos; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19571,7 +23134,7 @@ GRANT ALL ON TABLE public.costos_operativos TO service_role;
 
 
 --
--- TOC entry 6076 (class 0 OID 0)
+-- TOC entry 6330 (class 0 OID 0)
 -- Dependencies: 484
 -- Name: SEQUENCE costos_operativos_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19582,7 +23145,7 @@ GRANT ALL ON SEQUENCE public.costos_operativos_id_seq TO service_role;
 
 
 --
--- TOC entry 6079 (class 0 OID 0)
+-- TOC entry 6333 (class 0 OID 0)
 -- Dependencies: 461
 -- Name: TABLE cotizacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19593,7 +23156,7 @@ GRANT ALL ON TABLE public.cotizacion TO service_role;
 
 
 --
--- TOC entry 6080 (class 0 OID 0)
+-- TOC entry 6334 (class 0 OID 0)
 -- Dependencies: 463
 -- Name: TABLE cotizacion_detalle; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19604,7 +23167,7 @@ GRANT ALL ON TABLE public.cotizacion_detalle TO service_role;
 
 
 --
--- TOC entry 6082 (class 0 OID 0)
+-- TOC entry 6336 (class 0 OID 0)
 -- Dependencies: 462
 -- Name: SEQUENCE cotizacion_detalle_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19615,7 +23178,7 @@ GRANT ALL ON SEQUENCE public.cotizacion_detalle_id_seq TO service_role;
 
 
 --
--- TOC entry 6084 (class 0 OID 0)
+-- TOC entry 6338 (class 0 OID 0)
 -- Dependencies: 460
 -- Name: SEQUENCE cotizacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19626,7 +23189,7 @@ GRANT ALL ON SEQUENCE public.cotizacion_id_seq TO service_role;
 
 
 --
--- TOC entry 6085 (class 0 OID 0)
+-- TOC entry 6339 (class 0 OID 0)
 -- Dependencies: 457
 -- Name: TABLE crm_actividad; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19637,7 +23200,7 @@ GRANT ALL ON TABLE public.crm_actividad TO service_role;
 
 
 --
--- TOC entry 6087 (class 0 OID 0)
+-- TOC entry 6341 (class 0 OID 0)
 -- Dependencies: 456
 -- Name: SEQUENCE crm_actividad_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19648,7 +23211,7 @@ GRANT ALL ON SEQUENCE public.crm_actividad_id_seq TO service_role;
 
 
 --
--- TOC entry 6088 (class 0 OID 0)
+-- TOC entry 6342 (class 0 OID 0)
 -- Dependencies: 414
 -- Name: TABLE crm_etapa; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19659,7 +23222,7 @@ GRANT ALL ON TABLE public.crm_etapa TO service_role;
 
 
 --
--- TOC entry 6090 (class 0 OID 0)
+-- TOC entry 6344 (class 0 OID 0)
 -- Dependencies: 413
 -- Name: SEQUENCE crm_etapa_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19670,7 +23233,7 @@ GRANT ALL ON SEQUENCE public.crm_etapa_id_seq TO service_role;
 
 
 --
--- TOC entry 6091 (class 0 OID 0)
+-- TOC entry 6345 (class 0 OID 0)
 -- Dependencies: 459
 -- Name: TABLE crm_nota; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19681,7 +23244,7 @@ GRANT ALL ON TABLE public.crm_nota TO service_role;
 
 
 --
--- TOC entry 6093 (class 0 OID 0)
+-- TOC entry 6347 (class 0 OID 0)
 -- Dependencies: 458
 -- Name: SEQUENCE crm_nota_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19692,7 +23255,7 @@ GRANT ALL ON SEQUENCE public.crm_nota_id_seq TO service_role;
 
 
 --
--- TOC entry 6094 (class 0 OID 0)
+-- TOC entry 6348 (class 0 OID 0)
 -- Dependencies: 479
 -- Name: TABLE crowdlending_operacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19703,7 +23266,7 @@ GRANT ALL ON TABLE public.crowdlending_operacion TO service_role;
 
 
 --
--- TOC entry 6096 (class 0 OID 0)
+-- TOC entry 6350 (class 0 OID 0)
 -- Dependencies: 478
 -- Name: SEQUENCE crowdlending_operacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19714,7 +23277,7 @@ GRANT ALL ON SEQUENCE public.crowdlending_operacion_id_seq TO service_role;
 
 
 --
--- TOC entry 6097 (class 0 OID 0)
+-- TOC entry 6351 (class 0 OID 0)
 -- Dependencies: 473
 -- Name: TABLE cuenta_por_cobrar; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19725,7 +23288,7 @@ GRANT ALL ON TABLE public.cuenta_por_cobrar TO service_role;
 
 
 --
--- TOC entry 6099 (class 0 OID 0)
+-- TOC entry 6353 (class 0 OID 0)
 -- Dependencies: 472
 -- Name: SEQUENCE cuenta_por_cobrar_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19736,7 +23299,29 @@ GRANT ALL ON SEQUENCE public.cuenta_por_cobrar_id_seq TO service_role;
 
 
 --
--- TOC entry 6100 (class 0 OID 0)
+-- TOC entry 6355 (class 0 OID 0)
+-- Dependencies: 529
+-- Name: TABLE cuenta_por_pagar_proveedor; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.cuenta_por_pagar_proveedor TO anon;
+GRANT ALL ON TABLE public.cuenta_por_pagar_proveedor TO authenticated;
+GRANT ALL ON TABLE public.cuenta_por_pagar_proveedor TO service_role;
+
+
+--
+-- TOC entry 6357 (class 0 OID 0)
+-- Dependencies: 528
+-- Name: SEQUENCE cuenta_por_pagar_proveedor_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.cuenta_por_pagar_proveedor_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.cuenta_por_pagar_proveedor_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.cuenta_por_pagar_proveedor_id_seq TO service_role;
+
+
+--
+-- TOC entry 6358 (class 0 OID 0)
 -- Dependencies: 453
 -- Name: TABLE detalle_solicitud_cotizacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19747,7 +23332,7 @@ GRANT ALL ON TABLE public.detalle_solicitud_cotizacion TO service_role;
 
 
 --
--- TOC entry 6102 (class 0 OID 0)
+-- TOC entry 6360 (class 0 OID 0)
 -- Dependencies: 452
 -- Name: SEQUENCE detalle_solicitud_cotizacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19758,7 +23343,7 @@ GRANT ALL ON SEQUENCE public.detalle_solicitud_cotizacion_id_seq TO service_role
 
 
 --
--- TOC entry 6106 (class 0 OID 0)
+-- TOC entry 6364 (class 0 OID 0)
 -- Dependencies: 444
 -- Name: TABLE direccion_cliente; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19769,7 +23354,7 @@ GRANT ALL ON TABLE public.direccion_cliente TO service_role;
 
 
 --
--- TOC entry 6108 (class 0 OID 0)
+-- TOC entry 6366 (class 0 OID 0)
 -- Dependencies: 443
 -- Name: SEQUENCE direccion_cliente_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19780,7 +23365,7 @@ GRANT ALL ON SEQUENCE public.direccion_cliente_id_seq TO service_role;
 
 
 --
--- TOC entry 6109 (class 0 OID 0)
+-- TOC entry 6367 (class 0 OID 0)
 -- Dependencies: 398
 -- Name: TABLE disponibilidad; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19791,7 +23376,7 @@ GRANT ALL ON TABLE public.disponibilidad TO service_role;
 
 
 --
--- TOC entry 6111 (class 0 OID 0)
+-- TOC entry 6369 (class 0 OID 0)
 -- Dependencies: 397
 -- Name: SEQUENCE disponibilidad_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19802,7 +23387,7 @@ GRANT ALL ON SEQUENCE public.disponibilidad_id_seq TO service_role;
 
 
 --
--- TOC entry 6112 (class 0 OID 0)
+-- TOC entry 6370 (class 0 OID 0)
 -- Dependencies: 392
 -- Name: TABLE distrito; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19813,7 +23398,7 @@ GRANT ALL ON TABLE public.distrito TO service_role;
 
 
 --
--- TOC entry 6113 (class 0 OID 0)
+-- TOC entry 6371 (class 0 OID 0)
 -- Dependencies: 391
 -- Name: SEQUENCE distrito_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19824,7 +23409,7 @@ GRANT ALL ON SEQUENCE public.distrito_id_seq TO service_role;
 
 
 --
--- TOC entry 6114 (class 0 OID 0)
+-- TOC entry 6372 (class 0 OID 0)
 -- Dependencies: 421
 -- Name: TABLE empresa_emisora; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19835,7 +23420,7 @@ GRANT ALL ON TABLE public.empresa_emisora TO service_role;
 
 
 --
--- TOC entry 6116 (class 0 OID 0)
+-- TOC entry 6374 (class 0 OID 0)
 -- Dependencies: 420
 -- Name: SEQUENCE empresa_emisora_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19846,7 +23431,7 @@ GRANT ALL ON SEQUENCE public.empresa_emisora_id_seq TO service_role;
 
 
 --
--- TOC entry 6117 (class 0 OID 0)
+-- TOC entry 6375 (class 0 OID 0)
 -- Dependencies: 497
 -- Name: TABLE estado_cotizacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19857,7 +23442,7 @@ GRANT ALL ON TABLE public.estado_cotizacion TO service_role;
 
 
 --
--- TOC entry 6119 (class 0 OID 0)
+-- TOC entry 6377 (class 0 OID 0)
 -- Dependencies: 496
 -- Name: SEQUENCE estado_cotizacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19868,7 +23453,7 @@ GRANT ALL ON SEQUENCE public.estado_cotizacion_id_seq TO service_role;
 
 
 --
--- TOC entry 6120 (class 0 OID 0)
+-- TOC entry 6378 (class 0 OID 0)
 -- Dependencies: 477
 -- Name: TABLE factoring_operacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19879,7 +23464,7 @@ GRANT ALL ON TABLE public.factoring_operacion TO service_role;
 
 
 --
--- TOC entry 6122 (class 0 OID 0)
+-- TOC entry 6380 (class 0 OID 0)
 -- Dependencies: 476
 -- Name: SEQUENCE factoring_operacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19890,7 +23475,7 @@ GRANT ALL ON SEQUENCE public.factoring_operacion_id_seq TO service_role;
 
 
 --
--- TOC entry 6123 (class 0 OID 0)
+-- TOC entry 6381 (class 0 OID 0)
 -- Dependencies: 469
 -- Name: TABLE factura; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19901,7 +23486,7 @@ GRANT ALL ON TABLE public.factura TO service_role;
 
 
 --
--- TOC entry 6124 (class 0 OID 0)
+-- TOC entry 6382 (class 0 OID 0)
 -- Dependencies: 471
 -- Name: TABLE factura_detalle; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19912,7 +23497,7 @@ GRANT ALL ON TABLE public.factura_detalle TO service_role;
 
 
 --
--- TOC entry 6126 (class 0 OID 0)
+-- TOC entry 6384 (class 0 OID 0)
 -- Dependencies: 470
 -- Name: SEQUENCE factura_detalle_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19923,7 +23508,7 @@ GRANT ALL ON SEQUENCE public.factura_detalle_id_seq TO service_role;
 
 
 --
--- TOC entry 6128 (class 0 OID 0)
+-- TOC entry 6386 (class 0 OID 0)
 -- Dependencies: 468
 -- Name: SEQUENCE factura_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19934,7 +23519,7 @@ GRANT ALL ON SEQUENCE public.factura_id_seq TO service_role;
 
 
 --
--- TOC entry 6129 (class 0 OID 0)
+-- TOC entry 6387 (class 0 OID 0)
 -- Dependencies: 402
 -- Name: TABLE forma_pago; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19945,7 +23530,7 @@ GRANT ALL ON TABLE public.forma_pago TO service_role;
 
 
 --
--- TOC entry 6131 (class 0 OID 0)
+-- TOC entry 6389 (class 0 OID 0)
 -- Dependencies: 401
 -- Name: SEQUENCE forma_pago_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19956,7 +23541,29 @@ GRANT ALL ON SEQUENCE public.forma_pago_id_seq TO service_role;
 
 
 --
--- TOC entry 6132 (class 0 OID 0)
+-- TOC entry 6393 (class 0 OID 0)
+-- Dependencies: 542
+-- Name: TABLE historial_cotizacion; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.historial_cotizacion TO anon;
+GRANT ALL ON TABLE public.historial_cotizacion TO authenticated;
+GRANT ALL ON TABLE public.historial_cotizacion TO service_role;
+
+
+--
+-- TOC entry 6395 (class 0 OID 0)
+-- Dependencies: 541
+-- Name: SEQUENCE historial_cotizacion_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.historial_cotizacion_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.historial_cotizacion_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.historial_cotizacion_id_seq TO service_role;
+
+
+--
+-- TOC entry 6396 (class 0 OID 0)
 -- Dependencies: 483
 -- Name: TABLE historial_precios; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19967,7 +23574,7 @@ GRANT ALL ON TABLE public.historial_precios TO service_role;
 
 
 --
--- TOC entry 6134 (class 0 OID 0)
+-- TOC entry 6398 (class 0 OID 0)
 -- Dependencies: 482
 -- Name: SEQUENCE historial_precios_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19978,7 +23585,7 @@ GRANT ALL ON SEQUENCE public.historial_precios_id_seq TO service_role;
 
 
 --
--- TOC entry 6135 (class 0 OID 0)
+-- TOC entry 6399 (class 0 OID 0)
 -- Dependencies: 487
 -- Name: TABLE inversion_categoria; Type: ACL; Schema: public; Owner: postgres
 --
@@ -19989,7 +23596,7 @@ GRANT ALL ON TABLE public.inversion_categoria TO service_role;
 
 
 --
--- TOC entry 6137 (class 0 OID 0)
+-- TOC entry 6401 (class 0 OID 0)
 -- Dependencies: 486
 -- Name: SEQUENCE inversion_categoria_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20000,7 +23607,7 @@ GRANT ALL ON SEQUENCE public.inversion_categoria_id_seq TO service_role;
 
 
 --
--- TOC entry 6138 (class 0 OID 0)
+-- TOC entry 6402 (class 0 OID 0)
 -- Dependencies: 410
 -- Name: TABLE marca; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20011,7 +23618,7 @@ GRANT ALL ON TABLE public.marca TO service_role;
 
 
 --
--- TOC entry 6139 (class 0 OID 0)
+-- TOC entry 6403 (class 0 OID 0)
 -- Dependencies: 430
 -- Name: TABLE marca_categoria; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20022,7 +23629,7 @@ GRANT ALL ON TABLE public.marca_categoria TO service_role;
 
 
 --
--- TOC entry 6141 (class 0 OID 0)
+-- TOC entry 6405 (class 0 OID 0)
 -- Dependencies: 409
 -- Name: SEQUENCE marca_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20033,7 +23640,7 @@ GRANT ALL ON SEQUENCE public.marca_id_seq TO service_role;
 
 
 --
--- TOC entry 6142 (class 0 OID 0)
+-- TOC entry 6406 (class 0 OID 0)
 -- Dependencies: 386
 -- Name: TABLE moneda; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20044,7 +23651,7 @@ GRANT ALL ON TABLE public.moneda TO service_role;
 
 
 --
--- TOC entry 6144 (class 0 OID 0)
+-- TOC entry 6408 (class 0 OID 0)
 -- Dependencies: 385
 -- Name: SEQUENCE moneda_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20055,8 +23662,8 @@ GRANT ALL ON SEQUENCE public.moneda_id_seq TO service_role;
 
 
 --
--- TOC entry 6148 (class 0 OID 0)
--- Dependencies: 527
+-- TOC entry 6412 (class 0 OID 0)
+-- Dependencies: 525
 -- Name: TABLE notificaciones; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20066,8 +23673,8 @@ GRANT ALL ON TABLE public.notificaciones TO service_role;
 
 
 --
--- TOC entry 6150 (class 0 OID 0)
--- Dependencies: 526
+-- TOC entry 6414 (class 0 OID 0)
+-- Dependencies: 524
 -- Name: SEQUENCE notificaciones_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20077,7 +23684,7 @@ GRANT ALL ON SEQUENCE public.notificaciones_id_seq TO service_role;
 
 
 --
--- TOC entry 6151 (class 0 OID 0)
+-- TOC entry 6415 (class 0 OID 0)
 -- Dependencies: 455
 -- Name: TABLE oportunidad; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20088,7 +23695,7 @@ GRANT ALL ON TABLE public.oportunidad TO service_role;
 
 
 --
--- TOC entry 6153 (class 0 OID 0)
+-- TOC entry 6417 (class 0 OID 0)
 -- Dependencies: 454
 -- Name: SEQUENCE oportunidad_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20099,7 +23706,29 @@ GRANT ALL ON SEQUENCE public.oportunidad_id_seq TO service_role;
 
 
 --
--- TOC entry 6154 (class 0 OID 0)
+-- TOC entry 6419 (class 0 OID 0)
+-- Dependencies: 531
+-- Name: TABLE pago_proveedor; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.pago_proveedor TO anon;
+GRANT ALL ON TABLE public.pago_proveedor TO authenticated;
+GRANT ALL ON TABLE public.pago_proveedor TO service_role;
+
+
+--
+-- TOC entry 6421 (class 0 OID 0)
+-- Dependencies: 530
+-- Name: SEQUENCE pago_proveedor_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.pago_proveedor_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.pago_proveedor_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.pago_proveedor_id_seq TO service_role;
+
+
+--
+-- TOC entry 6422 (class 0 OID 0)
 -- Dependencies: 475
 -- Name: TABLE pago_recibido; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20110,7 +23739,7 @@ GRANT ALL ON TABLE public.pago_recibido TO service_role;
 
 
 --
--- TOC entry 6156 (class 0 OID 0)
+-- TOC entry 6424 (class 0 OID 0)
 -- Dependencies: 474
 -- Name: SEQUENCE pago_recibido_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20121,7 +23750,7 @@ GRANT ALL ON SEQUENCE public.pago_recibido_id_seq TO service_role;
 
 
 --
--- TOC entry 6157 (class 0 OID 0)
+-- TOC entry 6425 (class 0 OID 0)
 -- Dependencies: 388
 -- Name: TABLE pais; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20132,7 +23761,7 @@ GRANT ALL ON TABLE public.pais TO service_role;
 
 
 --
--- TOC entry 6159 (class 0 OID 0)
+-- TOC entry 6427 (class 0 OID 0)
 -- Dependencies: 387
 -- Name: SEQUENCE pais_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20143,7 +23772,7 @@ GRANT ALL ON SEQUENCE public.pais_id_seq TO service_role;
 
 
 --
--- TOC entry 6160 (class 0 OID 0)
+-- TOC entry 6428 (class 0 OID 0)
 -- Dependencies: 465
 -- Name: TABLE pedido; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20154,7 +23783,7 @@ GRANT ALL ON TABLE public.pedido TO service_role;
 
 
 --
--- TOC entry 6161 (class 0 OID 0)
+-- TOC entry 6429 (class 0 OID 0)
 -- Dependencies: 467
 -- Name: TABLE pedido_detalle; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20165,7 +23794,7 @@ GRANT ALL ON TABLE public.pedido_detalle TO service_role;
 
 
 --
--- TOC entry 6163 (class 0 OID 0)
+-- TOC entry 6431 (class 0 OID 0)
 -- Dependencies: 466
 -- Name: SEQUENCE pedido_detalle_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20176,7 +23805,7 @@ GRANT ALL ON SEQUENCE public.pedido_detalle_id_seq TO service_role;
 
 
 --
--- TOC entry 6165 (class 0 OID 0)
+-- TOC entry 6433 (class 0 OID 0)
 -- Dependencies: 464
 -- Name: SEQUENCE pedido_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20187,7 +23816,7 @@ GRANT ALL ON SEQUENCE public.pedido_id_seq TO service_role;
 
 
 --
--- TOC entry 6166 (class 0 OID 0)
+-- TOC entry 6434 (class 0 OID 0)
 -- Dependencies: 451
 -- Name: TABLE procesamiento_archivo_log; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20198,7 +23827,7 @@ GRANT ALL ON TABLE public.procesamiento_archivo_log TO service_role;
 
 
 --
--- TOC entry 6168 (class 0 OID 0)
+-- TOC entry 6436 (class 0 OID 0)
 -- Dependencies: 450
 -- Name: SEQUENCE procesamiento_archivo_log_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20209,7 +23838,7 @@ GRANT ALL ON SEQUENCE public.procesamiento_archivo_log_id_seq TO service_role;
 
 
 --
--- TOC entry 6174 (class 0 OID 0)
+-- TOC entry 6445 (class 0 OID 0)
 -- Dependencies: 434
 -- Name: TABLE producto; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20220,7 +23849,7 @@ GRANT ALL ON TABLE public.producto TO service_role;
 
 
 --
--- TOC entry 6177 (class 0 OID 0)
+-- TOC entry 6450 (class 0 OID 0)
 -- Dependencies: 514
 -- Name: TABLE producto_precio_moneda; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20231,7 +23860,7 @@ GRANT ALL ON TABLE public.producto_precio_moneda TO service_role;
 
 
 --
--- TOC entry 6179 (class 0 OID 0)
+-- TOC entry 6452 (class 0 OID 0)
 -- Dependencies: 513
 -- Name: SEQUENCE producto_precio_moneda_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20242,7 +23871,7 @@ GRANT ALL ON SEQUENCE public.producto_precio_moneda_id_seq TO service_role;
 
 
 --
--- TOC entry 6187 (class 0 OID 0)
+-- TOC entry 6461 (class 0 OID 0)
 -- Dependencies: 436
 -- Name: TABLE producto_proveedor; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20253,7 +23882,7 @@ GRANT ALL ON TABLE public.producto_proveedor TO service_role;
 
 
 --
--- TOC entry 6189 (class 0 OID 0)
+-- TOC entry 6463 (class 0 OID 0)
 -- Dependencies: 435
 -- Name: SEQUENCE producto_proveedor_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20264,7 +23893,7 @@ GRANT ALL ON SEQUENCE public.producto_proveedor_id_seq TO service_role;
 
 
 --
--- TOC entry 6191 (class 0 OID 0)
+-- TOC entry 6465 (class 0 OID 0)
 -- Dependencies: 433
 -- Name: SEQUENCE producto_sku_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20275,7 +23904,7 @@ GRANT ALL ON SEQUENCE public.producto_sku_seq TO service_role;
 
 
 --
--- TOC entry 6192 (class 0 OID 0)
+-- TOC entry 6466 (class 0 OID 0)
 -- Dependencies: 438
 -- Name: TABLE promocion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20286,7 +23915,7 @@ GRANT ALL ON TABLE public.promocion TO service_role;
 
 
 --
--- TOC entry 6193 (class 0 OID 0)
+-- TOC entry 6468 (class 0 OID 0)
 -- Dependencies: 440
 -- Name: TABLE promocion_descuento; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20297,7 +23926,7 @@ GRANT ALL ON TABLE public.promocion_descuento TO service_role;
 
 
 --
--- TOC entry 6195 (class 0 OID 0)
+-- TOC entry 6470 (class 0 OID 0)
 -- Dependencies: 439
 -- Name: SEQUENCE promocion_descuento_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20308,7 +23937,7 @@ GRANT ALL ON SEQUENCE public.promocion_descuento_id_seq TO service_role;
 
 
 --
--- TOC entry 6197 (class 0 OID 0)
+-- TOC entry 6472 (class 0 OID 0)
 -- Dependencies: 437
 -- Name: SEQUENCE promocion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20319,7 +23948,7 @@ GRANT ALL ON SEQUENCE public.promocion_id_seq TO service_role;
 
 
 --
--- TOC entry 6198 (class 0 OID 0)
+-- TOC entry 6473 (class 0 OID 0)
 -- Dependencies: 442
 -- Name: TABLE promocion_uso; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20330,7 +23959,7 @@ GRANT ALL ON TABLE public.promocion_uso TO service_role;
 
 
 --
--- TOC entry 6200 (class 0 OID 0)
+-- TOC entry 6475 (class 0 OID 0)
 -- Dependencies: 441
 -- Name: SEQUENCE promocion_uso_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20341,7 +23970,7 @@ GRANT ALL ON SEQUENCE public.promocion_uso_id_seq TO service_role;
 
 
 --
--- TOC entry 6202 (class 0 OID 0)
+-- TOC entry 6480 (class 0 OID 0)
 -- Dependencies: 423
 -- Name: TABLE proveedor; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20352,7 +23981,7 @@ GRANT ALL ON TABLE public.proveedor TO service_role;
 
 
 --
--- TOC entry 6203 (class 0 OID 0)
+-- TOC entry 6481 (class 0 OID 0)
 -- Dependencies: 432
 -- Name: TABLE proveedor_categoria; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20363,7 +23992,7 @@ GRANT ALL ON TABLE public.proveedor_categoria TO service_role;
 
 
 --
--- TOC entry 6205 (class 0 OID 0)
+-- TOC entry 6483 (class 0 OID 0)
 -- Dependencies: 422
 -- Name: SEQUENCE proveedor_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20374,7 +24003,7 @@ GRANT ALL ON SEQUENCE public.proveedor_id_seq TO service_role;
 
 
 --
--- TOC entry 6206 (class 0 OID 0)
+-- TOC entry 6484 (class 0 OID 0)
 -- Dependencies: 431
 -- Name: TABLE proveedor_marca; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20385,7 +24014,29 @@ GRANT ALL ON TABLE public.proveedor_marca TO service_role;
 
 
 --
--- TOC entry 6207 (class 0 OID 0)
+-- TOC entry 6485 (class 0 OID 0)
+-- Dependencies: 526
+-- Name: TABLE provincia; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.provincia TO anon;
+GRANT ALL ON TABLE public.provincia TO authenticated;
+GRANT ALL ON TABLE public.provincia TO service_role;
+
+
+--
+-- TOC entry 6486 (class 0 OID 0)
+-- Dependencies: 527
+-- Name: SEQUENCE provincia_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.provincia_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.provincia_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.provincia_id_seq TO service_role;
+
+
+--
+-- TOC entry 6487 (class 0 OID 0)
 -- Dependencies: 424
 -- Name: SEQUENCE recogedores_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20396,7 +24047,7 @@ GRANT ALL ON SEQUENCE public.recogedores_id_seq TO service_role;
 
 
 --
--- TOC entry 6208 (class 0 OID 0)
+-- TOC entry 6488 (class 0 OID 0)
 -- Dependencies: 394
 -- Name: TABLE rol; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20407,7 +24058,7 @@ GRANT ALL ON TABLE public.rol TO service_role;
 
 
 --
--- TOC entry 6210 (class 0 OID 0)
+-- TOC entry 6490 (class 0 OID 0)
 -- Dependencies: 520
 -- Name: TABLE rol_compra; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20418,7 +24069,7 @@ GRANT ALL ON TABLE public.rol_compra TO service_role;
 
 
 --
--- TOC entry 6212 (class 0 OID 0)
+-- TOC entry 6492 (class 0 OID 0)
 -- Dependencies: 519
 -- Name: SEQUENCE rol_compra_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20429,7 +24080,7 @@ GRANT ALL ON SEQUENCE public.rol_compra_id_seq TO service_role;
 
 
 --
--- TOC entry 6214 (class 0 OID 0)
+-- TOC entry 6494 (class 0 OID 0)
 -- Dependencies: 393
 -- Name: SEQUENCE rol_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20440,7 +24091,7 @@ GRANT ALL ON SEQUENCE public.rol_id_seq TO service_role;
 
 
 --
--- TOC entry 6215 (class 0 OID 0)
+-- TOC entry 6495 (class 0 OID 0)
 -- Dependencies: 406
 -- Name: TABLE rubro; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20451,7 +24102,7 @@ GRANT ALL ON TABLE public.rubro TO service_role;
 
 
 --
--- TOC entry 6217 (class 0 OID 0)
+-- TOC entry 6497 (class 0 OID 0)
 -- Dependencies: 405
 -- Name: SEQUENCE rubro_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20462,7 +24113,7 @@ GRANT ALL ON SEQUENCE public.rubro_id_seq TO service_role;
 
 
 --
--- TOC entry 6218 (class 0 OID 0)
+-- TOC entry 6498 (class 0 OID 0)
 -- Dependencies: 449
 -- Name: TABLE solicitud_archivo; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20473,7 +24124,7 @@ GRANT ALL ON TABLE public.solicitud_archivo TO service_role;
 
 
 --
--- TOC entry 6221 (class 0 OID 0)
+-- TOC entry 6501 (class 0 OID 0)
 -- Dependencies: 446
 -- Name: TABLE solicitud_cotizacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20484,7 +24135,7 @@ GRANT ALL ON TABLE public.solicitud_cotizacion TO service_role;
 
 
 --
--- TOC entry 6223 (class 0 OID 0)
+-- TOC entry 6503 (class 0 OID 0)
 -- Dependencies: 445
 -- Name: SEQUENCE solicitud_cotizacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20495,7 +24146,7 @@ GRANT ALL ON SEQUENCE public.solicitud_cotizacion_id_seq TO service_role;
 
 
 --
--- TOC entry 6224 (class 0 OID 0)
+-- TOC entry 6504 (class 0 OID 0)
 -- Dependencies: 396
 -- Name: TABLE tipo_cliente; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20506,7 +24157,7 @@ GRANT ALL ON TABLE public.tipo_cliente TO service_role;
 
 
 --
--- TOC entry 6225 (class 0 OID 0)
+-- TOC entry 6505 (class 0 OID 0)
 -- Dependencies: 384
 -- Name: SEQUENCE tipo_cliente_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20517,7 +24168,7 @@ GRANT ALL ON SEQUENCE public.tipo_cliente_id_seq TO service_role;
 
 
 --
--- TOC entry 6227 (class 0 OID 0)
+-- TOC entry 6507 (class 0 OID 0)
 -- Dependencies: 395
 -- Name: SEQUENCE tipo_cliente_id_seq1; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20528,7 +24179,7 @@ GRANT ALL ON SEQUENCE public.tipo_cliente_id_seq1 TO service_role;
 
 
 --
--- TOC entry 6228 (class 0 OID 0)
+-- TOC entry 6508 (class 0 OID 0)
 -- Dependencies: 499
 -- Name: TABLE tipo_contacto; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20539,7 +24190,7 @@ GRANT ALL ON TABLE public.tipo_contacto TO service_role;
 
 
 --
--- TOC entry 6230 (class 0 OID 0)
+-- TOC entry 6510 (class 0 OID 0)
 -- Dependencies: 498
 -- Name: SEQUENCE tipo_contacto_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20550,7 +24201,7 @@ GRANT ALL ON SEQUENCE public.tipo_contacto_id_seq TO service_role;
 
 
 --
--- TOC entry 6231 (class 0 OID 0)
+-- TOC entry 6511 (class 0 OID 0)
 -- Dependencies: 501
 -- Name: TABLE transicion_estado_cotizacion; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20561,7 +24212,7 @@ GRANT ALL ON TABLE public.transicion_estado_cotizacion TO service_role;
 
 
 --
--- TOC entry 6233 (class 0 OID 0)
+-- TOC entry 6513 (class 0 OID 0)
 -- Dependencies: 500
 -- Name: SEQUENCE transicion_estado_cotizacion_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20572,7 +24223,7 @@ GRANT ALL ON SEQUENCE public.transicion_estado_cotizacion_id_seq TO service_role
 
 
 --
--- TOC entry 6234 (class 0 OID 0)
+-- TOC entry 6514 (class 0 OID 0)
 -- Dependencies: 400
 -- Name: TABLE unidad; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20583,7 +24234,7 @@ GRANT ALL ON TABLE public.unidad TO service_role;
 
 
 --
--- TOC entry 6236 (class 0 OID 0)
+-- TOC entry 6516 (class 0 OID 0)
 -- Dependencies: 399
 -- Name: SEQUENCE unidad_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20594,7 +24245,7 @@ GRANT ALL ON SEQUENCE public.unidad_id_seq TO service_role;
 
 
 --
--- TOC entry 6237 (class 0 OID 0)
+-- TOC entry 6517 (class 0 OID 0)
 -- Dependencies: 415
 -- Name: TABLE usuario; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20605,7 +24256,7 @@ GRANT ALL ON TABLE public.usuario TO service_role;
 
 
 --
--- TOC entry 6238 (class 0 OID 0)
+-- TOC entry 6518 (class 0 OID 0)
 -- Dependencies: 417
 -- Name: TABLE usuario_rol; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20616,7 +24267,7 @@ GRANT ALL ON TABLE public.usuario_rol TO service_role;
 
 
 --
--- TOC entry 6240 (class 0 OID 0)
+-- TOC entry 6520 (class 0 OID 0)
 -- Dependencies: 416
 -- Name: SEQUENCE usuario_rol_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20627,7 +24278,18 @@ GRANT ALL ON SEQUENCE public.usuario_rol_id_seq TO service_role;
 
 
 --
--- TOC entry 6241 (class 0 OID 0)
+-- TOC entry 6521 (class 0 OID 0)
+-- Dependencies: 544
+-- Name: TABLE v_actividad_cotizaciones; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_actividad_cotizaciones TO anon;
+GRANT ALL ON TABLE public.v_actividad_cotizaciones TO authenticated;
+GRANT ALL ON TABLE public.v_actividad_cotizaciones TO service_role;
+
+
+--
+-- TOC entry 6522 (class 0 OID 0)
 -- Dependencies: 504
 -- Name: TABLE v_analisis_perdidas; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20638,7 +24300,18 @@ GRANT ALL ON TABLE public.v_analisis_perdidas TO service_role;
 
 
 --
--- TOC entry 6242 (class 0 OID 0)
+-- TOC entry 6523 (class 0 OID 0)
+-- Dependencies: 545
+-- Name: TABLE v_cambios_recientes_cotizaciones; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_cambios_recientes_cotizaciones TO anon;
+GRANT ALL ON TABLE public.v_cambios_recientes_cotizaciones TO authenticated;
+GRANT ALL ON TABLE public.v_cambios_recientes_cotizaciones TO service_role;
+
+
+--
+-- TOC entry 6524 (class 0 OID 0)
 -- Dependencies: 505
 -- Name: TABLE v_ciclo_vida_cotizaciones; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20649,18 +24322,7 @@ GRANT ALL ON TABLE public.v_ciclo_vida_cotizaciones TO service_role;
 
 
 --
--- TOC entry 6243 (class 0 OID 0)
--- Dependencies: 523
--- Name: TABLE v_clientes_contactos_roles; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.v_clientes_contactos_roles TO anon;
-GRANT ALL ON TABLE public.v_clientes_contactos_roles TO authenticated;
-GRANT ALL ON TABLE public.v_clientes_contactos_roles TO service_role;
-
-
---
--- TOC entry 6244 (class 0 OID 0)
+-- TOC entry 6525 (class 0 OID 0)
 -- Dependencies: 491
 -- Name: TABLE v_cobranza_pendiente; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20671,8 +24333,19 @@ GRANT ALL ON TABLE public.v_cobranza_pendiente TO service_role;
 
 
 --
--- TOC entry 6245 (class 0 OID 0)
--- Dependencies: 524
+-- TOC entry 6527 (class 0 OID 0)
+-- Dependencies: 532
+-- Name: TABLE v_cuentas_por_pagar_resumen; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_cuentas_por_pagar_resumen TO anon;
+GRANT ALL ON TABLE public.v_cuentas_por_pagar_resumen TO authenticated;
+GRANT ALL ON TABLE public.v_cuentas_por_pagar_resumen TO service_role;
+
+
+--
+-- TOC entry 6528 (class 0 OID 0)
+-- Dependencies: 523
 -- Name: TABLE v_estadisticas_roles; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20682,7 +24355,29 @@ GRANT ALL ON TABLE public.v_estadisticas_roles TO service_role;
 
 
 --
--- TOC entry 6246 (class 0 OID 0)
+-- TOC entry 6529 (class 0 OID 0)
+-- Dependencies: 543
+-- Name: TABLE v_historial_cotizacion_completo; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_historial_cotizacion_completo TO anon;
+GRANT ALL ON TABLE public.v_historial_cotizacion_completo TO authenticated;
+GRANT ALL ON TABLE public.v_historial_cotizacion_completo TO service_role;
+
+
+--
+-- TOC entry 6531 (class 0 OID 0)
+-- Dependencies: 534
+-- Name: TABLE v_historial_pagos_proveedor; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_historial_pagos_proveedor TO anon;
+GRANT ALL ON TABLE public.v_historial_pagos_proveedor TO authenticated;
+GRANT ALL ON TABLE public.v_historial_pagos_proveedor TO service_role;
+
+
+--
+-- TOC entry 6532 (class 0 OID 0)
 -- Dependencies: 489
 -- Name: TABLE v_historial_precios_detallado; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20693,7 +24388,7 @@ GRANT ALL ON TABLE public.v_historial_precios_detallado TO service_role;
 
 
 --
--- TOC entry 6247 (class 0 OID 0)
+-- TOC entry 6533 (class 0 OID 0)
 -- Dependencies: 503
 -- Name: TABLE v_performance_asesores_embudo; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20704,7 +24399,7 @@ GRANT ALL ON TABLE public.v_performance_asesores_embudo TO service_role;
 
 
 --
--- TOC entry 6248 (class 0 OID 0)
+-- TOC entry 6534 (class 0 OID 0)
 -- Dependencies: 490
 -- Name: TABLE v_pipeline_crm; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20715,7 +24410,40 @@ GRANT ALL ON TABLE public.v_pipeline_crm TO service_role;
 
 
 --
--- TOC entry 6249 (class 0 OID 0)
+-- TOC entry 6536 (class 0 OID 0)
+-- Dependencies: 538
+-- Name: TABLE v_productos_sin_datos_comerciales; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_productos_sin_datos_comerciales TO anon;
+GRANT ALL ON TABLE public.v_productos_sin_datos_comerciales TO authenticated;
+GRANT ALL ON TABLE public.v_productos_sin_datos_comerciales TO service_role;
+
+
+--
+-- TOC entry 6538 (class 0 OID 0)
+-- Dependencies: 533
+-- Name: TABLE v_proximos_pagos_proveedores; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_proximos_pagos_proveedores TO anon;
+GRANT ALL ON TABLE public.v_proximos_pagos_proveedores TO authenticated;
+GRANT ALL ON TABLE public.v_proximos_pagos_proveedores TO service_role;
+
+
+--
+-- TOC entry 6539 (class 0 OID 0)
+-- Dependencies: 540
+-- Name: TABLE v_resumen_estado_precios; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_resumen_estado_precios TO anon;
+GRANT ALL ON TABLE public.v_resumen_estado_precios TO authenticated;
+GRANT ALL ON TABLE public.v_resumen_estado_precios TO service_role;
+
+
+--
+-- TOC entry 6540 (class 0 OID 0)
 -- Dependencies: 492
 -- Name: TABLE v_solicitudes_pendientes; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20726,7 +24454,18 @@ GRANT ALL ON TABLE public.v_solicitudes_pendientes TO service_role;
 
 
 --
--- TOC entry 6250 (class 0 OID 0)
+-- TOC entry 6541 (class 0 OID 0)
+-- Dependencies: 539
+-- Name: TABLE v_tipos_cambio_actuales; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.v_tipos_cambio_actuales TO anon;
+GRANT ALL ON TABLE public.v_tipos_cambio_actuales TO authenticated;
+GRANT ALL ON TABLE public.v_tipos_cambio_actuales TO service_role;
+
+
+--
+-- TOC entry 6542 (class 0 OID 0)
 -- Dependencies: 502
 -- Name: TABLE v_transiciones_por_estado; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20737,7 +24476,7 @@ GRANT ALL ON TABLE public.v_transiciones_por_estado TO service_role;
 
 
 --
--- TOC entry 6251 (class 0 OID 0)
+-- TOC entry 6543 (class 0 OID 0)
 -- Dependencies: 411
 -- Name: SEQUENCE vehicle_types_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -20748,8 +24487,8 @@ GRANT ALL ON SEQUENCE public.vehicle_types_id_seq TO service_role;
 
 
 --
--- TOC entry 6253 (class 0 OID 0)
--- Dependencies: 525
+-- TOC entry 6545 (class 0 OID 0)
+-- Dependencies: 535
 -- Name: TABLE vista_analisis_descuentos; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20759,7 +24498,7 @@ GRANT ALL ON TABLE public.vista_analisis_descuentos TO service_role;
 
 
 --
--- TOC entry 6254 (class 0 OID 0)
+-- TOC entry 6546 (class 0 OID 0)
 -- Dependencies: 383
 -- Name: TABLE messages; Type: ACL; Schema: realtime; Owner: supabase_realtime_admin
 --
@@ -20772,7 +24511,7 @@ GRANT SELECT,INSERT,UPDATE ON TABLE realtime.messages TO service_role;
 
 
 --
--- TOC entry 6255 (class 0 OID 0)
+-- TOC entry 6547 (class 0 OID 0)
 -- Dependencies: 506
 -- Name: TABLE messages_2025_09_22; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20782,7 +24521,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_22 TO dashboard_user;
 
 
 --
--- TOC entry 6256 (class 0 OID 0)
+-- TOC entry 6548 (class 0 OID 0)
 -- Dependencies: 507
 -- Name: TABLE messages_2025_09_23; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20792,7 +24531,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_23 TO dashboard_user;
 
 
 --
--- TOC entry 6257 (class 0 OID 0)
+-- TOC entry 6549 (class 0 OID 0)
 -- Dependencies: 508
 -- Name: TABLE messages_2025_09_24; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20802,7 +24541,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_24 TO dashboard_user;
 
 
 --
--- TOC entry 6258 (class 0 OID 0)
+-- TOC entry 6550 (class 0 OID 0)
 -- Dependencies: 509
 -- Name: TABLE messages_2025_09_25; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20812,7 +24551,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_25 TO dashboard_user;
 
 
 --
--- TOC entry 6259 (class 0 OID 0)
+-- TOC entry 6551 (class 0 OID 0)
 -- Dependencies: 510
 -- Name: TABLE messages_2025_09_26; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20822,7 +24561,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_26 TO dashboard_user;
 
 
 --
--- TOC entry 6260 (class 0 OID 0)
+-- TOC entry 6552 (class 0 OID 0)
 -- Dependencies: 511
 -- Name: TABLE messages_2025_09_27; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20832,7 +24571,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_27 TO dashboard_user;
 
 
 --
--- TOC entry 6261 (class 0 OID 0)
+-- TOC entry 6553 (class 0 OID 0)
 -- Dependencies: 512
 -- Name: TABLE messages_2025_09_28; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20842,7 +24581,7 @@ GRANT ALL ON TABLE realtime.messages_2025_09_28 TO dashboard_user;
 
 
 --
--- TOC entry 6262 (class 0 OID 0)
+-- TOC entry 6554 (class 0 OID 0)
 -- Dependencies: 375
 -- Name: TABLE schema_migrations; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20856,7 +24595,7 @@ GRANT ALL ON TABLE realtime.schema_migrations TO supabase_realtime_admin;
 
 
 --
--- TOC entry 6263 (class 0 OID 0)
+-- TOC entry 6555 (class 0 OID 0)
 -- Dependencies: 380
 -- Name: TABLE subscription; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20870,7 +24609,7 @@ GRANT ALL ON TABLE realtime.subscription TO supabase_realtime_admin;
 
 
 --
--- TOC entry 6264 (class 0 OID 0)
+-- TOC entry 6556 (class 0 OID 0)
 -- Dependencies: 379
 -- Name: SEQUENCE subscription_id_seq; Type: ACL; Schema: realtime; Owner: supabase_admin
 --
@@ -20884,11 +24623,13 @@ GRANT ALL ON SEQUENCE realtime.subscription_id_seq TO supabase_realtime_admin;
 
 
 --
--- TOC entry 6266 (class 0 OID 0)
+-- TOC entry 6558 (class 0 OID 0)
 -- Dependencies: 358
 -- Name: TABLE buckets; Type: ACL; Schema: storage; Owner: supabase_storage_admin
 --
 
+REVOKE ALL ON TABLE storage.buckets FROM supabase_storage_admin;
+GRANT ALL ON TABLE storage.buckets TO supabase_storage_admin WITH GRANT OPTION;
 GRANT ALL ON TABLE storage.buckets TO anon;
 GRANT ALL ON TABLE storage.buckets TO authenticated;
 GRANT ALL ON TABLE storage.buckets TO service_role;
@@ -20896,7 +24637,7 @@ GRANT ALL ON TABLE storage.buckets TO postgres WITH GRANT OPTION;
 
 
 --
--- TOC entry 6267 (class 0 OID 0)
+-- TOC entry 6559 (class 0 OID 0)
 -- Dependencies: 494
 -- Name: TABLE buckets_analytics; Type: ACL; Schema: storage; Owner: supabase_storage_admin
 --
@@ -20907,11 +24648,24 @@ GRANT ALL ON TABLE storage.buckets_analytics TO anon;
 
 
 --
--- TOC entry 6269 (class 0 OID 0)
+-- TOC entry 6560 (class 0 OID 0)
+-- Dependencies: 536
+-- Name: TABLE buckets_vectors; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT SELECT ON TABLE storage.buckets_vectors TO service_role;
+GRANT SELECT ON TABLE storage.buckets_vectors TO authenticated;
+GRANT SELECT ON TABLE storage.buckets_vectors TO anon;
+
+
+--
+-- TOC entry 6562 (class 0 OID 0)
 -- Dependencies: 359
 -- Name: TABLE objects; Type: ACL; Schema: storage; Owner: supabase_storage_admin
 --
 
+REVOKE ALL ON TABLE storage.objects FROM supabase_storage_admin;
+GRANT ALL ON TABLE storage.objects TO supabase_storage_admin WITH GRANT OPTION;
 GRANT ALL ON TABLE storage.objects TO anon;
 GRANT ALL ON TABLE storage.objects TO authenticated;
 GRANT ALL ON TABLE storage.objects TO service_role;
@@ -20919,7 +24673,7 @@ GRANT ALL ON TABLE storage.objects TO postgres WITH GRANT OPTION;
 
 
 --
--- TOC entry 6270 (class 0 OID 0)
+-- TOC entry 6563 (class 0 OID 0)
 -- Dependencies: 493
 -- Name: TABLE prefixes; Type: ACL; Schema: storage; Owner: supabase_storage_admin
 --
@@ -20930,7 +24684,7 @@ GRANT ALL ON TABLE storage.prefixes TO anon;
 
 
 --
--- TOC entry 6271 (class 0 OID 0)
+-- TOC entry 6564 (class 0 OID 0)
 -- Dependencies: 376
 -- Name: TABLE s3_multipart_uploads; Type: ACL; Schema: storage; Owner: supabase_storage_admin
 --
@@ -20941,7 +24695,7 @@ GRANT SELECT ON TABLE storage.s3_multipart_uploads TO anon;
 
 
 --
--- TOC entry 6272 (class 0 OID 0)
+-- TOC entry 6565 (class 0 OID 0)
 -- Dependencies: 377
 -- Name: TABLE s3_multipart_uploads_parts; Type: ACL; Schema: storage; Owner: supabase_storage_admin
 --
@@ -20952,7 +24706,18 @@ GRANT SELECT ON TABLE storage.s3_multipart_uploads_parts TO anon;
 
 
 --
--- TOC entry 6273 (class 0 OID 0)
+-- TOC entry 6566 (class 0 OID 0)
+-- Dependencies: 537
+-- Name: TABLE vector_indexes; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT SELECT ON TABLE storage.vector_indexes TO service_role;
+GRANT SELECT ON TABLE storage.vector_indexes TO authenticated;
+GRANT SELECT ON TABLE storage.vector_indexes TO anon;
+
+
+--
+-- TOC entry 6567 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: TABLE secrets; Type: ACL; Schema: vault; Owner: supabase_admin
 --
@@ -20962,7 +24727,7 @@ GRANT SELECT,DELETE ON TABLE vault.secrets TO service_role;
 
 
 --
--- TOC entry 6274 (class 0 OID 0)
+-- TOC entry 6568 (class 0 OID 0)
 -- Dependencies: 362
 -- Name: TABLE decrypted_secrets; Type: ACL; Schema: vault; Owner: supabase_admin
 --
@@ -20972,7 +24737,7 @@ GRANT SELECT,DELETE ON TABLE vault.decrypted_secrets TO service_role;
 
 
 --
--- TOC entry 3083 (class 826 OID 16603)
+-- TOC entry 3162 (class 826 OID 16603)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -20981,7 +24746,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL O
 
 
 --
--- TOC entry 3084 (class 826 OID 16604)
+-- TOC entry 3163 (class 826 OID 16604)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -20990,7 +24755,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL O
 
 
 --
--- TOC entry 3082 (class 826 OID 16602)
+-- TOC entry 3161 (class 826 OID 16602)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: auth; Owner: supabase_auth_admin
 --
 
@@ -20999,7 +24764,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL O
 
 
 --
--- TOC entry 3093 (class 826 OID 16682)
+-- TOC entry 3172 (class 826 OID 16682)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -21007,7 +24772,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL 
 
 
 --
--- TOC entry 3092 (class 826 OID 16681)
+-- TOC entry 3171 (class 826 OID 16681)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -21015,7 +24780,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL 
 
 
 --
--- TOC entry 3091 (class 826 OID 16680)
+-- TOC entry 3170 (class 826 OID 16680)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
 --
 
@@ -21023,7 +24788,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL 
 
 
 --
--- TOC entry 3096 (class 826 OID 16637)
+-- TOC entry 3175 (class 826 OID 16637)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
 --
 
@@ -21034,7 +24799,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON 
 
 
 --
--- TOC entry 3095 (class 826 OID 16636)
+-- TOC entry 3174 (class 826 OID 16636)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
 --
 
@@ -21045,7 +24810,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON 
 
 
 --
--- TOC entry 3094 (class 826 OID 16635)
+-- TOC entry 3173 (class 826 OID 16635)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
 --
 
@@ -21056,7 +24821,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON 
 
 
 --
--- TOC entry 3088 (class 826 OID 16617)
+-- TOC entry 3167 (class 826 OID 16617)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: graphql_public; Owner: supabase_admin
 --
 
@@ -21067,7 +24832,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT 
 
 
 --
--- TOC entry 3090 (class 826 OID 16616)
+-- TOC entry 3169 (class 826 OID 16616)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: graphql_public; Owner: supabase_admin
 --
 
@@ -21078,7 +24843,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT 
 
 
 --
--- TOC entry 3089 (class 826 OID 16615)
+-- TOC entry 3168 (class 826 OID 16615)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: graphql_public; Owner: supabase_admin
 --
 
@@ -21089,7 +24854,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT 
 
 
 --
--- TOC entry 3099 (class 826 OID 73238)
+-- TOC entry 3178 (class 826 OID 73238)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
@@ -21099,7 +24864,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENC
 
 
 --
--- TOC entry 3098 (class 826 OID 73237)
+-- TOC entry 3177 (class 826 OID 73237)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
@@ -21109,7 +24874,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIO
 
 
 --
--- TOC entry 3097 (class 826 OID 73236)
+-- TOC entry 3176 (class 826 OID 73236)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
 --
 
@@ -21119,7 +24884,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES 
 
 
 --
--- TOC entry 3086 (class 826 OID 16607)
+-- TOC entry 3165 (class 826 OID 16607)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -21128,7 +24893,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON
 
 
 --
--- TOC entry 3087 (class 826 OID 16608)
+-- TOC entry 3166 (class 826 OID 16608)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -21137,7 +24902,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON
 
 
 --
--- TOC entry 3085 (class 826 OID 16606)
+-- TOC entry 3164 (class 826 OID 16606)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -21146,7 +24911,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON
 
 
 --
--- TOC entry 3081 (class 826 OID 16545)
+-- TOC entry 3160 (class 826 OID 16545)
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: storage; Owner: postgres
 --
 
@@ -21157,7 +24922,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUEN
 
 
 --
--- TOC entry 3080 (class 826 OID 16544)
+-- TOC entry 3159 (class 826 OID 16544)
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: storage; Owner: postgres
 --
 
@@ -21168,7 +24933,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTI
 
 
 --
--- TOC entry 3079 (class 826 OID 16543)
+-- TOC entry 3158 (class 826 OID 16543)
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: storage; Owner: postgres
 --
 
@@ -21179,7 +24944,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES
 
 
 --
--- TOC entry 4266 (class 3466 OID 16621)
+-- TOC entry 4345 (class 3466 OID 16621)
 -- Name: issue_graphql_placeholder; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
 --
 
@@ -21191,7 +24956,7 @@ CREATE EVENT TRIGGER issue_graphql_placeholder ON sql_drop
 ALTER EVENT TRIGGER issue_graphql_placeholder OWNER TO supabase_admin;
 
 --
--- TOC entry 4271 (class 3466 OID 16700)
+-- TOC entry 4350 (class 3466 OID 16700)
 -- Name: issue_pg_cron_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
 --
 
@@ -21203,7 +24968,7 @@ CREATE EVENT TRIGGER issue_pg_cron_access ON ddl_command_end
 ALTER EVENT TRIGGER issue_pg_cron_access OWNER TO supabase_admin;
 
 --
--- TOC entry 4265 (class 3466 OID 16619)
+-- TOC entry 4344 (class 3466 OID 16619)
 -- Name: issue_pg_graphql_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
 --
 
@@ -21215,7 +24980,7 @@ CREATE EVENT TRIGGER issue_pg_graphql_access ON ddl_command_end
 ALTER EVENT TRIGGER issue_pg_graphql_access OWNER TO supabase_admin;
 
 --
--- TOC entry 4272 (class 3466 OID 16703)
+-- TOC entry 4351 (class 3466 OID 16703)
 -- Name: issue_pg_net_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
 --
 
@@ -21227,7 +24992,7 @@ CREATE EVENT TRIGGER issue_pg_net_access ON ddl_command_end
 ALTER EVENT TRIGGER issue_pg_net_access OWNER TO supabase_admin;
 
 --
--- TOC entry 4267 (class 3466 OID 16622)
+-- TOC entry 4346 (class 3466 OID 16622)
 -- Name: pgrst_ddl_watch; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
 --
 
@@ -21238,7 +25003,7 @@ CREATE EVENT TRIGGER pgrst_ddl_watch ON ddl_command_end
 ALTER EVENT TRIGGER pgrst_ddl_watch OWNER TO supabase_admin;
 
 --
--- TOC entry 4268 (class 3466 OID 16623)
+-- TOC entry 4347 (class 3466 OID 16623)
 -- Name: pgrst_drop_watch; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
 --
 
@@ -21248,7 +25013,7 @@ CREATE EVENT TRIGGER pgrst_drop_watch ON sql_drop
 
 ALTER EVENT TRIGGER pgrst_drop_watch OWNER TO supabase_admin;
 
--- Completed on 2025-10-29 15:28:13
+-- Completed on 2025-11-24 09:31:24
 
 --
 -- PostgreSQL database dump complete

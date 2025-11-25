@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/use-cart';
 import { getProductosDestacados, getCategorias, Producto, Categoria } from '@/lib/supabase';
 import { formatPrice } from '@/lib/utils';
+import { buildProductUrl } from '@/lib/product-url';
+import { useCurrency } from '@/hooks/use-currency';
 
 export default function HomePage({ params }: { params: { locale: string } }) {
   const { addItem } = useCart();
+  const { currency } = useCurrency();
   const [featuredProducts, setFeaturedProducts] = useState<Producto[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,17 +135,21 @@ export default function HomePage({ params }: { params: { locale: string } }) {
           ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product) => {
-                const precioPrincipal = product.precios_por_moneda?.soles?.precio_venta || 
-                                       product.precios_por_moneda?.dolares?.precio_venta || 
-                                       product.precio_venta || 0;
-                const moneda = product.precios_por_moneda?.soles?.moneda || 
-                              product.precios_por_moneda?.dolares?.moneda || 
-                              product.moneda;
+                // Obtener precio según moneda seleccionada
+                const precioData = currency === 'PEN' 
+                  ? product.precios_por_moneda?.soles 
+                  : product.precios_por_moneda?.dolares;
+                
+                const precioPrincipal = precioData?.precio_venta || 0;
+                const moneda = precioData?.moneda;
+                
+                // Usar función helper para construir URL de forma consistente
+                const productUrl = buildProductUrl(product, params.locale)
                 
                 return (
                   <Link 
                     key={product.sku} 
-                    href={`/${params.locale}/producto/${product.seo_slug}`}
+                    href={productUrl}
                     className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
                   >
                     <div className="aspect-square overflow-hidden relative">
@@ -154,16 +161,13 @@ export default function HomePage({ params }: { params: { locale: string } }) {
                       />
                     </div>
                     <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 line-clamp-2">
                         {product.nombre}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                        {product.descripcion_corta || ''}
-                      </p>
                       <div className="flex items-center justify-between">
                         <span className="text-xl font-bold text-primary">
-                          {precioPrincipal > 0 
-                            ? `${moneda?.simbolo || 'S/'} ${precioPrincipal.toFixed(2)}`
+                          {precioPrincipal > 0 && moneda
+                            ? `${moneda.simbolo} ${precioPrincipal.toFixed(2)}`
                             : 'Consultar precio'
                           }
                         </span>
