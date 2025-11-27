@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams, useParams } from 'next/navigation'
+import { startTransition, useCallback, useRef } from 'react'
 import { ProductCard } from '@/components/catalog/product-card'
 import { ProductFilters, FilterState } from '@/components/catalog/product-filters'
 import { ProductSearch } from '@/components/catalog/product-search'
@@ -38,8 +39,16 @@ export function CategoryClient({
   const searchParams = useSearchParams()
   const params = useParams() as { locale?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
+  
+  // ✅ FIX: Usar ref para evitar re-renders durante las actualizaciones
+  const isUpdatingRef = useRef(false)
 
-  const updateURL = (updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
+  // ✅ FIX: Envolver updateURL en useCallback para estabilizar la función
+  const updateURL = useCallback((updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
+    // Evitar actualizaciones concurrentes
+    if (isUpdatingRef.current) return
+    isUpdatingRef.current = true
+    
     // Special handling for categoria: if selecting a different category, navigate to that category page
     if (updates.categoria !== undefined) {
       const categoriaArray = Array.isArray(updates.categoria) ? updates.categoria : [updates.categoria]
@@ -75,7 +84,11 @@ export function CategoryClient({
         
         // Navigate to the new category page
         const url = `/${locale}/categoria/${selectedCategoryId}?${newParams.toString()}`
-        router.push(url)
+        startTransition(() => {
+          router.push(url, { scroll: false })
+          // Reset flag después de la navegación
+          setTimeout(() => { isUpdatingRef.current = false }, 100)
+        })
         return
       }
       
@@ -102,7 +115,11 @@ export function CategoryClient({
       }
       
       const url = `?${params.toString()}`
-      router.push(url)
+      startTransition(() => {
+        router.replace(url, { scroll: false })
+        // Reset flag después de la navegación
+        setTimeout(() => { isUpdatingRef.current = false }, 100)
+      })
       return
     }
     
@@ -133,12 +150,16 @@ export function CategoryClient({
     }
     
     const url = `?${params.toString()}`
-    router.push(url)
-  }
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+      // Reset flag después de la navegación
+      setTimeout(() => { isUpdatingRef.current = false }, 100)
+    })
+  }, [category.id, filters, searchTerm, searchParams, locale, router])
 
 
   return (
-    <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 min-h-[calc(100vh-120px)]">
+    <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 pb-16">
       {/* Related Brands Carousel - Moved to top */}
       {relatedBrands.length > 0 && (
         <div className="mb-6">
@@ -166,7 +187,7 @@ export function CategoryClient({
               categoryName={category.nombre}
               categoryDescription={category.descripcion}
               currentCategoryId={category.id}
-              onFiltersChange={(newFilters) => updateURL(newFilters)}
+              onFiltersChange={updateURL}
             />
           </div>
         </div>
@@ -232,4 +253,3 @@ export function CategoryClient({
     </div>
   )
 }
-

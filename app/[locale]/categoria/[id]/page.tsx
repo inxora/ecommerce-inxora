@@ -5,6 +5,10 @@ import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 import { notFound } from 'next/navigation'
 
+// Deshabilitar caché para obtener datos frescos siempre
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface CategoryPageProps {
   params: {
     id: string

@@ -17,7 +17,6 @@ export function useCart() {
   useEffect(() => {
     const loadCart = () => {
       const savedCart = cartUtils.getCart()
-      console.log('Loading cart from localStorage:', savedCart)
       
       const newCartItems = savedCart.items.map(item => ({
         product: {
@@ -46,7 +45,6 @@ export function useCart() {
     // Escuchar cambios en localStorage desde otras pestañas/ventanas
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'inxora-cart') {
-        console.log('Storage changed, reloading cart')
         isUpdatingFromEvent.current = true
         loadCart()
         setUpdateTrigger(prev => prev + 1)
@@ -93,7 +91,6 @@ export function useCart() {
       itemCount: cart.items.reduce((total, item) => total + item.quantity, 0)
     }
 
-    console.log('Saving cart to localStorage:', cartState)
     cartUtils.saveCart(cartState)
     
     // Disparar evento personalizado para sincronizar otros componentes en la misma ventana
@@ -106,11 +103,6 @@ export function useCart() {
   }, [cart, isLoaded])
 
   const addItem = (product: Product, quantity: number = 1, selectedSize?: string) => {
-    console.log('=== ADD ITEM DEBUG ===')
-    console.log('Product received:', product)
-    console.log('Quantity:', quantity)
-    console.log('Selected size:', selectedSize)
-    
     // Ensure product has a valid SKU
     if (!product.sku) {
       console.error('Product missing SKU:', product)
@@ -122,8 +114,6 @@ export function useCart() {
       return
     }
 
-    console.log('Using product SKU as ID:', product.sku)
-
     setCart(prevCart => {
       const existingItemIndex = prevCart.items.findIndex(
         item => item.product.sku === product.sku && item.selectedSize === selectedSize
@@ -131,22 +121,17 @@ export function useCart() {
 
       let newItems
       if (existingItemIndex > -1) {
-        console.log('Updating existing item quantity')
         newItems = [...prevCart.items]
         newItems[existingItemIndex].quantity += quantity
       } else {
-        console.log('Adding new item to cart')
         newItems = [...prevCart.items, { product, quantity, selectedSize }]
       }
 
-      console.log('New cart items:', newItems)
       return { items: newItems }
     })
 
     // Force re-render
-    const newTrigger = updateTrigger + 1
-    console.log('Setting updateTrigger to:', newTrigger)
-    setUpdateTrigger(newTrigger)
+    setUpdateTrigger(prev => prev + 1)
 
     toast({
       title: "Producto agregado",
@@ -189,7 +174,6 @@ export function useCart() {
 
   const getItemsCount = () => {
     const count = cart.items.reduce((total, item) => total + item.quantity, 0)
-    console.log('getItemsCount called, returning:', count)
     return count
   }
 
@@ -200,8 +184,6 @@ export function useCart() {
   const getCartItems = () => {
     return cart.items
   }
-
-  console.log('Header render - updateTrigger:', updateTrigger, 'itemsCount:', getItemsCount())
 
   return {
     items: cart.items,

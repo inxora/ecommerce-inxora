@@ -4,6 +4,10 @@ import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 
+// Deshabilitar caché para obtener datos frescos siempre
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface CatalogPageProps {
   searchParams: {
     page?: string

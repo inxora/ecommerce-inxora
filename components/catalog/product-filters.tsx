@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Filter, X, ChevronDown, Check } from "lucide-react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { Filter, X, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DualRangeSlider } from "@/components/ui/dual-range-slider"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Categoria, Marca } from "@/lib/supabase"
+import type { Categoria, Marca } from "@/lib/supabase"
 
 export interface FilterState {
   categoria?: string | string[]
@@ -26,7 +26,7 @@ interface ProductFiltersProps {
   totalProducts: number
   categoryName?: string
   categoryDescription?: string
-  currentCategoryId?: number // ID de la categoría actual (para páginas de categoría)
+  currentCategoryId?: number
 }
 
 export function ProductFilters({ 
@@ -46,46 +46,42 @@ export function ProductFilters({
     filters.precioMin || 0,
     filters.precioMax || 10000
   ])
+  
+  const categoryDropdownRef = useRef<HTMLDivElement>(null)
+  const brandDropdownRef = useRef<HTMLDivElement>(null)
 
   const sortOptions = [
-    { value: 'nombre_asc', label: 'Nombre A-Z' },
-    { value: 'nombre_desc', label: 'Nombre Z-A' },
-    { value: 'precio_asc', label: 'Precio menor a mayor' },
-    { value: 'precio_desc', label: 'Precio mayor a menor' },
-    { value: 'destacado', label: 'Destacados' },
+    { value: "nombre_asc", label: "Nombre A-Z" },
+    { value: "nombre_desc", label: "Nombre Z-A" },
+    { value: "precio_asc", label: "Precio menor a mayor" },
+    { value: "precio_desc", label: "Precio mayor a menor" },
+    { value: "destacado", label: "Destacados" },
   ]
 
-  const updateFilter = (key: keyof FilterState, value: any) => {
-    // Handle 'all' value by clearing the filter
-    if (value === 'all') {
+  const updateFilter = useCallback((key: keyof FilterState, value: any) => {
+    if (value === "all") {
       const newFilters = { ...filters }
       delete newFilters[key]
       onFiltersChange(newFilters)
       return
     }
 
-    // Handle categoria and marca differently
-    if (key === 'categoria') {
-      // Categoria: Only ONE category at a time (single selection, not multiple)
+    if (key === "categoria") {
       const valueStr = String(value)
-      const currentValue = filters[key]
+
+      // Cerrar dropdown después de seleccionar
+      setTimeout(() => setCategoryDropdownOpen(false), 50)
       
-      // If clicking the same category that's already selected, don't allow deselecting it
       if (currentCategoryId && valueStr === String(currentCategoryId)) {
-        // Don't allow deselecting the current category
         return
       }
       
-      // If selecting a different category, navigate to that category (handled in category-client)
-      // For now, just set it as the only selected category
       onFiltersChange({ ...filters, [key]: [valueStr] })
       
-    } else if (key === 'marca') {
-      // Marca: Allow MULTIPLE selections
+    } else if (key === "marca") {
       const currentValue = filters[key]
       let newValue: string[]
       
-      // Convert current value to array if it's a string
       const currentArray = Array.isArray(currentValue) 
         ? currentValue 
         : currentValue !== undefined 
@@ -94,14 +90,12 @@ export function ProductFilters({
       
       const valueStr = String(value)
       
-      // Toggle: if already selected, remove it; otherwise add it
       if (currentArray.includes(valueStr)) {
         newValue = currentArray.filter(v => v !== valueStr)
       } else {
         newValue = [...currentArray, valueStr]
       }
       
-      // If no selections, remove the filter
       if (newValue.length === 0) {
         const newFilters = { ...filters }
         delete newFilters[key]
@@ -112,7 +106,7 @@ export function ProductFilters({
     } else {
       onFiltersChange({ ...filters, [key]: value })
     }
-  }
+  }, [filters, currentCategoryId, onFiltersChange])
 
   const clearFilter = (key: keyof FilterState) => {
     const newFilters = { ...filters }
@@ -139,13 +133,12 @@ export function ProductFilters({
     return count
   }
 
-  const isSelected = (key: 'categoria' | 'marca', value: string) => {
+  const isSelected = (key: "categoria" | "marca", value: string) => {
     const filterValue = filters[key]
     const valueStr = String(value)
     
-    // For categoria: check if it's the current category (always selected on category pages)
-    if (key === 'categoria' && currentCategoryId && valueStr === String(currentCategoryId)) {
-      return true // Current category is always selected
+    if (key === "categoria" && currentCategoryId && valueStr === String(currentCategoryId)) {
+      return true
     }
     
     if (Array.isArray(filterValue)) {
@@ -157,13 +150,43 @@ export function ProductFilters({
     return false
   }
 
-  // Initialize price range from filters
   useEffect(() => {
     setPriceRange([
       filters.precioMin || 0,
       filters.precioMax || 10000
     ])
   }, [filters.precioMin, filters.precioMax])
+
+  // 👉 Manejo de click afuera simplificado, compatible con Next (client component)
+  useEffect(() => {
+    if (!categoryDropdownOpen && !brandDropdownOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node
+      
+      if (
+        categoryDropdownOpen &&
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(target)
+      ) {
+        setCategoryDropdownOpen(false)
+      }
+      
+      if (
+        brandDropdownOpen &&
+        brandDropdownRef.current &&
+        !brandDropdownRef.current.contains(target)
+      ) {
+        setBrandDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener("click", handleClickOutside)
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside)
+    }
+  }, [categoryDropdownOpen, brandDropdownOpen])
 
   const handlePriceRangeChange = (range: [number, number]) => {
     setPriceRange(range)
@@ -200,11 +223,14 @@ export function ProductFilters({
       {/* Sort */}
       <div>
         <h3 className="font-semibold mb-3 text-inxora-dark-blue dark:text-white">Ordenar por</h3>
-        <Select value={filters.ordenar || undefined} onValueChange={(value) => updateFilter('ordenar', value)}>
-          <SelectTrigger className="bg-white dark:bg-slate-800">
+        <Select 
+          value={filters.ordenar || undefined} 
+          onValueChange={(value) => updateFilter("ordenar", value)}
+        >
+          <SelectTrigger className="bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600">
             <SelectValue placeholder="Seleccionar orden" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[100]">
             {sortOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
@@ -214,115 +240,120 @@ export function ProductFilters({
         </Select>
       </div>
 
-      {/* Categories - Dropdown Multiseleccionable */}
+      {/* Categorías */}
       {categories.length > 0 && (
         <div>
           <h3 className="font-semibold mb-3 text-inxora-dark-blue dark:text-white">Categoría</h3>
-          <div className="relative">
+          <div className="relative" ref={categoryDropdownRef}>
             <Button
               variant="outline"
               className="w-full justify-between text-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                setCategoryDropdownOpen(!categoryDropdownOpen)
-              }}
+              onClick={() => setCategoryDropdownOpen(prev => !prev)}
+              type="button"
             >
               <span className="truncate">
+                {/* Aquí puedes mostrar el recuento real si quieres */}
                 1 seleccionada
               </span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${categoryDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  categoryDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </Button>
+            
             {categoryDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-[45]"
-                  onClick={() => setCategoryDropdownOpen(false)}
-                />
-                <div 
-                  className="absolute z-[50] w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="p-2 space-y-2">
-                    {categories.map((category) => {
-                      const categoryId = String(category.id)
-                      const selected = isSelected('categoria', categoryId)
-                      return (
-                        <label
-                          key={category.id}
-                          className="flex items-center space-x-2 p-2 rounded hover:bg-inxora-light-blue/10 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={selected}
-                            onCheckedChange={() => updateFilter('categoria', categoryId)}
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{category.nombre}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
+              <div 
+                className="absolute z-[60] w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div className="p-2 space-y-1">
+                  {categories.map((category) => {
+                    const categoryId = String(category.id)
+                    const selected = isSelected("categoria", categoryId)
+                    return (
+                      <div
+                        key={category.id}
+                        className="flex items-center space-x-2 p-2 rounded hover:bg-inxora-light-blue/10 cursor-pointer transition-colors"
+                        onClick={() => {
+                          updateFilter("categoria", categoryId)
+                        }}
+                      >
+                        <Checkbox 
+                          checked={selected} 
+                          onCheckedChange={() => {}}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                          {category.nombre}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Brands - Dropdown Multiseleccionable */}
+      {/* Marcas */}
       {brands.length > 0 && (
         <div>
           <h3 className="font-semibold mb-3 text-inxora-dark-blue dark:text-white">Marca</h3>
-          <div className="relative">
+          <div className="relative" ref={brandDropdownRef}>
             <Button
               variant="outline"
               className="w-full justify-between text-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                setBrandDropdownOpen(!brandDropdownOpen)
-              }}
+              onClick={() => setBrandDropdownOpen(prev => !prev)}
+              type="button"
             >
               <span className="truncate">
                 {Array.isArray(filters.marca) && filters.marca.length > 0
-                  ? `${filters.marca.length} seleccionada${filters.marca.length > 1 ? 's' : ''}`
-                  : 'Seleccionar marcas'}
+                  ? `${filters.marca.length} seleccionada${filters.marca.length > 1 ? "s" : ""}`
+                  : "Seleccionar marcas"}
               </span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${brandDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  brandDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </Button>
+            
             {brandDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-[45]"
-                  onClick={() => setBrandDropdownOpen(false)}
-                />
-                <div 
-                  className="absolute z-[50] w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="p-2 space-y-2">
-                    {brands.map((brand) => {
-                      const brandId = String(brand.id)
-                      const selected = isSelected('marca', brandId)
-                      return (
-                        <label
-                          key={brand.id}
-                          className="flex items-center space-x-2 p-2 rounded hover:bg-inxora-light-blue/10 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={selected}
-                            onCheckedChange={() => updateFilter('marca', brandId)}
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{brand.nombre}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
+              <div 
+                className="absolute z-[60] w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div className="p-2 space-y-1">
+                  {brands.map((brand) => {
+                    const brandId = String(brand.id)
+                    const selected = isSelected("marca", brandId)
+                    return (
+                      <div
+                        key={brand.id}
+                        className="flex items-center space-x-2 p-2 rounded hover:bg-inxora-light-blue/10 cursor-pointer transition-colors"
+                        onClick={() => {
+                          updateFilter("marca", brandId)
+                        }}
+                      >
+                        <Checkbox 
+                          checked={selected} 
+                          onCheckedChange={() => {}}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                          {brand.nombre}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Price Range Slider - Dual Range */}
+      {/* Price Range Slider */}
       <div>
         <h3 className="font-semibold mb-3 text-inxora-dark-blue dark:text-white">Rango de precio</h3>
         <div className="space-y-4">
@@ -340,8 +371,8 @@ export function ProductFilters({
               size="sm"
               onClick={() => {
                 setPriceRange([0, 10000])
-                clearFilter('precioMin')
-                clearFilter('precioMax')
+                clearFilter("precioMin")
+                clearFilter("precioMax")
               }}
               className="w-full text-xs border-inxora-wine text-inxora-wine hover:bg-inxora-wine/10"
             >
@@ -353,7 +384,11 @@ export function ProductFilters({
 
       {/* Clear Filters */}
       {getActiveFiltersCount() > 0 && (
-        <Button variant="outline" onClick={clearAllFilters} className="w-full border-inxora-wine text-inxora-wine hover:bg-inxora-wine/10 dark:border-inxora-wine dark:text-inxora-wine dark:hover:bg-inxora-wine/20">
+        <Button 
+          variant="outline" 
+          onClick={clearAllFilters} 
+          className="w-full border-inxora-wine text-inxora-wine hover:bg-inxora-wine/10 dark:border-inxora-wine dark:text-inxora-wine dark:hover:bg-inxora-wine/20"
+        >
           Limpiar filtros
         </Button>
       )}
@@ -410,7 +445,7 @@ export function ProductFilters({
                     {category.nombre}
                     <X 
                       className="h-3 w-3 cursor-pointer" 
-                      onClick={() => updateFilter('categoria', catId)}
+                      onClick={() => updateFilter("categoria", catId)}
                     />
                   </Badge>
                 ) : null
@@ -423,7 +458,7 @@ export function ProductFilters({
                     {category.nombre}
                     <X 
                       className="h-3 w-3 cursor-pointer" 
-                      onClick={() => clearFilter('categoria')}
+                      onClick={() => clearFilter("categoria")}
                     />
                   </Badge>
                 ) : null
@@ -437,7 +472,7 @@ export function ProductFilters({
                     {brand.nombre}
                     <X 
                       className="h-3 w-3 cursor-pointer" 
-                      onClick={() => updateFilter('marca', brandId)}
+                      onClick={() => updateFilter("marca", brandId)}
                     />
                   </Badge>
                 ) : null
@@ -450,7 +485,7 @@ export function ProductFilters({
                     {brand.nombre}
                     <X 
                       className="h-3 w-3 cursor-pointer"
-                      onClick={() => clearFilter('marca')}
+                      onClick={() => clearFilter("marca")}
                     />
                   </Badge>
                 ) : null
@@ -467,8 +502,8 @@ export function ProductFilters({
                 <X 
                   className="h-3 w-3 cursor-pointer" 
                   onClick={() => {
-                    clearFilter('precioMin')
-                    clearFilter('precioMax')
+                    clearFilter("precioMin")
+                    clearFilter("precioMax")
                   }}
                 />
               </Badge>
