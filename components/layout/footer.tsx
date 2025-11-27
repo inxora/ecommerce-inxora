@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
 
@@ -16,8 +17,9 @@ export function Footer() {
       { name: 'Cotizaciones', href: `/${locale}/cotizaciones` },
     ],
     legal: [
-      { name: 'Términos', href: `/${locale}/terminos` },
-      { name: 'Privacidad', href: `/${locale}/privacidad` },
+      { name: 'Términos y Condiciones', href: `/${locale}/terminos` },
+      { name: 'Política de Privacidad', href: `/${locale}/privacidad` },
+      { name: 'Política de Cookies', href: `/${locale}/cookies` },
       { name: 'Envíos', href: `/${locale}/envios` },
       { name: 'Devoluciones', href: `/${locale}/devoluciones` },
     ],
@@ -50,13 +52,14 @@ export function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1 space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-inxora-cyan to-inxora-pink flex items-center justify-center">
-                <span className="text-white font-bold text-sm">I</span>
-              </div>
-              <div>
-                <span className="text-lg font-bold">INXORA</span>
-                <p className="text-xs text-blue-200">Marketplace Industrial</p>
-              </div>
+              <Image 
+                src="/LOGO-35.png" 
+                alt="INXORA" 
+                width={120} 
+                height={40} 
+                className="h-8 sm:h-10 md:h-12 w-auto object-contain"
+                priority
+              />
             </div>
             
             <p className="text-sm text-blue-100 leading-relaxed">
@@ -162,14 +165,6 @@ export function Footer() {
           <p className="text-xs text-blue-200 text-center md:text-left">
             © 2025 INXORA. Todos los derechos reservados.
           </p>
-          <div className="flex items-center space-x-3 text-xs text-blue-300">
-            <span>Desarrollado con</span>
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-1 bg-white/10 rounded text-xs">Next.js</span>
-              <span className="text-blue-300">•</span>
-              <span className="px-2 py-1 bg-white/10 rounded text-xs">Supabase</span>
-            </div>
-          </div>
         </div>
       </div>
     </footer>

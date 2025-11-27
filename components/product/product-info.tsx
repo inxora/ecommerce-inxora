@@ -9,6 +9,10 @@ import { Product } from '@/lib/supabase'
 import { useCart } from '@/hooks/use-cart'
 import { useToast } from '@/hooks/use-toast'
 import { useCurrency } from '@/hooks/use-currency'
+import { Shield, Truck, Star, Heart } from 'lucide-react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { useFavorites } from '@/hooks/use-favorites'
 
 interface ProductInfoProps {
   product: Product
@@ -19,6 +23,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const { addItem } = useCart()
   const { toast } = useToast()
   const { currency } = useCurrency()
+  const { toggleFavorite, isFavorite } = useFavorites()
+  const params = useParams() as { locale?: string }
+  const locale = typeof params?.locale === 'string' ? params.locale : 'es'
+  
+  const isFavorited = isFavorite(product.sku)
 
   const handleAddToCart = () => {
     console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity)
@@ -73,28 +82,29 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{product.nombre}</h1>
-        <div className="space-y-2">
-          {/* Precio según moneda seleccionada */}
-          {currency === 'PEN' && product.precios_por_moneda?.soles && (
-            <p className="text-xl font-semibold text-primary dark:text-blue-400">
-              {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
-            </p>
-          )}
-          
-          {currency === 'USD' && product.precios_por_moneda?.dolares && (
-            <p className="text-xl font-semibold text-primary dark:text-blue-400">
-              {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
-            </p>
-          )}
-          
-          {/* Fallback si no hay precio en la moneda seleccionada */}
-          {((currency === 'PEN' && !product.precios_por_moneda?.soles) || 
-            (currency === 'USD' && !product.precios_por_moneda?.dolares)) && (
-            <p className="text-xl font-semibold text-primary dark:text-blue-400">Consultar precio</p>
+      {/* Marca arriba del título - esquina superior izquierda */}
+      <div className="flex items-start justify-between">
+        <div>
+          {product.marca && (
+            <Badge variant="outline" className="text-xs sm:text-sm">
+              {typeof product.marca === 'string' ? product.marca : product.marca.nombre}
+            </Badge>
           )}
         </div>
+        {/* SKU y código de marca - esquina superior derecha */}
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          {product.sku_producto && (
+            <span className="font-mono">SKU: {product.sku_producto}</span>
+          )}
+          {product.cod_producto_marca && 
+           product.cod_producto_marca.trim() !== '' && (
+            <span className="font-mono">| {product.cod_producto_marca}</span>
+          )}
+        </div>
+      </div>
+      
+      <div>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-inxora-dark-blue dark:text-white mb-4">{product.nombre}</h1>
       </div>
 
       {product.descripcion_corta && (
@@ -119,6 +129,36 @@ export function ProductInfo({ product }: ProductInfoProps) {
           />
         </div>
       )}
+
+      {/* Disponibilidad debajo de descripción y antes del precio */}
+      {product.disponibilidad && (
+        <div>
+          <Badge className="bg-inxora-light-blue text-inxora-dark-blue border-0 font-medium text-sm">
+            Disponibilidad: {product.disponibilidad.descripcion || product.disponibilidad.nombre}
+          </Badge>
+        </div>
+      )}
+
+      {/* Precio debajo de la descripción */}
+      <div className="pt-2">
+        {currency === 'PEN' && product.precios_por_moneda?.soles && (
+          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
+            {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
+          </p>
+        )}
+        
+        {currency === 'USD' && product.precios_por_moneda?.dolares && (
+          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
+            {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
+          </p>
+        )}
+        
+        {/* Fallback si no hay precio en la moneda seleccionada */}
+        {((currency === 'PEN' && !product.precios_por_moneda?.soles) || 
+          (currency === 'USD' && !product.precios_por_moneda?.dolares)) && (
+          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">Consultar precio</p>
+        )}
+      </div>
 
       <div className="space-y-4">
         <div>
@@ -149,13 +189,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       <div className="space-y-3">
-        <Button 
-          onClick={handleAddToCart}
-          className="w-full"
-          size="lg"
-        >
-          Agregar al carrito
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleAddToCart}
+            className="flex-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white"
+            size="lg"
+          >
+            Agregar al carrito
+          </Button>
+          <Button
+            onClick={() => toggleFavorite(product)}
+            variant={isFavorited ? "default" : "outline"}
+            size="lg"
+            className="px-4"
+            aria-label={isFavorited ? "Eliminar de favoritos" : "Agregar a favoritos"}
+          >
+            <Heart className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`} />
+          </Button>
+        </div>
         
         {product.categoria && (
           <div>
@@ -163,20 +214,44 @@ export function ProductInfo({ product }: ProductInfoProps) {
             <Badge variant="secondary">{typeof product.categoria === 'string' ? product.categoria : product.categoria.nombre}</Badge>
           </div>
         )}
-        
-        {product.marca && (
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Marca: </span>
-            <Badge variant="outline">{typeof product.marca === 'string' ? product.marca : product.marca.nombre}</Badge>
-          </div>
-        )}
-        
-        {product.disponibilidad && (
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Disponibilidad: </span>
-            <Badge variant="secondary">{product.disponibilidad.descripcion || product.disponibilidad.nombre}</Badge>
-          </div>
-        )}
+      </div>
+
+      {/* Trust Badges - 3 Cards dentro del card de información */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="bg-inxora-light-blue/10 dark:bg-slate-700 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow border border-inxora-light-blue/20 dark:border-gray-600">
+          <Shield className="h-8 w-8 text-inxora-blue mx-auto mb-2" />
+          <p className="text-sm font-semibold text-inxora-dark-blue dark:text-white mb-1">Garantía</p>
+          <Link 
+            href={`/${locale}/terminos`}
+            className="text-xs text-inxora-blue hover:text-inxora-dark-blue hover:underline"
+          >
+            Ver condiciones
+          </Link>
+        </div>
+        <div className="bg-inxora-light-blue/10 dark:bg-slate-700 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow border border-inxora-light-blue/20 dark:border-gray-600">
+          <Truck className="h-8 w-8 text-inxora-light-blue mx-auto mb-2" />
+          <p className="text-sm font-bold text-inxora-dark-blue dark:text-white mb-1">
+            Envío Gratis
+          </p>
+          <Link 
+            href={`/${locale}/envios`}
+            className="text-xs text-inxora-blue hover:text-inxora-dark-blue hover:underline"
+          >
+            Ver condiciones
+          </Link>
+        </div>
+        <div className="bg-inxora-light-blue/10 dark:bg-slate-700 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow border border-inxora-light-blue/20 dark:border-gray-600">
+          <Star className="h-8 w-8 text-inxora-fuchsia mx-auto mb-2" />
+          <p className="text-sm font-semibold text-inxora-dark-blue dark:text-white mb-1">
+            Descuentos especiales
+          </p>
+          <Link 
+            href={`/${locale}/terminos`}
+            className="text-xs text-inxora-blue hover:text-inxora-dark-blue hover:underline"
+          >
+            Ver condiciones
+          </Link>
+        </div>
       </div>
     </div>
   )

@@ -1,14 +1,14 @@
 import { Suspense } from 'react'
-import { getProductos, getCategorias, getMarcas } from '@/lib/supabase'
+import { getProducts, getCategorias, getMarcas } from '@/lib/supabase'
 import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageLoader } from '@/components/ui/loader'
 
 interface CatalogPageProps {
   searchParams: {
     page?: string
-    categoria?: string
-    marca?: string
+    categoria?: string | string[]
+    marca?: string | string[]
     buscar?: string
     precioMin?: string
     precioMax?: string
@@ -20,9 +20,18 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const page = parseInt(searchParams.page || '1')
   const itemsPerPage = 12
 
+  // Normalize categoria and marca to arrays
+  const normalizeToArray = (value: string | string[] | undefined): string[] => {
+    if (!value) return []
+    return Array.isArray(value) ? value : [value]
+  }
+
+  const categoriaArray = normalizeToArray(searchParams.categoria)
+  const marcaArray = normalizeToArray(searchParams.marca)
+
   const filters: FilterState = {
-    categoria: searchParams.categoria,
-    marca: searchParams.marca,
+    categoria: categoriaArray.length > 0 ? categoriaArray : undefined,
+    marca: marcaArray.length > 0 ? marcaArray : undefined,
     precioMin: searchParams.precioMin ? parseInt(searchParams.precioMin) : undefined,
     precioMax: searchParams.precioMax ? parseInt(searchParams.precioMax) : undefined,
     ordenar: searchParams.ordenar,
@@ -31,20 +40,26 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const searchTerm = searchParams.buscar || ''
 
   // Fetch data in parallel
+  // For now, use getProducts which supports multiple filters
   const [productsData, categoriesData, marcasData] = await Promise.all([
-    getProductos(page - 1, itemsPerPage, 
-      filters.categoria ? parseInt(filters.categoria) : undefined,
-      filters.marca ? parseInt(filters.marca) : undefined,
-      searchTerm
-    ),
+    getProducts({
+      page,
+      limit: itemsPerPage,
+      categoria: categoriaArray.length > 0 ? categoriaArray : undefined,
+      marca: marcaArray.length > 0 ? marcaArray : undefined,
+      buscar: searchTerm,
+      precioMin: filters.precioMin,
+      precioMax: filters.precioMax,
+      ordenar: filters.ordenar,
+    }),
     getCategorias(),
     getMarcas(),
   ])
 
-  const { data: products, count: total } = productsData
+  const { products, total } = productsData
   const { data: categories } = categoriesData
   const { data: brands } = marcasData
-  const totalPages = Math.ceil((total || 0) / itemsPerPage)
+  const totalPages = productsData.totalPages || Math.ceil((total || 0) / itemsPerPage)
 
   return (
     <Suspense fallback={<CatalogSkeleton />}>
@@ -63,26 +78,5 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 }
 
 function CatalogSkeleton() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <Skeleton className="h-8 w-64 mb-4" />
-        <Skeleton className="h-10 w-full max-w-sm" />
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-1">
-          <Skeleton className="h-96 w-full" />
-        </div>
-        
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-80 w-full" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return <PageLoader />
 }

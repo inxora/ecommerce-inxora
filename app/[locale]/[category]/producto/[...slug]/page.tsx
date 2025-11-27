@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Star, ChevronLeft, ChevronRight, Shield, Truck } from 'lucide-react'
+import { Star, ChevronLeft, ChevronRight, Shield, Truck, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
-import { getProductBySlug, Producto, Product } from '@/lib/supabase'
+import { getProductBySlug, getRelatedProducts, Producto, Product } from '@/lib/supabase'
 import { ProductInfo } from '@/components/product/product-info'
 import { ProductImageZoom } from '@/components/product/product-image-zoom'
+import { RelatedProductsCarousel } from '@/components/product/related-products-carousel'
 
 interface Review {
   id: string
@@ -26,6 +27,8 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Producto | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+  const [relatedProducts, setRelatedProducts] = useState<Producto[]>([])
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -65,6 +68,20 @@ export default function ProductPage() {
           }
           
           setProduct(productData)
+          
+          // Obtener productos relacionados
+          if (productData) {
+            const idCategoria = typeof productData.categoria === 'object' ? productData.categoria?.id : productData.id_categoria
+            const idMarca = typeof productData.marca === 'object' ? productData.marca?.id : productData.id_marca
+            
+            const related = await getRelatedProducts(
+              productData.sku,
+              idCategoria,
+              idMarca,
+              8
+            )
+            setRelatedProducts(related)
+          }
         } catch (error) {
           console.error('❌ Error fetching product:', error)
         } finally {
@@ -215,47 +232,60 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full">
         {/* Breadcrumb */}
-        <nav className="flex mb-8" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-1 md:space-x-3 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-xl px-4 py-2 shadow-sm">
-            <li className="inline-flex items-center">
-              <Link href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}`} className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
-                Inicio
-              </Link>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
-                <Link href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}/catalogo`} className="text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
-                  Catálogo
-                </Link>
-              </div>
-            </li>
-            <li aria-current="page">
-              <div className="flex items-center">
-                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                  {product.nombre}
-                </span>
-              </div>
-            </li>
-          </ol>
-        </nav>
+        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <nav className="flex" aria-label="Breadcrumb">
+              <ol className="inline-flex items-center space-x-1 md:space-x-3">
+                <li className="inline-flex items-center">
+                  <Link href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}`} className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                    Inicio
+                  </Link>
+                </li>
+                {product?.categoria && (
+                  <li>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                      </svg>
+                      <Link 
+                        href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}/categoria/${
+                          typeof product.categoria === 'object' ? product.categoria.id : product.id_categoria
+                        }`} 
+                        className="text-sm font-medium text-gray-700 hover:text-inxora-blue dark:text-gray-400 dark:hover:text-inxora-light-blue transition-colors"
+                      >
+                        {typeof product.categoria === 'object' ? product.categoria.nombre : 'Categoría'}
+                      </Link>
+                    </div>
+                  </li>
+                )}
+                <li aria-current="page">
+                  <div className="flex items-center">
+                    <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                    </svg>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                      {product.nombre}
+                    </span>
+                  </div>
+                </li>
+              </ol>
+            </nav>
+          </div>
+        </div>
 
         {/* Product Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 xl:gap-12" style={{ minHeight: '500px' }}>
           {/* Product Images */}
-          <div className="space-y-6">
-            <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div className="space-y-4 lg:space-y-6 bg-white dark:bg-slate-800 p-4 lg:p-6">
+            <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-50 dark:bg-slate-700" style={{ minHeight: '400px' }}>
               <ProductImageZoom
                 src={images[currentImageIndex] || '/placeholder-product.svg'}
                 alt={product.nombre}
                 className="w-full h-full rounded-2xl"
+                priority={currentImageIndex === 0}
               />
               {images.length > 1 && (
                 <>
@@ -318,87 +348,97 @@ export default function ProductPage() {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-8">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl">
-              <ProductInfo product={product as Product} />
-            </div>
-
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">
-                <Shield className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Garantía</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">12 meses</p>
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">
-                <Truck className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <p className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2">
-                  Envío Gratis a partir de 500 soles a Lima Metropolitana
-                </p>
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">
-                <Star className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Calidad</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Premium</p>
-              </div>
-            </div>
-
-            {/* Purchase moved into ProductInfo */}
-
-            {/* Product Tags */}
-            {product.tags && product.tags.length > 0 && (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Etiquetas
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-block bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-lg text-sm font-medium hover:scale-105 transition-transform cursor-pointer"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="bg-white dark:bg-slate-800 p-4 lg:p-6 xl:p-8">
+            <ProductInfo product={product as Product} />
           </div>
+          </div>
+
+          {/* Product Tags */}
+          {product.tags && product.tags.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 p-4 lg:p-6 xl:p-8 mt-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                Etiquetas
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {product.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-md text-xs font-medium"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Product Details Sections */}
         {product.descripcion_detallada && (
-          <div className="mt-16">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 lg:p-12 shadow-xl">
+          <div className="w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700">
+            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
               <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
                 <div className="w-2 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full mr-3"></div>
                 Descripción Detallada
               </h3>
-              <div 
-                className="text-gray-700 dark:text-gray-300 prose prose-lg max-w-none dark:prose-invert
-                  prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-bold
-                  prose-p:mb-6 prose-p:leading-relaxed prose-p:text-base lg:prose-p:text-lg prose-p:text-gray-700 dark:prose-p:text-gray-300
-                  prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-bold prose-strong:text-lg
-                  prose-ul:my-8 prose-ul:space-y-4 prose-ul:pl-6
-                  prose-ol:my-8 prose-ol:space-y-4 prose-ol:pl-6
-                  prose-li:marker:text-green-600 dark:prose-li:marker:text-green-400
-                  prose-li:ml-4 prose-li:leading-relaxed prose-li:text-base lg:prose-li:text-lg
-                  prose-li:pl-2 prose-li:my-2
-                  prose-h3:text-xl lg:prose-h3:text-2xl prose-h3:font-bold prose-h3:mt-10 prose-h3:mb-6 prose-h3:text-gray-900 dark:prose-h3:text-white
-                  prose-h4:text-lg lg:prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-8 prose-h4:mb-4 prose-h4:text-gray-800 dark:prose-h4:text-gray-200
-                  prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-6
-                  prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-                  prose-blockquote:border-l-4 prose-blockquote:border-green-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6
-                  prose-table:w-full prose-table:my-6
-                  prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:px-4 prose-th:py-2 prose-th:bg-gray-100 dark:prose-th:bg-gray-700
-                  prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:px-4 prose-td:py-2
-                  [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
-                  [&>p]:mb-6 [&>p]:leading-7
-                  [&>ul>li]:mb-3 [&>ol>li]:mb-3
-                  [&>h2]:mt-12 [&>h2]:mb-6
-                  [&>h3]:mt-10 [&>h3]:mb-6"
-                dangerouslySetInnerHTML={{ __html: product.descripcion_detallada }}
-              />
+              <div className="relative">
+                <div 
+                  className={`text-gray-700 dark:text-gray-300 prose prose-lg max-w-none dark:prose-invert
+                    prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:font-bold
+                    prose-p:mb-6 prose-p:leading-relaxed prose-p:text-base lg:prose-p:text-lg prose-p:text-gray-700 dark:prose-p:text-gray-300
+                    prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-bold prose-strong:text-lg
+                    prose-ul:my-8 prose-ul:space-y-4 prose-ul:pl-6
+                    prose-ol:my-8 prose-ol:space-y-4 prose-ol:pl-6
+                    prose-li:marker:text-green-600 dark:prose-li:marker:text-green-400
+                    prose-li:ml-4 prose-li:leading-relaxed prose-li:text-base lg:prose-li:text-lg
+                    prose-li:pl-2 prose-li:my-2
+                    prose-h3:text-xl lg:prose-h3:text-2xl prose-h3:font-bold prose-h3:mt-10 prose-h3:mb-6 prose-h3:text-gray-900 dark:prose-h3:text-white
+                    prose-h4:text-lg lg:prose-h4:text-xl prose-h4:font-semibold prose-h4:mt-8 prose-h4:mb-4 prose-h4:text-gray-800 dark:prose-h4:text-gray-200
+                    prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-6
+                    prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+                    prose-blockquote:border-l-4 prose-blockquote:border-green-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6
+                    prose-table:w-full prose-table:my-6
+                    prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:px-4 prose-th:py-2 prose-th:bg-gray-100 dark:prose-th:bg-gray-700
+                    prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:px-4 prose-td:py-2
+                    [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
+                    [&>p]:mb-6 [&>p]:leading-7
+                    [&>ul>li]:mb-3 [&>ol>li]:mb-3
+                    [&>h2]:mt-12 [&>h2]:mb-6
+                    [&>h3]:mt-10 [&>h3]:mb-6
+                    transition-all duration-300 overflow-hidden
+                    ${isDescriptionExpanded ? 'max-h-none columns-1' : 'max-h-96 columns-1'}
+                  `}
+                  dangerouslySetInnerHTML={{ __html: product.descripcion_detallada }}
+                />
+                {!isDescriptionExpanded && (
+                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-slate-800 to-transparent pointer-events-none"></div>
+                )}
+              </div>
+              <button
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                className="mt-6 flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors"
+              >
+                {isDescriptionExpanded ? (
+                  <>
+                    <span>Ver menos</span>
+                    <ChevronUp className="h-5 w-5" />
+                  </>
+                ) : (
+                  <>
+                    <span>Ver más</span>
+                    <ChevronDown className="h-5 w-5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Productos Relacionados */}
+        {relatedProducts.length > 0 && (
+          <div className="w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700">
+            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+              <RelatedProductsCarousel products={relatedProducts} />
             </div>
           </div>
         )}

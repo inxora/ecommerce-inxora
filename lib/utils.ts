@@ -96,6 +96,86 @@ export interface CartState {
   itemCount: number
 }
 
+// Tipos para favoritos
+export interface FavoriteItem {
+  sku: number
+  nombre: string
+  precio_venta: number
+  imagen: string
+  slug: string
+  sku_producto?: string
+  cod_producto_marca?: string
+}
+
+export interface FavoritesState {
+  items: FavoriteItem[]
+  itemCount: number
+}
+
+// Funciones de favoritos (localStorage)
+export const favoritesUtils = {
+  getFavorites(): FavoritesState {
+    if (typeof window === 'undefined') {
+      return { items: [], itemCount: 0 }
+    }
+    
+    try {
+      const stored = localStorage.getItem('inxora-favorites')
+      if (!stored) {
+        return { items: [], itemCount: 0 }
+      }
+      
+      const parsed = JSON.parse(stored)
+      return {
+        items: parsed.items || [],
+        itemCount: parsed.items?.length || 0
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error)
+      return { items: [], itemCount: 0 }
+    }
+  },
+
+  saveFavorites(favorites: FavoritesState): void {
+    if (typeof window === 'undefined') return
+    
+    try {
+      localStorage.setItem('inxora-favorites', JSON.stringify(favorites))
+      // Disparar evento para sincronizar otras pestañas
+      window.dispatchEvent(new CustomEvent('favorites-updated'))
+    } catch (error) {
+      console.error('Error saving favorites:', error)
+    }
+  },
+
+  addFavorite(item: FavoriteItem): void {
+    const favorites = this.getFavorites()
+    const exists = favorites.items.some(fav => fav.sku === item.sku)
+    
+    if (!exists) {
+      favorites.items.push(item)
+      favorites.itemCount = favorites.items.length
+      this.saveFavorites(favorites)
+    }
+  },
+
+  removeFavorite(sku: number): void {
+    const favorites = this.getFavorites()
+    favorites.items = favorites.items.filter(item => item.sku !== sku)
+    favorites.itemCount = favorites.items.length
+    this.saveFavorites(favorites)
+  },
+
+  isFavorite(sku: number): boolean {
+    const favorites = this.getFavorites()
+    return favorites.items.some(item => item.sku === sku)
+  },
+
+  clearFavorites(): void {
+    this.saveFavorites({ items: [], itemCount: 0 })
+  }
+}
+
 // Funciones del carrito (localStorage)
 export const cartUtils = {
   getEmptyCart: (): CartState => {

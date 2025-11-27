@@ -8,9 +8,10 @@ interface ProductImageZoomProps {
   src: string
   alt: string
   className?: string
+  priority?: boolean
 }
 
-export function ProductImageZoom({ src, alt, className = '' }: ProductImageZoomProps) {
+export function ProductImageZoom({ src, alt, className = '', priority = false }: ProductImageZoomProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
   const containerRef = useRef<HTMLDivElement>(null)
@@ -45,7 +46,7 @@ export function ProductImageZoom({ src, alt, className = '' }: ProductImageZoomP
       onMouseMove={handleMouseMove}
     >
       <div
-        className="absolute inset-0 transition-transform duration-300"
+        className="absolute inset-0 transition-transform duration-300 will-change-transform"
         style={{
           transform: isHovering ? 'scale(2)' : 'scale(1)',
           transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
@@ -56,7 +57,13 @@ export function ProductImageZoom({ src, alt, className = '' }: ProductImageZoomP
           alt={alt}
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
+          priority={priority}
+          fetchPriority={priority ? 'high' : 'auto'}
+          loading={priority ? undefined : 'lazy'}
+          quality={priority ? 90 : 75}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
       </div>
       

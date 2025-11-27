@@ -112,6 +112,18 @@
 
         }
 
+        @media (min-width: 1024px) {
+
+            #chatbot-burbuja {
+
+                width: 120px !important;
+
+                height: 120px !important;
+
+            }
+
+        }
+
         #chatbot-burbuja:hover {
 
             transform: scale(1.05) !important;
@@ -127,6 +139,18 @@
             height: 70px !important;
 
             object-fit: contain !important;
+
+        }
+
+        @media (min-width: 1024px) {
+
+            #chatbot-burbuja img {
+
+                width: 85px !important;
+
+                height: 85px !important;
+
+            }
 
         }
 
@@ -186,9 +210,9 @@
 
             #chat-container {
 
-                width: 550px !important;
+                width: 400px !important;
 
-                height: 750px !important;
+                height: 600px !important;
 
                 max-height: 85vh !important;
 
@@ -200,9 +224,9 @@
 
             #chat-container {
 
-                width: 600px !important;
+                width: 420px !important;
 
-                height: 800px !important;
+                height: 650px !important;
 
                 max-height: 85vh !important;
 

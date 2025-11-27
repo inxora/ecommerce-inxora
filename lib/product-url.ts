@@ -39,9 +39,9 @@ export function normalizeBrandName(brandName: string | undefined | null): string
 
 /**
  * Construye la URL del producto siguiendo la estructura estándar
- * Formato: /{locale}/{categoria-slug}/producto/{marca-slug}/{product-slug}
+ * Formato: /{locale}/producto/{categoria-slug}/{marca-slug}/{product-slug}
  * Si no hay categoría: /{locale}/producto/{marca-slug}/{product-slug}
- * Si no hay marca: /{locale}/{categoria-slug}/producto/{product-slug}
+ * Si no hay marca: /{locale}/producto/{categoria-slug}/{product-slug}
  * Si no hay ni categoría ni marca: /{locale}/producto/{product-slug}
  */
 export function buildProductUrl(
@@ -79,22 +79,22 @@ export function buildProductUrl(
   const categorySegment = normalizeName(categoryName)
   const brandSegment = normalizeName(brandName)
 
-  // Construir URL con categoría y marca
+  // Construir URL con categoría y marca: /{locale}/producto/{categoria}/{marca}/{slug}
   if (categorySegment && brandSegment) {
-    return `/${locale}/${categorySegment}/producto/${brandSegment}/${seoSlug}`
+    return `/${locale}/producto/${categorySegment}/${brandSegment}/${seoSlug}`
   }
 
-  // Construir URL solo con categoría
+  // Construir URL solo con categoría: /{locale}/producto/{categoria}/{slug}
   if (categorySegment) {
-    return `/${locale}/${categorySegment}/producto/${seoSlug}`
+    return `/${locale}/producto/${categorySegment}/${seoSlug}`
   }
 
-  // Construir URL solo con marca
+  // Construir URL solo con marca: /{locale}/producto/{marca}/{slug}
   if (brandSegment) {
     return `/${locale}/producto/${brandSegment}/${seoSlug}`
   }
 
-  // URL sin categoría ni marca
+  // URL sin categoría ni marca: /{locale}/producto/{slug}
   return `/${locale}/producto/${seoSlug}`
 }
 

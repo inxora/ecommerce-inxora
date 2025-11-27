@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, ShoppingCart, Menu } from 'lucide-react'
+import { Search, ShoppingCart, Menu, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -8,19 +8,41 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCart } from '@/hooks/use-cart'
 import { useCurrency } from '@/hooks/use-currency'
-import { useState } from 'react'
+import { useFavorites } from '@/hooks/use-favorites'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
+import { getCategorias, Categoria } from '@/lib/supabase'
+import { ChevronDown } from 'lucide-react'
 
 export function Header() {
-  const { items, updateTrigger, isLoaded } = useCart()
+  const { items, updateTrigger, isLoaded, getItemsCount } = useCart()
   const { currency, setCurrency, currencySymbol } = useCurrency()
+  const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
+  const [categories, setCategories] = useState<Categoria[]>([])
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const pathname = usePathname() || '/es'
   const locale = (pathname.split('/')[1] || 'es') || 'es'
 
-  // Calcular la cantidad de items directamente desde el array
-  const itemsCount = items.reduce((total, item) => total + item.quantity, 0)
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data } = await getCategorias()
+        if (data) {
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error)
+      }
+    }
+    loadCategories()
+  }, [])
+
+  // Calcular la cantidad de items usando la función del hook para asegurar actualización
+  const itemsCount = getItemsCount()
+  const favoritesCount = getFavoritesCount()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,9 +53,9 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-        <div className="flex gap-6 md:gap-10">
-          <a href="https://www.inxora.com/" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
+      <div className="w-full flex h-16 items-center justify-between px-2 sm:px-3 md:px-4">
+        <div className="flex items-center gap-4 md:gap-8 lg:gap-10 flex-shrink-0">
+          <a href="https://www.inxora.com/" target="_blank" rel="noopener noreferrer" className="flex items-center">
             <Image 
               src="/LOGO-35.png" 
               alt="INXORA" 
@@ -43,34 +65,63 @@ export function Header() {
               priority
             />
           </a>
-          <nav className="hidden md:flex gap-6">
+          <nav className="hidden md:flex gap-5 lg:gap-6">
             <a
               href={`/${locale}`}
-              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Inicio
             </a>
-            <a
-              href={`/${locale}/catalogo`}
-              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Catálogo
-            </a>
+            <div className="relative">
+              <button
+                className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCategoriesOpen(!categoriesOpen)
+                }}
+              >
+                Categorías
+                <ChevronDown className={`h-4 w-4 transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {categoriesOpen && categories.length > 0 && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setCategoriesOpen(false)}
+                  />
+                  <div
+                    className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {categories.map((category) => (
+                      <Link
+                        key={category.id}
+                        href={`/${locale}/categoria/${category.id}`}
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#88D4E4]/20 hover:text-[#139ED4] dark:hover:bg-[#88D4E4]/10 dark:hover:text-[#88D4E4] transition-colors"
+                        onClick={() => setCategoriesOpen(false)}
+                      >
+                        {category.nombre}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <a
               href={`/${locale}/nosotros`}
-              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Nosotros
             </a>
             <a
               href={`/${locale}/contacto`}
-              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Contacto
             </a>
           </nav>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex items-center justify-end gap-3 sm:gap-4 flex-shrink-0">
           <form onSubmit={handleSearch} className="hidden sm:flex items-center">
             <div className="relative w-64">
               <Input
@@ -132,12 +183,18 @@ export function Header() {
                   <a href={`/${locale}`} className="text-sm font-medium hover:text-primary">
                     Inicio
                   </a>
-                  <a href={`/${locale}/catalogo`} className="text-sm font-medium hover:text-primary">
-                    Catálogo
-                  </a>
-                  <a href={`/${locale}/categorias`} className="text-sm font-medium hover:text-primary">
-                    Categorías
-                  </a>
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">Categorías</div>
+                    {categories.map((category) => (
+                      <a
+                        key={category.id}
+                        href={`/${locale}/categoria/${category.id}`}
+                        className="block pl-4 text-sm text-gray-600 dark:text-gray-400 hover:text-primary"
+                      >
+                        {category.nombre}
+                      </a>
+                    ))}
+                  </div>
                   <a href={`/${locale}/nosotros`} className="text-sm font-medium hover:text-primary">
                     Nosotros
                   </a>
@@ -148,6 +205,18 @@ export function Header() {
               </div>
             </SheetContent>
           </Sheet>
+
+          {/* Favoritos */}
+          <Link href={`/${locale}/favoritos`}>
+            <Button variant="ghost" size="sm" className="relative">
+              <Heart className="h-5 w-5" />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-lg border-2 border-background">
+                  {favoritesCount > 99 ? '99+' : favoritesCount}
+                </span>
+              )}
+            </Button>
+          </Link>
 
           <CartDrawer>
             <Button variant="ghost" size="sm" className="relative">

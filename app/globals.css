@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 195 85% 45%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -22,16 +22,24 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 195 85% 45%;
     --radius: 0.5rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --inxora-blue: #0579c7;
-    --inxora-cyan: #00bcd4;
-    --inxora-pink: #e91e63;
+    /* Colores INXORA */
+    --inxora-blue: #139ED4;
+    --inxora-light-blue: #88D4E4;
+    --inxora-dark-blue: #171D4C;
+    --inxora-wine: #771A53;
+    --inxora-fuchsia: #D90E8C;
+    --inxora-blue-rgb: 19, 158, 212;
+    --inxora-light-blue-rgb: 136, 212, 228;
+    --inxora-dark-blue-rgb: 23, 29, 76;
+    --inxora-wine-rgb: 119, 26, 83;
+    --inxora-fuchsia-rgb: 217, 14, 140;
     --background-light: #f5f7f8;
   --background-dark: #0f1b23;
   --content-light: #ffffff;
@@ -51,7 +59,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 195 85% 55%;
     --primary-foreground: 222.2 84% 4.9%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -63,7 +71,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --ring: 195 85% 55%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -193,6 +201,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Ocultar widget de chat cuando el carrito está abierto */
+  body.cart-drawer-open #chatbot-burbuja,
+  body.cart-drawer-open #chat-container {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+  }
 }
 
 /* Custom styles for INXORA */
@@ -206,6 +224,72 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Colores INXORA - Utilidades */
+.bg-inxora-blue { background-color: #139ED4; }
+.text-inxora-blue { color: #139ED4; }
+.border-inxora-blue { border-color: #139ED4; }
+.hover\:bg-inxora-blue:hover { background-color: #139ED4; }
+.hover\:text-inxora-blue:hover { color: #139ED4; }
+
+.bg-inxora-light-blue { background-color: #88D4E4; }
+.text-inxora-light-blue { color: #88D4E4; }
+.border-inxora-light-blue { border-color: #88D4E4; }
+.hover\:bg-inxora-light-blue:hover { background-color: #88D4E4; }
+.hover\:text-inxora-light-blue:hover { color: #88D4E4; }
+
+.bg-inxora-dark-blue { background-color: #171D4C; }
+.text-inxora-dark-blue { color: #171D4C; }
+.border-inxora-dark-blue { border-color: #171D4C; }
+.hover\:bg-inxora-dark-blue:hover { background-color: #171D4C; }
+.hover\:text-inxora-dark-blue:hover { color: #171D4C; }
+
+.bg-inxora-wine { background-color: #771A53; }
+.text-inxora-wine { color: #771A53; }
+.border-inxora-wine { border-color: #771A53; }
+.hover\:bg-inxora-wine:hover { background-color: #771A53; }
+.hover\:text-inxora-wine:hover { color: #771A53; }
+
+.bg-inxora-fuchsia { background-color: #D90E8C; }
+.text-inxora-fuchsia { color: #D90E8C; }
+.border-inxora-fuchsia { border-color: #D90E8C; }
+.hover\:bg-inxora-fuchsia:hover { background-color: #D90E8C; }
+.hover\:text-inxora-fuchsia:hover { color: #D90E8C; }
+  
+  /* Dual Range Slider Styles */
+  .slider-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 0;
+    height: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  
+  .slider-thumb::-moz-range-thumb {
+    width: 0;
+    height: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    -moz-appearance: none;
+  }
+  
+  .slider-thumb::-webkit-slider-runnable-track {
+    background: transparent;
+    height: 2px;
+  }
+  
+  .slider-thumb::-moz-range-track {
+    background: transparent;
+    height: 2px;
+  }
+  
+  .slider-thumb {
+    pointer-events: auto;
+    touch-action: none;
+  }
 
 /* WhatsApp floating button animation */
 .whatsapp-float {

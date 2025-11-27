@@ -10,6 +10,8 @@ import { getProductosDestacados, getCategorias, Producto, Categoria } from '@/li
 import { formatPrice } from '@/lib/utils';
 import { buildProductUrl } from '@/lib/product-url';
 import { useCurrency } from '@/hooks/use-currency';
+import { ProductCard } from '@/components/catalog/product-card';
+import { PageLoader, ProductGridLoader, Loader } from '@/components/ui/loader';
 
 export default function HomePage({ params }: { params: { locale: string } }) {
   const { addItem } = useCart();
@@ -89,13 +91,22 @@ export default function HomePage({ params }: { params: { locale: string } }) {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
-      <section 
-        className="relative flex min-h-[60vh] items-center justify-center bg-cover bg-center py-20" 
-        style={{
-          backgroundImage: 'linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.1)), url("/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg")'
-        }}
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+      <section className="relative flex min-h-[60vh] items-center justify-center py-20 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg"
+            alt="Suministros Industriales INXORA"
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/10"></div>
+        </div>
+        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
             Suministros Industriales de Calidad
           </h1>
@@ -105,7 +116,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
           <div className="mt-10">
             <Link 
               href={`/${params.locale}/catalogo`}
-              className="inline-block rounded-lg bg-primary px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105"
+              className="inline-block rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105"
             >
               Explorar Catálogo
             </Link>
@@ -116,77 +127,16 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       {/* Featured Products Section */}
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-12 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-12 text-center">
             Productos Destacados
           </h2>
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-gray-300 dark:bg-gray-700"></div>
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-full"></div>
-                    <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductGridLoader count={4} />
           ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => {
-                // Obtener precio según moneda seleccionada
-                const precioData = currency === 'PEN' 
-                  ? product.precios_por_moneda?.soles 
-                  : product.precios_por_moneda?.dolares;
-                
-                const precioPrincipal = precioData?.precio_venta || 0;
-                const moneda = precioData?.moneda;
-                
-                // Usar función helper para construir URL de forma consistente
-                const productUrl = buildProductUrl(product, params.locale)
-                
-                return (
-                  <Link 
-                    key={product.sku} 
-                    href={productUrl}
-                    className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-                  >
-                    <div className="aspect-square overflow-hidden relative">
-                      <Image 
-                        alt={product.nombre}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110" 
-                        src={product.imagen_principal_url || '/placeholder-product.svg'}
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 line-clamp-2">
-                        {product.nombre}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-primary">
-                          {precioPrincipal > 0 && moneda
-                            ? `${moneda.simbolo} ${precioPrincipal.toFixed(2)}`
-                            : 'Consultar precio'
-                          }
-                        </span>
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleAddToCart(product);
-                          }}
-                          className="flex items-center gap-1"
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                          Agregar
-                        </Button>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.sku} product={product} />
+              ))}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -199,17 +149,12 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       {/* Main Categories Section */}
       <section className="bg-background-light dark:bg-background-dark py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-12 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-12 text-center">
             Categorías Principales
           </h2>
           {loading ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-40 w-full bg-gray-300 dark:bg-gray-700 rounded-xl mb-4"></div>
-                  <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mx-auto"></div>
-                </div>
-              ))}
+            <div className="flex items-center justify-center py-12">
+              <Loader size="lg" text="Cargando categorías..." />
             </div>
           ) : categories.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
@@ -243,13 +188,13 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       {/* CTA Section */}
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl">
             Explora Nuestro Catálogo Completo
           </h2>
           <div className="mt-8">
             <Link 
               href={`/${params.locale}/catalogo`}
-              className="inline-block rounded-lg bg-primary px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105"
+              className="inline-block rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105"
             >
               Ver Todos los Productos
             </Link>
