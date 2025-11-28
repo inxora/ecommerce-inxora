@@ -9,6 +9,7 @@ import { ProductInfo } from '@/components/product/product-info'
 import { ProductImageZoom } from '@/components/product/product-image-zoom'
 import { RelatedProductsCarousel } from '@/components/product/related-products-carousel'
 import { PageLoader } from '@/components/ui/loader'
+import { buildCategoryUrl } from '@/lib/product-url'
 
 interface Review {
   id: string
@@ -93,14 +94,14 @@ export default function ProductPage() {
         ? `/${locale}/producto/${brandSegment}/${product.seo_slug}`
         : `/${locale}/producto/${product.seo_slug}`
 
-    // Actualizar o crear tag canonical
+    // Actualizar o crear tag canonical - usar dominio de producción
     let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement
     if (!canonicalLink) {
       canonicalLink = document.createElement('link')
       canonicalLink.setAttribute('rel', 'canonical')
       document.head.appendChild(canonicalLink)
     }
-    canonicalLink.setAttribute('href', `${typeof window !== 'undefined' ? window.location.origin : ''}${canonicalUrl}`)
+    canonicalLink.setAttribute('href', `https://tienda.inxora.com${canonicalUrl}`)
 
     // Actualizar title si existe seo_title
     if (product.seo_title) {
@@ -215,9 +216,11 @@ export default function ProductPage() {
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
                   </svg>
                   <Link 
-                    href={`/${typeof params?.locale === 'string' ? params.locale : 'es'}/categoria/${
-                      typeof product.categoria === 'object' ? product.categoria.id : product.id_categoria
-                    }`} 
+                    href={
+                      typeof product.categoria === 'object' && product.categoria.nombre
+                        ? buildCategoryUrl(product.categoria.nombre, typeof params?.locale === 'string' ? params.locale : 'es')
+                        : `/${typeof params?.locale === 'string' ? params.locale : 'es'}/categoria`
+                    } 
                     className="text-sm font-medium text-gray-700 hover:text-inxora-blue dark:text-gray-400 dark:hover:text-inxora-light-blue transition-colors"
                   >
                     {typeof product.categoria === 'object' ? product.categoria.nombre : 'Categoría'}

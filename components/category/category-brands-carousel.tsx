@@ -2,14 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Marca, buildBrandLogoUrl } from '@/lib/supabase'
+import { Marca, Categoria, buildBrandLogoUrl } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { buildCategoryUrl } from '@/lib/product-url'
 
 interface CategoryBrandsCarouselProps {
   brands: Marca[]
-  categoryId: number
+  category: Categoria
 }
 
 interface BrandLogoProps {
@@ -48,12 +49,13 @@ function BrandLogo({ brand }: BrandLogoProps) {
   )
 }
 
-export function CategoryBrandsCarousel({ brands, categoryId }: CategoryBrandsCarouselProps) {
+export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarouselProps) {
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const params = useParams() as { locale?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
+  const categoryUrl = buildCategoryUrl(category.nombre, locale)
 
   const checkScrollability = () => {
     if (scrollContainerRef.current) {
@@ -126,7 +128,7 @@ export function CategoryBrandsCarousel({ brands, categoryId }: CategoryBrandsCar
         {brands.map((brand) => (
           <Link
             key={brand.id}
-            href={`/${locale}/categoria/${categoryId}?marca=${brand.id}`}
+            href={`${categoryUrl}?marca=${brand.id}`}
             className="flex-shrink-0 flex flex-col items-center gap-2 p-2 sm:p-3 rounded-lg hover:bg-inxora-light-blue/10 dark:hover:bg-slate-700 transition-colors min-w-[100px] sm:min-w-[110px]"
           >
             <BrandLogo brand={brand} />

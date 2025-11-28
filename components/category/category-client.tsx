@@ -9,6 +9,7 @@ import { ProductPagination } from '@/components/catalog/product-pagination'
 import { CategoryBrandsCarousel } from '@/components/category/category-brands-carousel'
 import { Producto, Categoria, Marca } from '@/lib/supabase'
 import { Search, Package } from 'lucide-react'
+import { buildCategoryUrl } from '@/lib/product-url'
 
 interface CategoryClientProps {
   category: Categoria
@@ -59,6 +60,13 @@ export function CategoryClient({
       
       // If a different category is selected, navigate to that category page
       if (selectedCategoryId && selectedCategoryId !== currentCategoryIdStr) {
+        // Find the selected category to get its name
+        const selectedCategory = categories.find(c => String(c.id) === selectedCategoryId)
+        if (!selectedCategory) {
+          isUpdatingRef.current = false
+          return
+        }
+        
         const newParams = new URLSearchParams()
         
         // Preserve marca filters (multiple marcas allowed)
@@ -82,8 +90,9 @@ export function CategoryClient({
         
         if (searchTerm) newParams.set('buscar', searchTerm)
         
-        // Navigate to the new category page
-        const url = `/${locale}/categoria/${selectedCategoryId}?${newParams.toString()}`
+        // Navigate to the new category page using category name
+        const categoryUrl = buildCategoryUrl(selectedCategory.nombre, locale)
+        const url = `${categoryUrl}?${newParams.toString()}`
         startTransition(() => {
           router.push(url, { scroll: false })
           // Reset flag después de la navegación
@@ -163,7 +172,7 @@ export function CategoryClient({
       {/* Related Brands Carousel - Moved to top */}
       {relatedBrands.length > 0 && (
         <div className="mb-6">
-          <CategoryBrandsCarousel brands={relatedBrands} categoryId={category.id} />
+          <CategoryBrandsCarousel brands={relatedBrands} category={category} />
         </div>
       )}
 

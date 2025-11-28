@@ -4,6 +4,7 @@ import { CategoryClient } from '@/components/category/category-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 import { notFound } from 'next/navigation'
+import { normalizeName } from '@/lib/product-url'
 
 // Deshabilitar caché para obtener datos frescos siempre
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ export const revalidate = 0
 
 interface CategoryPageProps {
   params: {
-    id: string
+    slug: string
     locale: string
   }
   searchParams: {
@@ -26,7 +27,7 @@ interface CategoryPageProps {
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const categoryId = parseInt(params.id)
+  const categorySlug = params.slug
   const page = parseInt(searchParams.page || '1')
   const itemsPerPage = 12
 
@@ -38,14 +39,28 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   const marcaArray = normalizeToArray(searchParams.marca)
 
+  // Fetch all categories first to find the one matching the slug
+  const categoriesData = await getCategorias()
+  const { data: allCategories } = categoriesData
+  
+  // Find category by matching normalized name with slug
+  const category = allCategories?.find(c => {
+    const normalizedName = normalizeName(c.nombre)
+    return normalizedName === categorySlug
+  })
+
+  if (!category) {
+    notFound()
+  }
+
+  const categoryId = category.id
+
   // Only ONE category at a time - use the current category from the route
   // Multiple marcas are allowed
   const allCategoriaIds = [String(categoryId)]
 
-  // Fetch data in parallel
-  const [categoriesData, categoryData, brandsData, productsData] = await Promise.all([
-    getCategorias(),
-    getCategorias().then(({ data }) => data?.find(c => c.id === categoryId)),
+  // Fetch remaining data in parallel
+  const [brandsData, productsData] = await Promise.all([
     getMarcas(),
     getProducts({
       page,
@@ -58,11 +73,6 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       ordenar: searchParams.ordenar,
     })
   ])
-
-  const category = categoryData
-  if (!category) {
-    notFound()
-  }
 
   // Get brands related to this category (brands that have products in this category)
   // We need to fetch all products (not just current page) to get all brands

@@ -15,6 +15,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getCategorias, Categoria } from '@/lib/supabase'
 import { ChevronDown } from 'lucide-react'
+import { buildCategoryUrlFromObject } from '@/lib/product-url'
 
 export function Header() {
   const { items, updateTrigger, isLoaded, getItemsCount } = useCart()
@@ -96,7 +97,7 @@ export function Header() {
                     {categories.map((category) => (
                       <Link
                         key={category.id}
-                        href={`/${locale}/categoria/${category.id}`}
+                        href={buildCategoryUrlFromObject(category, locale)}
                         className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#88D4E4]/20 hover:text-[#139ED4] dark:hover:bg-[#88D4E4]/10 dark:hover:text-[#88D4E4] transition-colors"
                         onClick={() => setCategoriesOpen(false)}
                       >
@@ -188,7 +189,7 @@ export function Header() {
                     {categories.map((category) => (
                       <a
                         key={category.id}
-                        href={`/${locale}/categoria/${category.id}`}
+                        href={buildCategoryUrlFromObject(category, locale)}
                         className="block pl-4 text-sm text-gray-600 dark:text-gray-400 hover:text-primary"
                       >
                         {category.nombre}

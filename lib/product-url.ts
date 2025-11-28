@@ -161,6 +161,40 @@ export function generateProductSlug(
 }
 
 /**
+ * Construye la URL de una categoría usando su nombre normalizado
+ * Formato: /{locale}/categoria/{category-slug}
+ * 
+ * @param categoryName - Nombre de la categoría
+ * @param locale - Locale (es, en, pt)
+ * @returns URL de la categoría
+ */
+export function buildCategoryUrl(
+  categoryName: string,
+  locale: string = 'es'
+): string {
+  const categorySlug = normalizeName(categoryName)
+  if (!categorySlug) {
+    return `/${locale}/categoria`
+  }
+  return `/${locale}/categoria/${categorySlug}`
+}
+
+/**
+ * Construye la URL de una categoría usando el objeto Categoria
+ * Formato: /{locale}/categoria/{category-slug}
+ * 
+ * @param category - Objeto Categoria con nombre
+ * @param locale - Locale (es, en, pt)
+ * @returns URL de la categoría
+ */
+export function buildCategoryUrlFromObject(
+  category: { nombre: string; id?: number },
+  locale: string = 'es'
+): string {
+  return buildCategoryUrl(category.nombre, locale)
+}
+
+/**
  * Valida que un slug sea válido
  */
 export function isValidSlug(slug: string): boolean {
