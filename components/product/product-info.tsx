@@ -130,15 +130,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       )}
 
-      {/* Disponibilidad debajo de descripción y antes del precio */}
-      {product.disponibilidad && (
-        <div>
-          <Badge className="bg-inxora-light-blue text-inxora-dark-blue border-0 font-medium text-sm">
-            Disponibilidad: {product.disponibilidad.descripcion || product.disponibilidad.nombre}
-          </Badge>
-        </div>
-      )}
-
       {/* Precio debajo de la descripción */}
       <div className="pt-2">
         {currency === 'PEN' && product.precios_por_moneda?.soles && (
