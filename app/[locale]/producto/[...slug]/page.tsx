@@ -1,10 +1,11 @@
+export const revalidate = 3600;
+export const dynamic = 'force-static';
+
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { getProductBySlug, getRelatedProducts, Producto } from '@/lib/supabase'
 import ProductClient from './ProductClient'
-
-export const revalidate = 3600 // 1 hora (ideal para productos)
 
 interface PageProps {
   params: Promise<{ slug: string[]; locale: string }>
