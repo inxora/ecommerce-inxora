@@ -13,8 +13,20 @@ export const metadata = {
   description: 'Encuentra los mejores suministros industriales para tu empresa en Perú. Catálogo completo, precios competitivos y atención especializada.',
   icons: {
     icon: '/icon.png',
-    shortcut: '/public/inxora.png',
-    apple: '/public/inxora.png',
+    shortcut: '/icon.png',
+    apple: '/inxora.png',
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'Tienda INXORA',
+    images: [
+      {
+        url: 'https://tienda.inxora.com/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Tienda INXORA - Suministros Industriales',
+      },
+    ],
   },
 }
 

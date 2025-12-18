@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ShoppingCart, ShoppingBag, Plus, Minus, Trash2 } from 'lucide-react'
-import { useCart } from '@/hooks/use-cart'
+import { useCart } from '@/lib/hooks/use-cart'
 import { formatPrice } from '@/lib/utils'
 
 interface CartDrawerProps {

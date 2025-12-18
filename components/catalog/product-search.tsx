@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useDebounce } from "@/lib/hooks/use-debounce"
 
 interface ProductSearchProps {
   searchTerm: string

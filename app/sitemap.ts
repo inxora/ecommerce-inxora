@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     `)
     .eq('activo', true)
     .eq('visible_web', true)
-
+  
   // Obtener todas las categorías (tabla es 'categoria', no 'categorias')
   const { data: categories } = await supabase
     .from('categoria')
@@ -67,8 +67,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return {
         url: `${baseUrl}${productPath}`,
         lastModified: product.fecha_actualizacion ? new Date(product.fecha_actualizacion) : new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
       }
     })
   )
@@ -78,9 +78,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     (categories || []).map((category) => ({
       url: `${baseUrl}/${locale}/categoria/${normalizeName(category.nombre)}`,
       lastModified: category.fecha_actualizacion ? new Date(category.fecha_actualizacion) : new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
   )
 
   return [...staticPages, ...productPages, ...categoryPages]

@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatPrice } from '@/lib/utils'
 import { Product } from '@/lib/supabase'
-import { useCart } from '@/hooks/use-cart'
-import { useToast } from '@/hooks/use-toast'
-import { useCurrency } from '@/hooks/use-currency'
+import { useCart } from '@/lib/hooks/use-cart'
+import { useToast } from '@/lib/hooks/use-toast'
+import { useCurrency } from '@/lib/hooks/use-currency'
 import { Shield, Truck, Star, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useFavorites } from '@/hooks/use-favorites'
+import { useFavorites } from '@/lib/hooks/use-favorites'
 
 interface ProductInfoProps {
   product: Product

@@ -14,8 +14,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useCart } from '@/hooks/use-cart'
-import { useToast } from '@/hooks/use-toast'
+import { useCart } from '@/lib/hooks/use-cart'
+import { useToast } from '@/lib/hooks/use-toast'
 
 const checkoutSchema = z.object({
   // Información personal

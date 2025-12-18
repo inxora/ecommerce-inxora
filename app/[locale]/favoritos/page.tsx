@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useFavorites } from '@/hooks/use-favorites'
+import { useFavorites } from '@/lib/hooks/use-favorites'
 import { ProductCard } from '@/components/catalog/product-card'
 import { getProductBySku, Producto } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'

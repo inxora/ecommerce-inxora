@@ -1,7 +1,7 @@
 'use client'
 
 import { formatPrice } from '@/lib/utils'
-import { useCart } from '@/hooks/use-cart'
+import { useCart } from '@/lib/hooks/use-cart'
 
 export function OrderSummary() {
   const { items, getTotalPrice } = useCart()

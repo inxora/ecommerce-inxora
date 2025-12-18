@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { Producto, Product } from '@/lib/supabase'
@@ -8,6 +8,7 @@ import { ProductInfo } from '@/components/product/product-info'
 import { ProductImageZoom } from '@/components/product/product-image-zoom'
 import { RelatedProductsCarousel } from '@/components/product/related-products-carousel'
 import { buildCategoryUrl } from '@/lib/product-url'
+import { ProductsService } from '@/lib/services/products.service'
 
 interface ProductClientProps {
   product: Producto
@@ -18,6 +19,17 @@ interface ProductClientProps {
 export default function ProductClient({ product, relatedProducts, locale }: ProductClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+
+  // Incrementar visualización al cargar la página (solo una vez)
+  const hasTrackedView = useRef(false)
+  useEffect(() => {
+    if (product?.sku && !hasTrackedView.current) {
+      hasTrackedView.current = true
+      ProductsService.incrementarVisualizacion(product.sku).catch(() => {
+        // Silenciar errores - no es crítico para el usuario
+      })
+    }
+  }, [product?.sku])
 
   // Construir array de imágenes válidas
   const images: string[] = []
