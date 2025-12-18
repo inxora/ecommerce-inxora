@@ -1,3 +1,11 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Términos y Condiciones | TIENDA INXORA',
+  description: 'Términos y condiciones de uso del sitio web INXORA. Condiciones de compra, envío y devoluciones.',
+  robots: 'index, follow',
+}
+
 export default function TerminosPage({ params }: { params: { locale: string } }) {
   const { locale } = params
 

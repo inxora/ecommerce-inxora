@@ -1,4 +1,16 @@
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Contacto | TIENDA INXORA - Atención al Cliente',
+  description: 'Contáctanos para cotizaciones rápidas, asesoría técnica especializada y atención inmediata. WhatsApp, email y teléfono disponibles 24/7.',
+  keywords: 'contacto INXORA, cotización industrial, atención al cliente, soporte técnico, WhatsApp',
+  openGraph: {
+    title: 'Contacto | TIENDA INXORA',
+    description: 'Contáctanos para cotizaciones rápidas y asesoría técnica especializada.',
+    type: 'website',
+  },
+}
 
 export default function ContactoPage({ params }: { params: { locale: string } }) {
   const { locale } = params

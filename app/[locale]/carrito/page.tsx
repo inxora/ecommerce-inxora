@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+
+// Nota: metadata no funciona en Client Components, pero esta página no necesita SEO (noindex)
 import Image from 'next/image'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Package, Heart } from 'lucide-react'
 import { useCart } from '@/hooks/use-cart'

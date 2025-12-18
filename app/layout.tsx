@@ -12,9 +12,9 @@ export const metadata = {
   title: 'TIENDA INXORA - Marketplace B2B de Suministros Industriales',
   description: 'Encuentra los mejores suministros industriales para tu empresa en Perú. Catálogo completo, precios competitivos y atención especializada.',
   icons: {
-    icon: '/inxora.png',
-    shortcut: '/inxora.png',
-    apple: '/inxora.png',
+    icon: '/icon.png',
+    shortcut: '/public/inxora.png',
+    apple: '/public/inxora.png',
   },
 }
 

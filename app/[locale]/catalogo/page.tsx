@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { Metadata } from 'next'
 import { getProducts, getCategorias, getMarcas } from '@/lib/supabase'
 import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
@@ -7,6 +8,17 @@ import { PageLoader } from '@/components/ui/loader'
 // Deshabilitar caché para obtener datos frescos siempre
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+
+export const metadata: Metadata = {
+  title: 'Catálogo de Productos | TIENDA INXORA - Suministros Industriales',
+  description: 'Explora nuestro catálogo completo de suministros industriales. Herramientas eléctricas, equipos de seguridad, ferretería y más. Filtra por categoría, marca y precio.',
+  keywords: 'catálogo industrial, herramientas, equipos de seguridad, ferretería, Milwaukee, DeWalt, 3M, Perú',
+  openGraph: {
+    title: 'Catálogo de Productos | TIENDA INXORA',
+    description: 'Explora nuestro catálogo completo de suministros industriales.',
+    type: 'website',
+  },
+}
 
 interface CatalogPageProps {
   searchParams: {

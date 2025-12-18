@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { Metadata } from 'next'
 import { getCategorias, getMarcas, getProducts, Categoria, Marca } from '@/lib/supabase'
 import { CategoryClient } from '@/components/category/category-client'
 import { FilterState } from '@/components/catalog/product-filters'
@@ -11,11 +12,8 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 interface CategoryPageProps {
-  params: {
-    slug: string
-    locale: string
-  }
-  searchParams: {
+  params: Promise<{ slug: string; locale: string }>
+  searchParams: Promise<{
     page?: string
     categoria?: string | string[]
     marca?: string | string[]
@@ -23,12 +21,33 @@ interface CategoryPageProps {
     precioMin?: string
     precioMax?: string
     ordenar?: string
+  }>
+}
+
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { slug, locale } = await params
+  
+  const categoriesData = await getCategorias()
+  const category = categoriesData.data?.find(c => normalizeName(c.nombre) === slug)
+  
+  if (!category) {
+    return { title: 'Categoría no encontrada' }
+  }
+
+  return {
+    title: `${category.nombre} | TIENDA INXORA - Suministros Industriales`,
+    description: `Encuentra productos de ${category.nombre} en TIENDA INXORA. Los mejores suministros industriales en Perú con envío a todo el país.`,
+    openGraph: {
+      title: `${category.nombre} | TIENDA INXORA`,
+      description: `Productos de ${category.nombre} - Suministros industriales de calidad.`,
+    },
   }
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const categorySlug = params.slug
-  const page = parseInt(searchParams.page || '1')
+  const { slug: categorySlug, locale } = await params
+  const resolvedSearchParams = await searchParams
+  const page = parseInt(resolvedSearchParams.page || '1')
   const itemsPerPage = 12
 
   // Normalize categoria and marca to arrays
@@ -37,7 +56,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     return Array.isArray(value) ? value : [value]
   }
 
-  const marcaArray = normalizeToArray(searchParams.marca)
+  const marcaArray = normalizeToArray(resolvedSearchParams.marca)
 
   // Fetch all categories first to find the one matching the slug
   const categoriesData = await getCategorias()
@@ -67,10 +86,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       limit: itemsPerPage,
       categoria: allCategoriaIds,
       marca: marcaArray.length > 0 ? marcaArray : undefined,
-      buscar: searchParams.buscar,
-      precioMin: searchParams.precioMin ? parseInt(searchParams.precioMin) : undefined,
-      precioMax: searchParams.precioMax ? parseInt(searchParams.precioMax) : undefined,
-      ordenar: searchParams.ordenar,
+      buscar: resolvedSearchParams.buscar,
+      precioMin: resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined,
+      precioMax: resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined,
+      ordenar: resolvedSearchParams.ordenar,
     })
   ])
 
@@ -110,9 +129,9 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     // Current category is always selected (it's in the route)
     categoria: [String(categoryId)],
     marca: marcaArray.length > 0 ? marcaArray : undefined,
-    precioMin: searchParams.precioMin ? parseInt(searchParams.precioMin) : undefined,
-    precioMax: searchParams.precioMax ? parseInt(searchParams.precioMax) : undefined,
-    ordenar: searchParams.ordenar,
+    precioMin: resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined,
+    precioMax: resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined,
+    ordenar: resolvedSearchParams.ordenar,
   }
 
   return (
@@ -127,7 +146,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         totalPages={totalPages}
         currentPage={page}
         filters={filters}
-        searchTerm={searchParams.buscar || ''}
+        searchTerm={resolvedSearchParams.buscar || ''}
       />
     </Suspense>
   )

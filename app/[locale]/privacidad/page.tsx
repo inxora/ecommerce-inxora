@@ -1,3 +1,11 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Política de Privacidad | TIENDA INXORA',
+  description: 'Conoce cómo INXORA protege y utiliza tu información personal. Política de privacidad y protección de datos.',
+  robots: 'index, follow',
+}
+
 export default function PrivacidadPage({ params }: { params: { locale: string } }) {
   const { locale } = params
 

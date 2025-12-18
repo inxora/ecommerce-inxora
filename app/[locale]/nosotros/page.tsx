@@ -1,4 +1,16 @@
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Nosotros | TIENDA INXORA - Marketplace Industrial del Perú',
+  description: 'INXORA es el primer marketplace industrial del Perú con IA. Precios directos de fábrica, cotizaciones rápidas y despacho nacional. Conoce nuestra historia.',
+  keywords: 'INXORA, marketplace industrial, suministros industriales Perú, empresa, historia',
+  openGraph: {
+    title: 'Nosotros | TIENDA INXORA',
+    description: 'INXORA es el primer marketplace industrial del Perú con IA.',
+    type: 'website',
+  },
+}
 
 export default function NosotrosPage({ params }: { params: { locale: string } }) {
   const { locale } = params

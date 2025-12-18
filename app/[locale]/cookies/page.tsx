@@ -1,3 +1,11 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Política de Cookies | TIENDA INXORA',
+  description: 'Información sobre el uso de cookies en el sitio web de INXORA. Tipos de cookies y cómo gestionarlas.',
+  robots: 'index, follow',
+}
+
 export default function CookiesPage({ params }: { params: { locale: string } }) {
   const { locale } = params
 
