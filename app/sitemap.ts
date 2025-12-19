@@ -23,29 +23,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locales = ['es', 'en', 'pt']
 
   // Obtener todos los productos activos con sus marcas
-  const { data: products, error: productsError } = await supabase
-    .from('productos')
-    .select(`
-      seo_slug,
-      canonical_url,
-      fecha_actualizacion,
-      id_marca,
-      marca:marcas(id, nombre)
-    `)
-    .eq('activo', true)
-    .eq('visible_web', true)
+  let products: any[] = []
+  let productsError: any = null
 
-  // Log para debugging
-  if (productsError) {
-    console.error('❌ Error fetching products for sitemap:', productsError)
-  } else {
-    console.log(`✅ Sitemap: Found ${products?.length || 0} products`)
+  try {
+    const result = await supabase
+      .from('producto')
+      .select(`
+        seo_slug,
+        canonical_url,
+        fecha_actualizacion,
+        id_marca,
+        marca:marca(id, nombre)
+      `)
+      .eq('activo', true)
+      .eq('visible_web', true)
+    
+    products = result.data || []
+    productsError = result.error
+
+    // Log para debugging
+    if (productsError) {
+      console.error('❌ Error fetching products for sitemap:', productsError)
+    } else {
+      console.log(`✅ Sitemap: Found ${products.length} products`)
+    }
+  } catch (error) {
+    console.error('❌ Exception fetching products for sitemap:', error)
+    productsError = error
   }
   
   // Obtener todas las categorías (tabla es 'categoria', no 'categorias')
   const { data: categories } = await supabase
     .from('categoria')
-    .select('id, nombre, fecha_actualizacion')
+    .select('id, nombre, fecha_creacion')
     .eq('activo', true)
 
   // Páginas estáticas por locale
@@ -92,10 +103,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categoryPages: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     (categories || []).map((category) => ({
       url: `${baseUrl}/${locale}/categoria/${normalizeName(category.nombre)}`,
-      lastModified: category.fecha_actualizacion ? new Date(category.fecha_actualizacion) : new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+      lastModified: category.fecha_creacion ? new Date(category.fecha_creacion) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
   )
 
   return [...staticPages, ...productPages, ...categoryPages]
