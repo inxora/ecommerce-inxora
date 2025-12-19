@@ -83,7 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             lastModified: product.fecha_actualizacion ? new Date(product.fecha_actualizacion) : new Date(),
             changeFrequency: 'weekly' as const,
             priority: 0.8,
-          }
+          } as MetadataRoute.Sitemap[0]
         }).filter((item): item is MetadataRoute.Sitemap[0] => item !== null)
       )
     : []
