@@ -1,36 +1,13 @@
 import { Inter } from 'next/font/google'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
-import { Toaster } from '@/components/ui/toaster'
-import { CurrencyProviderWrapper } from '@/components/providers/currency-provider-wrapper'
 import Script from 'next/script'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'TIENDA INXORA - Marketplace B2B de Suministros Industriales',
-  description: 'Encuentra los mejores suministros industriales para tu empresa en Perú. Catálogo completo, precios competitivos y atención especializada.',
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.png', type: 'image/png' },
-      { url: '/inxora.png', type: 'image/png', sizes: '512x512' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: '/inxora.png',
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'Tienda INXORA',
-    images: [
-      {
-        url: 'https://tienda.inxora.com/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Tienda INXORA - Suministros Industriales',
-      },
-    ],
+  robots: {
+    index: false,
+    follow: false,
   },
 }
 
@@ -40,19 +17,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html>
       <body className={inter.className}>
-        <CurrencyProviderWrapper>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </div>
-        </CurrencyProviderWrapper>
-        <Toaster />
-        
+        {children}
+
         {/* Chat Widget SARA XORA */}
         <Script
           id="chat-widget-config"

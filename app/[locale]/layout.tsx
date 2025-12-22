@@ -7,20 +7,34 @@ export const metadata: Metadata = {
   authors: [{ name: 'INXORA' }],
   creator: 'INXORA',
   publisher: 'INXORA',
+
+  alternates: {
+    languages: {
+      es: '/es',
+      en: '/en',
+      pt: '/pt',
+    },
+  },
+
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
+
+  robots: {
+    index: true,
+    follow: true,
+  },
+
   verification: {
-    // Agregar cuando tengas los códigos de verificación
-    // google: 'tu-codigo-de-verificacion',
+    // google: 'CODIGO_DE_GSC'
   },
 }
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode
   params: Promise<{ locale: string }>
@@ -29,8 +43,12 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <NextIntlClientProvider messages={messages}>
-      {children}
-    </NextIntlClientProvider>
+    <html lang={locale}>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
   )
 }

@@ -1,7 +1,6 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 
-// Función para normalizar nombres a slugs
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -20,9 +19,12 @@ function normalizeName(name: string): string {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://tienda.inxora.com'
-  const locales = ['es', 'en', 'pt']
+  const locale = 'es' // 🎯 CANÓNICO
 
-  // Obtener todos los productos activos con sus marcas
+  // ===============================
+  // PRODUCTOS
+  // ===============================
+
   let products: any[] = []
   let productsError: any = null
 
@@ -33,12 +35,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         seo_slug,
         canonical_url,
         fecha_actualizacion,
-        id_marca,
-        marca:marca(id, nombre)
+        marca:marca(nombre)
       `)
       .eq('activo', true)
       .eq('visible_web', true)
-    
+
     products = result.data || []
     productsError = result.error
 
@@ -51,63 +52,65 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     console.error('❌ Exception fetching products for sitemap:', error)
     productsError = error
+
   }
-  
-  // Obtener todas las categorías (tabla es 'categoria', no 'categorias')
-  const { data: categories } = await supabase
-    .from('categoria')
-    .select('id, nombre, fecha_creacion')
-    .eq('activo', true)
 
-  // Páginas estáticas por locale
-  const staticPages: MetadataRoute.Sitemap = locales.flatMap((locale) => [
-    { url: `${baseUrl}/${locale}`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 1 },
-    { url: `${baseUrl}/${locale}/catalogo`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.9 },
-    { url: `${baseUrl}/${locale}/contacto`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
-    { url: `${baseUrl}/${locale}/nosotros`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
-  ])
+  // ===============================
+  // PÁGINAS ESTÁTICAS
+  // ===============================
+  const staticPages: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/${locale}`,
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/${locale}/catalogo`,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/${locale}/contacto`,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/${locale}/nosotros`,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+  ]
 
-  // Páginas de productos por locale
-  const productPages: MetadataRoute.Sitemap = (products && products.length > 0)
-    ? locales.flatMap((locale) =>
-        products.map((product) => {
-          if (!product.seo_slug) {
-            console.warn('⚠️ Product without seo_slug:', product)
-            return null
-          }
+  // ===============================
+  // PRODUCTOS (SOLO ES)
+  // ===============================
+  const productPages: MetadataRoute.Sitemap =
+    products?.map((product) => {
+      if (!product.seo_slug) return null
 
-          // Usar canonical_url si existe, sino construir con marca
-          let productPath: string
-          if (product.canonical_url && product.canonical_url.startsWith('/')) {
-            productPath = product.canonical_url.replace(/^\/(es|en|pt)/, `/${locale}`)
-          } else {
-            const brandSlug = product.marca && typeof product.marca === 'object' && 'nombre' in product.marca
-              ? (product.marca as { nombre: string }).nombre.toLowerCase().replace(/\s+/g, '-')
-              : null
-            productPath = brandSlug
-              ? `/${locale}/producto/${brandSlug}/${product.seo_slug}`
-              : `/${locale}/producto/${product.seo_slug}`
-          }
+      let path: string
 
-          return {
-            url: `${baseUrl}${productPath}`,
-            lastModified: product.fecha_actualizacion ? new Date(product.fecha_actualizacion) : new Date(),
-            changeFrequency: 'weekly' as const,
-            priority: 0.8,
-          } as MetadataRoute.Sitemap[0]
-        }).filter((item): item is MetadataRoute.Sitemap[0] => item !== null)
-      )
-    : []
+      if (product.canonical_url?.startsWith('/')) {
+        path = product.canonical_url
+      } else {
+        const brandSlug = product.marca?.[0]?.nombre
+          ? normalizeName(product.marca?.[0]?.nombre)
+          : null
 
-  // Páginas de categorías por locale (usar nombre normalizado como slug)
-  const categoryPages: MetadataRoute.Sitemap = locales.flatMap((locale) =>
-    (categories || []).map((category) => ({
-      url: `${baseUrl}/${locale}/categoria/${normalizeName(category.nombre)}`,
-      lastModified: category.fecha_creacion ? new Date(category.fecha_creacion) : new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
-  )
+        path = brandSlug
+          ? `/${locale}/producto/${brandSlug}/${product.seo_slug}`
+          : `/${locale}/producto/${product.seo_slug}`
+      }
 
-  return [...staticPages, ...productPages, ...categoryPages]
+      return {
+        url: `${baseUrl}${path}`,
+        lastModified: product.fecha_actualizacion
+          ? new Date(product.fecha_actualizacion)
+          : new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      }
+    }).filter(Boolean) as MetadataRoute.Sitemap
+
+  return [...staticPages, ...productPages]
 }
