@@ -21,31 +21,12 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
 
-        {/* Chat Widget SARA XORA */}
+        {/* Chat Widget */}
         <Script
           id="chat-widget-config"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: `
-              window.ChatWidgetConfig = {
-                webhook: {
-                  url: 'https://paneln8n.wayrixai.com/webhook/bf0ec96d-8d41-4d7a-bcad-35367ca6de80/chat',
-                  route: 'general'
-                },
-                branding: {
-                  logo: '/LOGO-03.png',
-                  name: 'INXORA',
-                  welcomeText: '¡Hola! Soy SARA XORA, tu asistente virtual. ¿En qué puedo ayudarte?',
-                  responseTimeText: 'Respondemos en menos de 1 minuto.'
-                },
-                style: {
-                  primaryColor: '#13A0D8',
-                  secondaryColor: '#0d7ba8',
-                  backgroundColor: '#ffffff',
-                  fontColor: '#333333'
-                }
-              };
-            `,
+            __html: `/* config */`,
           }}
         />
         <Script src="/js/chat.js" strategy="afterInteractive" />
