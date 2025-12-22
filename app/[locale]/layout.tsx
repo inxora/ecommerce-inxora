@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://tienda.inxora.com'),
 
   alternates: {
+    canonical: '/es',
     languages: {
       es: '/es',
       en: '/en',
