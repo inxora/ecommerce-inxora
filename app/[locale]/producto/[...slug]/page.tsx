@@ -4,6 +4,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { getProductBySlug, getRelatedProducts, Producto } from '@/lib/supabase'
+import { buildProductUrl } from '@/lib/product-url'
 import ProductClient from './ProductClient'
 
 interface PageProps {
@@ -36,18 +37,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  // Construir URL canónica
-  const brandSegment = product.marca && typeof product.marca !== 'string' 
-    ? product.marca.nombre.toLowerCase().replace(/\s+/g, '-') 
-    : typeof product.marca === 'string' 
-      ? (product.marca as string).toLowerCase().replace(/\s+/g, '-')
-      : undefined
-
+  // Construir URL canónica usando buildProductUrl para consistencia
   const canonicalPath = product.canonical_url && product.canonical_url.startsWith('/')
     ? product.canonical_url
-    : brandSegment
-      ? `/${locale}/producto/${brandSegment}/${product.seo_slug}`
-      : `/${locale}/producto/${product.seo_slug}`
+    : buildProductUrl(product, locale)
 
   const canonicalUrl = `https://tienda.inxora.com${canonicalPath}`
 
@@ -99,11 +92,60 @@ export default async function ProductPage({ params }: PageProps) {
     8
   )
 
+  // Construir URL canónica para JSON-LD
+  const canonicalPath = product.canonical_url && product.canonical_url.startsWith('/')
+    ? product.canonical_url
+    : buildProductUrl(product, locale)
+  const canonicalUrl = `https://tienda.inxora.com${canonicalPath}`
+
+  // Construir JSON-LD Schema para Product
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.nombre,
+    description: product.descripcion_corta || product.descripcion_detallada || product.nombre,
+    image: product.imagen_principal_url 
+      ? (Array.isArray(product.imagen_principal_url) 
+          ? product.imagen_principal_url 
+          : [product.imagen_principal_url])
+      : undefined,
+    sku: product.sku_producto || product.sku.toString(),
+    brand: product.marca 
+      ? (typeof product.marca === 'object' 
+          ? { '@type': 'Brand', name: product.marca.nombre }
+          : { '@type': 'Brand', name: product.marca })
+      : undefined,
+    category: product.categoria
+      ? (typeof product.categoria === 'object'
+          ? product.categoria.nombre
+          : product.categoria)
+      : undefined,
+    offers: product.precios_por_moneda?.soles
+      ? {
+          '@type': 'Offer',
+          price: product.precios_por_moneda.soles.precio_venta.toString(),
+          priceCurrency: 'PEN',
+          availability: product.disponibilidad?.nombre === 'Disponible' 
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+          url: canonicalUrl,
+        }
+      : undefined,
+    url: canonicalUrl,
+    ...(product.structured_data || {}),
+  }
+
   return (
-    <ProductClient 
-      product={product} 
-      relatedProducts={relatedProducts} 
-      locale={locale} 
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <ProductClient 
+        product={product} 
+        relatedProducts={relatedProducts} 
+        locale={locale} 
+      />
+    </>
   )
 }

@@ -4,12 +4,8 @@ import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+// Metadata removida - cada página define su propia metadata de robots
+// Esto permite que las páginas individuales controlen su indexación
 
 export default function RootLayout({
   children,

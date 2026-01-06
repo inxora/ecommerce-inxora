@@ -1,20 +1,15 @@
 import { MetadataRoute } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCategorias } from '@/lib/supabase'
+import { buildProductUrl, buildCategoryUrlFromObject } from '@/lib/product-url'
 
-function normalizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[áàäâ]/g, 'a')
-    .replace(/[éèëê]/g, 'e')
-    .replace(/[íìïî]/g, 'i')
-    .replace(/[óòöô]/g, 'o')
-    .replace(/[úùüû]/g, 'u')
-    .replace(/ñ/g, 'n')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+// Tipo parcial para productos en el sitemap (solo los campos necesarios)
+// Supabase devuelve arrays para relaciones cuando se hace select con joins
+type SitemapProduct = {
+  seo_slug: string
+  canonical_url?: string | null
+  fecha_actualizacion?: string | null
+  categoria?: { id: number; nombre: string }[] | { id: number; nombre: string } | null
+  marca?: { id: number; nombre: string }[] | { id: number; nombre: string } | null
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -25,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // PRODUCTOS
   // ===============================
 
-  let products: any[] = []
+  let products: SitemapProduct[] = []
   let productsError: any = null
 
   try {
@@ -35,12 +30,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         seo_slug,
         canonical_url,
         fecha_actualizacion,
-        marca:marca(nombre)
+        categoria:id_categoria(id, nombre),
+        marca:id_marca(id, nombre)
       `)
       .eq('activo', true)
       .eq('visible_web', true)
 
-    products = result.data || []
+    products = (result.data || []) as unknown as SitemapProduct[]
     productsError = result.error
 
     // Log para debugging
@@ -52,7 +48,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     console.error('❌ Exception fetching products for sitemap:', error)
     productsError = error
+  }
 
+  // ===============================
+  // CATEGORÍAS
+  // ===============================
+  let categories: any[] = []
+  try {
+    const categoriesResult = await getCategorias()
+    categories = categoriesResult.data || []
+    console.log(`✅ Sitemap: Found ${categories.length} categories`)
+  } catch (error) {
+    console.error('❌ Error fetching categories for sitemap:', error)
   }
 
   // ===============================
@@ -82,24 +89,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   // ===============================
+  // CATEGORÍAS (SOLO ES)
+  // ===============================
+  const categoryPages: MetadataRoute.Sitemap = categories.map((category) => ({
+    url: `${baseUrl}${buildCategoryUrlFromObject(category, locale)}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
+
+  // ===============================
   // PRODUCTOS (SOLO ES)
   // ===============================
-  const productPages: MetadataRoute.Sitemap =
-    products?.map((product) => {
+  const productPages: MetadataRoute.Sitemap = products
+    .map((product) => {
       if (!product.seo_slug) return null
 
+      // Usar canonical_url si existe, sino construir con buildProductUrl
       let path: string
-
       if (product.canonical_url?.startsWith('/')) {
         path = product.canonical_url
       } else {
-        const brandSlug = product.marca?.[0]?.nombre
-          ? normalizeName(product.marca?.[0]?.nombre)
-          : null
-
-        path = brandSlug
-          ? `/${locale}/producto/${brandSlug}/${product.seo_slug}`
-          : `/${locale}/producto/${product.seo_slug}`
+        // Normalizar categoría y marca (pueden ser arrays o objetos)
+        const categoria = Array.isArray(product.categoria) 
+          ? product.categoria[0] 
+          : product.categoria
+        const marca = Array.isArray(product.marca) 
+          ? product.marca[0] 
+          : product.marca
+        
+        // Construir objeto parcial compatible con buildProductUrl
+        const productForUrl = {
+          seo_slug: product.seo_slug,
+          categoria,
+          marca,
+        }
+        path = buildProductUrl(productForUrl as any, locale)
       }
 
       return {
@@ -107,10 +132,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: product.fecha_actualizacion
           ? new Date(product.fecha_actualizacion)
           : new Date(),
-        changeFrequency: 'weekly',
+        changeFrequency: 'weekly' as const,
         priority: 0.8,
       }
-    }).filter(Boolean) as MetadataRoute.Sitemap
+    })
+    .filter(Boolean) as MetadataRoute.Sitemap
 
-  return [...staticPages, ...productPages]
+  return [...staticPages, ...categoryPages, ...productPages]
 }
