@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { supabase, getCategorias } from '@/lib/supabase'
+import { getSupabaseClient, getCategorias } from '@/lib/supabase'
 import { buildProductUrl, buildCategoryUrlFromObject } from '@/lib/product-url'
 
 // Tipo parcial para productos en el sitemap (solo los campos necesarios)
@@ -8,7 +8,8 @@ type SitemapProduct = {
   seo_slug: string
   canonical_url?: string | null
   fecha_actualizacion?: string | null
-  categoria?: { id: number; nombre: string }[] | { id: number; nombre: string } | null
+  categorias?: Array<{ id_categoria: number; categoria: { id: number; nombre: string } }> | { id_categoria: number; categoria: { id: number; nombre: string } } | null
+  categoria?: { id: number; nombre: string }[] | { id: number; nombre: string } | null // Mantener para compatibilidad
   marca?: { id: number; nombre: string }[] | { id: number; nombre: string } | null
 }
 
@@ -24,17 +25,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let productsError: any = null
 
   try {
+    const supabase = getSupabaseClient()
     const result = await supabase
       .from('producto')
       .select(`
         seo_slug,
         canonical_url,
         fecha_actualizacion,
-        categoria:id_categoria(id, nombre),
+        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre)
       `)
       .eq('activo', true)
       .eq('visible_web', true)
+      .limit(10000) // Límite razonable para sitemap
 
     products = (result.data || []) as unknown as SitemapProduct[]
     productsError = result.error
@@ -111,9 +114,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         path = product.canonical_url
       } else {
         // Normalizar categoría y marca (pueden ser arrays o objetos)
-        const categoria = Array.isArray(product.categoria) 
-          ? product.categoria[0] 
-          : product.categoria
+        // Las categorías ahora vienen como array de relaciones producto_categoria
+        let categoria: { id: number; nombre: string } | null = null
+        if (product.categorias) {
+          if (Array.isArray(product.categorias) && product.categorias.length > 0) {
+            categoria = product.categorias[0]?.categoria || null
+          } else if (product.categorias.categoria) {
+            categoria = product.categorias.categoria
+          }
+        }
+        // Fallback a categoria singular para compatibilidad
+        if (!categoria) {
+          categoria = Array.isArray(product.categoria) 
+            ? product.categoria[0] 
+            : product.categoria
+        }
         const marca = Array.isArray(product.marca) 
           ? product.marca[0] 
           : product.marca

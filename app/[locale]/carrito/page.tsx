@@ -96,12 +96,20 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                     <div className="flex items-start space-x-4">
                       {/* Product Image */}
                       <div className="relative w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 rounded-xl flex-shrink-0 overflow-hidden">
-                        <Image
-                          src={item.product.imagen_principal_url || '/placeholder-product.svg'}
-                          alt={item.product.nombre}
-                          fill
-                          className="object-cover"
-                        />
+                        {item.product.imagen_principal_url && item.product.imagen_principal_url.trim() !== '' ? (
+                          <Image
+                            src={item.product.imagen_principal_url}
+                            alt={item.product.nombre || 'Producto sin nombre'}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center p-2">
+                            <p className="text-gray-600 dark:text-gray-300 text-xs text-center line-clamp-3 font-medium" aria-label={item.product.nombre || 'Producto sin imagen'}>
+                              {item.product.nombre || 'Sin imagen'}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Product Info */}

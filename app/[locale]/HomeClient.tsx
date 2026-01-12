@@ -30,7 +30,11 @@ export default function HomeClient({ locale }: HomeClientProps) {
         }
         
         if (categoriasData.data) {
-          setCategories(categoriasData.data.slice(0, 6));
+          // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
+          const filteredCategories = categoriasData.data.filter(
+            (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
+          );
+          setCategories(filteredCategories.slice(0, 6));
         }
       } catch (error) {
         console.error('Error loading data:', error);

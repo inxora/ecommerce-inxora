@@ -33,7 +33,7 @@ Consulta `lib/supabase.ts` y `messages/*.json` para revisar dependencias de conf
 ```
 npm run dev
 ```
-Servidor por defecto: `http://localhost:3000` (en este proyecto se usa `3001` en desarrollo).
+Servidor de desarrollo: `http://localhost:3001`
 
 ## Build
 ```

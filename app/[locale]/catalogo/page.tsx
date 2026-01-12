@@ -5,9 +5,9 @@ import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 
-// Deshabilitar caché para obtener datos frescos siempre
+// Caché optimizado: revalidar cada 60 segundos para mejorar rendimiento
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Catálogo de Productos | TIENDA INXORA - Suministros Industriales',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 }
 
 interface CatalogPageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string
     categoria?: string | string[]
     marca?: string | string[]
@@ -29,12 +29,13 @@ interface CatalogPageProps {
     precioMin?: string
     precioMax?: string
     ordenar?: string
-  }
+  }>
 }
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
-  const page = parseInt(searchParams.page || '1')
-  const itemsPerPage = 12
+  const resolvedSearchParams = await searchParams
+  const page = parseInt(resolvedSearchParams.page || '1')
+  const itemsPerPage = 50
 
   // Normalize categoria and marca to arrays
   const normalizeToArray = (value: string | string[] | undefined): string[] => {
@@ -42,18 +43,18 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     return Array.isArray(value) ? value : [value]
   }
 
-  const categoriaArray = normalizeToArray(searchParams.categoria)
-  const marcaArray = normalizeToArray(searchParams.marca)
+  const categoriaArray = normalizeToArray(resolvedSearchParams.categoria)
+  const marcaArray = normalizeToArray(resolvedSearchParams.marca)
 
   const filters: FilterState = {
     categoria: categoriaArray.length > 0 ? categoriaArray : undefined,
     marca: marcaArray.length > 0 ? marcaArray : undefined,
-    precioMin: searchParams.precioMin ? parseInt(searchParams.precioMin) : undefined,
-    precioMax: searchParams.precioMax ? parseInt(searchParams.precioMax) : undefined,
-    ordenar: searchParams.ordenar,
+    precioMin: resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined,
+    precioMax: resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined,
+    ordenar: resolvedSearchParams.ordenar,
   }
 
-  const searchTerm = searchParams.buscar || ''
+  const searchTerm = resolvedSearchParams.buscar || ''
 
   // Fetch data in parallel
   // For now, use getProducts which supports multiple filters

@@ -14,6 +14,7 @@ interface ProductImageZoomProps {
 export function ProductImageZoom({ src, alt, className = '', priority = false }: ProductImageZoomProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 })
+  const [imageError, setImageError] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -37,6 +38,9 @@ export function ProductImageZoom({ src, alt, className = '', priority = false }:
     setIsHovering(false)
   }
 
+  // Verificar si la imagen es válida o es un placeholder
+  const hasValidImage = src && src.trim() !== '' && src !== '/placeholder-product.svg' && !imageError
+
   return (
     <div
       ref={containerRef}
@@ -45,27 +49,65 @@ export function ProductImageZoom({ src, alt, className = '', priority = false }:
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
     >
-      <div
-        className="absolute inset-0 transition-transform duration-300 will-change-transform"
-        style={{
-          transform: isHovering ? 'scale(2)' : 'scale(1)',
-          transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
-        }}
-      >
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
-          priority={priority}
-          fetchPriority={priority ? 'high' : 'auto'}
-          loading={priority ? undefined : 'lazy'}
-          quality={priority ? 90 : 75}
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-        />
-      </div>
+      {hasValidImage ? (
+        <>
+        <div
+          className="absolute inset-0 transition-transform duration-300 will-change-transform"
+          style={{
+            transform: isHovering ? 'scale(2)' : 'scale(1)',
+            transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
+          }}
+        >
+          <Image
+            src={src}
+            alt={alt || 'Imagen del producto'}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
+            priority={priority}
+            fetchPriority={priority ? 'high' : 'auto'}
+            loading={priority ? undefined : 'lazy'}
+            quality={priority ? 90 : 75}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              onError={(e) => {
+                // Silenciar el error para evitar que cierre el servidor
+                console.warn(`Error cargando imagen: ${src}`)
+                setImageError(true)
+                // Prevenir propagación del error
+                e.stopPropagation()
+              }}
+              onLoad={() => {
+                setImageError(false)
+              }}
+          />
+        </div>
+          {/* Fallback que se muestra si la imagen falla */}
+          {imageError && (
+            <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 z-10">
+              <div className="text-center">
+                <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold mb-2" aria-label={alt || 'Producto sin imagen'}>
+                  {alt || 'Sin imagen disponible'}
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  Imagen no disponible
+                </p>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold mb-2" aria-label={alt || 'Producto sin imagen'}>
+              {alt || 'Sin imagen disponible'}
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              Imagen no disponible
+            </p>
+          </div>
+        </div>
+      )}
       
       {/* Zoom Icon Overlay */}
       <div

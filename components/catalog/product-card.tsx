@@ -29,6 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
   
   const isWishlisted = isFavorite(product.sku)
+  const [imageError, setImageError] = useState(false)
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -59,17 +60,51 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="relative">
           {/* Product Image */}
           <div className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 aspect-square">
-            <Image
-              src={product.imagen_principal_url || '/placeholder-product.svg'}
-              alt={product.nombre}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              loading="lazy"
-              quality={75}
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-            />
+            {product.imagen_principal_url && product.imagen_principal_url.trim() !== '' && !imageError ? (
+              <>
+              <Image
+                src={product.imagen_principal_url}
+                alt={product.nombre || 'Producto sin nombre'}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                loading="lazy"
+                quality={75}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                  onError={(e) => {
+                    // Silenciar el error para evitar que cierre el servidor
+                  console.warn(`Error cargando imagen para producto ${product.sku}: ${product.imagen_principal_url}`)
+                  setImageError(true)
+                    // Prevenir propagación del error
+                    e.stopPropagation()
+                  }}
+                  onLoad={() => {
+                    // Si la imagen carga correctamente, asegurarse de que imageError sea false
+                    setImageError(false)
+                }}
+                unoptimized={false}
+              />
+                {/* Fallback placeholder que se muestra si la imagen falla */}
+                {imageError && (
+                  <div className="absolute inset-0 flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                    <div className="text-center">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base font-medium line-clamp-3" aria-label={product.nombre || 'Producto sin imagen'}>
+                        {product.nombre || 'Sin imagen'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="text-center">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base font-medium line-clamp-3" aria-label={product.nombre || 'Producto sin imagen'}>
+                    {product.nombre || 'Sin imagen'}
+                  </p>
+                </div>
+              </div>
+            )}
             
             {/* Eye Icon on Hover */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

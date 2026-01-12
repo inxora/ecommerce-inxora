@@ -6,16 +6,18 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://tienda.inxora.com'),
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/inxora.png', type: 'image/png' },
+      { url: '/inxora.png', type: 'image/png', sizes: '512x512' },
     ],
     apple: [
-      { url: '/inxora.png', type: 'image/png' },
+      { url: '/inxora.png', type: 'image/png', sizes: '512x512' },
     ],
     shortcut: '/favicon.ico',
   },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({

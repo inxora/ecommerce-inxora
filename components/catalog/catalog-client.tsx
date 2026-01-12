@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useCallback } from 'react'
 import { ProductCard } from '@/components/catalog/product-card'
 import { ProductFilters, FilterState } from '@/components/catalog/product-filters'
 import { ProductSearch } from '@/components/catalog/product-search'
@@ -31,45 +32,99 @@ export function CatalogClient({
 }: CatalogClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
-  const updateURL = (updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
+  // Función separada para cambios de página - más robusta
+  const handlePageChange = useCallback((page: number) => {
+    // Validar que la página esté en rango válido
+    if (page < 1 || page > totalPages) return
+    
+    const currentPageFromUrl = parseInt(searchParams.get('page') || '1')
+    
+    // Prevenir actualizaciones si ya estamos en esa página
+    if (page === currentPageFromUrl) return
+    
+    // Crear nuevos params basados en los actuales
+    const newParams = new URLSearchParams(searchParams.toString())
+    
+    // Actualizar el parámetro de página
+    if (page === 1) {
+      newParams.delete('page')
+    } else {
+      newParams.set('page', String(page))
+    }
+    
+    // Construir URL con query params
+    const queryString = newParams.toString()
+    const url = queryString ? `${pathname}?${queryString}` : pathname
+    
+    // Usar router.push para navegación - asegurar que se preserve el estado
+    router.push(url, { scroll: false })
+  }, [searchParams, router, pathname, totalPages])
+
+  const updateURL = useCallback((updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
+    // Si solo es un cambio de página, usar handlePageChange directamente
+    if (Object.keys(updates).length === 1 && 'page' in updates && updates.page !== undefined) {
+      const pageNum = typeof updates.page === 'string' ? parseInt(updates.page) : updates.page
+      if (!isNaN(pageNum) && pageNum > 0) {
+        handlePageChange(pageNum)
+        return
+      }
+    }
+    
+    // Crear nuevos params desde los actuales
     const params = new URLSearchParams(searchParams.toString())
     
+    // Determinar si este update incluye un cambio de página explícito
+    const hasPageUpdate = 'page' in updates && updates.page !== undefined
+    const hasOtherUpdates = Object.keys(updates).some(k => k !== 'page' && updates[k as keyof typeof updates] !== undefined)
+    
+    // Procesar todos los updates
     Object.entries(updates).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        // Handle arrays for categoria and marca
-        if (key === 'categoria' || key === 'marca') {
-          // Remove existing values for this key
-          params.delete(key)
-          // Add all values from array
-          if (Array.isArray(value)) {
-            value.forEach(v => params.append(key, String(v)))
-          } else {
-            params.set(key, String(value))
-          }
+      if (value === undefined || value === '') {
+        params.delete(key)
+        return
+      }
+      
+      // Handle arrays for categoria and marca
+      if (key === 'categoria' || key === 'marca') {
+        // Remove existing values for this key
+        params.delete(key)
+        // Add all values from array
+        if (Array.isArray(value)) {
+          value.forEach(v => params.append(key, String(v)))
         } else {
           params.set(key, String(value))
         }
+      } else if (key === 'page') {
+        // Manejar página: solo agregar si no es 1, eliminar si es 1
+        const pageValue = String(value)
+        if (pageValue === '1') {
+          params.delete('page')
+        } else {
+          params.set('page', pageValue)
+        }
       } else {
-        params.delete(key)
+        params.set(key, String(value))
       }
     })
     
-    // Reset to first page when filters change (except for page updates)
-    if (!('page' in updates)) {
+    // Solo resetear página si hubo cambios en filtros (NO en cambios de página explícitos)
+    if (hasOtherUpdates && !hasPageUpdate) {
       params.delete('page')
     }
     
-    router.push(`?${params.toString()}`)
-  }
+    // Construir URL completa usando pathname para Next.js 14 App Router
+    const queryString = params.toString()
+    const url = queryString ? `${pathname}?${queryString}` : pathname
+    
+    router.push(url, { scroll: false })
+  }, [searchParams, router, pathname, handlePageChange])
 
-  const clearFilters = () => {
-    const params = new URLSearchParams(searchParams.toString())
-    ;['buscar', 'categoria', 'marca', 'precioMin', 'precioMax', 'ordenar', 'page'].forEach((key) => {
-      params.delete(key)
-    })
-    router.push(`?${params.toString()}`)
-  }
+  const clearFilters = useCallback(() => {
+    // Limpiar todos los filtros y volver a la página 1
+    router.push(pathname, { scroll: false })
+  }, [router, pathname])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -128,7 +183,7 @@ export function CatalogClient({
                 <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">
-                      Mostrando <span className="text-inxora-blue font-semibold">{(currentPage - 1) * 12 + 1}-{Math.min(currentPage * 12, total)}</span> de <span className="text-inxora-blue font-semibold">{total}</span> productos
+                      Mostrando <span className="text-inxora-blue font-semibold">{(currentPage - 1) * 50 + 1}-{Math.min(currentPage * 50, total)}</span> de <span className="text-inxora-blue font-semibold">{total}</span> productos
                     </p>
                     <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                       <Package className="h-4 w-4" />
@@ -149,9 +204,9 @@ export function CatalogClient({
                   <ProductPagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={(page) => updateURL({ page: page.toString() })}
+                    onPageChange={handlePageChange}
                     totalItems={total}
-                    itemsPerPage={12}
+                    itemsPerPage={50}
                   />
                 </div>
               </>

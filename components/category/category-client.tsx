@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams, useParams } from 'next/navigation'
+import { useRouter, useSearchParams, useParams, usePathname } from 'next/navigation'
 import { startTransition, useCallback, useRef } from 'react'
 import { ProductCard } from '@/components/catalog/product-card'
 import { ProductFilters, FilterState } from '@/components/catalog/product-filters'
@@ -38,29 +38,79 @@ export function CategoryClient({
 }: CategoryClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const params = useParams() as { locale?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
   
-  // ✅ FIX: Usar ref para evitar re-renders durante las actualizaciones
   const isUpdatingRef = useRef(false)
+  
+  // ✅ FIX: Separar las dependencias estables de las inestables
+  const categoryIdRef = useRef(category.id)
+  const localeRef = useRef(locale)
+  
+  // Actualizar refs cuando cambien los valores
+  categoryIdRef.current = category.id
+  localeRef.current = locale
 
-  // ✅ FIX: Envolver updateURL en useCallback para estabilizar la función
+  // Función separada para cambios de página - debe definirse antes de updateURL
+  const handlePageChange = useCallback((page: number) => {
+    // Validar que la página esté en rango válido
+    if (page < 1 || page > totalPages) return
+    
+    // Leer la página actual directamente de searchParams para evitar problemas de sincronización
+    const currentPageFromUrl = parseInt(searchParams.get('page') || '1')
+    
+    // Prevenir actualizaciones si ya estamos en esa página
+    if (page === currentPageFromUrl) return
+    
+    // Crear nuevos params basados en los actuales pero actualizando solo la página
+    // Usar searchParams pero crear una nueva instancia para evitar problemas de referencia
+    const newParams = new URLSearchParams(searchParams.toString())
+    
+    // Actualizar el parámetro de página
+    if (page === 1) {
+      newParams.delete('page')
+    } else {
+      newParams.set('page', String(page))
+    }
+    
+    // Construir URL completa
+    const queryString = newParams.toString()
+    const url = queryString ? `${pathname}?${queryString}` : pathname
+    
+    // Usar router.push directamente sin bloqueos para cambios de página
+    // Los cambios de página deben tener prioridad sobre otras actualizaciones
+    router.push(url, { scroll: false })
+  }, [searchParams, router, pathname, totalPages])
+
   const updateURL = useCallback((updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
-    // Evitar actualizaciones concurrentes
-    if (isUpdatingRef.current) return
+    // Si solo es un cambio de página, usar handlePageChange directamente y salir
+    // Los cambios de página tienen prioridad y no deben ser bloqueados
+    if (Object.keys(updates).length === 1 && 'page' in updates && updates.page !== undefined) {
+      const pageNum = typeof updates.page === 'string' ? parseInt(updates.page) : updates.page
+      if (!isNaN(pageNum) && pageNum > 0 && pageNum <= totalPages) {
+        handlePageChange(pageNum)
+        return
+      }
+    }
+    
+    // Para otros cambios (filtros), prevenir actualizaciones simultáneas
+    if (isUpdatingRef.current) {
+      return
+    }
+    
     isUpdatingRef.current = true
     
-    // Special handling for categoria: if selecting a different category, navigate to that category page
+    // Usar searchParams de Next.js en lugar de window.location.search para evitar problemas de sincronización
+    const currentSearchParams = new URLSearchParams(searchParams.toString())
+    
+    // Special handling for categoria
     if (updates.categoria !== undefined) {
       const categoriaArray = Array.isArray(updates.categoria) ? updates.categoria : [updates.categoria]
-      const currentCategoryIdStr = String(category.id)
-      
-      // Get the selected category (should be only one)
+      const currentCategoryIdStr = String(categoryIdRef.current)
       const selectedCategoryId = categoriaArray.length > 0 ? categoriaArray[0] : null
       
-      // If a different category is selected, navigate to that category page
       if (selectedCategoryId && selectedCategoryId !== currentCategoryIdStr) {
-        // Find the selected category to get its name
         const selectedCategory = categories.find(c => String(c.id) === selectedCategoryId)
         if (!selectedCategory) {
           isUpdatingRef.current = false
@@ -69,114 +119,126 @@ export function CategoryClient({
         
         const newParams = new URLSearchParams()
         
-        // Preserve marca filters (multiple marcas allowed)
+        // Preserve existing filters from current URL
+        const currentMarca = currentSearchParams.getAll('marca')
         if (updates.marca) {
           const marcaArray = Array.isArray(updates.marca) ? updates.marca : [updates.marca]
           marcaArray.forEach(m => newParams.append('marca', String(m)))
-        } else if (filters.marca) {
-          const marcaArray = Array.isArray(filters.marca) ? filters.marca : [filters.marca]
-          marcaArray.forEach(m => newParams.append('marca', String(m)))
+        } else if (currentMarca.length > 0) {
+          currentMarca.forEach(m => newParams.append('marca', m))
         }
         
-        // Preserve other filters
+        const currentPrecioMin = currentSearchParams.get('precioMin')
+        const currentPrecioMax = currentSearchParams.get('precioMax')
+        const currentOrdenar = currentSearchParams.get('ordenar')
+        const currentBuscar = currentSearchParams.get('buscar')
+        const currentPage = currentSearchParams.get('page')
+        
         if (updates.precioMin !== undefined) newParams.set('precioMin', String(updates.precioMin))
-        else if (filters.precioMin !== undefined) newParams.set('precioMin', String(filters.precioMin))
+        else if (currentPrecioMin) newParams.set('precioMin', currentPrecioMin)
         
         if (updates.precioMax !== undefined) newParams.set('precioMax', String(updates.precioMax))
-        else if (filters.precioMax !== undefined) newParams.set('precioMax', String(filters.precioMax))
+        else if (currentPrecioMax) newParams.set('precioMax', currentPrecioMax)
         
         if (updates.ordenar) newParams.set('ordenar', String(updates.ordenar))
-        else if (filters.ordenar) newParams.set('ordenar', String(filters.ordenar))
+        else if (currentOrdenar) newParams.set('ordenar', currentOrdenar)
         
-        if (searchTerm) newParams.set('buscar', searchTerm)
+        if (updates.buscar) newParams.set('buscar', updates.buscar)
+        else if (currentBuscar) newParams.set('buscar', currentBuscar)
         
-        // Navigate to the new category page using category name
-        const categoryUrl = buildCategoryUrl(selectedCategory.nombre, locale)
+        // Preservar página si no hay cambio explícito
+        if (updates.page) {
+          if (updates.page !== '1') newParams.set('page', updates.page)
+        } else if (currentPage && currentPage !== '1') {
+          newParams.set('page', currentPage)
+        }
+        
+        const categoryUrl = buildCategoryUrl(selectedCategory.nombre, localeRef.current)
         const url = `${categoryUrl}?${newParams.toString()}`
+        
         startTransition(() => {
           router.push(url, { scroll: false })
-          // Reset flag después de la navegación
-          setTimeout(() => { isUpdatingRef.current = false }, 100)
+          setTimeout(() => { isUpdatingRef.current = false }, 200)
         })
         return
       }
       
-      // If current category is selected, just update other filters (categoria is in the route)
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('categoria') // Remove categoria from params (it's in the route)
-      
-      // Update other filters
-      Object.entries(updates).forEach(([key, val]) => {
-        if (key !== 'categoria' && val !== undefined && val !== '') {
-          if (key === 'marca' && Array.isArray(val)) {
-            params.delete(key)
-            val.forEach(v => params.append(key, String(v)))
-          } else {
-            params.set(key, String(val))
-          }
-        } else if (key !== 'categoria') {
-          params.delete(key)
-        }
-      })
-      
-      if (!('page' in updates)) {
-        params.delete('page')
-      }
-      
-      const url = `?${params.toString()}`
-      startTransition(() => {
-        router.replace(url, { scroll: false })
-        // Reset flag después de la navegación
-        setTimeout(() => { isUpdatingRef.current = false }, 100)
-      })
-      return
+      // Current category selected - remove categoria param and update others
+      currentSearchParams.delete('categoria')
     }
     
-    // Default handling for other filters
-    const params = new URLSearchParams(searchParams.toString())
+    // Construir params desde el estado actual de la URL
+    const newParams = new URLSearchParams(currentSearchParams.toString())
     
+    // Determinar si este update incluye un cambio de página explícito
+    const hasPageUpdate = 'page' in updates && updates.page !== undefined
+    const hasOtherUpdates = Object.keys(updates).some(k => k !== 'page' && k !== 'buscar' && updates[k as keyof typeof updates] !== undefined)
+    
+    // Preservar la página actual si no hay cambios de filtros (excepto buscar)
+    const currentPage = currentSearchParams.get('page')
+    
+    // Aplicar todos los updates
     Object.entries(updates).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        // Handle arrays for marca
-        if (key === 'marca') {
-          params.delete(key)
-          if (Array.isArray(value)) {
-            value.forEach(v => params.append(key, String(v)))
-          } else {
-            params.set(key, String(value))
-          }
-        } else if (key !== 'categoria') {
-          params.set(key, String(value))
+      if (key === 'categoria') {
+        newParams.delete('categoria')
+        return
+      }
+      
+      if (value === undefined || value === '') {
+        newParams.delete(key)
+        return
+      }
+      
+      if (key === 'marca') {
+        newParams.delete(key)
+        if (Array.isArray(value)) {
+          value.forEach(v => newParams.append(key, String(v)))
+        } else {
+          newParams.append(key, String(value))
         }
-      } else if (key !== 'categoria') {
-        params.delete(key)
+      } else if (key === 'page') {
+        // Manejar página: solo agregar si no es 1, eliminar si es 1
+        const pageValue = String(value)
+        if (pageValue === '1') {
+          newParams.delete('page')
+        } else {
+          newParams.set('page', pageValue)
+        }
+      } else {
+        newParams.set(key, String(value))
       }
     })
     
-    // Reset to first page when filters change (except for page updates)
-    if (!('page' in updates)) {
-      params.delete('page')
+    // Solo resetear página si hubo cambios en filtros (NO en cambios de página explícitos, NO en cambios de búsqueda)
+    if (hasOtherUpdates && !hasPageUpdate) {
+      newParams.delete('page')
+    } else if (!hasPageUpdate && currentPage && !hasOtherUpdates) {
+      // Preservar la página actual si no hay cambios de filtros
+      if (currentPage !== '1') {
+        newParams.set('page', currentPage)
+      }
     }
     
-    const url = `?${params.toString()}`
+    // Construir URL completa usando pathname para Next.js 14 App Router
+    const queryString = newParams.toString()
+    const url = queryString ? `${pathname}?${queryString}` : pathname
+    
     startTransition(() => {
-      router.replace(url, { scroll: false })
-      // Reset flag después de la navegación
-      setTimeout(() => { isUpdatingRef.current = false }, 100)
+      router.push(url, { scroll: false })
+      // Usar un timeout más largo para asegurar que la navegación se complete
+      // especialmente importante cuando hay múltiples páginas
+      setTimeout(() => { isUpdatingRef.current = false }, 300)
     })
-  }, [category.id, filters, searchTerm, searchParams, locale, router])
-
+  }, [router, categories, searchParams, handlePageChange, pathname, totalPages]) // Incluir totalPages como dependencia
 
   return (
     <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 pb-16">
-      {/* Related Brands Carousel - Moved to top */}
       {relatedBrands.length > 0 && (
         <div className="mb-6">
           <CategoryBrandsCarousel brands={relatedBrands} category={category} />
         </div>
       )}
 
-      {/* Search */}
       <div className="mb-6">
         <ProductSearch
           searchTerm={searchTerm}
@@ -185,7 +247,6 @@ export function CategoryClient({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-        {/* Filters Sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-24">
             <ProductFilters
@@ -201,15 +262,13 @@ export function CategoryClient({
           </div>
         </div>
 
-        {/* Products Grid */}
         <div className="lg:col-span-3">
           {products && products.length > 0 ? (
             <>
-              {/* Results Info */}
               <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">
-                    Mostrando <span className="text-inxora-blue font-semibold">{(currentPage - 1) * 12 + 1}-{Math.min(currentPage * 12, total)}</span> de <span className="text-inxora-blue font-semibold">{total}</span> productos
+                    Mostrando <span className="text-inxora-blue font-semibold">{(currentPage - 1) * 50 + 1}-{Math.min(currentPage * 50, total)}</span> de <span className="text-inxora-blue font-semibold">{total}</span> productos
                   </p>
                   <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     <Package className="h-4 w-4" />
@@ -218,21 +277,19 @@ export function CategoryClient({
                 </div>
               </div>
               
-              {/* Products Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {products.map((product) => (
                   <ProductCard key={product.sku} product={product} />
                 ))}
               </div>
               
-              {/* Pagination */}
               <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
                 <ProductPagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  onPageChange={(page) => updateURL({ page: page.toString() })}
+                  onPageChange={handlePageChange}
                   totalItems={total}
-                  itemsPerPage={12}
+                  itemsPerPage={50}
                 />
               </div>
             </>

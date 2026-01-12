@@ -14,6 +14,12 @@ interface ProductGalleryProps {
 
 export function ProductGallery({ images, productName }: ProductGalleryProps) {
   const [currentImage, setCurrentImage] = useState(0)
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
+
+  const handleImageError = (index: number) => {
+    console.warn(`Error cargando imagen ${index} para producto: ${productName}`)
+    setImageErrors(prev => new Set(prev).add(index))
+  }
 
   if (!images || images.length === 0) {
     return (
@@ -35,13 +41,28 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
     <div className="space-y-4">
       {/* Main Image */}
       <div className="relative aspect-square bg-white rounded-lg overflow-hidden border">
-        <Image
-          src={images[currentImage]}
-          alt={`${productName} - Imagen ${currentImage + 1}`}
-          fill
-          className="object-contain"
-          priority
-        />
+        {images[currentImage] && images[currentImage].trim() !== '' && images[currentImage] !== '/placeholder-product.svg' && !imageErrors.has(currentImage) ? (
+          <Image
+            src={images[currentImage]}
+            alt={`${productName || 'Producto'} - Imagen ${currentImage + 1}`}
+            fill
+            className="object-contain"
+            priority
+            onError={() => handleImageError(currentImage)}
+            unoptimized={false}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+            <div className="text-center">
+              <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold mb-2" aria-label={productName || 'Producto sin imagen'}>
+                {productName || 'Sin imagen disponible'}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Imagen no disponible
+              </p>
+            </div>
+          </div>
+        )}
         
         {/* Navigation arrows for multiple images */}
         {images.length > 1 && (
@@ -78,12 +99,27 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
           </DialogTrigger>
           <DialogContent className="max-w-4xl">
             <div className="relative aspect-square">
-              <Image
-                src={images[currentImage]}
-                alt={`${productName} - Imagen ampliada`}
-                fill
-                className="object-contain"
-              />
+              {images[currentImage] && images[currentImage].trim() !== '' && images[currentImage] !== '/placeholder-product.svg' && !imageErrors.has(currentImage) ? (
+                <Image
+                  src={images[currentImage]}
+                  alt={`${productName || 'Producto'} - Imagen ampliada`}
+                  fill
+                  className="object-contain"
+                  onError={() => handleImageError(currentImage)}
+                  unoptimized={false}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                  <div className="text-center">
+                    <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold mb-2" aria-label={productName || 'Producto sin imagen'}>
+                      {productName || 'Sin imagen disponible'}
+                    </p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      Imagen no disponible
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -104,18 +140,28 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               key={index}
               onClick={() => setCurrentImage(index)}
               className={cn(
-                "relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-colors",
+                "relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-colors bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600",
                 currentImage === index
                   ? "border-primary"
                   : "border-transparent hover:border-muted-foreground"
               )}
             >
-              <Image
-                src={image}
-                alt={`${productName} - Miniatura ${index + 1}`}
-                fill
-                className="object-cover"
-              />
+              {image && image.trim() !== '' && image !== '/placeholder-product.svg' && !imageErrors.has(index) ? (
+                <Image
+                  src={image}
+                  alt={`${productName || 'Producto'} - Miniatura ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  onError={() => handleImageError(index)}
+                  unoptimized={false}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs text-center line-clamp-2">
+                    {productName || 'Sin imagen'}
+                  </span>
+                </div>
+              )}
             </button>
           ))}
         </div>

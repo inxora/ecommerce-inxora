@@ -20,11 +20,17 @@ interface CartDrawerProps {
 export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
   const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, clearCart, updateTrigger } = useCart()
   const [isOpen, setIsOpen] = useState(false)
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
   const totalItems = getItemsCount()
   const total = getTotalPrice()
   const isEmpty = items.length === 0
   const pathname = usePathname()
   const locale = (pathname?.split('/')?.[1] || 'es')
+  
+  const handleImageError = (sku: number) => {
+    console.warn(`Error cargando imagen para producto SKU ${sku} en carrito`)
+    setImageErrors(prev => new Set(prev).add(sku))
+  }
   
   // Ocultar widget de chat cuando el carrito esté abierto
   useEffect(() => {
@@ -205,13 +211,23 @@ export function CartDrawer({ open, onOpenChange, children }: CartDrawerProps) {
               <div className="flex-1 overflow-y-auto py-4 space-y-4">
                 {cartItems.map((item) => (
                   <div key={item.product.sku} className="flex space-x-3 p-3 border rounded-lg">
-                    <div className="relative h-16 w-16 flex-shrink-0">
-                      <Image
-                        src={item.product.imagen_principal_url || '/placeholder-product.svg'}
-                        alt={item.product.nombre}
-                        fill
-                        className="object-cover rounded"
-                      />
+                    <div className="relative h-16 w-16 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 rounded overflow-hidden">
+                      {item.product.imagen_principal_url && item.product.imagen_principal_url.trim() !== '' && !imageErrors.has(item.product.sku) ? (
+                        <Image
+                          src={item.product.imagen_principal_url}
+                          alt={item.product.nombre || 'Producto sin nombre'}
+                          fill
+                          className="object-cover"
+                          onError={() => handleImageError(item.product.sku)}
+                          unoptimized={false}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center p-1">
+                          <p className="text-gray-500 dark:text-gray-400 text-xs text-center line-clamp-2" aria-label={item.product.nombre || 'Producto sin imagen'}>
+                            {item.product.nombre || 'Sin imagen'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex-1 min-w-0">

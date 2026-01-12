@@ -39,6 +39,11 @@ export function ProductFilters({
   categoryDescription,
   currentCategoryId
 }: ProductFiltersProps) {
+  // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
+  const filteredCategories = categories.filter(
+    (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
+  )
+  
   const [isOpen, setIsOpen] = useState(false)
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false)
@@ -241,7 +246,7 @@ export function ProductFilters({
       </div>
 
       {/* Categorías */}
-      {categories.length > 0 && (
+      {filteredCategories.length > 0 && (
         <div>
           <h3 className="font-semibold mb-3 text-inxora-dark-blue dark:text-white">Categoría</h3>
           <div className="relative" ref={categoryDropdownRef}>
@@ -267,7 +272,7 @@ export function ProductFilters({
                 className="absolute z-[60] w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto"
               >
                 <div className="p-2 space-y-1">
-                  {categories.map((category) => {
+                  {filteredCategories.map((category) => {
                     const categoryId = String(category.id)
                     const selected = isSelected("categoria", categoryId)
                     return (
@@ -439,7 +444,7 @@ export function ProductFilters({
           <div className="flex flex-wrap gap-2 mb-4">
             {Array.isArray(filters.categoria) ? (
               filters.categoria.map((catId) => {
-                const category = categories.find(c => String(c.id) === catId)
+                const category = filteredCategories.find(c => String(c.id) === catId)
                 return category ? (
                   <Badge key={catId} variant="outline" className="flex items-center gap-1">
                     {category.nombre}
@@ -452,7 +457,7 @@ export function ProductFilters({
               })
             ) : filters.categoria ? (
               (() => {
-                const category = categories.find(c => String(c.id) === filters.categoria)
+                const category = filteredCategories.find(c => String(c.id) === filters.categoria)
                 return category ? (
                   <Badge key={filters.categoria} variant="outline" className="flex items-center gap-1">
                     {category.nombre}

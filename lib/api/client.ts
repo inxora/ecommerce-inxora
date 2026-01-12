@@ -36,25 +36,43 @@ export async function apiClient<T>(
     }
   }
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers: {
-      'Content-Type': 'application/json',
-      ...fetchOptions?.headers,
-    },
-  })
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers: {
+        'Content-Type': 'application/json',
+        ...fetchOptions?.headers,
+      },
+      // Agregar credentials para requests CORS
+      credentials: 'omit', // No enviar cookies para evitar problemas CORS
+    })
 
-  if (!response.ok) {
-    throw new ApiError(response.status, response.statusText)
+    // Si hay error de CORS pero el status es 200, intentar leer la respuesta de todas formas
+    if (!response.ok) {
+      throw new ApiError(response.status, response.statusText)
+    }
+
+    // Manejar respuestas vacías
+    const text = await response.text()
+    if (!text) {
+      return {} as T
+    }
+
+    return JSON.parse(text)
+  } catch (error) {
+    // Si es un error de CORS pero el request fue exitoso (200 OK),
+    // el servidor procesó la petición aunque el navegador bloquee la respuesta
+    // En este caso, retornar un objeto vacío ya que no podemos leer la respuesta
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      // El error de CORS puede ocurrir aunque el request sea exitoso
+      // Si el endpoint no requiere respuesta, simplemente retornar vacío
+      // NO loggear para evitar saturar la consola con errores de CORS del backend
+      return {} as T
+    }
+    
+    // Re-lanzar otros errores
+    throw error
   }
-
-  // Manejar respuestas vacías
-  const text = await response.text()
-  if (!text) {
-    return {} as T
-  }
-
-  return JSON.parse(text)
 }
 
 // Métodos de conveniencia

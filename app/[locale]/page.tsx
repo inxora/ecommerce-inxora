@@ -63,22 +63,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function HomePage({ params }: PageProps) {
   const { locale } = await params
   
-  // JSON-LD Schema para Organization
-  const organizationSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'INXORA',
-    url: 'https://tienda.inxora.com',
-    logo: 'https://tienda.inxora.com/inxora.png',
-    description: 'Tienda online de suministros industriales en Perú',
-    address: {
-      '@type': 'PostalAddress',
-      addressCountry: 'PE',
-    },
-    sameAs: [],
-  }
-
   // JSON-LD Schema para WebSite con SearchAction
+  // Nota: El schema de Organization está en el layout principal para estar disponible en todas las páginas
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -96,10 +82,6 @@ export default async function HomePage({ params }: PageProps) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}

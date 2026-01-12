@@ -199,12 +199,19 @@ export function ProductInfo({ product }: ProductInfoProps) {
           </Button>
         </div>
         
-        {product.categoria && (
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">Categoría: </span>
-            <Badge variant="secondary">{typeof product.categoria === 'string' ? product.categoria : product.categoria.nombre}</Badge>
-          </div>
-        )}
+        {(() => {
+          // Usar primera categoría del array categorias, o categoria como fallback
+          const categoria = product?.categorias && product.categorias.length > 0
+            ? product.categorias[0]
+            : product?.categoria
+          
+          return categoria ? (
+            <div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Categoría: </span>
+              <Badge variant="secondary">{typeof categoria === 'string' ? categoria : categoria.nombre}</Badge>
+            </div>
+          ) : null
+        })()}
       </div>
 
       {/* Trust Badges - 3 Cards dentro del card de información */}

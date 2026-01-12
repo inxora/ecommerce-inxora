@@ -32,7 +32,11 @@ export function Header() {
       try {
         const { data } = await getCategorias()
         if (data) {
-          setCategories(data)
+          // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
+          const filteredCategories = data.filter(
+            (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
+          )
+          setCategories(filteredCategories)
         }
       } catch (error) {
         console.error('Error loading categories:', error)

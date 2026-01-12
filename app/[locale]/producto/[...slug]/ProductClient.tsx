@@ -71,25 +71,32 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
                     Inicio
                   </Link>
                 </li>
-                {product?.categoria && (
-                  <li>
-                    <div className="flex items-center">
-                      <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                      </svg>
-                      <Link 
-                        href={
-                          typeof product.categoria === 'object' && product.categoria.nombre
-                            ? buildCategoryUrl(product.categoria.nombre, locale)
-                            : `/${locale}/categoria`
-                        } 
-                        className="text-sm font-medium text-gray-700 hover:text-inxora-blue dark:text-gray-400 dark:hover:text-inxora-light-blue transition-colors"
-                      >
-                        {typeof product.categoria === 'object' ? product.categoria.nombre : 'Categoría'}
-                      </Link>
-                    </div>
-                  </li>
-                )}
+                {(() => {
+                  // Usar primera categoría del array categorias, o categoria como fallback
+                  const categoria = product?.categorias && product.categorias.length > 0
+                    ? product.categorias[0]
+                    : product?.categoria
+                  
+                  return categoria ? (
+                    <li>
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                        </svg>
+                        <Link 
+                          href={
+                            typeof categoria === 'object' && categoria.nombre
+                              ? buildCategoryUrl(categoria.nombre, locale)
+                              : `/${locale}/categoria`
+                          } 
+                          className="text-sm font-medium text-gray-700 hover:text-inxora-blue dark:text-gray-400 dark:hover:text-inxora-light-blue transition-colors"
+                        >
+                          {typeof categoria === 'object' ? categoria.nombre : 'Categoría'}
+                        </Link>
+                      </div>
+                    </li>
+                  ) : null
+                })()}
                 <li aria-current="page">
                   <div className="flex items-center">
                     <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
