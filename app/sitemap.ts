@@ -119,12 +119,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (product.categorias) {
           if (Array.isArray(product.categorias) && product.categorias.length > 0) {
             categoria = product.categorias[0]?.categoria || null
-          } else if (product.categorias.categoria) {
+          } else if (!Array.isArray(product.categorias) && 'categoria' in product.categorias) {
             categoria = product.categorias.categoria
           }
         }
         // Fallback a categoria singular para compatibilidad
-        if (!categoria) {
+        if (!categoria && product.categoria) {
           categoria = Array.isArray(product.categoria) 
             ? product.categoria[0] 
             : product.categoria
