@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useCallback } from 'react'
+import { startTransition, useCallback, useRef } from 'react'
 import { ProductCard } from '@/components/catalog/product-card'
 import { ProductFilters, FilterState } from '@/components/catalog/product-filters'
 import { ProductSearch } from '@/components/catalog/product-search'
@@ -33,18 +33,22 @@ export function CatalogClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
+  
+  const isUpdatingRef = useRef(false)
 
-  // Función separada para cambios de página - más robusta
+  // Función separada para cambios de página - debe definirse antes de updateURL
   const handlePageChange = useCallback((page: number) => {
     // Validar que la página esté en rango válido
     if (page < 1 || page > totalPages) return
     
+    // Leer la página actual directamente de searchParams para evitar problemas de sincronización
     const currentPageFromUrl = parseInt(searchParams.get('page') || '1')
     
     // Prevenir actualizaciones si ya estamos en esa página
     if (page === currentPageFromUrl) return
     
-    // Crear nuevos params basados en los actuales
+    // Crear nuevos params basados en los actuales pero actualizando solo la página
+    // Usar searchParams pero crear una nueva instancia para evitar problemas de referencia
     const newParams = new URLSearchParams(searchParams.toString())
     
     // Actualizar el parámetro de página
@@ -54,72 +58,101 @@ export function CatalogClient({
       newParams.set('page', String(page))
     }
     
-    // Construir URL con query params
+    // Construir URL completa
     const queryString = newParams.toString()
     const url = queryString ? `${pathname}?${queryString}` : pathname
     
-    // Usar router.push para navegación - asegurar que se preserve el estado
+    // Usar router.push directamente sin bloqueos para cambios de página
+    // Los cambios de página deben tener prioridad sobre otras actualizaciones
     router.push(url, { scroll: false })
   }, [searchParams, router, pathname, totalPages])
 
   const updateURL = useCallback((updates: Partial<FilterState & { page?: string; buscar?: string }>) => {
-    // Si solo es un cambio de página, usar handlePageChange directamente
+    // Si solo es un cambio de página, usar handlePageChange directamente y salir
+    // Los cambios de página tienen prioridad y no deben ser bloqueados
     if (Object.keys(updates).length === 1 && 'page' in updates && updates.page !== undefined) {
       const pageNum = typeof updates.page === 'string' ? parseInt(updates.page) : updates.page
-      if (!isNaN(pageNum) && pageNum > 0) {
+      if (!isNaN(pageNum) && pageNum > 0 && pageNum <= totalPages) {
         handlePageChange(pageNum)
         return
       }
     }
     
-    // Crear nuevos params desde los actuales
-    const params = new URLSearchParams(searchParams.toString())
+    // Para otros cambios (filtros), prevenir actualizaciones simultáneas
+    if (isUpdatingRef.current) {
+      return
+    }
+    
+    isUpdatingRef.current = true
+    
+    // Usar searchParams de Next.js en lugar de window.location.search para evitar problemas de sincronización
+    const currentSearchParams = new URLSearchParams(searchParams.toString())
+    
+    // Construir params desde el estado actual de la URL
+    const newParams = new URLSearchParams(currentSearchParams.toString())
     
     // Determinar si este update incluye un cambio de página explícito
     const hasPageUpdate = 'page' in updates && updates.page !== undefined
-    const hasOtherUpdates = Object.keys(updates).some(k => k !== 'page' && updates[k as keyof typeof updates] !== undefined)
+    const hasOtherUpdates = Object.keys(updates).some(k => k !== 'page' && k !== 'buscar' && updates[k as keyof typeof updates] !== undefined)
     
-    // Procesar todos los updates
+    // Preservar la página actual si no hay cambios de filtros (excepto buscar)
+    const currentPage = currentSearchParams.get('page')
+    
+    // Aplicar todos los updates
     Object.entries(updates).forEach(([key, value]) => {
       if (value === undefined || value === '') {
-        params.delete(key)
+        newParams.delete(key)
         return
       }
       
-      // Handle arrays for categoria and marca
-      if (key === 'categoria' || key === 'marca') {
-        // Remove existing values for this key
-        params.delete(key)
-        // Add all values from array
+      if (key === 'marca') {
+        newParams.delete(key)
         if (Array.isArray(value)) {
-          value.forEach(v => params.append(key, String(v)))
+          value.forEach(v => newParams.append(key, String(v)))
         } else {
-          params.set(key, String(value))
+          newParams.append(key, String(value))
+        }
+      } else if (key === 'categoria') {
+        newParams.delete(key)
+        if (Array.isArray(value)) {
+          value.forEach(v => newParams.append(key, String(v)))
+        } else {
+          newParams.append(key, String(value))
         }
       } else if (key === 'page') {
         // Manejar página: solo agregar si no es 1, eliminar si es 1
         const pageValue = String(value)
         if (pageValue === '1') {
-          params.delete('page')
+          newParams.delete('page')
         } else {
-          params.set('page', pageValue)
+          newParams.set('page', pageValue)
         }
       } else {
-        params.set(key, String(value))
+        newParams.set(key, String(value))
       }
     })
     
-    // Solo resetear página si hubo cambios en filtros (NO en cambios de página explícitos)
+    // Solo resetear página si hubo cambios en filtros (NO en cambios de página explícitos, NO en cambios de búsqueda)
     if (hasOtherUpdates && !hasPageUpdate) {
-      params.delete('page')
+      newParams.delete('page')
+    } else if (!hasPageUpdate && currentPage && !hasOtherUpdates) {
+      // Preservar la página actual si no hay cambios de filtros
+      if (currentPage !== '1') {
+        newParams.set('page', currentPage)
+      }
     }
     
     // Construir URL completa usando pathname para Next.js 14 App Router
-    const queryString = params.toString()
+    const queryString = newParams.toString()
     const url = queryString ? `${pathname}?${queryString}` : pathname
     
-    router.push(url, { scroll: false })
-  }, [searchParams, router, pathname, handlePageChange])
+    startTransition(() => {
+      router.push(url, { scroll: false })
+      // Usar un timeout más largo para asegurar que la navegación se complete
+      // especialmente importante cuando hay múltiples páginas
+      setTimeout(() => { isUpdatingRef.current = false }, 300)
+    })
+  }, [router, searchParams, handlePageChange, pathname, totalPages]) // Incluir totalPages como dependencia
 
   const clearFilters = useCallback(() => {
     // Limpiar todos los filtros y volver a la página 1
