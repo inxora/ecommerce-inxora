@@ -3,6 +3,11 @@ import { getSupabaseClient, getSupabaseAdmin, getCategorias, getMarcasByCategori
 import { buildCategoryUrlFromObject, buildCategoryBrandUrl } from '@/lib/product-url'
 import { generateCanonicalUrl } from '@/lib/product-seo'
 
+// Configuración para regenerar el sitemap automáticamente
+// ISR: El sitemap se regenera máximo cada 1 hora (3600 segundos)
+// Esto significa que productos nuevos aparecerán en máximo 1 hora
+export const revalidate = 3600
+
 // Tipo parcial para productos en el sitemap (solo los campos necesarios)
 // Supabase devuelve arrays para relaciones cuando se hace select con joins
 type SitemapProduct = {
