@@ -4,7 +4,8 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { getProductBySlug, getRelatedProducts, Producto } from '@/lib/supabase'
-import { buildProductUrl, buildCategoryUrlFromObject } from '@/lib/product-url'
+import { buildCategoryUrlFromObject } from '@/lib/product-url'
+import { generateProductSeo } from '@/lib/product-seo'
 import ProductClient from './ProductClient'
 
 interface PageProps {
@@ -37,38 +38,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  // Construir URL canónica usando buildProductUrl para consistencia
-  const canonicalPath = product.canonical_url && product.canonical_url.startsWith('/')
-    ? product.canonical_url
-    : buildProductUrl(product, locale)
-
-  const canonicalUrl = `https://tienda.inxora.com${canonicalPath}`
+  // Generar todos los datos SEO optimizados
+  const seoData = generateProductSeo(product, locale)
 
   return {
-    title: product.seo_title || product.nombre,
-    description: product.seo_description || product.descripcion_corta,
-    keywords: product.seo_keywords,
+    title: seoData.seoTitle,
+    description: seoData.seoDescription,
+    keywords: seoData.seoKeywords,
     robots: product.meta_robots || 'index, follow',
     alternates: {
-      canonical: canonicalUrl,
+      canonical: seoData.canonicalUrl,
     },
     openGraph: {
-      title: product.seo_title || product.nombre,
-      description: product.seo_description || product.descripcion_corta,
-      url: canonicalUrl,
+      title: seoData.seoTitle,
+      description: seoData.seoDescription,
+      url: seoData.canonicalUrl,
       images: product.imagen_principal_url ? [
         {
           url: product.imagen_principal_url,
-          alt: product.nombre,
-          width: 1200,
-          height: 630,
+          alt: `${product.marca && typeof product.marca === 'object' ? product.marca.nombre + ' ' : ''}${product.nombre}${product.cod_producto_marca ? ' modelo ' + product.cod_producto_marca : ''}`,
         }
       ] : [
         {
           url: 'https://tienda.inxora.com/inxora.png',
           alt: 'INXORA - Suministros Industriales',
-          width: 1200,
-          height: 630,
         }
       ],
       locale: locale === 'es' ? 'es_PE' : locale === 'pt' ? 'pt_BR' : 'en_US',
@@ -76,8 +69,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: product.seo_title || product.nombre,
-      description: product.seo_description || product.descripcion_corta,
+      title: seoData.seoTitle,
+      description: seoData.seoDescription,
       images: product.imagen_principal_url ? [product.imagen_principal_url] : undefined,
     },
   }
@@ -105,32 +98,16 @@ export default async function ProductPage({ params }: PageProps) {
     8
   )
 
-  // Construir URL canónica para JSON-LD
-  const canonicalPath = product.canonical_url && product.canonical_url.startsWith('/')
-    ? product.canonical_url
-    : buildProductUrl(product, locale)
-  const canonicalUrl = `https://tienda.inxora.com${canonicalPath}`
+  // Generar datos SEO usando las nuevas funciones
+  const seoData = generateProductSeo(product, locale)
+  const canonicalUrl = seoData.canonicalUrl
 
-  // Asegurar que las imágenes sean URLs absolutas para JSON-LD
-  const productImages = product.imagen_principal_url 
-    ? (Array.isArray(product.imagen_principal_url) 
-        ? product.imagen_principal_url.map(img => 
-            img.startsWith('http') ? img : `https://tienda.inxora.com${img}`
-          )
-        : [product.imagen_principal_url.startsWith('http') 
-            ? product.imagen_principal_url 
-            : `https://tienda.inxora.com${product.imagen_principal_url}`])
-    : ['https://tienda.inxora.com/inxora.png']
-
-  // Construir categoría para breadcrumbs y schema
+  // Construir categoría para breadcrumbs
   const categoria = product.categorias && product.categorias.length > 0
     ? product.categorias[0]
     : (product.categoria && typeof product.categoria === 'object'
         ? product.categoria
         : undefined)
-  const categoriaNombre = categoria 
-    ? (typeof categoria === 'object' ? categoria.nombre : categoria)
-    : undefined
 
   // Construir JSON-LD Schema para BreadcrumbList
   const breadcrumbItems = [
@@ -165,40 +142,8 @@ export default async function ProductPage({ params }: PageProps) {
     itemListElement: breadcrumbItems,
   }
 
-  // Construir JSON-LD Schema para Product
-  const productSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.nombre,
-    description: product.descripcion_corta || product.descripcion_detallada || product.nombre,
-    image: productImages,
-    sku: product.sku_producto || product.sku.toString(),
-    brand: product.marca 
-      ? (typeof product.marca === 'object' 
-          ? { '@type': 'Brand', name: product.marca.nombre }
-          : { '@type': 'Brand', name: product.marca })
-      : undefined,
-    category: categoriaNombre,
-    offers: product.precios_por_moneda?.soles
-      ? {
-          '@type': 'Offer',
-          price: product.precios_por_moneda.soles.precio_venta.toString(),
-          priceCurrency: 'PEN',
-          availability: product.disponibilidad?.nombre === 'Disponible' 
-            ? 'https://schema.org/InStock'
-            : 'https://schema.org/OutOfStock',
-          url: canonicalUrl,
-          seller: {
-            '@type': 'Organization',
-            name: 'INXORA',
-            url: 'https://tienda.inxora.com',
-          },
-          priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        }
-      : undefined,
-    url: canonicalUrl,
-    ...(product.structured_data || {}),
-  }
+  // Usar el JSON-LD generado por la función utilitaria
+  const productSchema = seoData.jsonLd
 
   return (
     <>

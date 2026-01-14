@@ -297,6 +297,7 @@ export interface Categoria {
   id: number
   nombre: string
   descripcion: string
+  logo_url?: string | null
   activo: boolean
   fecha_creacion: string
 }

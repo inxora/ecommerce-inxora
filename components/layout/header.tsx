@@ -14,8 +14,7 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getCategorias, Categoria } from '@/lib/supabase'
-import { ChevronDown } from 'lucide-react'
-import { buildCategoryUrlFromObject } from '@/lib/product-url'
+import { CategoriesSidebar } from '@/components/layout/categories-sidebar'
 
 export function Header() {
   const { items, updateTrigger, isLoaded, getItemsCount } = useCart()
@@ -23,7 +22,6 @@ export function Header() {
   const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState<Categoria[]>([])
-  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const pathname = usePathname() || '/es'
   const locale = (pathname.split('/')[1] || 'es') || 'es'
 
@@ -60,6 +58,13 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full flex h-16 items-center justify-between px-2 sm:px-3 md:px-4">
         <div className="flex items-center gap-4 md:gap-8 lg:gap-10 flex-shrink-0">
+          {/* Menú hamburguesa a la izquierda del logo - Solo visible en desktop */}
+          <div className="hidden lg:block">
+            <CategoriesSidebar 
+              categories={categories} 
+              locale={locale}
+            />
+          </div>
           <a href="https://www.inxora.com/" target="_blank" rel="noopener noreferrer" className="flex items-center">
             <Image 
               src="/LOGO-35.png" 
@@ -70,48 +75,13 @@ export function Header() {
               priority
             />
           </a>
-          <nav className="hidden md:flex gap-5 lg:gap-6">
+          <nav className="hidden md:flex gap-5 lg:gap-6 items-center">
             <a
               href={`/${locale}`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Inicio
             </a>
-            <div className="relative">
-              <button
-                className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setCategoriesOpen(!categoriesOpen)
-                }}
-              >
-                Categorías
-                <ChevronDown className={`h-4 w-4 transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {categoriesOpen && categories.length > 0 && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setCategoriesOpen(false)}
-                  />
-                  <div
-                    className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {categories.map((category) => (
-                      <Link
-                        key={category.id}
-                        href={buildCategoryUrlFromObject(category, locale)}
-                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#88D4E4]/20 hover:text-[#139ED4] dark:hover:bg-[#88D4E4]/10 dark:hover:text-[#88D4E4] transition-colors"
-                        onClick={() => setCategoriesOpen(false)}
-                      >
-                        {category.nombre}
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
             <a
               href={`/${locale}/nosotros`}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -188,18 +158,18 @@ export function Header() {
                   <a href={`/${locale}`} className="text-sm font-medium hover:text-primary">
                     Inicio
                   </a>
-                  <div className="space-y-1">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">Categorías</div>
-                    {categories.map((category) => (
-                      <a
-                        key={category.id}
-                        href={buildCategoryUrlFromObject(category, locale)}
-                        className="block pl-4 text-sm text-gray-600 dark:text-gray-400 hover:text-primary"
-                      >
-                        {category.nombre}
-                      </a>
-                    ))}
-                  </div>
+                  <CategoriesSidebar 
+                    categories={categories} 
+                    locale={locale}
+                    trigger={
+                      <button className="text-left text-sm font-medium hover:text-primary">
+                        Categorías
+                      </button>
+                    }
+                  />
+                  <a href={`/${locale}/catalogo`} className="text-sm font-medium hover:text-primary">
+                    Catálogo
+                  </a>
                   <a href={`/${locale}/nosotros`} className="text-sm font-medium hover:text-primary">
                     Nosotros
                   </a>

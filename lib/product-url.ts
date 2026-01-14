@@ -195,6 +195,45 @@ export function buildCategoryUrlFromObject(
 }
 
 /**
+ * Construye la URL de una categoría con marca
+ * Formato: /{locale}/categoria/{category-slug}/{brand-slug}
+ * 
+ * @param category - Objeto Categoria con nombre
+ * @param brand - Objeto Marca con nombre o nombre de marca como string
+ * @param locale - Locale (es, en, pt)
+ * @returns URL de la categoría con marca
+ */
+export function buildCategoryBrandUrl(
+  category: { nombre: string; id?: number },
+  brand: { nombre: string; id?: number } | string,
+  locale: string = 'es'
+): string {
+  const categorySlug = normalizeName(category.nombre)
+  if (!categorySlug) {
+    return `/${locale}/categoria`
+  }
+
+  // Obtener nombre de marca
+  let brandName: string | undefined
+  if (typeof brand === 'string') {
+    brandName = brand
+  } else if (typeof brand === 'object' && 'nombre' in brand) {
+    brandName = brand.nombre
+  }
+
+  if (!brandName) {
+    return `/${locale}/categoria/${categorySlug}`
+  }
+
+  const brandSlug = normalizeName(brandName)
+  if (!brandSlug) {
+    return `/${locale}/categoria/${categorySlug}`
+  }
+
+  return `/${locale}/categoria/${categorySlug}/${brandSlug}`
+}
+
+/**
  * Valida que un slug sea válido
  */
 export function isValidSlug(slug: string): boolean {

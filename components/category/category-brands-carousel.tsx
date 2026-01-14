@@ -6,7 +6,7 @@ import { Marca, Categoria, buildBrandLogoUrl } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { buildCategoryUrl } from '@/lib/product-url'
+import { buildCategoryBrandUrl } from '@/lib/product-url'
 
 interface CategoryBrandsCarouselProps {
   brands: Marca[]
@@ -55,7 +55,6 @@ export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarou
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const params = useParams() as { locale?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
-  const categoryUrl = buildCategoryUrl(category.nombre, locale)
 
   const checkScrollability = () => {
     if (scrollContainerRef.current) {
@@ -125,10 +124,13 @@ export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarou
         className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
         onScroll={checkScrollability}
       >
-        {brands.map((brand) => (
+        {brands.map((brand) => {
+          // Usar nueva estructura de URL: /categoria/{slug}/{marca}
+          const brandUrl = buildCategoryBrandUrl(category, brand, locale)
+          return (
           <Link
             key={brand.id}
-            href={`${categoryUrl}?marca=${brand.id}`}
+            href={brandUrl}
             className="flex-shrink-0 flex flex-col items-center gap-2 p-2 sm:p-3 rounded-lg hover:bg-inxora-light-blue/10 dark:hover:bg-slate-700 transition-colors min-w-[100px] sm:min-w-[110px]"
           >
             <BrandLogo brand={brand} />
@@ -136,7 +138,8 @@ export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarou
               {brand.nombre}
             </span>
           </Link>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

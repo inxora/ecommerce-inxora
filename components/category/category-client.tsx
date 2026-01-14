@@ -9,7 +9,7 @@ import { ProductPagination } from '@/components/catalog/product-pagination'
 import { CategoryBrandsCarousel } from '@/components/category/category-brands-carousel'
 import { Producto, Categoria, Marca } from '@/lib/supabase'
 import { Search, Package } from 'lucide-react'
-import { buildCategoryUrl } from '@/lib/product-url'
+import { buildCategoryUrl, buildCategoryBrandUrl } from '@/lib/product-url'
 
 interface CategoryClientProps {
   category: Categoria
@@ -165,6 +165,70 @@ export function CategoryClient({
       
       // Current category selected - remove categoria param and update others
       currentSearchParams.delete('categoria')
+    }
+    
+    // Verificar si solo se está seleccionando UNA marca (sin otros filtros)
+    // En ese caso, usar la nueva estructura de URL: /categoria/{slug}/{marca}
+    const marcaValue = updates.marca
+    const isMarcaUpdate = 'marca' in updates && marcaValue !== undefined
+    
+    if (isMarcaUpdate) {
+      // Normalizar a array para verificar
+      const marcaArray = Array.isArray(marcaValue) ? marcaValue : [marcaValue]
+      const hasOnlyOneMarca = marcaArray.length === 1
+      const hasNoOtherFilters = 
+        !updates.precioMin &&
+        !updates.precioMax &&
+        !updates.ordenar &&
+        !updates.buscar &&
+        !currentSearchParams.get('precioMin') &&
+        !currentSearchParams.get('precioMax') &&
+        !currentSearchParams.get('ordenar') &&
+        !currentSearchParams.get('buscar')
+      
+      // Si solo hay UNA marca y no hay otros filtros, usar nueva estructura de URL
+      if (hasOnlyOneMarca && hasNoOtherFilters) {
+        const marcaId = String(marcaArray[0])
+        const selectedBrand = brands.find(b => String(b.id) === marcaId)
+        
+        if (selectedBrand) {
+          // Usar nueva estructura de URL: /categoria/{slug}/{marca}
+          const brandUrl = buildCategoryBrandUrl(category, selectedBrand, locale)
+          
+          startTransition(() => {
+            router.push(brandUrl, { scroll: false })
+            setTimeout(() => { isUpdatingRef.current = false }, 200)
+          })
+          return
+        }
+      }
+    }
+    
+    // Si se está eliminando la marca (value === undefined, '' o array vacío)
+    const isRemovingMarca = 
+      'marca' in updates && 
+      (marcaValue === undefined || 
+       marcaValue === '' || 
+       (Array.isArray(marcaValue) && marcaValue.length === 0))
+    
+    if (isRemovingMarca && !updates.precioMin && !updates.precioMax && !updates.ordenar && !updates.buscar) {
+      // Verificar si hay otros filtros activos en la URL actual
+      const hasOtherActiveFilters = 
+        currentSearchParams.get('precioMin') ||
+        currentSearchParams.get('precioMax') ||
+        currentSearchParams.get('ordenar') ||
+        currentSearchParams.get('buscar')
+      
+      if (!hasOtherActiveFilters) {
+        // Volver a la URL base de la categoría
+        const categoryBaseUrl = buildCategoryUrl(category.nombre, locale)
+        
+        startTransition(() => {
+          router.push(categoryBaseUrl, { scroll: false })
+          setTimeout(() => { isUpdatingRef.current = false }, 200)
+        })
+        return
+      }
     }
     
     // Construir params desde el estado actual de la URL

@@ -5,7 +5,7 @@ import { CategoryClient } from '@/components/category/category-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 import { notFound } from 'next/navigation'
-import { normalizeName } from '@/lib/product-url'
+import { normalizeName, buildCategoryUrlFromObject } from '@/lib/product-url'
 
 // Caché optimizado: revalidar cada 60 segundos para mejorar rendimiento
 export const dynamic = 'force-dynamic'
@@ -34,12 +34,21 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     return { title: 'Categoría no encontrada' }
   }
 
+  // Generar URL canónica base (sin query parameters)
+  // Esto evita contenido duplicado cuando hay filtros como ?marca=49
+  const baseUrl = 'https://tienda.inxora.com'
+  const canonicalUrl = `${baseUrl}${buildCategoryUrlFromObject(category, locale)}`
+
   return {
     title: `${category.nombre} | TIENDA INXORA - Suministros Industriales`,
     description: `Encuentra productos de ${category.nombre} en TIENDA INXORA. Los mejores suministros industriales en Perú con envío a todo el país.`,
+    alternates: {
+      canonical: canonicalUrl, // URL base sin query parameters
+    },
     openGraph: {
       title: `${category.nombre} | TIENDA INXORA`,
       description: `Productos de ${category.nombre} - Suministros industriales de calidad.`,
+      url: canonicalUrl, // URL base sin query parameters
     },
   }
 }

@@ -35,19 +35,28 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   // JSON-LD Schema para Organization - disponible en todas las páginas
+  // IMPORTANTE: Para que Google muestre el logo en resultados enriquecidos, debe cumplir:
+  // - Mínimo 112x112px (recomendado 512x512px o más)
+  // - Formato PNG, JPG o SVG
+  // - URL absoluta y accesible públicamente
+  // - Debe estar en la página principal (/es)
+  // - El logo puede ser un string directo o un objeto ImageObject
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'INXORA',
     legalName: 'INXORA',
     url: 'https://tienda.inxora.com',
-    logo: {
+    // Logo como string directo (formato preferido por Google para resultados enriquecidos)
+    logo: 'https://tienda.inxora.com/inxora.png',
+    // También incluir como ImageObject para compatibilidad completa
+    image: {
       '@type': 'ImageObject',
       url: 'https://tienda.inxora.com/inxora.png',
       width: 512,
       height: 512,
+      contentUrl: 'https://tienda.inxora.com/inxora.png',
     },
-    image: 'https://tienda.inxora.com/inxora.png',
     description: 'Tienda online de suministros industriales en Perú. Suministros industriales, herramientas eléctricas, equipos de seguridad y ferretería industrial.',
     address: {
       '@type': 'PostalAddress',

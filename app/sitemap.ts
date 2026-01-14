@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
-import { getSupabaseClient, getCategorias } from '@/lib/supabase'
-import { buildProductUrl, buildCategoryUrlFromObject } from '@/lib/product-url'
+import { getSupabaseClient, getSupabaseAdmin, getCategorias, getMarcasByCategoria } from '@/lib/supabase'
+import { buildCategoryUrlFromObject, buildCategoryBrandUrl } from '@/lib/product-url'
+import { generateCanonicalUrl } from '@/lib/product-seo'
 
 // Tipo parcial para productos en el sitemap (solo los campos necesarios)
 // Supabase devuelve arrays para relaciones cuando se hace select con joins
@@ -25,7 +26,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let productsError: any = null
 
   try {
-    const supabase = getSupabaseClient()
+    // Usar cliente admin para bypasear RLS y obtener todos los productos activos
+    const supabase = getSupabaseAdmin()
     const result = await supabase
       .from('producto')
       .select(`
@@ -102,48 +104,80 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   // ===============================
+  // CATEGORÍAS CON MARCA (SOLO ES)
+  // ===============================
+  const categoryBrandPages: MetadataRoute.Sitemap = []
+  
+  // Generar URLs para cada combinación categoría/marca
+  for (const category of categories) {
+    try {
+      // Obtener marcas disponibles para esta categoría
+      const brandsForCategory = await getMarcasByCategoria(category.id)
+      
+      if (brandsForCategory && brandsForCategory.length > 0) {
+        // Agregar URL para cada marca
+        for (const brand of brandsForCategory) {
+          categoryBrandPages.push({
+            url: `${baseUrl}${buildCategoryBrandUrl(category, brand, locale)}`,
+            lastModified: new Date(),
+            changeFrequency: 'weekly' as const,
+            priority: 0.6, // Prioridad ligeramente menor que categorías base
+          })
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching brands for category ${category.id}:`, error)
+      // Continuar con la siguiente categoría
+    }
+  }
+  
+  console.log(`✅ Sitemap: Found ${categoryBrandPages.length} category-brand combinations`)
+
+  // ===============================
   // PRODUCTOS (SOLO ES)
   // ===============================
   const productPages: MetadataRoute.Sitemap = products
     .map((product) => {
       if (!product.seo_slug) return null
 
-      // Usar canonical_url si existe, sino construir con buildProductUrl
-      let path: string
-      if (product.canonical_url?.startsWith('/')) {
-        path = product.canonical_url
-      } else {
-        // Normalizar categoría y marca (pueden ser arrays o objetos)
-        // Las categorías ahora vienen como array de relaciones producto_categoria
-        let categoria: { id: number; nombre: string } | null = null
-        if (product.categorias) {
-          if (Array.isArray(product.categorias) && product.categorias.length > 0) {
-            categoria = product.categorias[0]?.categoria || null
-          } else if (!Array.isArray(product.categorias) && 'categoria' in product.categorias) {
-            categoria = product.categorias.categoria
-          }
+      // Normalizar categoría y marca para construir objeto Producto parcial
+      // Las categorías ahora vienen como array de relaciones producto_categoria
+      let categorias: Array<{ id: number; nombre: string; es_principal?: boolean }> = []
+      if (product.categorias) {
+        if (Array.isArray(product.categorias) && product.categorias.length > 0) {
+          categorias = product.categorias
+            .map((pc: any) => pc?.categoria)
+            .filter((cat: any) => cat != null)
+        } else if (!Array.isArray(product.categorias) && 'categoria' in product.categorias) {
+          categorias = [product.categorias.categoria]
         }
-        // Fallback a categoria singular para compatibilidad
-        if (!categoria && product.categoria) {
-          categoria = Array.isArray(product.categoria) 
-            ? product.categoria[0] 
-            : product.categoria
-        }
-        const marca = Array.isArray(product.marca) 
-          ? product.marca[0] 
-          : product.marca
-        
-        // Construir objeto parcial compatible con buildProductUrl
-        const productForUrl = {
-          seo_slug: product.seo_slug,
-          categoria,
-          marca,
-        }
-        path = buildProductUrl(productForUrl as any, locale)
+      }
+      // Fallback a categoria singular para compatibilidad
+      if (categorias.length === 0 && product.categoria) {
+        const cat = Array.isArray(product.categoria) 
+          ? product.categoria[0] 
+          : product.categoria
+        if (cat) categorias = [cat]
       }
 
+      const marca = Array.isArray(product.marca) 
+        ? product.marca[0] 
+        : product.marca
+      
+      // Construir objeto Producto parcial compatible con generateCanonicalUrl
+      const productForUrl = {
+        seo_slug: product.seo_slug,
+        categorias: categorias.length > 0 ? categorias : undefined,
+        categoria: categorias.length > 0 ? categorias[0] : undefined,
+        marca,
+      } as any
+
+      // Usar generateCanonicalUrl para asegurar URLs correctas (tienda.inxora.com)
+      // NO usar canonical_url del producto (puede apuntar a app.inxora.com)
+      const canonicalUrl = generateCanonicalUrl(productForUrl, locale)
+
       return {
-        url: `${baseUrl}${path}`,
+        url: canonicalUrl, // URL completa ya generada correctamente
         lastModified: product.fecha_actualizacion
           ? new Date(product.fecha_actualizacion)
           : new Date(),
@@ -153,5 +187,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
     .filter(Boolean) as MetadataRoute.Sitemap
 
-  return [...staticPages, ...categoryPages, ...productPages]
+  return [...staticPages, ...categoryPages, ...categoryBrandPages, ...productPages]
 }

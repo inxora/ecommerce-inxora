@@ -31,10 +31,14 @@ export default function HomeClient({ locale }: HomeClientProps) {
         
         if (categoriasData.data) {
           // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
+          // y solo incluir categorías que tengan logo_url no vacío
           const filteredCategories = categoriasData.data.filter(
-            (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
+            (cat) => 
+              cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS' &&
+              cat.logo_url && 
+              cat.logo_url.trim() !== ''
           );
-          setCategories(filteredCategories.slice(0, 6));
+          setCategories(filteredCategories);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -46,21 +50,6 @@ export default function HomeClient({ locale }: HomeClientProps) {
     fetchData();
   }, []);
 
-  // Mapeo de imágenes para las categorías
-  const categoryImages: Record<number, string> = {
-    1: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBq3Q9ZZopE0QStHQqu5hACHd-hByecyEGM6CWtRZoc-wKmzt1IVulEm0VygZScgZMiZf8NP_d0_2Esr8c7nl2R_4Q_4hFymhKY6Ec2hMhVf-QhAGnCLCSUj9IuTGUp5e_N-h9s4hIbgUuQBu8AoO5wSR-_BQ74_X30gZycrhFvVGq8MixvoarjlVs0gBVfNFBXjk3cB2_aEX4nxwzhW0QpPPjEM0c40vSZNcL3MJEIQSLGW3HiGAuUj5PyHCaJJLTGjiHlLNirFt8',
-    2: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDyTndwtiVCCoPgNlxgrhcHAC2ywYdqK0Px4DYQQoIbZnXk2GHeUqOgXKTdwBS-73JlS7uFS31Vsd0dJk-uN1eudA8NgdPCmlCyLV3hrtgPTdeUIT7qCTU2MC-Y_e8aikQ9GWLv8NKMPwIFJX2IL_tn9RfkpwxBTpVBo-o7oJFsorxutZOIhH0ub8S8xqLb9cX2UiMsO9ormJ757QctBz6WhqWhBT5tl-MysAINPVLUuhWihzBe3SKksawicGFfnhfVrDwKlBrnORU',
-    3: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCeFrVXbaJhl-boubfVopyd1vvDHDPJ6RRt8uEAYZjNBBEi4EbOLoHS5vWjTUz7I8RkK7lVJM86tP2RMAR9fmUoUy1hzzFwPO4KWt4uoiIoyHNoIayZf8QK9SfxRbW8x49az2czEI76NnPuOrd15BfMaFUJdRFc9GMlFdov4dz1glMDVt0hzsTAHhRDNAuN7jFqvw_dhbb-L7texnUDGjZwwQ2JkQWxTeDSZ-TMDSKtotHcH7Zfn6ksSxd5RM3bLQfA03dMVd5cc0Q',
-    4: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCm6ajuzSDT9UW8R3GdnuSsgU2pjGPSiAtldZFe_nRUNIFmidznnf-PT-ON9GjbrDKV_ogyL-a847KmEGljSQJrNoEtMNIaviU-CiIDWmRc3UVpRR1JNDqWLKz9l9WvSCVpELb49fghg72zZFCZtIpsR5iwMvI_tRVRPm3-1Haz3YkdsqmBV7dhJYf8gEKokP7sXT3OrkiYhc5ym-WQiCDS1cRLYI3SJuSXQsvmj9mWaLgeqrC9XycYSaLtBquVNTDcP0Qx8yK1Jis',
-    5: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDEv9F3-SftwgIELEqGFHG4Geir-8lOHbSokMv2WZMlD-HWDHhAzzziwv-S6voX978HvxgGMMiYOnoCgjosHL8xusKHB6AWfL8MgpWCyKjV1uJ3Fc5obC7CxyLsKi2YXXxh76_CVrRThQOtxsV2SO_ZR9g4xa9Up0tHfnriDdNbtJIwyI8UtAWgSC4K5atKz4OyFlBAz7dhIjJndW2EDuIgR_sfUwBgv63KieJNqMaXZaY8DI5g05Rv5GhxCSm5bW9oSmKZqocIy6o',
-    6: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDfk2-2IUQqkIyltA9GI2j8ncJEKA-Dg-ChxRCC9ySi0dlomtq1qfZgPDoEzOfnqCr_QipdIC8GVdhV7EFZ3aw_-gWgBBytimw2V-VedGLaSgM5qh050uST6zzVFlhRYZuKT84JREqSLFpJFuEu_5GB5Z8i8-SQiKhcKQ0Bqt17S06JoND-vQqqIZeGuPHs5oaGDJ-CPtqyjBzp-nSCB_lQPotn-kmxvIb5erZL10Wut7s7SlF7t35tRK1Lu9fpV-2kH5sFeWe2-Ao',
-  };
-  
-  const getCategoryImage = (index: number) => {
-    const imageKeys = [1, 2, 3, 4, 5, 6];
-    const imageKey = imageKeys[index % imageKeys.length];
-    return categoryImages[imageKey] || categoryImages[1];
-  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -132,7 +121,7 @@ export default function HomeClient({ locale }: HomeClientProps) {
             </div>
           ) : categories.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
-              {categories.map((category, index) => (
+              {categories.map((category) => (
                 <Link 
                   key={category.id} 
                   href={`/${locale}/catalogo?categoria=${category.id}`} 
@@ -142,7 +131,7 @@ export default function HomeClient({ locale }: HomeClientProps) {
                     <img 
                       alt={`Categoría ${category.nombre} - Suministros industriales`}
                       className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                      src={getCategoryImage(index)}
+                      src={category.logo_url || ''}
                     />
                   </div>
                   <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
