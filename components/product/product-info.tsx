@@ -32,7 +32,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const handleAddToCart = () => {
     console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity)
     
-    // Obtener el precio directamente de producto_precio_moneda
+    // Obtener el precio del producto
     let precioPrincipal = 0
     
     if (product.precios && product.precios.length > 0) {
@@ -74,7 +74,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       precio_venta: precioPrincipal
     }
     
-    console.log('Product prepared for cart (precio from producto_precio_moneda):', productToAdd)
+    console.log('Product prepared for cart:', productToAdd)
     addItem(productToAdd, quantity)
   }
 

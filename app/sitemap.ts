@@ -39,7 +39,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         seo_slug,
         canonical_url,
         fecha_actualizacion,
-        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre)
       `)
       .eq('activo', true)
@@ -146,7 +145,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (!product.seo_slug) return null
 
       // Normalizar categoría y marca para construir objeto Producto parcial
-      // Las categorías ahora vienen como array de relaciones producto_categoria
+      // Las categorías vienen directamente del producto
       let categorias: Array<{ id: number; nombre: string; es_principal?: boolean }> = []
       if (product.categorias) {
         if (Array.isArray(product.categorias) && product.categorias.length > 0) {

@@ -32,6 +32,8 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  // Fallback a 'es' si locale es undefined o null
+  const validLocale = locale || 'es'
   const messages = await getMessages()
 
   // JSON-LD Schema para Organization - disponible en todas las páginas
@@ -80,7 +82,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <NextIntlClientProvider locale={validLocale} messages={messages}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}

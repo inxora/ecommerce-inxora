@@ -162,7 +162,7 @@ export function generateProductSlug(
 
 /**
  * Construye la URL de una categoría usando su nombre normalizado
- * Formato: /{locale}/categoria/{category-slug}
+ * Formato: /{locale}/{category-slug}
  * 
  * @param categoryName - Nombre de la categoría
  * @param locale - Locale (es, en, pt)
@@ -174,14 +174,14 @@ export function buildCategoryUrl(
 ): string {
   const categorySlug = normalizeName(categoryName)
   if (!categorySlug) {
-    return `/${locale}/categoria`
+    return `/${locale}`
   }
-  return `/${locale}/categoria/${categorySlug}`
+  return `/${locale}/${categorySlug}`
 }
 
 /**
  * Construye la URL de una categoría usando el objeto Categoria
- * Formato: /{locale}/categoria/{category-slug}
+ * Formato: /{locale}/{category-slug}
  * 
  * @param category - Objeto Categoria con nombre
  * @param locale - Locale (es, en, pt)
@@ -196,7 +196,7 @@ export function buildCategoryUrlFromObject(
 
 /**
  * Construye la URL de una categoría con marca
- * Formato: /{locale}/categoria/{category-slug}/{brand-slug}
+ * Formato: /{locale}/{category-slug}/{brand-slug}
  * 
  * @param category - Objeto Categoria con nombre
  * @param brand - Objeto Marca con nombre o nombre de marca como string
@@ -210,7 +210,7 @@ export function buildCategoryBrandUrl(
 ): string {
   const categorySlug = normalizeName(category.nombre)
   if (!categorySlug) {
-    return `/${locale}/categoria`
+    return `/${locale}`
   }
 
   // Obtener nombre de marca
@@ -222,15 +222,15 @@ export function buildCategoryBrandUrl(
   }
 
   if (!brandName) {
-    return `/${locale}/categoria/${categorySlug}`
+    return `/${locale}/${categorySlug}`
   }
 
   const brandSlug = normalizeName(brandName)
   if (!brandSlug) {
-    return `/${locale}/categoria/${categorySlug}`
+    return `/${locale}/${categorySlug}`
   }
 
-  return `/${locale}/categoria/${categorySlug}/${brandSlug}`
+  return `/${locale}/${categorySlug}/${brandSlug}`
 }
 
 /**

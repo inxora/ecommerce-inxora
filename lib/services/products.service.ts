@@ -8,4 +8,3 @@ export const ProductsService = {
   incrementarVisualizacion: (sku: number | string) =>
     api.post(`/api/productos/${sku}/incrementar-visualizacion`),
 }
-

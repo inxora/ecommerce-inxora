@@ -125,7 +125,7 @@ export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarou
         onScroll={checkScrollability}
       >
         {brands.map((brand) => {
-          // Usar nueva estructura de URL: /categoria/{slug}/{marca}
+          // Usar estructura de URL: /{locale}/{slug}/{marca}
           const brandUrl = buildCategoryBrandUrl(category, brand, locale)
           return (
           <Link

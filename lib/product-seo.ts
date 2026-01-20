@@ -9,7 +9,7 @@ import { normalizeName } from './product-url'
 /**
  * Obtiene la categoría principal del producto
  * Busca la categoría con es_principal = true, o la primera del array
- * Maneja tanto categorías directas como desde relaciones producto_categoria
+ * Maneja categorías del producto
  */
 function getCategoriaPrincipal(product: Producto): { nombre: string } | undefined {
   if (!product.categorias || product.categorias.length === 0) {
@@ -18,7 +18,7 @@ function getCategoriaPrincipal(product: Producto): { nombre: string } | undefine
       : undefined
   }
 
-  // Las categorías pueden venir directamente o desde relaciones producto_categoria
+  // Las categorías vienen directamente del producto
   // Intentar encontrar la categoría principal buscando en el array
   for (const cat of product.categorias) {
     if (typeof cat === 'object' && cat !== null) {
@@ -27,7 +27,7 @@ function getCategoriaPrincipal(product: Producto): { nombre: string } | undefine
         return cat
       }
       
-      // Verificar si es una relación producto_categoria con categoría anidada
+      // Verificar si es una categoría anidada
       if ('categoria' in cat && typeof cat.categoria === 'object' && cat.categoria !== null) {
         const categoriaRelacion = cat.categoria as any
         if (categoriaRelacion.es_principal === true) {

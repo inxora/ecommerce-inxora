@@ -168,7 +168,7 @@ export function CategoryClient({
     }
     
     // Verificar si solo se está seleccionando UNA marca (sin otros filtros)
-    // En ese caso, usar la nueva estructura de URL: /categoria/{slug}/{marca}
+    // En ese caso, usar la estructura de URL: /{locale}/{slug}/{marca}
     const marcaValue = updates.marca
     const isMarcaUpdate = 'marca' in updates && marcaValue !== undefined
     
@@ -192,7 +192,7 @@ export function CategoryClient({
         const selectedBrand = brands.find(b => String(b.id) === marcaId)
         
         if (selectedBrand) {
-          // Usar nueva estructura de URL: /categoria/{slug}/{marca}
+          // Usar estructura de URL: /{locale}/{slug}/{marca}
           const brandUrl = buildCategoryBrandUrl(category, selectedBrand, locale)
           
           startTransition(() => {

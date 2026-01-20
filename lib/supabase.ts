@@ -322,31 +322,7 @@ export const getProductos = async (
   marca?: number | number[],
   search?: string
 ) => {
-  // Si hay filtro de categoría, primero obtener los SKUs de productos que tienen esas categorías
-  let productSkus: number[] | null = null
-  if (categoria) {
-    const categoriaIds = Array.isArray(categoria) ? categoria : [categoria]
-    
-    const supabase = getSupabaseClient()
-    const { data: productoCategoriaData, error: pcError } = await supabase
-      .from('producto_categoria')
-      .select('sku')
-      .in('id_categoria', categoriaIds)
-      .eq('activo', true)
-      .limit(10000) // Límite razonable para evitar queries muy grandes
-    
-    if (pcError) {
-      console.error('Error fetching producto_categoria:', pcError)
-      return { data: [], count: 0, error: pcError }
-    }
-    
-    const skuSet = new Set((productoCategoriaData || []).map((pc: any) => pc.sku))
-    productSkus = Array.from(skuSet)
-    
-    if (productSkus.length === 0) {
-      return { data: [], count: 0, error: null }
-    }
-  }
+  // Filtro de categoría removido - ya no se usa producto_categoria
 
   const supabase = getSupabaseClient()
   let query = supabase
@@ -364,28 +340,14 @@ export const getProductos = async (
       es_novedad,
       es_promocion,
       tags,
-      categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
       marca:id_marca(id, nombre, logo_url),
       unidad:id_unidad(id, nombre, simbolo),
-      disponibilidad:id_disponibilidad(id, nombre),
-      precios:producto_precio_moneda(
-        id,
-        precio_venta,
-        precio_proveedor,
-        margen_aplicado,
-        fecha_vigencia_desde,
-        fecha_vigencia_hasta,
-        activo,
-        moneda:id_moneda(id, codigo, nombre, simbolo)
-      )
+      disponibilidad:id_disponibilidad(id, nombre)
     `, { count: 'exact' })
     .eq('activo', true)
     .eq('visible_web', true)
 
-  // Filtrar por SKUs si hay filtro de categoría
-  if (productSkus && productSkus.length > 0) {
-    query = query.in('sku', productSkus)
-  }
+  // Filtro de categoría removido - ya no se usa producto_categoria
 
   if (marca) {
     if (Array.isArray(marca)) {
@@ -414,46 +376,15 @@ export const getProductos = async (
 
   // Procesar los datos para obtener los precios actuales
   const processedData = data?.map(producto => {
-    // Normalizar categorías (pueden venir como array de relaciones)
+    // Categorías y precios removidos - ya no se usan producto_categoria ni producto_precio_moneda
     let categorias: Categoria[] = []
-    if (producto.categorias) {
-      if (Array.isArray(producto.categorias)) {
-        categorias = producto.categorias
-          .map((pc: any) => pc?.categoria)
-          .filter((cat: any) => cat != null)
-      } else if (producto.categorias && typeof producto.categorias === 'object' && 'categoria' in producto.categorias) {
-        const cat = (producto.categorias as any).categoria
-        if (cat) {
-          categorias = [cat as Categoria]
-        }
-      }
-    }
-    // Mantener compatibilidad con categoria (primera categoría)
-    const categoria = categorias.length > 0 ? categorias[0] : undefined
+    const categoria = undefined
     
-    // Filtrar precios activos y vigentes
-    const preciosVigentes = producto.precios?.filter(precio => {
-      if (!precio.activo) return false
-      
-      const hoy = new Date().toISOString().split('T')[0]
-      const fechaDesde = precio.fecha_vigencia_desde
-      const fechaHasta = precio.fecha_vigencia_hasta
-      
-      // Verificar que la fecha de inicio sea menor o igual a hoy
-      if (fechaDesde && fechaDesde > hoy) return false
-      
-      // Verificar que la fecha de fin sea null o mayor o igual a hoy
-      if (fechaHasta && fechaHasta < hoy) return false
-      
-      return true
-    }) || []
-    
-    // Separar precios por moneda
-    const precioSoles = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'PEN')
-    const precioDolares = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'USD')
-    
-    // Priorizar soles, luego dólares
-    const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
+    // Precios removidos - ya no se usa producto_precio_moneda
+    const preciosVigentes: any[] = []
+    const precioSoles = null
+    const precioDolares = null
+    const precioPrincipal = null
     
     // Procesar URL de imagen principal usando buildProductImageUrl
     const imagenPrincipalUrl = buildProductImageUrl(producto.imagen_principal_url, producto.sku_producto) || ''
@@ -642,20 +573,9 @@ const getProductBySlugInternal = cache(async (slug: string): Promise<Producto | 
         fecha_actualizacion,
         creado_por,
         actualizado_por,
-        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
         disponibilidad:id_disponibilidad(id, nombre, descripcion),
-        precios:producto_precio_moneda(
-          id,
-          precio_venta,
-          margen_aplicado,
-          fecha_vigencia_desde,
-          fecha_vigencia_hasta,
-          activo,
-          precio_proveedor,
-          moneda:id_moneda(id, codigo, nombre, simbolo)
-        )
       `)
       .eq('seo_slug', slug)
       .eq('activo', true)
@@ -702,20 +622,9 @@ const getProductBySlugInternal = cache(async (slug: string): Promise<Producto | 
           visible_web,
           fecha_creacion,
           fecha_actualizacion,
-          categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
           marca:id_marca(id, nombre, logo_url),
           unidad:id_unidad(id, nombre, simbolo),
           disponibilidad:id_disponibilidad(id, nombre, descripcion),
-          precios:producto_precio_moneda(
-            id,
-            precio_venta,
-            margen_aplicado,
-            fecha_vigencia_desde,
-            fecha_vigencia_hasta,
-            activo,
-            precio_proveedor,
-            moneda:id_moneda(id, codigo, nombre, simbolo)
-          )
         `)
         .ilike('seo_slug', pattern)
         .eq('activo', true)
@@ -748,20 +657,9 @@ const getProductBySlugInternal = cache(async (slug: string): Promise<Producto | 
             visible_web,
             fecha_creacion,
             fecha_actualizacion,
-            categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
             marca:id_marca(id, nombre, logo_url),
             unidad:id_unidad(id, nombre, simbolo),
             disponibilidad:id_disponibilidad(id, nombre, descripcion),
-            precios:producto_precio_moneda(
-              id,
-              precio_venta,
-              margen_aplicado,
-              fecha_vigencia_desde,
-              fecha_vigencia_hasta,
-              activo,
-              precio_proveedor,
-              moneda:id_moneda(id, codigo, nombre, simbolo)
-            )
           `)
           .ilike('seo_slug', `%${slug}%`)
           .eq('activo', true)
@@ -799,20 +697,9 @@ const getProductBySlugInternal = cache(async (slug: string): Promise<Producto | 
             visible_web,
             fecha_creacion,
             fecha_actualizacion,
-            categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
             marca:id_marca(id, nombre, logo_url),
             unidad:id_unidad(id, nombre, simbolo),
             disponibilidad:id_disponibilidad(id, nombre, descripcion),
-            precios:producto_precio_moneda(
-              id,
-              precio_venta,
-              margen_aplicado,
-              fecha_vigencia_desde,
-              fecha_vigencia_hasta,
-              activo,
-              precio_proveedor,
-              moneda:id_moneda(id, codigo, nombre, simbolo)
-            )
           `)
           .or(`seo_slug.ilike.%/${last},seo_slug.ilike.%${last}%`)
           .eq('activo', true)
@@ -986,20 +873,9 @@ export async function getProductBySku(sku: number): Promise<Producto | null> {
         fecha_actualizacion,
         creado_por,
         actualizado_por,
-        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
         disponibilidad:id_disponibilidad(id, nombre, descripcion),
-        precios:producto_precio_moneda(
-          id,
-          precio_venta,
-          margen_aplicado,
-          fecha_vigencia_desde,
-          fecha_vigencia_hasta,
-          activo,
-          precio_proveedor,
-          moneda:id_moneda(id, codigo, nombre, simbolo)
-        )
       `)
       .eq('sku', sku)
       .eq('activo', true)
@@ -1057,52 +933,7 @@ export async function getProducts({
         ? categoria.map(c => parseInt(c)).filter(id => !isNaN(id))
         : [parseInt(categoria)].filter(id => !isNaN(id))
       
-      if (categoriaIds.length > 0) {
-        try {
-          const supabase = getSupabaseClient()
-          // Primero obtener el count total para calcular páginas
-          const { count: categoriaCount, error: countError } = await supabase
-            .from('producto_categoria')
-            .select('sku', { count: 'exact', head: true })
-            .in('id_categoria', categoriaIds)
-            .eq('activo', true)
-          
-          if (countError) {
-            console.error('Error counting producto_categoria:', countError)
-            return { products: [], total: 0, totalPages: 0 }
-          }
-          
-          totalCategoriaProducts = categoriaCount || 0
-          
-          if (totalCategoriaProducts === 0) {
-            return { products: [], total: 0, totalPages: 0 }
-          }
-          
-          // Obtener todos los SKUs únicos de productos en estas categorías
-          // Usamos una consulta optimizada que solo obtiene los SKUs únicos
-          const { data: productoCategoriaData, error: pcError } = await supabase
-            .from('producto_categoria')
-            .select('sku')
-            .in('id_categoria', categoriaIds)
-            .eq('activo', true)
-            .limit(10000) // Límite razonable para evitar queries muy grandes
-          
-          if (pcError) {
-            console.error('Error fetching producto_categoria:', pcError)
-            return { products: [], total: 0, totalPages: 0 }
-          }
-          
-          const skuSet = new Set((productoCategoriaData || []).map((pc: any) => pc.sku))
-          productSkus = Array.from(skuSet)
-          
-          if (productSkus.length === 0) {
-            return { products: [], total: 0, totalPages: 0 }
-          }
-        } catch (error) {
-          console.error('Exception fetching producto_categoria:', error)
-          return { products: [], total: 0, totalPages: 0 }
-        }
-      }
+      // Filtro de categoría removido - ya no se usa producto_categoria
     }
 
     const supabase = getSupabaseClient()
@@ -1120,44 +951,15 @@ export async function getProducts({
         es_novedad,
         es_promocion,
         tags,
-        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
         disponibilidad:id_disponibilidad(id, nombre, descripcion),
-        precios:producto_precio_moneda(
-          id,
-          precio_venta,
-          margen_aplicado,
-          fecha_vigencia_desde,
-          fecha_vigencia_hasta,
-          activo,
-          precio_proveedor,
-          moneda:id_moneda(id, codigo, nombre, simbolo)
-        )
       `, { count: 'exact' })
       .eq('activo', true)
       .eq('visible_web', true)
-      .eq('precios.activo', true)
-      .lte('precios.fecha_vigencia_desde', new Date().toISOString().split('T')[0])
+      // Removed: producto_precio_moneda filters
 
-    // Filtrar por SKUs si hay filtro de categoría
-    // Supabase permite hasta cierto límite en .in(), pero si hay muchos SKUs,
-    // podemos dividirlos en chunks si es necesario
-    if (productSkus && productSkus.length > 0) {
-      // Supabase generalmente maneja bien arrays grandes, pero si hay problemas
-      // podemos dividir en chunks de 1000
-      if (productSkus.length > 1000) {
-        // Dividir en chunks y usar el chunk apropiado para la página
-        const chunkSize = 1000
-        const chunkIndex = Math.floor((page - 1) * limit / chunkSize)
-        const startIdx = chunkIndex * chunkSize
-        const endIdx = Math.min(startIdx + chunkSize, productSkus.length)
-        const currentChunk = productSkus.slice(startIdx, endIdx)
-        query = query.in('sku', currentChunk)
-      } else {
-        query = query.in('sku', productSkus)
-      }
-    }
+    // Filtro de categoría removido - ya no se usa producto_categoria
 
     if (marca) {
       // Handle both single value and array
@@ -1237,19 +1039,15 @@ export async function getProducts({
     const processedData = data?.map(producto => {
       // Normalizar categorías (pueden venir como array de relaciones)
       let categorias: Categoria[] = []
-      if (producto.categorias) {
-        if (Array.isArray(producto.categorias)) {
-          categorias = producto.categorias
-            .map((pc: any) => pc?.categoria)
-            .filter((cat: any) => cat != null)
-        } else if (producto.categorias.categoria) {
-          categorias = [producto.categorias.categoria]
-        }
-      }
+      // Categorías removidas - ya no se usa producto_categoria
+      categorias = []
       // Mantener compatibilidad con categoria (primera categoría)
       const categoria = categorias.length > 0 ? categorias[0] : undefined
       
       // Filtrar precios activos y vigentes
+      // Precios removidos - ya no se usa producto_precio_moneda
+      const preciosVigentes: any[] = []
+      /*
       const preciosVigentes = producto.precios?.filter(precio => {
         if (!precio.activo) return false
         
@@ -1257,18 +1055,12 @@ export async function getProducts({
         const fechaDesde = precio.fecha_vigencia_desde
         const fechaHasta = precio.fecha_vigencia_hasta
         
-        if (fechaDesde && fechaDesde > hoy) return false
-        if (fechaHasta && fechaHasta < hoy) return false
-        
         return true
       }) || []
-      
-      // Separar precios por moneda
-      const precioSoles = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'PEN')
-      const precioDolares = preciosVigentes.find(p => p.moneda && typeof p.moneda === 'object' && 'codigo' in p.moneda && p.moneda.codigo === 'USD')
-      
-      // Priorizar soles, luego dólares
-      const precioPrincipal = precioSoles || precioDolares || preciosVigentes[0]
+      */
+      const precioSoles = null
+      const precioDolares = null
+      const precioPrincipal = null
       
       // Procesar URL de imagen principal
       const imagenPrincipalUrl = buildProductImageUrl(producto.imagen_principal_url, producto.sku_producto) || ''
@@ -1306,7 +1098,7 @@ export async function getProducts({
     }) || []
 
     // Calcular el total: si solo hay filtro de categoría (sin otros filtros),
-    // podemos usar el count de producto_categoria. Si hay otros filtros,
+    // Filtro de categoría removido - ya no se usa producto_categoria
     // debemos usar el count de la consulta principal que ya aplica todos los filtros
     const hasOtherFilters = !!(marca || buscar || precioMin !== undefined || precioMax !== undefined)
     const total = (totalCategoriaProducts > 0 && !hasOtherFilters)
@@ -1377,69 +1169,11 @@ export const getMarcas = async () => {
 export const getMarcasByCategoria = async (categoriaId: number): Promise<Marca[]> => {
   try {
     const supabase = getSupabaseClient()
-    // Primero obtener los SKUs únicos de productos en esta categoría
-    const { data: productoCategoriaData, error: pcError } = await supabase
-      .from('producto_categoria')
-      .select('sku')
-      .eq('id_categoria', categoriaId)
-      .eq('activo', true)
-      .limit(10000) // Límite razonable para evitar queries muy grandes
+    // Filtro de categoría removido - ya no se usa producto_categoria
+    // Retornar array vacío ya que no podemos obtener marcas por categoría sin producto_categoria
+    return []
     
-    if (pcError) {
-      console.error('Error fetching producto_categoria:', pcError)
-      return []
-    }
-    
-    if (!productoCategoriaData || productoCategoriaData.length === 0) {
-      return []
-    }
-    
-    const skuSet = new Set(productoCategoriaData.map((pc: any) => pc.sku))
-    const productSkus = Array.from(skuSet)
-    
-    if (productSkus.length === 0) {
-      return []
-    }
-    
-    // Obtener solo los id_marca únicos de los productos en esta categoría
-    // Usamos una consulta optimizada que solo trae id_marca
-    const { data: productosData, error: productosError } = await supabase
-      .from('producto')
-      .select('id_marca')
-      .in('sku', productSkus)
-      .eq('activo', true)
-      .eq('visible_web', true)
-    
-    if (productosError || !productosData) {
-      console.error('Error fetching productos for marcas:', productosError)
-      return []
-    }
-    
-    // Extraer IDs únicos de marcas
-    const marcaIds = new Set(
-      productosData
-        .map(p => p.id_marca)
-        .filter((id): id is number => id !== null && id !== undefined)
-    )
-    
-    if (marcaIds.size === 0) {
-      return []
-    }
-    
-    // Obtener las marcas completas
-    const { data: marcasData, error: marcasError } = await supabase
-      .from('marca')
-      .select('*')
-      .in('id', Array.from(marcaIds))
-      .eq('activo', true)
-      .order('nombre')
-    
-    if (marcasError) {
-      console.error('Error fetching marcas:', marcasError)
-      return []
-    }
-    
-    return marcasData || []
+    // Código removido - ya no se usa producto_categoria
   } catch (error) {
     console.error('Error in getMarcasByCategoria:', error)
     return []
@@ -1489,20 +1223,9 @@ export const getProductosDestacados = async (limit = 8) => {
       fecha_actualizacion,
       creado_por,
       actualizado_por,
-      categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
       marca:id_marca(id, nombre, logo_url),
       unidad:id_unidad(id, nombre, simbolo),
-      disponibilidad:id_disponibilidad(id, nombre),
-      precios:producto_precio_moneda(
-        id,
-        precio_venta,
-        margen_aplicado,
-        fecha_vigencia_desde,
-        fecha_vigencia_hasta,
-        activo,
-        precio_proveedor,
-        moneda:id_moneda(id, codigo, nombre, simbolo)
-      )
+      disponibilidad:id_disponibilidad(id, nombre)
     `)
     .eq('activo', true)
     .eq('visible_web', true)
@@ -1554,20 +1277,9 @@ export const getProductosDestacados = async (limit = 8) => {
         fecha_actualizacion,
         creado_por,
         actualizado_por,
-        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre, logo_url),
         unidad:id_unidad(id, nombre, simbolo),
         disponibilidad:id_disponibilidad(id, nombre, descripcion),
-        precios:producto_precio_moneda(
-          id,
-          precio_venta,
-          margen_aplicado,
-          fecha_vigencia_desde,
-          fecha_vigencia_hasta,
-          activo,
-          precio_proveedor,
-          moneda:id_moneda(id, codigo, nombre, simbolo)
-        )
       `)
       .eq('activo', true)
       .eq('visible_web', true)
@@ -1579,7 +1291,22 @@ export const getProductosDestacados = async (limit = 8) => {
       return { data: [], error: fallbackError }
     }
     
-    data = fallbackData
+    // Asignar fallbackData a data con type assertion
+    // Supabase puede retornar null o un array, y necesitamos asegurar que sea un array
+    if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
+      // Filtrar elementos que no sean errores de parser y tengan la estructura correcta
+      // Usar type assertion para evitar errores de tipo con ParserError
+      const validProducts = (fallbackData as any[]).filter((item: any) => {
+        return item != null && 
+               typeof item === 'object' && 
+               !('error' in item) &&
+               'sku' in item
+      })
+      // Usar type assertion doble para evitar el error de tipo
+      data = validProducts as unknown as typeof data
+    } else {
+      data = []
+    }
     error = null
   }
 
@@ -1592,18 +1319,8 @@ export const getProductosDestacados = async (limit = 8) => {
   const processedData = data?.map(producto => {
     // Normalizar categorías (pueden venir como array de relaciones)
     let categorias: Categoria[] = []
-    if (producto.categorias) {
-      if (Array.isArray(producto.categorias)) {
-        categorias = producto.categorias
-          .map((pc: any) => pc?.categoria)
-          .filter((cat: any) => cat != null)
-      } else if (producto.categorias && typeof producto.categorias === 'object' && 'categoria' in producto.categorias) {
-        const cat = (producto.categorias as any).categoria
-        if (cat) {
-          categorias = [cat as Categoria]
-        }
-      }
-    }
+    // Categorías removidas - ya no se usa producto_categoria
+    categorias = []
     // Mantener compatibilidad con categoria (primera categoría)
     const categoria = categorias.length > 0 ? categorias[0] : undefined
     
@@ -1612,41 +1329,12 @@ export const getProductosDestacados = async (limit = 8) => {
     const unidad = Array.isArray(producto.unidad) ? producto.unidad[0] : producto.unidad
     const disponibilidad = Array.isArray(producto.disponibilidad) ? producto.disponibilidad[0] : producto.disponibilidad
     
-    // Filtrar precios activos y vigentes
-    const preciosVigentes = (producto.precios || []).filter(precio => {
-      if (!precio.activo) return false
-      
-      const hoy = new Date().toISOString().split('T')[0]
-      const fechaDesde = precio.fecha_vigencia_desde
-      const fechaHasta = precio.fecha_vigencia_hasta
-      
-      // Verificar que la fecha de inicio sea menor o igual a hoy
-      if (fechaDesde && fechaDesde > hoy) return false
-      
-      // Verificar que la fecha de fin sea null o mayor o igual a hoy
-      if (fechaHasta && fechaHasta < hoy) return false
-      
-      return true
-    })
-    
-    // Normalizar monedas en los precios (pueden venir como arrays)
-    const preciosNormalizados = preciosVigentes.map(precio => ({
-      ...precio,
-      moneda: Array.isArray(precio.moneda) ? precio.moneda[0] : precio.moneda
-    }))
-    
-    // Separar precios por moneda
-    const precioSoles = preciosNormalizados.find(p => {
-      const moneda = p.moneda
-      return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'PEN'
-    })
-    const precioDolares = preciosNormalizados.find(p => {
-      const moneda = p.moneda
-      return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'USD'
-    })
-    
-    // Priorizar soles, luego dólares
-    const precioPrincipal = precioSoles || precioDolares || preciosNormalizados[0]
+    // Precios removidos - ya no se usa producto_precio_moneda
+    const preciosVigentes: any[] = []
+    const preciosNormalizados: any[] = []
+    const precioSoles = null
+    const precioDolares = null
+    const precioPrincipal = null
     
     // Procesar URLs de imágenes usando buildProductImageUrl
     let imagenPrincipalUrl = ''
@@ -1750,26 +1438,7 @@ export async function getRelatedProducts(
     const supabase = getSupabaseClient()
     // Si hay filtro de categoría, primero obtener los SKUs de productos que tienen esa categoría
     let productSkus: number[] | null = null
-    if (idCategoria) {
-      const { data: productoCategoriaData, error: pcError } = await supabase
-        .from('producto_categoria')
-        .select('sku')
-        .eq('id_categoria', idCategoria)
-        .eq('activo', true)
-        .limit(10000) // Límite razonable para evitar queries muy grandes
-      
-      if (pcError) {
-        console.error('Error fetching producto_categoria:', pcError)
-        return []
-      }
-      
-      const skuSet = new Set((productoCategoriaData || []).map((pc: any) => pc.sku))
-    productSkus = Array.from(skuSet)
-      
-      if (productSkus.length === 0) {
-        return []
-      }
-    }
+    // Filtro de categoría removido - ya no se usa producto_categoria
 
     let query = supabase
       .from('producto')
@@ -1783,26 +1452,14 @@ export async function getRelatedProducts(
         galeria_imagenes_urls,
         seo_slug,
         es_destacado,
-        categorias:producto_categoria(id_categoria, categoria:categoria(id, nombre)),
         marca:id_marca(id, nombre, logo_url),
-        precios:producto_precio_moneda(
-          id,
-          precio_venta,
-          fecha_vigencia_desde,
-          fecha_vigencia_hasta,
-          activo,
-          moneda:id_moneda(id, codigo, nombre, simbolo)
-        )
       `)
       .eq('activo', true)
       .eq('visible_web', true)
       .neq('sku', currentSku)
       .limit(limit)
 
-    // Filtrar por SKUs si hay filtro de categoría
-    if (productSkus && productSkus.length > 0) {
-      query = query.in('sku', productSkus)
-    }
+    // Filtro de categoría removido - ya no se usa producto_categoria
 
     // Filtrar por marca si está disponible
     if (idMarca) {
@@ -1824,38 +1481,22 @@ export async function getRelatedProducts(
     const processedData = data.map((producto: any) => {
       // Normalizar categorías
       let categorias: Categoria[] = []
-      if (producto.categorias) {
-        if (Array.isArray(producto.categorias)) {
-          categorias = producto.categorias
-            .map((pc: any) => pc?.categoria)
-            .filter((cat: any) => cat != null)
-        } else if (producto.categorias.categoria) {
-          categorias = [producto.categorias.categoria]
-        }
-      }
+      // Categorías removidas - ya no se usa producto_categoria
+      categorias = []
       const categoria = categorias.length > 0 ? categorias[0] : undefined
       
       const hoy = new Date().toISOString().split('T')[0]
+      // Precios removidos - ya no se usa producto_precio_moneda
+      const preciosVigentes: any[] = []
+      /*
       const preciosVigentes = (producto.precios || []).filter((p: any) => {
         if (!p.activo) return false
-        if (p.fecha_vigencia_desde && p.fecha_vigencia_desde > hoy) return false
-        if (p.fecha_vigencia_hasta && p.fecha_vigencia_hasta < hoy) return false
         return true
       })
-
-      const preciosNormalizados = preciosVigentes.map((precio: any) => ({
-        ...precio,
-        moneda: Array.isArray(precio.moneda) ? precio.moneda[0] : precio.moneda
-      }))
-
-      const precioSoles = preciosNormalizados.find((p: any) => {
-        const moneda = p.moneda
-        return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'PEN'
-      })
-      const precioDolares = preciosNormalizados.find((p: any) => {
-        const moneda = p.moneda
-        return moneda && typeof moneda === 'object' && 'codigo' in moneda && moneda.codigo === 'USD'
-      })
+      */
+      const preciosNormalizados: any[] = []
+      const precioSoles = null
+      const precioDolares = null
 
       return {
         ...producto,
