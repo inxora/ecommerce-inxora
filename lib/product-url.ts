@@ -38,65 +38,13 @@ export function normalizeBrandName(brandName: string | undefined | null): string
 }
 
 /**
- * Construye la URL del producto siguiendo la estructura estándar
- * Formato: /{locale}/producto/{categoria-slug}/{marca-slug}/{product-slug}
- * Si no hay categoría: /{locale}/producto/{marca-slug}/{product-slug}
- * Si no hay marca: /{locale}/producto/{categoria-slug}/{product-slug}
- * Si no hay ni categoría ni marca: /{locale}/producto/{product-slug}
+ * @deprecated Esta función ha sido movida a @/lib/product-seo
+ * Usa buildProductUrl desde @/lib/product-seo en su lugar
+ * 
+ * Esta función se mantiene solo para compatibilidad hacia atrás.
+ * Se eliminará en una versión futura.
  */
-export function buildProductUrl(
-  product: Product | Producto,
-  locale: string = 'es'
-): string {
-  const seoSlug = product.seo_slug
-  
-  if (!seoSlug) {
-    console.warn('Producto sin seo_slug:', product)
-    return `/${locale}/producto`
-  }
-
-  // Obtener nombre de categoría
-  let categoryName: string | undefined
-  if (product.categoria) {
-    if (typeof product.categoria === 'string') {
-      categoryName = product.categoria
-    } else if (typeof product.categoria === 'object' && 'nombre' in product.categoria) {
-      categoryName = product.categoria.nombre
-    }
-  }
-
-  // Obtener nombre de marca
-  let brandName: string | undefined
-  if (product.marca) {
-    if (typeof product.marca === 'string') {
-      brandName = product.marca
-    } else if (typeof product.marca === 'object' && 'nombre' in product.marca) {
-      brandName = product.marca.nombre
-    }
-  }
-
-  // Normalizar nombres
-  const categorySegment = normalizeName(categoryName)
-  const brandSegment = normalizeName(brandName)
-
-  // Construir URL con categoría y marca: /{locale}/producto/{categoria}/{marca}/{slug}
-  if (categorySegment && brandSegment) {
-    return `/${locale}/producto/${categorySegment}/${brandSegment}/${seoSlug}`
-  }
-
-  // Construir URL solo con categoría: /{locale}/producto/{categoria}/{slug}
-  if (categorySegment) {
-    return `/${locale}/producto/${categorySegment}/${seoSlug}`
-  }
-
-  // Construir URL solo con marca: /{locale}/producto/{marca}/{slug}
-  if (brandSegment) {
-    return `/${locale}/producto/${brandSegment}/${seoSlug}`
-  }
-
-  // URL sin categoría ni marca: /{locale}/producto/{slug}
-  return `/${locale}/producto/${seoSlug}`
-}
+export { buildProductUrl } from './product-seo'
 
 /**
  * Genera un slug SEO-friendly a partir del nombre del producto
@@ -197,6 +145,7 @@ export function buildCategoryUrlFromObject(
 /**
  * Construye la URL de una categoría con marca
  * Formato: /{locale}/{category-slug}/{brand-slug}
+ * @deprecated Usar buildCategorySubcategoriaUrl en su lugar
  * 
  * @param category - Objeto Categoria con nombre
  * @param brand - Objeto Marca con nombre o nombre de marca como string
@@ -231,6 +180,103 @@ export function buildCategoryBrandUrl(
   }
 
   return `/${locale}/${categorySlug}/${brandSlug}`
+}
+
+/**
+ * Construye la URL de una categoría con subcategoría
+ * Formato: /{locale}/{category-slug}/{subcategoria-slug}
+ * 
+ * @param category - Objeto Categoria con nombre
+ * @param subcategoria - Objeto Subcategoria con nombre o nombre de subcategoría como string
+ * @param locale - Locale (es, en, pt)
+ * @returns URL de la categoría con subcategoría
+ */
+export function buildCategorySubcategoriaUrl(
+  category: { nombre: string; id?: number },
+  subcategoria: { nombre: string; id?: number } | string,
+  locale: string = 'es'
+): string {
+  const categorySlug = normalizeName(category.nombre)
+  if (!categorySlug) {
+    return `/${locale}`
+  }
+
+  // Obtener nombre de subcategoría
+  let subcategoriaName: string | undefined
+  if (typeof subcategoria === 'string') {
+    subcategoriaName = subcategoria
+  } else if (typeof subcategoria === 'object' && 'nombre' in subcategoria) {
+    subcategoriaName = subcategoria.nombre
+  }
+
+  if (!subcategoriaName) {
+    return `/${locale}/${categorySlug}`
+  }
+
+  const subcategoriaSlug = normalizeName(subcategoriaName)
+  if (!subcategoriaSlug) {
+    return `/${locale}/${categorySlug}`
+  }
+
+  return `/${locale}/${categorySlug}/${subcategoriaSlug}`
+}
+
+/**
+ * Construye la URL de una categoría con subcategoría y marca
+ * Formato: /{locale}/{category-slug}/{subcategoria-slug}/{marca-slug}
+ * 
+ * @param category - Objeto Categoria con nombre
+ * @param subcategoria - Objeto Subcategoria con nombre o nombre de subcategoría como string
+ * @param brand - Objeto Marca con nombre o nombre de marca como string
+ * @param locale - Locale (es, en, pt)
+ * @returns URL de la categoría con subcategoría y marca
+ */
+export function buildCategorySubcategoriaMarcaUrl(
+  category: { nombre: string; id?: number },
+  subcategoria: { nombre: string; id?: number } | string,
+  brand: { nombre: string; id?: number } | string,
+  locale: string = 'es'
+): string {
+  const categorySlug = normalizeName(category.nombre)
+  if (!categorySlug) {
+    return `/${locale}`
+  }
+
+  // Obtener nombre de subcategoría
+  let subcategoriaName: string | undefined
+  if (typeof subcategoria === 'string') {
+    subcategoriaName = subcategoria
+  } else if (typeof subcategoria === 'object' && 'nombre' in subcategoria) {
+    subcategoriaName = subcategoria.nombre
+  }
+
+  if (!subcategoriaName) {
+    return `/${locale}/${categorySlug}`
+  }
+
+  const subcategoriaSlug = normalizeName(subcategoriaName)
+  if (!subcategoriaSlug) {
+    return `/${locale}/${categorySlug}`
+  }
+
+  // Obtener nombre de marca
+  let brandName: string | undefined
+  if (typeof brand === 'string') {
+    brandName = brand
+  } else if (typeof brand === 'object' && 'nombre' in brand) {
+    brandName = brand.nombre
+  }
+
+  if (!brandName) {
+    return `/${locale}/${categorySlug}/${subcategoriaSlug}`
+  }
+
+  const brandSlug = normalizeName(brandName)
+  if (!brandSlug) {
+    return `/${locale}/${categorySlug}/${subcategoriaSlug}`
+  }
+
+  return `/${locale}/${categorySlug}/${subcategoriaSlug}/${brandSlug}`
 }
 
 /**

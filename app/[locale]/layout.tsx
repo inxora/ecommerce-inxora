@@ -4,6 +4,7 @@ import { CurrencyProviderWrapper } from '@/components/providers/currency-provide
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Metadata } from 'next'
+import { CategoriesService } from '@/lib/services/categories.service'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://tienda.inxora.com'),
@@ -24,6 +25,8 @@ export const metadata: Metadata = {
   },
 }
 
+const supportedLocales = ['es', 'en', 'pt']
+
 export default async function LocaleLayout({
   children,
   params,
@@ -32,9 +35,25 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  // Fallback a 'es' si locale es undefined o null
-  const validLocale = locale || 'es'
-  const messages = await getMessages()
+  // Validar que el locale sea uno de los soportados
+  // Si no es válido o es undefined/null, usar 'es' como fallback
+  const validLocale = (locale && supportedLocales.includes(locale)) ? locale : 'es'
+  
+  // Cargar categorías desde el servidor para mejor SEO y rendimiento
+  let categories = []
+  try {
+    const categoriasNavegacion = await CategoriesService.getCategorias()
+    // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
+    categories = categoriasNavegacion.filter(
+      (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
+    )
+  } catch (error) {
+    console.error('Error loading categories in layout:', error)
+    // Continuar con array vacío si hay error
+  }
+  
+  try {
+    const messages = await getMessages({ locale: validLocale })
 
   // JSON-LD Schema para Organization - disponible en todas las páginas
   // IMPORTANTE: Para que Google muestre el logo en resultados enriquecidos, debe cumplir:
@@ -81,14 +100,14 @@ export default async function LocaleLayout({
     },
   }
 
-  return (
-    <NextIntlClientProvider locale={validLocale} messages={messages}>
+    return (
+      <NextIntlClientProvider locale={validLocale} messages={messages}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
       />
       <CurrencyProviderWrapper>
-        <Header />
+        <Header categories={categories} />
 
         <main>
           {children}
@@ -97,5 +116,31 @@ export default async function LocaleLayout({
         <Footer />
       </CurrencyProviderWrapper>
     </NextIntlClientProvider>
-  )
+    )
+  } catch (error) {
+    console.error('Error loading messages in LocaleLayout:', error)
+    // Fallback: intentar cargar mensajes en español
+    try {
+      const fallbackMessages = await getMessages({ locale: 'es' })
+      return (
+        <NextIntlClientProvider locale="es" messages={fallbackMessages}>
+          <CurrencyProviderWrapper>
+            <Header categories={categories} />
+            <main>{children}</main>
+            <Footer />
+          </CurrencyProviderWrapper>
+        </NextIntlClientProvider>
+      )
+    } catch (fallbackError) {
+      console.error('Error loading fallback messages:', fallbackError)
+      // Último recurso: renderizar sin mensajes
+      return (
+        <CurrencyProviderWrapper>
+          <Header categories={categories} />
+          <main>{children}</main>
+          <Footer />
+        </CurrencyProviderWrapper>
+      )
+    }
+  }
 }

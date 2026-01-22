@@ -6,21 +6,87 @@ import { useRouter } from 'next/navigation'
 import { ChevronRight, Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Categoria, Marca, buildBrandLogoUrl } from '@/lib/supabase'
-import { CategoriesService, MarcaNavegacion, SubcategoriaNavegacion } from '@/lib/services/categories.service'
-import { buildCategoryUrlFromObject, buildCategoryUrl, buildCategoryBrandUrl } from '@/lib/product-url'
+import { buildBrandLogoUrl } from '@/lib/supabase'
+import { CategoriesService, MarcaNavegacion, SubcategoriaNavegacion, CategoriaNavegacion } from '@/lib/services/categories.service'
+import { buildCategoryUrlFromObject, buildCategoryUrl, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
 
-interface CategoriesSidebarProps {
-  categories: Categoria[]
-  locale: string
-  trigger?: React.ReactNode
+// Componente para mostrar el logo de la marca con manejo de errores
+function BrandLogo({ brand }: { brand: MarcaNavegacion }) {
+  const [imageError, setImageError] = useState(false)
+  const logoUrl = brand.logo_url ? buildBrandLogoUrl(brand.logo_url) : null
+  const brandName = brand.nombre.trim()
+  
+  if (logoUrl && !imageError) {
+    return (
+      <div className="w-8 h-8 flex-shrink-0 rounded bg-white dark:bg-slate-600 p-1 border border-gray-200 dark:border-gray-600">
+        <Image
+          src={logoUrl}
+          alt={brandName}
+          width={32}
+          height={32}
+          className="object-contain w-full h-full"
+          loading="lazy"
+          unoptimized={true}
+          onError={() => setImageError(true)}
+        />
+      </div>
+    )
+  }
+  
+  return (
+    <div className="w-8 h-8 flex-shrink-0 rounded bg-gray-200 dark:bg-slate-600 flex items-center justify-center">
+      <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">
+        {brandName.substring(0, 2).toUpperCase()}
+      </span>
+    </div>
+  )
 }
 
-export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSidebarProps) {
+// Componente para mostrar el logo de la marca en el panel de desktop
+function BrandLogoDesktop({ brand }: { brand: MarcaNavegacion }) {
+  const [imageError, setImageError] = useState(false)
+  const logoUrl = brand.logo_url ? buildBrandLogoUrl(brand.logo_url) : null
+  const brandName = brand.nombre.trim()
+  
+  if (logoUrl && !imageError) {
+    return (
+      <div className="w-10 h-10 flex-shrink-0 rounded bg-gray-50 dark:bg-slate-700 p-1.5 flex items-center justify-center border border-gray-200 dark:border-gray-600 group-hover:border-[#139ED4] dark:group-hover:border-[#88D4E4] transition-colors">
+        <Image
+          src={logoUrl}
+          alt={brandName}
+          width={40}
+          height={40}
+          className="object-contain w-full h-full"
+          loading="lazy"
+          unoptimized={true}
+          onError={() => setImageError(true)}
+        />
+      </div>
+    )
+  }
+  
+  return (
+    <div className="w-10 h-10 flex-shrink-0 rounded bg-gray-200 dark:bg-slate-600 flex items-center justify-center border border-gray-300 dark:border-gray-500">
+      <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">
+        {brandName.substring(0, 2).toUpperCase()}
+      </span>
+    </div>
+  )
+}
+
+interface CategoriesSidebarProps {
+  locale: string
+  trigger?: React.ReactNode
+  categories?: CategoriaNavegacion[] // Categorías cargadas desde el servidor (opcional)
+}
+
+export function CategoriesSidebar({ locale, trigger, categories: serverCategories = [] }: CategoriesSidebarProps) {
   const router = useRouter()
+  const [categories, setCategories] = useState<CategoriaNavegacion[]>(serverCategories)
+  const [loadingCategories, setLoadingCategories] = useState(serverCategories.length === 0)
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null)
   const [expandedCategoryMobile, setExpandedCategoryMobile] = useState<number | null>(null)
   const [categorySubcategorias, setCategorySubcategorias] = useState<Record<number, SubcategoriaNavegacion[]>>({})
@@ -34,6 +100,35 @@ export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSid
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const brandsPanelRef = useRef<HTMLDivElement>(null)
   const sheetContentRef = useRef<HTMLDivElement | null>(null)
+
+  // Cargar categorías desde el endpoint solo si no se proporcionaron desde el servidor
+  useEffect(() => {
+    // Si ya tenemos categorías del servidor, no necesitamos cargarlas
+    if (serverCategories.length > 0) {
+      setCategories(serverCategories)
+      setLoadingCategories(false)
+      return
+    }
+
+    // Solo cargar desde el cliente si no se proporcionaron categorías del servidor (fallback)
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        const categorias = await CategoriesService.getCategorias()
+        // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
+        const filteredCategories = categorias.filter(
+          (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
+        )
+        setCategories(filteredCategories)
+      } catch (error) {
+        console.error('Error loading categories from arbol-navegacion:', error)
+        setCategories([])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+    loadCategories()
+  }, [serverCategories])
 
   // Detectar cuando el sheet se abre/cierra usando el DOM
   useEffect(() => {
@@ -215,10 +310,10 @@ export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSid
   const defaultTrigger = (
     <Button
       variant="ghost"
-      size="icon"
-      className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      aria-label="Abrir menÃº"
+      className="flex items-center gap-2 h-10 px-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      aria-label="Abrir menú de categorías"
     >
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Categorías</span>
       <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
     </Button>
   )
@@ -371,7 +466,13 @@ export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSid
             <div className="flex-1 overflow-y-auto">
               {/* Lista de categorÃ­as con scroll */}
               <div className="px-4 py-4">
-                  {categories && categories.length > 0 ? (
+                  {loadingCategories ? (
+                    <div className="px-4 py-12 text-center">
+                      <div className="text-sm text-muted-foreground">
+                        <p>Cargando categorías...</p>
+                      </div>
+                    </div>
+                  ) : categories && categories.length > 0 ? (
                     <div className="space-y-1">
                       {categories.map((category) => {
                         const isActive = hoveredCategory === category.id
@@ -447,33 +548,25 @@ export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSid
                                             {subcategoria.nombre}
                                           </h4>
                                         </div>
+                                        {/* Link a la subcategoría */}
+                                        <Link
+                                          href={buildCategorySubcategoriaUrl(category, subcategoria, locale)}
+                                          className="block px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors mb-2"
+                                        >
+                                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                            Ver productos de {subcategoria.nombre}
+                                          </span>
+                                        </Link>
+                                        {/* Links a marcas individuales */}
                                         {subcategoria.marcas && subcategoria.marcas.length > 0 && (
                                           <div className="space-y-1">
                                             {subcategoria.marcas.map((brand) => (
                                               <Link
                                                 key={brand.id}
-                                                href={buildCategoryBrandUrl(category, brand, locale)}
+                                                href={buildCategorySubcategoriaMarcaUrl(category, subcategoria, brand, locale)}
                                                 className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors"
                                               >
-                                                {brand.logo_url ? (
-                                                  <div className="w-8 h-8 flex-shrink-0 rounded bg-white dark:bg-slate-600 p-1 border border-gray-200 dark:border-gray-600">
-                                                    <Image
-                                                      src={buildBrandLogoUrl(brand.logo_url)}
-                                                      alt={brand.nombre}
-                                                      width={32}
-                                                      height={32}
-                                                      className="object-contain w-full h-full"
-                                                      loading="lazy"
-                                                      unoptimized={false}
-                                                    />
-                                                  </div>
-                                                ) : (
-                                                  <div className="w-8 h-8 flex-shrink-0 rounded bg-gray-200 dark:bg-slate-600 flex items-center justify-center">
-                                                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">
-                                                      {brand.nombre.substring(0, 2).toUpperCase()}
-                                                    </span>
-                                                  </div>
-                                                )}
+                                                <BrandLogo brand={brand} />
                                                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                                                   {brand.nombre}
                                                 </span>
@@ -599,32 +692,19 @@ export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSid
                       
                       {/* Marcas de la subcategoría */}
                       {subcategoria.marcas && subcategoria.marcas.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
-                          {subcategoria.marcas.map((brand) => {
-                            const logoUrl = brand.logo_url ? buildBrandLogoUrl(brand.logo_url) : null
-                            const brandUrl = hoveredCategoryData
-                              ? buildCategoryBrandUrl(hoveredCategoryData, brand, locale)
-                              : '#'
-
-                            const handleBrandClick = (e: React.PointerEvent<HTMLDivElement>) => {
-                              // Prevenir comportamiento por defecto
-                              e.preventDefault()
-                              e.stopPropagation()
-                              
-                              // Marcar que estamos haciendo clic
-                              setIsClicking(true)
-                              
-                              // Navegar usando el router
-                              router.push(brandUrl)
-                              
-                              // Cerrar el panel inmediatamente
+                        <div className="space-y-2">
+                          {/* Link principal a la subcategoría */}
+                          <Link
+                            href={hoveredCategoryData
+                              ? buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)
+                              : '#'}
+                            className="block p-3 rounded-lg hover:bg-[#88D4E4]/10 dark:hover:bg-slate-800 transition-colors group border border-gray-200 dark:border-gray-700"
+                            onClick={(e) => {
+                              // Cerrar el panel y sheet al hacer click
                               setHoveredCategory(null)
-                              
-                              // Cerrar el sheet después de un pequeño delay
                               setTimeout(() => {
                                 const sheetElement = document.querySelector('[data-state="open"]')
                                 if (sheetElement) {
-                                  // Simular ESC key para cerrar el sheet
                                   const escEvent = new KeyboardEvent('keydown', {
                                     key: 'Escape',
                                     code: 'Escape',
@@ -633,62 +713,51 @@ export function CategoriesSidebar({ categories, locale, trigger }: CategoriesSid
                                   })
                                   document.dispatchEvent(escEvent)
                                 }
-                                setIsClicking(false)
                               }, 150)
-                            }
-
-                            return (
-                              <Link
-                                key={brand.id}
-                                href={brandUrl}
-                                className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#88D4E4]/10 dark:hover:bg-slate-800 transition-colors group"
-                                style={{
-                                  pointerEvents: 'auto',
-                                  cursor: 'pointer',
-                                  userSelect: 'none',
-                                  position: 'relative',
-                                  zIndex: 100,
-                                  isolation: 'isolate',
-                                  touchAction: 'none'
-                                }}
-                              >
-                                <div
-                                  onPointerDown={handleBrandClick}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {subcategoria.nombre}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                Ver productos →
+                              </span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {subcategoria.marcas.slice(0, 6).map((brand) => (
+                                <Link
+                                  key={brand.id}
+                                  href={hoveredCategoryData
+                                    ? buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)
+                                    : '#'}
+                                  className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setHoveredCategory(null)
+                                    setTimeout(() => {
+                                      const sheetElement = document.querySelector('[data-state="open"]')
+                                      if (sheetElement) {
+                                        const escEvent = new KeyboardEvent('keydown', {
+                                          key: 'Escape',
+                                          code: 'Escape',
+                                          keyCode: 27,
+                                          bubbles: true
+                                        })
+                                        document.dispatchEvent(escEvent)
+                                      }
+                                    }, 150)
                                   }}
                                 >
-                                {logoUrl ? (
-                                  <div className="w-10 h-10 flex-shrink-0 rounded bg-gray-50 dark:bg-slate-700 p-1.5 flex items-center justify-center border border-gray-200 dark:border-gray-600 group-hover:border-[#139ED4] dark:group-hover:border-[#88D4E4] transition-colors">
-                                    <Image
-                                      src={logoUrl}
-                                      alt={brand.nombre}
-                                      width={40}
-                                      height={40}
-                                      className="object-contain w-full h-full"
-                                      loading="lazy"
-                                      unoptimized={false}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-10 h-10 flex-shrink-0 rounded bg-gray-200 dark:bg-slate-600 flex items-center justify-center border border-gray-300 dark:border-gray-500">
-                                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">
-                                      {brand.nombre.substring(0, 2).toUpperCase()}
-                                    </span>
-                                  </div>
-                                )}
-                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 leading-tight flex-1">
-                                  {brand.nombre}
-                                </span>
-                                </div>
-                              </Link>
-                            )
-                          })}
-                        </div>
+                                  <BrandLogoDesktop brand={brand} />
+                                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                                    {brand.nombre}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                            </Link>
+                          </div>
                       ) : (
                         <p className="text-xs text-muted-foreground italic">
                           No hay marcas disponibles

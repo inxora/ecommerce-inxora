@@ -1,4 +1,4 @@
-import { api } from '@/lib/api/client'
+import { api, apiClient } from '@/lib/api/client'
 
 // Tipos para la respuesta del endpoint
 export interface MarcaNavegacion {
@@ -51,25 +51,25 @@ export interface ArbolNavegacionResponse {
   status_code: number | null
 }
 
-// Caché simple para evitar múltiples llamadas al mismo endpoint
-let cachedArbolNavegacion: ArbolNavegacionResponse | null = null
-let cachedCategorias: CategoriaNavegacion[] | null = null
-let cacheTimestamp: number = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
-
 export const CategoriesService = {
   /**
    * Obtiene el árbol de navegación completo con categorías, subcategorías y marcas
+   * Con timeout y manejo de errores optimizado
    */
   getArbolNavegacion: async (): Promise<ArbolNavegacionResponse> => {
     try {
-      // Verificar caché
-      const now = Date.now()
-      if (cachedArbolNavegacion && (now - cacheTimestamp) < CACHE_DURATION) {
-        return cachedArbolNavegacion
-      }
-
-      const response = await api.get<ArbolNavegacionResponse>('/api/test/ecommerce/arbol-navegacion')
+      // ✅ FIX 3: Estrategia de caché según entorno
+      // En desarrollo: revalidar cada 60 segundos para evitar saturar la API
+      // En producción: no cachear para respuestas grandes
+      const cacheOptions = process.env.NODE_ENV === 'development'
+        ? { next: { revalidate: 60 } } // 1 minuto en desarrollo
+        : { cache: 'no-store' as RequestCache } // Sin caché en producción
+      
+      // Usar apiClient directamente para poder agregar timeout
+      const response = await apiClient<ArbolNavegacionResponse>('/api/test/ecommerce/arbol-navegacion', {
+        method: 'GET',
+        ...cacheOptions,
+      })
       
       // Validar estructura de respuesta
       if (!response || !response.success || !response.data || !Array.isArray(response.data.categorias)) {
@@ -77,17 +77,16 @@ export const CategoriesService = {
         throw new Error('Invalid response structure from API')
       }
       
-      // Guardar en caché
-      cachedArbolNavegacion = response
-      cacheTimestamp = now
-      
       return response
     } catch (error) {
       console.error('Error fetching arbol-navegacion:', error)
-      // Si hay error pero tenemos caché, retornar caché
-      if (cachedArbolNavegacion) {
-        console.warn('Using cached data due to error')
-        return cachedArbolNavegacion
+      // Si es un timeout, loggear específicamente
+      if (error instanceof Error && error.message.includes('timeout')) {
+        console.error('Error: Timeout obteniendo árbol de navegación')
+      }
+      // Si es un error de CORS, lanzar error más descriptivo
+      if (error instanceof Error && error.name === 'CORSError') {
+        throw new Error('CORS error: No se puede acceder al endpoint. Verifique la configuración CORS del servidor.')
       }
       throw error
     }
@@ -95,15 +94,10 @@ export const CategoriesService = {
 
   /**
    * Obtiene las categorías con sus subcategorías ya parseadas (ahora vienen como array directamente)
+   * Sin caché para verificar que el endpoint funcione correctamente
    */
   getCategorias: async (): Promise<CategoriaNavegacion[]> => {
     try {
-      // Verificar caché
-      const now = Date.now()
-      if (cachedCategorias && (now - cacheTimestamp) < CACHE_DURATION) {
-        return cachedCategorias
-      }
-
       const response = await CategoriesService.getArbolNavegacion()
       
       // Validar que las subcategorías sean arrays válidos
@@ -120,17 +114,9 @@ export const CategoriesService = {
         return categoria
       })
       
-      // Guardar en caché
-      cachedCategorias = categorias
-      
       return categorias
     } catch (error) {
       console.error('Error in getCategorias:', error)
-      // Si hay error pero tenemos caché, retornar caché
-      if (cachedCategorias) {
-        console.warn('Using cached categorias data due to error')
-        return cachedCategorias
-      }
       throw error
     }
   },

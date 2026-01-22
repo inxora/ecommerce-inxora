@@ -3,7 +3,8 @@ export const revalidate = 3600;
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
-import { getProductBySlug, getRelatedProducts, Producto } from '@/lib/supabase'
+import { Producto } from '@/lib/supabase'
+import { ProductsService } from '@/lib/services/products.service'
 import { buildCategoryUrlFromObject } from '@/lib/product-url'
 import { generateProductSeo } from '@/lib/product-seo'
 import ProductClient from './ProductClient'
@@ -13,14 +14,17 @@ interface PageProps {
 }
 
 // Función cacheada para obtener el producto (evita queries duplicadas)
+// Solo usa el API externo, ya no usa Supabase
 const getProduct = cache(async (slugSegments: string[]): Promise<Producto | null> => {
   const lastSegment = slugSegments[slugSegments.length - 1]
   
-  let productData = await getProductBySlug(lastSegment)
+  // Buscar en el API externo usando el último segmento (el slug del producto)
+  let productData = await ProductsService.getProductoBySlug(lastSegment)
   
+  // Si no se encuentra, intentar con el slug completo
   if (!productData && slugSegments.length > 1) {
     const fullSlug = slugSegments.join('/')
-    productData = await getProductBySlug(fullSlug)
+    productData = await ProductsService.getProductoBySlug(fullSlug)
   }
   
   return productData
@@ -84,17 +88,15 @@ export default async function ProductPage({ params }: PageProps) {
     notFound()
   }
 
-  // Obtener productos relacionados
-  // Usar la primera categoría del array de categorías, o la categoría singular para compatibilidad
-  const idCategoria = product.categorias && product.categorias.length > 0 
-    ? product.categorias[0].id 
-    : (typeof product.categoria === 'object' ? product.categoria?.id : undefined)
+  // Obtener productos relacionados desde el API externo
+  // Filtrar por marca y subcategoría
   const idMarca = typeof product.marca === 'object' ? product.marca?.id : product.id_marca
+  const idSubcategoria = product.subcategoria_principal?.id
   
-  const relatedProducts = await getRelatedProducts(
+  const relatedProducts = await ProductsService.getProductosRelacionados(
     product.sku,
-    idCategoria,
-    idMarca,
+    idMarca || 0, // Si no hay marca, usar 0 (no encontrará productos relacionados)
+    idSubcategoria,
     8
   )
 

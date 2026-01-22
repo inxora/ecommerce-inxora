@@ -3,19 +3,25 @@
  * Genera URLs canónicas, meta tags optimizados y datos estructurados Schema.org
  */
 
-import { Producto } from './supabase'
-import { normalizeName } from './product-url'
+import { Producto, Product } from './supabase'
+import { normalizeName, generateProductSlug } from './product-url'
 
 /**
  * Obtiene la categoría principal del producto
+ * Prioriza product.categoria (del endpoint externo) sobre product.categorias (array)
  * Busca la categoría con es_principal = true, o la primera del array
- * Maneja categorías del producto
+ * Maneja categorías del producto tanto del endpoint externo como de Supabase
  */
 function getCategoriaPrincipal(product: Producto): { nombre: string } | undefined {
+  // Priorizar product.categoria (singular) que viene del endpoint externo
+  // Esto es más directo y eficiente para productos del API externo
+  if (product.categoria && typeof product.categoria === 'object' && 'nombre' in product.categoria) {
+    return product.categoria
+  }
+
+  // Si no hay categoría singular, buscar en el array de categorías
   if (!product.categorias || product.categorias.length === 0) {
-    return product.categoria && typeof product.categoria === 'object'
-      ? product.categoria
-      : undefined
+    return undefined
   }
 
   // Las categorías vienen directamente del producto
@@ -51,24 +57,65 @@ function getCategoriaPrincipal(product: Producto): { nombre: string } | undefine
 }
 
 /**
- * Genera la URL canónica del producto
- * Formato: https://tienda.inxora.com/{locale}/producto/{categoria-principal}/{marca}/{seo-slug}
- * 
- * @param product - Producto con sus datos
- * @param locale - Locale (es, en, pt)
- * @returns URL canónica completa
+ * Función interna que construye la URL relativa del producto
+ * Esta función centraliza toda la lógica de construcción de URLs
  */
-export function generateCanonicalUrl(product: Producto, locale: string = 'es'): string {
-  const baseUrl = 'https://tienda.inxora.com'
-  
-  if (!product.seo_slug) {
-    console.warn('Producto sin seo_slug:', product.sku)
-    return `${baseUrl}/${locale}/producto`
+function buildProductUrlRelative(
+  product: Product | Producto,
+  locale: string = 'es'
+): string {
+  // Normalizar el seo_slug para asegurar que no tenga espacios ni caracteres especiales
+  let seoSlugNormalizado: string
+  if (!product.seo_slug || product.seo_slug.trim() === '') {
+    // Si no hay seo_slug, generar uno desde el nombre del producto
+    let marcaNombreParaSlug: string | undefined
+    if (product.marca) {
+      if (typeof product.marca === 'string') {
+        marcaNombreParaSlug = product.marca
+      } else if (typeof product.marca === 'object' && 'nombre' in product.marca) {
+        marcaNombreParaSlug = product.marca.nombre
+      }
+    }
+    seoSlugNormalizado = generateProductSlug(product.nombre, marcaNombreParaSlug)
+  } else {
+    // Normalizar el seo_slug: puede venir con espacios o caracteres especiales del API
+    const slugTrimmed = product.seo_slug.trim()
+    // Verificar si el slug ya está normalizado (solo letras minúsculas, números y guiones, sin espacios)
+    if (/^[a-z0-9-]+$/.test(slugTrimmed) && !slugTrimmed.includes(' ')) {
+      // Ya está normalizado, usarlo tal cual
+      seoSlugNormalizado = slugTrimmed
+    } else {
+      // El slug tiene espacios o caracteres especiales, normalizarlo
+      const normalized = normalizeName(slugTrimmed)
+      if (normalized && normalized.length > 0) {
+        seoSlugNormalizado = normalized
+      } else {
+        // Si normalizeName falla, generar slug desde el nombre del producto
+        let marcaNombreParaSlug: string | undefined
+        if (product.marca) {
+          if (typeof product.marca === 'string') {
+            marcaNombreParaSlug = product.marca
+          } else if (typeof product.marca === 'object' && 'nombre' in product.marca) {
+            marcaNombreParaSlug = product.marca.nombre
+          }
+        }
+        seoSlugNormalizado = generateProductSlug(product.nombre, marcaNombreParaSlug)
+      }
+    }
   }
 
-  // Obtener categoría principal
-  const categoriaPrincipal = getCategoriaPrincipal(product)
-  const categoriaNombre = categoriaPrincipal?.nombre
+  // Obtener categoría principal (usar getCategoriaPrincipal para productos Producto)
+  let categoriaNombre: string | undefined
+  if ('categorias' in product && (product as Producto).categorias) {
+    const categoriaPrincipal = getCategoriaPrincipal(product as Producto)
+    categoriaNombre = categoriaPrincipal?.nombre
+  } else if (product.categoria) {
+    if (typeof product.categoria === 'string') {
+      categoriaNombre = product.categoria
+    } else if (typeof product.categoria === 'object' && 'nombre' in product.categoria) {
+      categoriaNombre = product.categoria.nombre
+    }
+  }
 
   // Obtener nombre de marca
   let marcaNombre: string | undefined
@@ -80,27 +127,107 @@ export function generateCanonicalUrl(product: Producto, locale: string = 'es'): 
     }
   }
 
+  // Obtener subcategoría principal del producto
+  let subcategoriaNombre: string | undefined
+  if (product.subcategoria_principal && typeof product.subcategoria_principal === 'object' && 'nombre' in product.subcategoria_principal) {
+    subcategoriaNombre = product.subcategoria_principal.nombre
+  }
+
   // Normalizar nombres para URL
   const categoriaSlug = categoriaNombre ? normalizeName(categoriaNombre) : undefined
+  const subcategoriaSlug = subcategoriaNombre ? normalizeName(subcategoriaNombre) : undefined
   const marcaSlug = marcaNombre ? normalizeName(marcaNombre) : undefined
 
-  // Construir URL: /{locale}/producto/{categoria}/{marca}/{slug}
+  // Construir URL con categoría, subcategoría y marca: /{locale}/producto/{categoria}/{subcategoria}/{marca}/{slug}
+  if (categoriaSlug && subcategoriaSlug && marcaSlug) {
+    return `/${locale}/producto/${categoriaSlug}/${subcategoriaSlug}/${marcaSlug}/${seoSlugNormalizado}`
+  }
+
+  // Fallback: categoría y marca sin subcategoría
   if (categoriaSlug && marcaSlug) {
-    return `${baseUrl}/${locale}/producto/${categoriaSlug}/${marcaSlug}/${product.seo_slug}`
+    return `/${locale}/producto/${categoriaSlug}/${marcaSlug}/${seoSlugNormalizado}`
   }
 
   // Fallback: solo categoría
   if (categoriaSlug) {
-    return `${baseUrl}/${locale}/producto/${categoriaSlug}/${product.seo_slug}`
+    return `/${locale}/producto/${categoriaSlug}/${seoSlugNormalizado}`
   }
 
   // Fallback: solo marca
   if (marcaSlug) {
-    return `${baseUrl}/${locale}/producto/${marcaSlug}/${product.seo_slug}`
+    return `/${locale}/producto/${marcaSlug}/${seoSlugNormalizado}`
   }
 
   // Fallback mínimo: solo slug
-  return `${baseUrl}/${locale}/producto/${product.seo_slug}`
+  return `/${locale}/producto/${seoSlugNormalizado}`
+}
+
+/**
+ * Construye la URL relativa del producto (sin dominio)
+ * Esta función es usada internamente y también puede ser exportada para uso en componentes
+ * 
+ * @param product - Producto con sus datos
+ * @param locale - Locale (es, en, pt)
+ * @returns URL relativa del producto (ej: /es/producto/categoria/subcategoria/marca/slug)
+ */
+export function buildProductUrl(
+  product: Product | Producto,
+  locale: string = 'es'
+): string {
+  return buildProductUrlRelative(product, locale)
+}
+
+/**
+ * Genera la URL canónica del producto (con dominio completo)
+ * Optimizada para trabajar con productos del endpoint externo (/api/test/productos/ecommerce)
+ * 
+ * Prioridad:
+ * 1. Si el producto tiene canonical_url del API, se usa ese (validando dominio tienda.inxora.com)
+ * 2. Si no, construye la URL usando: categoria/subcategoria/marca/seo-slug
+ * 
+ * Formato preferido: https://tienda.inxora.com/{locale}/producto/{categoria}/{subcategoria}/{marca}/{seo-slug}
+ * 
+ * @param product - Producto con sus datos (del endpoint externo o Supabase)
+ * @param locale - Locale (es, en, pt)
+ * @returns URL canónica completa (siempre apunta a tienda.inxora.com)
+ */
+export function generateCanonicalUrl(product: Producto, locale: string = 'es'): string {
+  const baseUrl = 'https://tienda.inxora.com'
+  
+  // PRIORIDAD 1: Si el producto tiene canonical_url del endpoint externo, validarlo y normalizarlo
+  // IMPORTANTE: El canonical_url del API puede venir sin normalizar (con espacios), así que debemos validarlo
+  if (product.canonical_url && product.canonical_url.trim() !== '') {
+    const canonicalUrl = product.canonical_url.trim()
+    
+    // ✅ FIX: Validar que la URL esté normalizada (sin espacios ni caracteres especiales en el slug)
+    // Extraer la parte del slug (después del último /) y verificar si tiene espacios
+    const urlParts = canonicalUrl.split('/')
+    const slugPart = urlParts[urlParts.length - 1]
+    
+    // Si el slug tiene espacios o caracteres no permitidos (excepto guiones), construir desde cero
+    if (slugPart && (slugPart.includes(' ') || /[^a-z0-9-]/.test(slugPart.toLowerCase()))) {
+      // La URL tiene espacios o caracteres especiales en el slug, construir desde cero con normalización
+      const relativeUrl = buildProductUrlRelative(product, locale)
+      return `${baseUrl}${relativeUrl}`
+    }
+    
+    // Validar que sea de tienda.inxora.com (no de app.inxora.com)
+    if (canonicalUrl.includes('tienda.inxora.com')) {
+      // La URL está normalizada y es del dominio correcto, usarla
+      return canonicalUrl
+    }
+    // Si es de app.inxora.com, reemplazar el dominio automáticamente
+    if (canonicalUrl.includes('app.inxora.com')) {
+      return canonicalUrl.replace('app.inxora.com', 'tienda.inxora.com')
+    }
+    // Si la URL canónica no es de un dominio conocido, construirla desde cero
+    // (esto evita usar URLs inválidas del API)
+  }
+  
+  // Usar la función base para construir la URL relativa y agregar el dominio
+  // Esta función siempre normaliza correctamente el seo_slug
+  const relativeUrl = buildProductUrlRelative(product, locale)
+  return `${baseUrl}${relativeUrl}`
 }
 
 /**

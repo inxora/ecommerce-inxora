@@ -168,12 +168,19 @@ export const buildProductImageUrl = (imageUrl: string | null | undefined, skuPro
 }
 
 // Función para construir URL de imagen de marca
-export const buildBrandLogoUrl = (fileName: string | null | undefined): string | null => {
-  if (!fileName) return null
-  // Si ya es una URL completa, retornarla tal cual
-  if (fileName.startsWith('http')) return fileName
-  // Construir URL desde el bucket de marcas
-  return `https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/marcas-images/${fileName}`
+// Acepta tanto URLs completas (del API) como nombres de archivo (de Supabase)
+export const buildBrandLogoUrl = (logoUrl: string | null | undefined): string | null => {
+  if (!logoUrl || logoUrl.trim() === '') return null
+  
+  const trimmedUrl = logoUrl.trim()
+  
+  // Si ya es una URL completa (viene del API), retornarla tal cual
+  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    return trimmedUrl
+  }
+  
+  // Si es un nombre de archivo (viene de Supabase), construir la URL completa
+  return `https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/marcas-images/${trimmedUrl}`
 }
 
 // Tipos de datos basados en la estructura de la base de datos
@@ -238,6 +245,14 @@ export interface Producto {
       precio_referencia: number
       moneda: Moneda
     } | null
+  }
+  // Subcategoría principal del producto (viene del API)
+  subcategoria_principal?: {
+    id: number
+    nombre: string
+    codigo: string
+    categoria_id: number
+    categoria_nombre: string
   }
 }
 
@@ -1119,23 +1134,29 @@ export async function getProducts({
 
 export const getCategorias = async () => {
   try {
-    const supabase = getSupabaseClient()
-  const { data, error } = await supabase
-    .from('categoria')
-    .select('*')
-    .eq('activo', true)
-    .order('nombre')
-      .limit(500) // Límite razonable (normalmente no hay más de 500 categorías)
+    // Usar CategoriesService para obtener categorías desde el endpoint de la API
+    const { CategoriesService } = await import('@/lib/services/categories.service')
+    const categoriasNavegacion = await CategoriesService.getCategorias()
+    
+    // Mapear CategoriaNavegacion a Categoria para mantener compatibilidad
+    const categorias: Categoria[] = categoriasNavegacion.map(cat => ({
+      id: cat.id,
+      nombre: cat.nombre,
+      descripcion: cat.descripcion || '',
+      logo_url: cat.logo_url,
+      activo: cat.activo,
+      fecha_creacion: new Date().toISOString() // Valor por defecto ya que no viene del API
+    }))
 
-  if (error) {
-    console.error('Error fetching categorias:', error)
-      throw new Error(`Error al obtener categorías: ${error.message}`)
-    }
-
-    return { data: data || [], error: null }
+    return { data: categorias, error: null }
   } catch (error) {
     console.error('Exception in getCategorias:', error)
-    return { data: [], error: error instanceof Error ? error : new Error('Error desconocido') }
+    // Retornar array vacío en lugar de lanzar error para evitar que el servidor se cierre
+    // Esto permite que la aplicación continúe funcionando aunque el endpoint falle
+    return { 
+      data: [], 
+      error: error instanceof Error ? error : new Error('Error desconocido al obtener categorías desde la API') 
+    }
   }
 }
 
@@ -1163,27 +1184,41 @@ export const getMarcas = async () => {
 
 /**
  * Obtiene las marcas relacionadas con una categoría específica
- * de forma optimizada, consultando directamente las relaciones sin necesidad
- * de traer todos los productos
+ * desde el endpoint de la API en lugar de Supabase
  */
 export const getMarcasByCategoria = async (categoriaId: number): Promise<Marca[]> => {
   try {
-    const supabase = getSupabaseClient()
-    // Filtro de categoría removido - ya no se usa producto_categoria
-    // Retornar array vacío ya que no podemos obtener marcas por categoría sin producto_categoria
-    return []
+    // Usar CategoriesService para obtener marcas desde el endpoint de la API
+    const { CategoriesService } = await import('@/lib/services/categories.service')
+    const marcasNavegacion = await CategoriesService.getMarcasByCategoria(categoriaId)
     
-    // Código removido - ya no se usa producto_categoria
+    // Mapear MarcaNavegacion a Marca para mantener compatibilidad
+    const marcas: Marca[] = marcasNavegacion.map(marca => ({
+      id: marca.id,
+      codigo: marca.codigo || '',
+      nombre: marca.nombre,
+      descripcion: '',
+      logo_url: marca.logo_url || '',
+      sitio_web: '',
+      pais_origen: '',
+      activo: marca.activo,
+      fecha_creacion: marca.fecha_asociacion || new Date().toISOString()
+    }))
+
+    return marcas
   } catch (error) {
+    // Loggear el error pero retornar array vacío para evitar que el servidor se cierre
     console.error('Error in getMarcasByCategoria:', error)
+    // Retornar array vacío en lugar de lanzar error
     return []
   }
 }
 
 export const getProductosDestacados = async (limit = 8) => {
-  const supabase = getSupabaseClient()
-  // Primero intentar obtener productos destacados
-  let { data, error } = await supabase
+  try {
+    const supabase = getSupabaseClient()
+    // Primero intentar obtener productos destacados
+    let { data, error } = await supabase
     .from('producto')
     .select(`
       sku,
@@ -1425,7 +1460,15 @@ export const getProductosDestacados = async (limit = 8) => {
     } as Producto
   }) || []
 
-  return { data: processedData, error: null }
+    return { data: processedData, error: null }
+  } catch (error) {
+    console.error('Exception in getProductosDestacados:', error)
+    // Retornar array vacío en lugar de lanzar error para evitar que el servidor se cierre
+    return { 
+      data: [], 
+      error: error instanceof Error ? error : new Error('Error desconocido al obtener productos destacados') 
+    }
+  }
 }
 
 export async function getRelatedProducts(
@@ -1452,7 +1495,7 @@ export async function getRelatedProducts(
         galeria_imagenes_urls,
         seo_slug,
         es_destacado,
-        marca:id_marca(id, nombre, logo_url),
+        marca:id_marca(id, nombre, logo_url)
       `)
       .eq('activo', true)
       .eq('visible_web', true)

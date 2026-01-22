@@ -7,9 +7,11 @@ import { ProductFilters, FilterState } from '@/components/catalog/product-filter
 import { ProductSearch } from '@/components/catalog/product-search'
 import { ProductPagination } from '@/components/catalog/product-pagination'
 import { CategoryBrandsCarousel } from '@/components/category/category-brands-carousel'
+import { CategorySubcategoryFilter } from '@/components/category/category-subcategory-filter'
 import { Producto, Categoria, Marca } from '@/lib/supabase'
 import { Search, Package } from 'lucide-react'
-import { buildCategoryUrl, buildCategoryBrandUrl } from '@/lib/product-url'
+import { buildCategoryUrl, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl, normalizeName } from '@/lib/product-url'
+import { CategoriesService, SubcategoriaNavegacion } from '@/lib/services/categories.service'
 
 interface CategoryClientProps {
   category: Categoria
@@ -39,7 +41,7 @@ export function CategoryClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
-  const params = useParams() as { locale?: string }
+  const params = useParams() as { locale?: string; slug?: string; subcategoria?: string; marca?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
   
   const isUpdatingRef = useRef(false)
@@ -47,10 +49,53 @@ export function CategoryClient({
   // ✅ FIX: Separar las dependencias estables de las inestables
   const categoryIdRef = useRef(category.id)
   const localeRef = useRef(locale)
+  // ✅ FIX: Estabilizar params para evitar bucles infinitos
+  const paramsRef = useRef(params)
+  const subcategoriaSlugRef = useRef<string | undefined>(params.subcategoria)
   
   // Actualizar refs cuando cambien los valores
   categoryIdRef.current = category.id
   localeRef.current = locale
+  if (paramsRef.current.subcategoria !== params.subcategoria) {
+    paramsRef.current = { ...params }
+    subcategoriaSlugRef.current = params.subcategoria
+  }
+  
+  // ✅ FIX: Memoizar categorías navegación para evitar llamadas repetidas
+  const categoriasNavegacionRef = useRef<Awaited<ReturnType<typeof CategoriesService.getCategorias>> | null>(null)
+  const categoriasNavegacionLoadingRef = useRef(false)
+
+  // ✅ FIX: Función helper para obtener categorías navegación (memoizada)
+  const getCategoriasNavegacion = useCallback(async () => {
+    if (categoriasNavegacionRef.current && !categoriasNavegacionLoadingRef.current) {
+      return categoriasNavegacionRef.current
+    }
+    if (categoriasNavegacionLoadingRef.current) {
+      // Esperar a que termine la carga actual
+      return new Promise<Awaited<ReturnType<typeof CategoriesService.getCategorias>>>((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (categoriasNavegacionRef.current && !categoriasNavegacionLoadingRef.current) {
+            clearInterval(checkInterval)
+            resolve(categoriasNavegacionRef.current!)
+          }
+        }, 100)
+        setTimeout(() => {
+          clearInterval(checkInterval)
+          if (!categoriasNavegacionRef.current) {
+            categoriasNavegacionLoadingRef.current = false
+          }
+        }, 5000)
+      })
+    }
+    categoriasNavegacionLoadingRef.current = true
+    try {
+      const categorias = await CategoriesService.getCategorias()
+      categoriasNavegacionRef.current = categorias
+      return categorias
+    } finally {
+      categoriasNavegacionLoadingRef.current = false
+    }
+  }, [])
 
   // Función separada para cambios de página - debe definirse antes de updateURL
   const handlePageChange = useCallback((page: number) => {
@@ -186,19 +231,125 @@ export function CategoryClient({
         !currentSearchParams.get('ordenar') &&
         !currentSearchParams.get('buscar')
       
-      // Si solo hay UNA marca y no hay otros filtros, usar nueva estructura de URL
+      // Si solo hay UNA marca y no hay otros filtros, buscar subcategoría y navegar
       if (hasOnlyOneMarca && hasNoOtherFilters) {
         const marcaId = String(marcaArray[0])
         const selectedBrand = brands.find(b => String(b.id) === marcaId)
         
         if (selectedBrand) {
-          // Usar estructura de URL: /{locale}/{slug}/{marca}
-          const brandUrl = buildCategoryBrandUrl(category, selectedBrand, locale)
+          // Si ya estamos en una ruta con subcategoría, usar esa subcategoría
+          // ✅ FIX: Usar el ref estabilizado en lugar de params directamente
+          const currentSubcategoriaSlug = subcategoriaSlugRef.current
           
-          startTransition(() => {
-            router.push(brandUrl, { scroll: false })
-            setTimeout(() => { isUpdatingRef.current = false }, 200)
-          })
+          if (currentSubcategoriaSlug) {
+            // Ya estamos en una subcategoría, navegar directamente a categoría/subcategoría/marca
+            // ✅ FIX: Usar categorías memoizadas para evitar llamadas repetidas
+            getCategoriasNavegacion()
+              .then(categoriasNavegacion => {
+                const categoriaNavegacion = categoriasNavegacion.find(c => c.id === category.id)
+                if (categoriaNavegacion) {
+                  const subcategoriaActual = categoriaNavegacion.subcategorias.find(
+                    sub => normalizeName(sub.nombre) === currentSubcategoriaSlug
+                  )
+                  
+                  if (subcategoriaActual) {
+                    const brandUrl = buildCategorySubcategoriaMarcaUrl(
+                      category,
+                      subcategoriaActual,
+                      selectedBrand,
+                      locale
+                    )
+                    
+                    startTransition(() => {
+                      router.push(brandUrl, { scroll: false })
+                      setTimeout(() => { isUpdatingRef.current = false }, 200)
+                    })
+                    return
+                  }
+                }
+                
+                // Si no se encuentra la subcategoría actual, buscar la que contiene la marca
+                // Reutilizar categoriaNavegacion que ya fue encontrada arriba
+                if (categoriaNavegacion) {
+                  const subcategoriaConMarca = categoriaNavegacion.subcategorias.find(sub => 
+                    sub.marcas && sub.marcas.some(m => m.id === Number(marcaId))
+                  )
+                  
+                  if (subcategoriaConMarca) {
+                    const brandUrl = buildCategorySubcategoriaMarcaUrl(
+                      category,
+                      subcategoriaConMarca,
+                      selectedBrand,
+                      locale
+                    )
+                    
+                    startTransition(() => {
+                      router.push(brandUrl, { scroll: false })
+                      setTimeout(() => { isUpdatingRef.current = false }, 200)
+                    })
+                    return
+                  }
+                }
+                
+                isUpdatingRef.current = false
+              })
+              .catch(error => {
+                console.error('Error finding subcategoria for brand:', error)
+                isUpdatingRef.current = false
+              })
+            
+            return
+          }
+          
+          // Si no hay subcategoría en la URL, buscar la subcategoría que contiene esta marca
+          // ✅ FIX: Usar categorías memoizadas para evitar llamadas repetidas
+          getCategoriasNavegacion()
+            .then(categoriasNavegacion => {
+              const categoriaNavegacion = categoriasNavegacion.find(c => c.id === category.id)
+              if (categoriaNavegacion) {
+                // Buscar la primera subcategoría que contiene esta marca
+                const subcategoriaConMarca = categoriaNavegacion.subcategorias.find(sub => 
+                  sub.marcas && sub.marcas.some(m => m.id === Number(marcaId))
+                )
+                
+                if (subcategoriaConMarca) {
+                  // Navegar a categoría/subcategoría/marca
+                  const brandUrl = buildCategorySubcategoriaMarcaUrl(
+                    category,
+                    subcategoriaConMarca,
+                    selectedBrand,
+                    locale
+                  )
+                  
+                  startTransition(() => {
+                    router.push(brandUrl, { scroll: false })
+                    setTimeout(() => { isUpdatingRef.current = false }, 200)
+                  })
+                  return
+                } else {
+                  // Si no se encuentra subcategoría, navegar solo a la subcategoría más relevante
+                  const primeraSubcategoria = categoriaNavegacion.subcategorias.find(sub => sub.activo)
+                  if (primeraSubcategoria) {
+                    const subcategoriaUrl = buildCategorySubcategoriaUrl(category, primeraSubcategoria, locale)
+                    startTransition(() => {
+                      router.push(subcategoriaUrl, { scroll: false })
+                      setTimeout(() => { isUpdatingRef.current = false }, 200)
+                    })
+                    return
+                  }
+                }
+              }
+              
+              // Fallback: mantener filtro en URL actual si no se encuentra subcategoría
+              isUpdatingRef.current = false
+            })
+            .catch(error => {
+              console.error('Error finding subcategoria for brand:', error)
+              // Fallback: mantener filtro en URL actual
+              isUpdatingRef.current = false
+            })
+          
+          // Retornar temprano mientras se busca la subcategoría
           return
         }
       }
@@ -293,10 +444,18 @@ export function CategoryClient({
       // especialmente importante cuando hay múltiples páginas
       setTimeout(() => { isUpdatingRef.current = false }, 300)
     })
-  }, [router, categories, searchParams, handlePageChange, pathname, totalPages]) // Incluir totalPages como dependencia
+  }, [router, categories, searchParams, handlePageChange, pathname, totalPages, brands, locale, category]) // ✅ FIX: Remover params de dependencias para evitar bucles infinitos
+
+  // Detectar si estamos en una ruta con subcategoría usando el ref estabilizado
+  const currentSubcategoriaSlug = subcategoriaSlugRef.current
 
   return (
     <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 pb-16">
+      {/* Filtro de subcategorías - arriba de las marcas */}
+      <div className="mb-6">
+        <CategorySubcategoryFilter category={category} locale={locale} />
+      </div>
+
       {relatedBrands.length > 0 && (
         <div className="mb-6">
           <CategoryBrandsCarousel brands={relatedBrands} category={category} />

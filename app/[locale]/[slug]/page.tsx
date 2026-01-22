@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
-import { getCategorias, getMarcas, getProducts, getMarcasByCategoria, Categoria, Marca } from '@/lib/supabase'
+import { getCategorias, getMarcas, getMarcasByCategoria, Categoria, Marca } from '@/lib/supabase'
+import { ProductsService } from '@/lib/services/products.service'
 import { CategoryClient } from '@/components/category/category-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
@@ -55,6 +56,13 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug: categorySlug, locale } = await params
+  
+  // Validar que el locale sea válido y que no sea una ruta especial (como .well-known)
+  const validLocales = ['es', 'en', 'pt']
+  if (!validLocales.includes(locale) || locale.startsWith('.') || locale.startsWith('_')) {
+    notFound()
+  }
+  
   const resolvedSearchParams = await searchParams
   const page = parseInt(resolvedSearchParams.page || '1')
   const itemsPerPage = 50
@@ -91,15 +99,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // OPTIMIZACIÓN: Usar getMarcasByCategoria en lugar de consultar 500 productos
   const [brandsData, productsData, relatedBrandsData] = await Promise.all([
     getMarcas(),
-    getProducts({
+    ProductsService.getProductos({
       page,
       limit: itemsPerPage,
-      categoria: allCategoriaIds,
-      marca: marcaArray.length > 0 ? marcaArray : undefined,
+      categoria_id: allCategoriaIds.map(id => parseInt(id)),
+      id_marca: marcaArray.length > 0 ? marcaArray.map(m => parseInt(m)) : undefined,
       buscar: resolvedSearchParams.buscar,
-      precioMin: resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined,
-      precioMax: resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined,
-      ordenar: resolvedSearchParams.ordenar,
+      visible_web: true,
     }),
     getMarcasByCategoria(categoryId) // Consulta optimizada directa a relaciones
   ])

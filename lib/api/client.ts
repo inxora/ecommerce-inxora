@@ -1,7 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://app.inxora.com'
 
-interface ApiOptions extends RequestInit {
+interface ApiOptions extends Omit<RequestInit, 'next'> {
   params?: Record<string, string | number | boolean | undefined>
+  next?: { revalidate?: number | false } | { cache?: RequestCache }
 }
 
 export class ApiError extends Error {
@@ -19,9 +20,9 @@ export async function apiClient<T>(
   endpoint: string,
   options?: ApiOptions
 ): Promise<T> {
-  const { params, ...fetchOptions } = options || {}
+  const { params, next, ...fetchOptions } = options || {}
 
-  // Construir URL con query params
+  // Construir URL con query params - siempre usar API_BASE_URL externo
   let url = `${API_BASE_URL}${endpoint}`
   if (params) {
     const searchParams = new URLSearchParams()
@@ -37,40 +38,142 @@ export async function apiClient<T>(
   }
 
   try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions?.headers,
-      },
-      // Agregar credentials para requests CORS
-      credentials: 'omit', // No enviar cookies para evitar problemas CORS
-    })
+    // Los logs están deshabilitados por defecto para reducir ruido en la terminal
+    // Solo loggear si NEXT_PUBLIC_DEBUG_API está explícitamente en 'true'
+    const shouldLog = process.env.NEXT_PUBLIC_DEBUG_API === 'true'
+    
+    if (shouldLog) {
+    console.log(`[API Client] Fetching: ${url}`)
+    }
+    
+    // Construir headers según el método
+    // Para GET: no enviar Content-Type (evita preflight)
+    // Para POST/PUT: enviar Content-Type solo si hay body
+    const method = fetchOptions?.method || 'GET'
+    const hasBody = fetchOptions?.body !== undefined
+    
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+      ...fetchOptions?.headers,
+    }
+    
+    // Solo agregar Content-Type si es POST/PUT/PATCH y hay body
+    if ((method === 'POST' || method === 'PUT' || method === 'PATCH') && hasBody) {
+      headers['Content-Type'] = 'application/json'
+    }
+    
+    // Crear un AbortController para timeout (10 segundos por defecto)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 segundos timeout
+    
+    let response: Response
+    try {
+      // ✅ FIX 3: Pasar opciones de Next.js (next.revalidate) al fetch
+      const fetchConfig: RequestInit & { next?: { revalidate?: number | false } | { cache?: RequestCache } } = {
+        ...fetchOptions,
+        headers,
+        signal: controller.signal, // Agregar signal para poder cancelar
+        credentials: 'omit', // No enviar cookies para evitar problemas CORS
+      }
+      
+      // Agregar opciones de Next.js si están presentes
+      if (next) {
+        fetchConfig.next = next
+      }
+      
+      response = await fetch(url, fetchConfig as RequestInit)
+      
+      clearTimeout(timeoutId) // Limpiar timeout si la petición se completa
+    } catch (fetchError) {
+      clearTimeout(timeoutId) // Limpiar timeout en caso de error
+      
+      // Detectar errores de timeout/abort
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error(`[API Client] Request timeout for ${url} (10s)`)
+        throw new Error(`Request timeout: The API request took longer than 10 seconds`)
+      }
+      
+      throw fetchError // Re-lanzar otros errores de fetch
+    }
 
-    // Si hay error de CORS pero el status es 200, intentar leer la respuesta de todas formas
+    // Solo loggear si está habilitado el debug o si hay un error
+    if (shouldLog || !response.ok) {
+      if (shouldLog) {
+        console.log(`[API Client] Response status: ${response.status} ${response.statusText} - ${url}`)
+        if (response.ok) {
+    console.log(`[API Client] Response headers:`, Object.fromEntries(response.headers.entries()))
+        }
+      } else if (!response.ok) {
+        // Solo loggear errores si el debug no está habilitado
+        console.error(`[API Client] Error ${response.status} ${response.statusText} - ${url}`)
+      }
+    }
+
+    // Si hay error HTTP, intentar leer el mensaje de error del cuerpo
     if (!response.ok) {
-      throw new ApiError(response.status, response.statusText)
+      let errorMessage = response.statusText
+      try {
+        const errorText = await response.text()
+        if (errorText) {
+          try {
+            const errorJson = JSON.parse(errorText)
+            errorMessage = errorJson.message || errorJson.error || errorText
+          } catch {
+            errorMessage = errorText
+          }
+        }
+      } catch (e) {
+        // Si no se puede leer el cuerpo, usar el statusText
+      }
+      console.error(`[API Client] Error response: ${response.status} - ${errorMessage}`)
+      throw new ApiError(response.status, response.statusText, errorMessage)
     }
 
     // Manejar respuestas vacías
     const text = await response.text()
     if (!text) {
+      console.warn(`[API Client] Empty response from ${url}`)
       return {} as T
     }
 
-    return JSON.parse(text)
+    try {
+      return JSON.parse(text)
+    } catch (parseError) {
+      console.error(`[API Client] JSON parse error for ${url}:`, parseError)
+      console.error(`[API Client] Response text:`, text.substring(0, 500))
+      throw new Error(`Invalid JSON response from API: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
+    }
   } catch (error) {
-    // Si es un error de CORS pero el request fue exitoso (200 OK),
-    // el servidor procesó la petición aunque el navegador bloquee la respuesta
-    // En este caso, retornar un objeto vacío ya que no podemos leer la respuesta
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      // El error de CORS puede ocurrir aunque el request sea exitoso
-      // Si el endpoint no requiere respuesta, simplemente retornar vacío
-      // NO loggear para evitar saturar la consola con errores de CORS del backend
-      return {} as T
+    // Detectar errores de CORS de diferentes formas
+    const isCorsError = 
+      (error instanceof TypeError && error.message.includes('Failed to fetch')) ||
+      (error instanceof TypeError && error.message.includes('NetworkError')) ||
+      (error instanceof Error && error.message.includes('CORS')) ||
+      (error instanceof Error && error.message.includes('cors'))
+    
+    if (isCorsError) {
+      console.error(`[API Client] CORS error for ${url}`)
+      // El error de CORS puede ocurrir cuando el servidor no permite el origen
+      // Lanzar un error específico para que el código que llama pueda manejarlo
+      const corsError = new Error(`CORS error: Failed to fetch from ${url}. The server may not allow requests from origin ${typeof window !== 'undefined' ? window.location.origin : 'server'}.`)
+      corsError.name = 'CORSError'
+      throw corsError
     }
     
-    // Re-lanzar otros errores
+    // Si es un ApiError, re-lanzarlo con más contexto
+    if (error instanceof ApiError) {
+      console.error(`[API Client] API error for ${url}:`, error.status, error.message)
+      throw error
+    }
+    
+    // Detectar errores de timeout/abort (por si acaso no se capturaron antes)
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`[API Client] Request timeout for ${url} (10s)`)
+      throw new Error(`Request timeout: The API request took longer than 10 seconds`)
+    }
+    
+    // Re-lanzar otros errores con más contexto
+    console.error(`[API Client] Unexpected error for ${url}:`, error)
     throw error
   }
 }

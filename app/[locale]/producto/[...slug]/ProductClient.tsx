@@ -20,6 +20,17 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
 
+  // Debug: Verificar que descripcion_detallada esté presente
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ProductClient] Product descripcion_detallada:', {
+        hasDescripcionDetallada: !!product.descripcion_detallada,
+        length: product.descripcion_detallada?.length || 0,
+        preview: product.descripcion_detallada?.substring(0, 100) || 'N/A'
+      })
+    }
+  }, [product.descripcion_detallada])
+
   // Incrementar visualización al cargar la página (solo una vez)
   const hasTrackedView = useRef(false)
   useEffect(() => {
@@ -211,7 +222,7 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
         </div>
 
         {/* Product Details Sections */}
-        {product.descripcion_detallada && (
+        {product.descripcion_detallada && product.descripcion_detallada.trim() !== '' && (
           <div className="w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700">
             <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
               <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">

@@ -6,7 +6,8 @@ import { Marca, Categoria, buildBrandLogoUrl } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { buildCategoryBrandUrl } from '@/lib/product-url'
+import { buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl, buildCategoryUrl, normalizeName } from '@/lib/product-url'
+import { CategoriesService } from '@/lib/services/categories.service'
 
 interface CategoryBrandsCarouselProps {
   brands: Marca[]
@@ -52,9 +53,83 @@ function BrandLogo({ brand }: BrandLogoProps) {
 export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarouselProps) {
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
+  const [brandUrls, setBrandUrls] = useState<Record<number, string>>({})
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const params = useParams() as { locale?: string }
+  const params = useParams() as { locale?: string; subcategoria?: string }
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
+
+  // Cargar subcategorías y construir URLs para cada marca
+  useEffect(() => {
+    const loadBrandUrls = async () => {
+      try {
+        const categoriasNavegacion = await CategoriesService.getCategorias()
+        const categoriaNavegacion = categoriasNavegacion.find(c => c.id === category.id)
+        
+        if (categoriaNavegacion) {
+          const urls: Record<number, string> = {}
+          
+          // Obtener subcategoría actual de la URL si existe
+          const currentSubcategoriaSlug = params.subcategoria
+          const subcategoriaActual = currentSubcategoriaSlug
+            ? categoriaNavegacion.subcategorias.find(
+                sub => normalizeName(sub.nombre) === currentSubcategoriaSlug
+              )
+            : null
+          
+          brands.forEach(brand => {
+            // Si hay una subcategoría actual en la URL, usarla para construir la URL
+            if (subcategoriaActual) {
+              // Construir URL: categoría/subcategoría/marca
+              urls[brand.id] = buildCategorySubcategoriaMarcaUrl(
+                category,
+                subcategoriaActual,
+                brand,
+                locale
+              )
+            } else {
+            // Buscar la primera subcategoría que contiene esta marca
+            const subcategoriaConMarca = categoriaNavegacion.subcategorias.find(sub => 
+              sub.marcas && sub.marcas.some(m => m.id === brand.id)
+            )
+            
+            if (subcategoriaConMarca) {
+              // Construir URL: categoría/subcategoría/marca
+              urls[brand.id] = buildCategorySubcategoriaMarcaUrl(
+                category,
+                subcategoriaConMarca,
+                brand,
+                locale
+              )
+            } else {
+              // Si no se encuentra, usar la primera subcategoría activa
+              const primeraSubcategoria = categoriaNavegacion.subcategorias.find(sub => sub.activo)
+              if (primeraSubcategoria) {
+                urls[brand.id] = buildCategorySubcategoriaUrl(category, primeraSubcategoria, locale)
+              } else {
+                // Fallback: solo categoría
+                urls[brand.id] = buildCategoryUrl(category.nombre, locale)
+                }
+              }
+            }
+          })
+          
+          setBrandUrls(urls)
+        }
+      } catch (error) {
+        console.error('Error loading brand URLs:', error)
+        // En caso de error, construir URLs básicas
+        const urls: Record<number, string> = {}
+        brands.forEach(brand => {
+          urls[brand.id] = buildCategoryUrl(category.nombre, locale)
+        })
+        setBrandUrls(urls)
+      }
+    }
+    
+    if (brands.length > 0) {
+      loadBrandUrls()
+    }
+  }, [brands, category, locale, params])
 
   const checkScrollability = () => {
     if (scrollContainerRef.current) {
@@ -94,9 +169,16 @@ export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarou
   return (
     <div className="w-full bg-white dark:bg-slate-800 rounded-xl shadow-md p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
         <h2 className="text-base sm:text-lg font-bold text-inxora-dark-blue dark:text-white">
           Marcas Disponibles
         </h2>
+          {params.subcategoria && (
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              ({brands.length} {brands.length === 1 ? 'marca' : 'marcas'} {params.subcategoria ? '(filtradas)' : ''})
+            </span>
+          )}
+        </div>
         {brands.length > 3 && (
           <div className="flex gap-2">
             <button
@@ -125,8 +207,8 @@ export function CategoryBrandsCarousel({ brands, category }: CategoryBrandsCarou
         onScroll={checkScrollability}
       >
         {brands.map((brand) => {
-          // Usar estructura de URL: /{locale}/{slug}/{marca}
-          const brandUrl = buildCategoryBrandUrl(category, brand, locale)
+          // Usar URL de subcategoría/marca si está disponible, sino usar fallback
+          const brandUrl = brandUrls[brand.id] || buildCategoryUrl(category.nombre, locale)
           return (
           <Link
             key={brand.id}

@@ -1,23 +1,15 @@
 import { MetadataRoute } from 'next'
-import { getSupabaseClient, getSupabaseAdmin, getCategorias, getMarcasByCategoria } from '@/lib/supabase'
-import { buildCategoryUrlFromObject, buildCategoryBrandUrl } from '@/lib/product-url'
+import { getCategorias } from '@/lib/supabase'
+import { buildCategoryUrlFromObject, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
 import { generateCanonicalUrl } from '@/lib/product-seo'
+import { CategoriesService } from '@/lib/services/categories.service'
+import { ProductsService } from '@/lib/services/products.service'
+import { Producto } from '@/lib/supabase'
 
 // Configuración para regenerar el sitemap automáticamente
 // ISR: El sitemap se regenera máximo cada 1 hora (3600 segundos)
 // Esto significa que productos nuevos aparecerán en máximo 1 hora
 export const revalidate = 3600
-
-// Tipo parcial para productos en el sitemap (solo los campos necesarios)
-// Supabase devuelve arrays para relaciones cuando se hace select con joins
-type SitemapProduct = {
-  seo_slug: string
-  canonical_url?: string | null
-  fecha_actualizacion?: string | null
-  categorias?: Array<{ id_categoria: number; categoria: { id: number; nombre: string } }> | { id_categoria: number; categoria: { id: number; nombre: string } } | null
-  categoria?: { id: number; nombre: string }[] | { id: number; nombre: string } | null // Mantener para compatibilidad
-  marca?: { id: number; nombre: string }[] | { id: number; nombre: string } | null
-}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://tienda.inxora.com'
@@ -27,36 +19,68 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // PRODUCTOS
   // ===============================
 
-  let products: SitemapProduct[] = []
-  let productsError: any = null
-
+  // Generar URLs de productos de forma incremental para evitar alto consumo de memoria
+  // Solo obtener los campos mínimos necesarios y procesar en lotes pequeños
+  const productPages: MetadataRoute.Sitemap = []
+  
   try {
-    // Usar cliente admin para bypasear RLS y obtener todos los productos activos
-    const supabase = getSupabaseAdmin()
-    const result = await supabase
-      .from('producto')
-      .select(`
-        seo_slug,
-        canonical_url,
-        fecha_actualizacion,
-        marca:id_marca(id, nombre)
-      `)
-      .eq('activo', true)
-      .eq('visible_web', true)
-      .limit(10000) // Límite razonable para sitemap
+    // Obtener productos en lotes pequeños y procesar inmediatamente
+    // Esto evita acumular todos los productos en memoria
+    let page = 1
+    const limit = 100 // Reducir a 100 productos por página para menor consumo
+    let hasMore = true
+    let totalProcessed = 0
+    const maxProducts = 5000 // Limitar a 5000 productos máximo para el sitemap
 
-    products = (result.data || []) as unknown as SitemapProduct[]
-    productsError = result.error
+    while (hasMore && page <= 50 && totalProcessed < maxProducts) { // Máximo 50 páginas
+      try {
+        const result = await ProductsService.getProductos({
+          page,
+          limit,
+          visible_web: true,
+        })
 
-    // Log para debugging
-    if (productsError) {
-      console.error('❌ Error fetching products for sitemap:', productsError)
-    } else {
-      console.log(`✅ Sitemap: Found ${products.length} products`)
+        if (result.products && result.products.length > 0) {
+          // Procesar productos inmediatamente y generar URLs sin acumular en memoria
+          for (const product of result.products) {
+            if (totalProcessed >= maxProducts) break
+            
+            if (product.seo_slug) {
+              try {
+                const canonicalUrl = generateCanonicalUrl(product, locale)
+                productPages.push({
+                  url: canonicalUrl,
+                  lastModified: product.fecha_actualizacion
+                    ? new Date(product.fecha_actualizacion)
+                    : new Date(),
+                  changeFrequency: 'weekly' as const,
+                  priority: 0.8,
+                })
+                totalProcessed++
+              } catch (urlError) {
+                console.error(`❌ Error generating URL for product ${product.sku}:`, urlError)
+              }
+            }
+          }
+          
+          // Si obtenemos menos productos que el límite, significa que es la última página
+          if (result.products.length < limit) {
+            hasMore = false
+          } else {
+            page++
+          }
+        } else {
+          hasMore = false
+        }
+      } catch (pageError) {
+        console.error(`❌ Error fetching products page ${page} for sitemap:`, pageError)
+        hasMore = false
+      }
     }
+
+    console.log(`✅ Sitemap: Processed ${totalProcessed} products`)
   } catch (error) {
-    console.error('❌ Exception fetching products for sitemap:', error)
-    productsError = error
+    console.error('❌ Exception processing products for sitemap:', error)
   }
 
   // ===============================
@@ -108,88 +132,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   // ===============================
-  // CATEGORÍAS CON MARCA (SOLO ES)
+  // CATEGORÍAS CON SUBCATEGORÍA Y MARCA (SOLO ES)
   // ===============================
-  const categoryBrandPages: MetadataRoute.Sitemap = []
+  const categorySubcategoriaMarcaPages: MetadataRoute.Sitemap = []
   
-  // Generar URLs para cada combinación categoría/marca
-  for (const category of categories) {
-    try {
-      // Obtener marcas disponibles para esta categoría
-      const brandsForCategory = await getMarcasByCategoria(category.id)
+  // Generar URLs para cada combinación categoría/subcategoría/marca
+  try {
+    const categoriasNavegacion = await CategoriesService.getCategorias()
+    
+    for (const categoriaNavegacion of categoriasNavegacion) {
+      // Buscar la categoría correspondiente en el array de categorías
+      const category = categories.find(c => c.id === categoriaNavegacion.id)
       
-      if (brandsForCategory && brandsForCategory.length > 0) {
-        // Agregar URL para cada marca
-        for (const brand of brandsForCategory) {
-          categoryBrandPages.push({
-            url: `${baseUrl}${buildCategoryBrandUrl(category, brand, locale)}`,
-            lastModified: new Date(),
-            changeFrequency: 'weekly' as const,
-            priority: 0.6, // Prioridad ligeramente menor que categorías base
-          })
+      if (category && categoriaNavegacion.subcategorias && categoriaNavegacion.subcategorias.length > 0) {
+        // Agregar URL para cada subcategoría con sus marcas
+        for (const subcategoria of categoriaNavegacion.subcategorias) {
+          if (subcategoria.activo && subcategoria.marcas && subcategoria.marcas.length > 0) {
+            // Agregar URL para cada marca dentro de la subcategoría
+            for (const marca of subcategoria.marcas) {
+              if (marca.activo) {
+                categorySubcategoriaMarcaPages.push({
+                  url: `${baseUrl}${buildCategorySubcategoriaMarcaUrl(category, subcategoria, marca, locale)}`,
+                  lastModified: new Date(),
+                  changeFrequency: 'weekly' as const,
+                  priority: 0.6, // Prioridad ligeramente menor que categorías base
+                })
+              }
+            }
+          }
         }
       }
-    } catch (error) {
-      console.error(`❌ Error fetching brands for category ${category.id}:`, error)
-      // Continuar con la siguiente categoría
     }
+  } catch (error) {
+    console.error('❌ Error fetching subcategorias with marcas for sitemap:', error)
   }
   
-  console.log(`✅ Sitemap: Found ${categoryBrandPages.length} category-brand combinations`)
+  console.log(`✅ Sitemap: Found ${categorySubcategoriaMarcaPages.length} category-subcategoria-marca combinations`)
 
-  // ===============================
-  // PRODUCTOS (SOLO ES)
-  // ===============================
-  const productPages: MetadataRoute.Sitemap = products
-    .map((product) => {
-      if (!product.seo_slug) return null
+  // Los productos ya fueron procesados arriba de forma incremental
+  // productPages ya contiene todas las URLs de productos generadas
 
-      // Normalizar categoría y marca para construir objeto Producto parcial
-      // Las categorías vienen directamente del producto
-      let categorias: Array<{ id: number; nombre: string; es_principal?: boolean }> = []
-      if (product.categorias) {
-        if (Array.isArray(product.categorias) && product.categorias.length > 0) {
-          categorias = product.categorias
-            .map((pc: any) => pc?.categoria)
-            .filter((cat: any) => cat != null)
-        } else if (!Array.isArray(product.categorias) && 'categoria' in product.categorias) {
-          categorias = [product.categorias.categoria]
-        }
-      }
-      // Fallback a categoria singular para compatibilidad
-      if (categorias.length === 0 && product.categoria) {
-        const cat = Array.isArray(product.categoria) 
-          ? product.categoria[0] 
-          : product.categoria
-        if (cat) categorias = [cat]
-      }
-
-      const marca = Array.isArray(product.marca) 
-        ? product.marca[0] 
-        : product.marca
-      
-      // Construir objeto Producto parcial compatible con generateCanonicalUrl
-      const productForUrl = {
-        seo_slug: product.seo_slug,
-        categorias: categorias.length > 0 ? categorias : undefined,
-        categoria: categorias.length > 0 ? categorias[0] : undefined,
-        marca,
-      } as any
-
-      // Usar generateCanonicalUrl para asegurar URLs correctas (tienda.inxora.com)
-      // NO usar canonical_url del producto (puede apuntar a app.inxora.com)
-      const canonicalUrl = generateCanonicalUrl(productForUrl, locale)
-
-      return {
-        url: canonicalUrl, // URL completa ya generada correctamente
-        lastModified: product.fecha_actualizacion
-          ? new Date(product.fecha_actualizacion)
-          : new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-      }
-    })
-    .filter(Boolean) as MetadataRoute.Sitemap
-
-  return [...staticPages, ...categoryPages, ...categoryBrandPages, ...productPages]
+  return [...staticPages, ...categoryPages, ...categorySubcategoriaMarcaPages, ...productPages]
 }

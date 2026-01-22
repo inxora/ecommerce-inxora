@@ -1,54 +1,21 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getProductosDestacados, getCategorias, Producto, Categoria } from '@/lib/supabase';
+import { Producto, Categoria } from '@/lib/supabase';
 import { ProductCard } from '@/components/catalog/product-card';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
 
 interface HomeClientProps {
   locale: string;
+  featuredProducts?: Producto[];
+  categories?: Categoria[];
 }
 
-export default function HomeClient({ locale }: HomeClientProps) {
-  const [featuredProducts, setFeaturedProducts] = useState<Producto[]>([]);
-  const [categories, setCategories] = useState<Categoria[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productosData, categoriasData] = await Promise.all([
-          getProductosDestacados(4),
-          getCategorias()
-        ]);
-        
-        if (productosData.data) {
-          setFeaturedProducts(productosData.data as Producto[]);
-        }
-        
-        if (categoriasData.data) {
-          // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
-          // y solo incluir categorías que tengan logo_url no vacío
-          const filteredCategories = categoriasData.data.filter(
-            (cat) => 
-              cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS' &&
-              cat.logo_url && 
-              cat.logo_url.trim() !== ''
-          );
-          setCategories(filteredCategories);
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+export default function HomeClient({ locale, featuredProducts = [], categories = [] }: HomeClientProps) {
+  // ✅ FIX 1: Los datos ahora vienen del servidor, no necesitamos fetch en el cliente
+  const loading = false; // Ya no hay loading porque los datos vienen del servidor
 
 
   return (
@@ -93,9 +60,7 @@ export default function HomeClient({ locale }: HomeClientProps) {
           <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-12 text-center">
             Productos Destacados
           </h2>
-          {loading ? (
-            <ProductGridLoader count={4} />
-          ) : featuredProducts.length > 0 ? (
+          {featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((product) => (
                 <ProductCard key={product.sku} product={product} />
@@ -115,11 +80,7 @@ export default function HomeClient({ locale }: HomeClientProps) {
           <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-12 text-center">
             Categorías Principales
           </h2>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader size="lg" text="Cargando categorías..." />
-            </div>
-          ) : categories.length > 0 ? (
+          {categories.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
               {categories.map((category) => (
                 <Link 

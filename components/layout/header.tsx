@@ -13,35 +13,20 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getCategorias, Categoria } from '@/lib/supabase'
 import { CategoriesSidebar } from '@/components/layout/categories-sidebar'
+import { CategoriaNavegacion } from '@/lib/services/categories.service'
 
-export function Header() {
+interface HeaderProps {
+  categories?: CategoriaNavegacion[]
+}
+
+export function Header({ categories = [] }: HeaderProps) {
   const { items, updateTrigger, isLoaded, getItemsCount } = useCart()
   const { currency, setCurrency, currencySymbol } = useCurrency()
   const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
-  const [categories, setCategories] = useState<Categoria[]>([])
   const pathname = usePathname() || '/es'
   const locale = (pathname.split('/')[1] || 'es') || 'es'
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const { data } = await getCategorias()
-        if (data) {
-          // Filtrar la categoría "DESPACHO DE PRODUCTOS" (categoría oculta para trabajadores)
-          const filteredCategories = data.filter(
-            (cat) => cat.nombre.toUpperCase() !== 'DESPACHO DE PRODUCTOS'
-          )
-          setCategories(filteredCategories)
-        }
-      } catch (error) {
-        console.error('Error loading categories:', error)
-      }
-    }
-    loadCategories()
-  }, [])
 
   // Calcular la cantidad de items usando la función del hook para asegurar actualización
   const itemsCount = getItemsCount()
@@ -58,13 +43,6 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full flex h-16 items-center justify-between px-2 sm:px-3 md:px-4">
         <div className="flex items-center gap-4 md:gap-8 lg:gap-10 flex-shrink-0">
-          {/* Menú hamburguesa a la izquierda del logo - Solo visible en desktop */}
-          <div className="hidden lg:block">
-            <CategoriesSidebar 
-              categories={categories} 
-              locale={locale}
-            />
-          </div>
           <a href="https://www.inxora.com/" target="_blank" rel="noopener noreferrer" className="flex items-center">
             <Image 
               src="/LOGO-35.png" 
@@ -75,6 +53,13 @@ export function Header() {
               priority
             />
           </a>
+          {/* Menú hamburguesa después del logo - Solo visible en desktop */}
+          <div className="hidden lg:block">
+            <CategoriesSidebar 
+              locale={locale}
+              categories={categories}
+            />
+          </div>
           <nav className="hidden md:flex gap-5 lg:gap-6 items-center">
             <a
               href={`/${locale}`}
@@ -159,8 +144,8 @@ export function Header() {
                     Inicio
                   </a>
                   <CategoriesSidebar 
-                    categories={categories} 
                     locale={locale}
+                    categories={categories}
                     trigger={
                       <button className="text-left text-sm font-medium hover:text-primary">
                         Categorías

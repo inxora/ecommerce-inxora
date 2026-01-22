@@ -14,7 +14,7 @@ import { useFavorites } from '@/lib/hooks/use-favorites'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useToast } from '@/lib/hooks/use-toast'
 import { formatPrice } from '@/lib/utils'
-import { buildProductUrl } from '@/lib/product-url'
+import { buildProductUrl } from '@/lib/product-seo'
 
 interface ProductCardProps {
   product: Producto
@@ -56,8 +56,18 @@ export function ProductCard({ product }: ProductCardProps) {
   const precio = getPrecio()
 
   // Función para formatear precio con símbolo de moneda
+  // formatPrice ya incluye el símbolo de moneda, así que solo lo usamos directamente
   const formatCurrencyPrice = (price: number) => {
-    return `${currencySymbol} ${formatPrice(price)}`
+    // formatPrice ya formatea con el símbolo de moneda, pero está hardcodeado a PEN
+    // Necesitamos formatear según la moneda seleccionada
+    if (currency === 'USD') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(price)
+    }
+    // Para PEN, usar formatPrice que ya está configurado para soles
+    return formatPrice(price)
   }
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -134,7 +144,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 className={`object-contain p-4 group-hover:scale-110 transition-transform duration-300 ${
                   isImageLoading ? 'blur-sm' : 'blur-0'
                 }`}
-                onLoadingComplete={() => setIsImageLoading(false)}
+                onLoad={() => setIsImageLoading(false)}
                 onError={() => {
                   setImageError(true)
                   setIsImageLoading(false)

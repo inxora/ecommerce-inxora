@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useFavorites } from '@/lib/hooks/use-favorites'
 import { ProductCard } from '@/components/catalog/product-card'
-import { getProductBySku, Producto } from '@/lib/supabase'
+import { Producto } from '@/lib/supabase'
+import { ProductsService } from '@/lib/services/products.service'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -34,13 +35,22 @@ export default function FavoritesPage() {
     const loadFavoriteProducts = async () => {
       setLoading(true)
       try {
-        // Obtener productos completos desde la base de datos usando los SKUs de favoritos
-        const productPromises = favorites.map(fav => 
-          getProductBySku(fav.sku).catch(() => null)
-        )
+        // Optimización: Limitar la cantidad de favoritos a cargar simultáneamente
+        // Cargar en lotes pequeños para evitar sobrecargar el servidor
+        const maxConcurrent = 5 // Máximo 5 peticiones simultáneas
+        const validProducts: Producto[] = []
         
-        const loadedProducts = await Promise.all(productPromises)
-        const validProducts = loadedProducts.filter((p): p is Producto => p !== null)
+        // Procesar favoritos en lotes
+        for (let i = 0; i < favorites.length; i += maxConcurrent) {
+          const batch = favorites.slice(i, i + maxConcurrent)
+          const productPromises = batch.map(fav => 
+            ProductsService.getProductoBySku(fav.sku).catch(() => null)
+          )
+          
+          const batchResults = await Promise.all(productPromises)
+          const batchValid = batchResults.filter((p): p is Producto => p !== null)
+          validProducts.push(...batchValid)
+        }
         
         setProducts(validProducts)
       } catch (error) {

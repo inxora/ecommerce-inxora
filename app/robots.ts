@@ -29,7 +29,6 @@ export default function robots(): MetadataRoute.Robots {
           '/proveedores',
           '/financiamiento',
           '/entities',
-          '/marca-categoria',
           '/disponibilidades',
           '/sara-xora',
           '/login',

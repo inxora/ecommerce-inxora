@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
-import { getProducts, getCategorias, getMarcas } from '@/lib/supabase'
+import { getCategorias, getMarcas } from '@/lib/supabase'
+import { ProductsService } from '@/lib/services/products.service'
 import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
@@ -57,17 +58,15 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const searchTerm = resolvedSearchParams.buscar || ''
 
   // Fetch data in parallel
-  // For now, use getProducts which supports multiple filters
+  // Usar ProductsService.getProductos del endpoint externo
   const [productsData, categoriesData, marcasData] = await Promise.all([
-    getProducts({
+    ProductsService.getProductos({
       page,
       limit: itemsPerPage,
-      categoria: categoriaArray.length > 0 ? categoriaArray : undefined,
-      marca: marcaArray.length > 0 ? marcaArray : undefined,
+      categoria_id: categoriaArray.length > 0 ? categoriaArray.map(c => parseInt(c)) : undefined,
+      id_marca: marcaArray.length > 0 ? marcaArray.map(m => parseInt(m)) : undefined,
       buscar: searchTerm,
-      precioMin: filters.precioMin,
-      precioMax: filters.precioMax,
-      ordenar: filters.ordenar,
+      visible_web: true,
     }),
     getCategorias(),
     getMarcas(),
