@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
 interface CategorySubcategoriaMarcaPageProps {
-  params: Promise<{ slug: string; subcategoria: string; marca: string; locale: string }>
+  params: Promise<{ categoria: string; subcategoria: string; marca: string; locale: string }>
   searchParams: Promise<{
     page?: string
     buscar?: string
@@ -26,7 +26,7 @@ interface CategorySubcategoriaMarcaPageProps {
 
 export async function generateMetadata({ params }: CategorySubcategoriaMarcaPageProps): Promise<Metadata> {
   try {
-  const { slug: categorySlug, subcategoria: subcategoriaSlug, marca: brandSlug, locale } = await params
+  const { categoria: categorySlug, subcategoria: subcategoriaSlug, marca: brandSlug, locale } = await params
   
   const categoriesData = await getCategorias()
   const category = categoriesData.data?.find(c => normalizeName(c.nombre) === categorySlug)
@@ -81,22 +81,26 @@ export async function generateMetadata({ params }: CategorySubcategoriaMarcaPage
 
 export default async function CategorySubcategoriaMarcaPage({ params, searchParams }: CategorySubcategoriaMarcaPageProps) {
   try {
-  const { slug: categorySlug, subcategoria: subcategoriaSlug, marca: brandSlug, locale } = await params
+  const { categoria: categorySlug, subcategoria: subcategoriaSlug, marca: brandSlug, locale } = await params
   
-  // Validar que el locale sea válido y que no sea una ruta especial (como .well-known)
+  // Validar que el locale sea válido (rutas especiales no deben llegar aquí)
   const validLocales = ['es', 'en', 'pt']
-  if (!validLocales.includes(locale) || locale.startsWith('.') || locale.startsWith('_')) {
+  if (!validLocales.includes(locale)) {
     notFound()
   }
-  if (categorySlug.startsWith('.') || categorySlug.startsWith('_')) {
+  
+  // Validar slugs - evitar rutas del sistema
+  const invalidPrefixes = ['.', '_', 'api', 'favicon', 'icon', 'manifest', 'robots', 'sitemap']
+  if (invalidPrefixes.some(prefix => categorySlug.startsWith(prefix) || categorySlug === prefix)) {
     notFound()
   }
-  if (subcategoriaSlug.startsWith('.') || subcategoriaSlug.startsWith('_')) {
+  if (invalidPrefixes.some(prefix => subcategoriaSlug.startsWith(prefix) || subcategoriaSlug === prefix)) {
     notFound()
   }
-  if (brandSlug.startsWith('.') || brandSlug.startsWith('_')) {
+  if (invalidPrefixes.some(prefix => brandSlug.startsWith(prefix) || brandSlug === prefix)) {
     notFound()
   }
+  
   const resolvedSearchParams = await searchParams
   const page = parseInt(resolvedSearchParams.page || '1')
   const itemsPerPage = 50
@@ -152,14 +156,17 @@ export default async function CategorySubcategoriaMarcaPage({ params, searchPara
   }
 
   const categoryId = category.id
+  const subcategoriaId = subcategoria.id
   const brandId = brand.id
 
   // Fetch remaining data in parallel
+  // ✅ Ahora usa id_subcategoria para filtrado preciso
   const [productsData, relatedBrandsData] = await Promise.all([
     ProductsService.getProductos({
       page,
       limit: itemsPerPage,
-      categoria_id: [categoryId],
+      categoria_id: [categoryId],  // Fallback si el backend no soporta id_subcategoria
+      id_subcategoria: subcategoriaId,  // ✅ Filtro preciso por subcategoría
       id_marca: [brandId], // Solo esta marca
       buscar: resolvedSearchParams.buscar,
       visible_web: true,
@@ -216,10 +223,15 @@ export default async function CategorySubcategoriaMarcaPage({ params, searchPara
     ordenar: resolvedSearchParams.ordenar,
   }
 
+  // ✅ Obtener todas las subcategorías de la categoría para el filtro
+  const subcategoriasActivas = categoriaNavegacion.subcategorias.filter(s => s.activo)
+
   return (
     <Suspense fallback={<PageLoader />}>
       <CategoryClient
         category={category}
+        subcategoria={subcategoria}
+        subcategorias={subcategoriasActivas}
         products={products || []}
         categories={categories || []}
         brands={brands || []}
@@ -233,20 +245,23 @@ export default async function CategorySubcategoriaMarcaPage({ params, searchPara
     </Suspense>
   )
   } catch (error) {
-    console.error('Error in CategoryBrandPage:', error)
+    // Si es un error de NOT_FOUND, simplemente re-lanzarlo sin logging
+    if (error instanceof Error && error.message === 'NEXT_NOT_FOUND') {
+      throw error
+    }
     
-    // Si es un error de conexión/API, no mostrar 404 sino un error más descriptivo
+    // Si es un error de conexión/API, mostrar error y re-lanzar
     if (error instanceof Error && (
       error.message.includes('No se pueden cargar') ||
       error.message.includes('CORS') ||
       error.message.includes('conexión')
     )) {
-      // Re-lanzar el error para que Next.js lo maneje como un error de servidor
-      // Esto mostrará una página de error en lugar de 404
+      console.error('Error in CategoryBrandPage:', error)
       throw error
     }
     
-    // Para otros errores, mostrar 404
+    // Solo loguear errores inesperados
+    console.error('Unexpected error in CategoryBrandPage:', error)
     notFound()
   }
 }

@@ -34,13 +34,18 @@ const sheetVariants = cva(
   }
 )
 
+interface SheetOverlayProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay> {
+  disablePointerEvents?: boolean
+}
+
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
+  SheetOverlayProps
+>(({ className, disablePointerEvents, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
       "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      disablePointerEvents && "pointer-events-none",
       className
     )}
     {...props}
@@ -51,14 +56,16 @@ SheetOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  disableOverlayPointerEvents?: boolean
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, children, disableOverlayPointerEvents, ...props }, ref) => (
   <SheetPortal>
-    <SheetOverlay />
+    <SheetOverlay disablePointerEvents={disableOverlayPointerEvents} />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Producto, Categoria } from '@/lib/supabase';
 import { ProductCard } from '@/components/catalog/product-card';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
+import { CategoriesCarousel } from '@/components/home/categories-carousel';
 
 interface HomeClientProps {
   locale: string;
@@ -77,35 +78,10 @@ export default function HomeClient({ locale, featuredProducts = [], categories =
       {/* Main Categories Section */}
       <section className="bg-background-light dark:bg-background-dark py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-12 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-8 sm:mb-12 text-center">
             Categorías Principales
           </h2>
-          {categories.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
-              {categories.map((category) => (
-                <Link 
-                  key={category.id} 
-                  href={`/${locale}/catalogo?categoria=${category.id}`} 
-                  className="group block text-center"
-                >
-                  <div className="overflow-hidden rounded-xl">
-                    <img 
-                      alt={`Categoría ${category.nombre} - Suministros industriales`}
-                      className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                      src={category.logo_url || ''}
-                    />
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
-                    {category.nombre}
-                  </h3>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">No hay categorías disponibles</p>
-            </div>
-          )}
+          <CategoriesCarousel categories={categories} locale={locale} />
         </div>
       </section>
 

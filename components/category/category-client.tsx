@@ -15,6 +15,8 @@ import { CategoriesService, SubcategoriaNavegacion } from '@/lib/services/catego
 
 interface CategoryClientProps {
   category: Categoria
+  subcategoria?: SubcategoriaNavegacion // Opcional: subcategoría actual si está en esa ruta
+  subcategorias?: SubcategoriaNavegacion[] // ✅ Todas las subcategorías de la categoría
   products: Producto[]
   categories: Categoria[]
   brands: Marca[]
@@ -28,6 +30,8 @@ interface CategoryClientProps {
 
 export function CategoryClient({
   category,
+  subcategoria,
+  subcategorias,
   products,
   categories,
   brands,
@@ -453,7 +457,12 @@ export function CategoryClient({
     <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-8 pb-16">
       {/* Filtro de subcategorías - arriba de las marcas */}
       <div className="mb-6">
-        <CategorySubcategoryFilter category={category} locale={locale} />
+        <CategorySubcategoryFilter 
+          category={category} 
+          locale={locale} 
+          subcategorias={subcategorias}
+          currentSubcategoria={subcategoria}
+        />
       </div>
 
       {relatedBrands.length > 0 && (

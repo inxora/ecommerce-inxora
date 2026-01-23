@@ -59,6 +59,13 @@ function getCategoriaPrincipal(product: Producto): { nombre: string } | undefine
 /**
  * Función interna que construye la URL relativa del producto
  * Esta función centraliza toda la lógica de construcción de URLs
+ * 
+ * ESTRUCTURA CANÓNICA: /{locale}/{categoria}/{subcategoria}/{marca}/{slug}
+ * 
+ * IMPORTANTE: Las URLs canónicas NO incluyen /producto/ para:
+ * - URLs más cortas y limpias
+ * - Mejor jerarquía semántica para SEO
+ * - Estándar en ecommerce profesionales
  */
 function buildProductUrlRelative(
   product: Product | Producto,
@@ -138,28 +145,29 @@ function buildProductUrlRelative(
   const subcategoriaSlug = subcategoriaNombre ? normalizeName(subcategoriaNombre) : undefined
   const marcaSlug = marcaNombre ? normalizeName(marcaNombre) : undefined
 
-  // Construir URL con categoría, subcategoría y marca: /{locale}/producto/{categoria}/{subcategoria}/{marca}/{slug}
+  // ESTRUCTURA CANÓNICA: /{locale}/{categoria}/{subcategoria}/{marca}/{slug}
+  // SIN /producto/ para URLs más limpias y mejor SEO
   if (categoriaSlug && subcategoriaSlug && marcaSlug) {
-    return `/${locale}/producto/${categoriaSlug}/${subcategoriaSlug}/${marcaSlug}/${seoSlugNormalizado}`
+    return `/${locale}/${categoriaSlug}/${subcategoriaSlug}/${marcaSlug}/${seoSlugNormalizado}`
   }
 
   // Fallback: categoría y marca sin subcategoría
   if (categoriaSlug && marcaSlug) {
-    return `/${locale}/producto/${categoriaSlug}/${marcaSlug}/${seoSlugNormalizado}`
+    return `/${locale}/${categoriaSlug}/${marcaSlug}/${seoSlugNormalizado}`
   }
 
   // Fallback: solo categoría
   if (categoriaSlug) {
-    return `/${locale}/producto/${categoriaSlug}/${seoSlugNormalizado}`
+    return `/${locale}/${categoriaSlug}/${seoSlugNormalizado}`
   }
 
   // Fallback: solo marca
   if (marcaSlug) {
-    return `/${locale}/producto/${marcaSlug}/${seoSlugNormalizado}`
+    return `/${locale}/${marcaSlug}/${seoSlugNormalizado}`
   }
 
-  // Fallback mínimo: solo slug
-  return `/${locale}/producto/${seoSlugNormalizado}`
+  // Fallback mínimo: solo slug (esto no debería ocurrir en producción)
+  return `/${locale}/${seoSlugNormalizado}`
 }
 
 /**
@@ -168,7 +176,7 @@ function buildProductUrlRelative(
  * 
  * @param product - Producto con sus datos
  * @param locale - Locale (es, en, pt)
- * @returns URL relativa del producto (ej: /es/producto/categoria/subcategoria/marca/slug)
+ * @returns URL relativa del producto (ej: /es/categoria/subcategoria/marca/slug)
  */
 export function buildProductUrl(
   product: Product | Producto,
@@ -182,10 +190,12 @@ export function buildProductUrl(
  * Optimizada para trabajar con productos del endpoint externo (/api/test/productos/ecommerce)
  * 
  * Prioridad:
- * 1. Si el producto tiene canonical_url del API, se usa ese (validando dominio tienda.inxora.com)
- * 2. Si no, construye la URL usando: categoria/subcategoria/marca/seo-slug
+ * 1. Construye la URL usando la estructura canónica: categoria/subcategoria/marca/seo-slug
+ * 2. Si el producto tiene canonical_url del API y está correctamente formateado, lo valida
  * 
- * Formato preferido: https://tienda.inxora.com/{locale}/producto/{categoria}/{subcategoria}/{marca}/{seo-slug}
+ * ESTRUCTURA CANÓNICA: https://tienda.inxora.com/{locale}/{categoria}/{subcategoria}/{marca}/{seo-slug}
+ * 
+ * NOTA: Las URLs ya NO incluyen /producto/ para mejor SEO
  * 
  * @param product - Producto con sus datos (del endpoint externo o Supabase)
  * @param locale - Locale (es, en, pt)
@@ -194,38 +204,13 @@ export function buildProductUrl(
 export function generateCanonicalUrl(product: Producto, locale: string = 'es'): string {
   const baseUrl = 'https://tienda.inxora.com'
   
-  // PRIORIDAD 1: Si el producto tiene canonical_url del endpoint externo, validarlo y normalizarlo
-  // IMPORTANTE: El canonical_url del API puede venir sin normalizar (con espacios), así que debemos validarlo
-  if (product.canonical_url && product.canonical_url.trim() !== '') {
-    const canonicalUrl = product.canonical_url.trim()
-    
-    // ✅ FIX: Validar que la URL esté normalizada (sin espacios ni caracteres especiales en el slug)
-    // Extraer la parte del slug (después del último /) y verificar si tiene espacios
-    const urlParts = canonicalUrl.split('/')
-    const slugPart = urlParts[urlParts.length - 1]
-    
-    // Si el slug tiene espacios o caracteres no permitidos (excepto guiones), construir desde cero
-    if (slugPart && (slugPart.includes(' ') || /[^a-z0-9-]/.test(slugPart.toLowerCase()))) {
-      // La URL tiene espacios o caracteres especiales en el slug, construir desde cero con normalización
-      const relativeUrl = buildProductUrlRelative(product, locale)
-      return `${baseUrl}${relativeUrl}`
-    }
-    
-    // Validar que sea de tienda.inxora.com (no de app.inxora.com)
-    if (canonicalUrl.includes('tienda.inxora.com')) {
-      // La URL está normalizada y es del dominio correcto, usarla
-      return canonicalUrl
-    }
-    // Si es de app.inxora.com, reemplazar el dominio automáticamente
-    if (canonicalUrl.includes('app.inxora.com')) {
-      return canonicalUrl.replace('app.inxora.com', 'tienda.inxora.com')
-    }
-    // Si la URL canónica no es de un dominio conocido, construirla desde cero
-    // (esto evita usar URLs inválidas del API)
-  }
+  // SIEMPRE construir la URL desde cero usando la nueva estructura canónica
+  // Esto asegura consistencia y evita usar URLs antiguas con /producto/ del API
+  // 
+  // NOTA: El campo canonical_url de la BD puede tener estructura antigua,
+  // por lo que siempre generamos la URL fresca con la nueva estructura:
+  // /{locale}/{categoria}/{subcategoria}/{marca}/{slug}
   
-  // Usar la función base para construir la URL relativa y agregar el dominio
-  // Esta función siempre normaliza correctamente el seo_slug
   const relativeUrl = buildProductUrlRelative(product, locale)
   return `${baseUrl}${relativeUrl}`
 }
@@ -255,6 +240,7 @@ function cleanHtmlDescription(html: string | null | undefined): string {
 
 /**
  * Genera el título SEO optimizado para productos
+ * ✅ PRIORIDAD: Usa seo_title de la base de datos si existe, sino genera uno optimizado
  * Formato: [Nombre del Producto] | [Marca] | Inxora Perú
  * Si supera 60 caracteres, acorta el nombre del producto y mantiene | Inxora
  * 
@@ -262,6 +248,21 @@ function cleanHtmlDescription(html: string | null | undefined): string {
  * @returns Título SEO optimizado
  */
 export function generateSeoTitle(product: Producto): string {
+  // ✅ PRIORIDAD 1: Usar seo_title de la base de datos si existe y es válido
+  if (product.seo_title && product.seo_title.trim().length > 0) {
+    // Limpiar HTML y normalizar tildes si es necesario
+    let cleanedTitle = product.seo_title.trim()
+      .replace(/<[^>]*>/g, '') // Eliminar HTML
+      .replace(/\s+/g, ' ') // Normalizar espacios
+      .trim()
+    
+    // Si después de limpiar sigue siendo válido, usarlo
+    if (cleanedTitle.length > 10 && cleanedTitle.length < 70) {
+      return cleanedTitle
+    }
+  }
+  
+  // ✅ FALLBACK: Generar título optimizado si no hay seo_title válido
   const nombreProducto = product.nombre || 'Producto'
   
   // Obtener nombre de marca
@@ -317,12 +318,28 @@ export function generateSeoTitle(product: Producto): string {
 
 /**
  * Genera las meta keywords optimizadas para productos
+ * ✅ PRIORIDAD: Usa seo_keywords de la base de datos si existe, sino genera keywords optimizadas
  * Combina: marca, categoría principal, SKU/modelo y palabras transaccionales
  * 
  * @param product - Producto con sus datos
  * @returns String de keywords separadas por comas
  */
 export function generateMetaKeywords(product: Producto): string {
+  // ✅ PRIORIDAD 1: Usar seo_keywords de la base de datos si existe y es válido
+  if (product.seo_keywords && product.seo_keywords.trim().length > 0) {
+    // Limpiar y normalizar keywords de la base de datos
+    let cleanedKeywords = product.seo_keywords.trim()
+      .replace(/<[^>]*>/g, '') // Eliminar HTML
+      .replace(/\s+/g, ' ') // Normalizar espacios
+      .trim()
+    
+    // Si después de limpiar sigue siendo válido, usarlo
+    if (cleanedKeywords.length > 10) {
+      return cleanedKeywords
+    }
+  }
+  
+  // ✅ FALLBACK: Generar keywords optimizadas si no hay seo_keywords válido
   const keywords: string[] = []
 
   // 1. Nombre de la marca

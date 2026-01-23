@@ -1,7 +1,7 @@
 import { api, apiClient } from '@/lib/api/client'
 import { Producto } from '@/lib/supabase'
 import { buildProductImageUrl } from '@/lib/supabase'
-import { generateProductSlug } from '@/lib/product-url'
+import { generateProductSlug, normalizeName } from '@/lib/product-url'
 
 // Tipos para la respuesta del endpoint de productos
 export interface UnidadProducto {
@@ -96,6 +96,7 @@ export interface GetProductosParams {
   page?: number
   limit?: number
   categoria_id?: number | number[]
+  id_subcategoria?: number | number[]  // ✅ NUEVO: Filtro por subcategoría
   id_marca?: number | number[]
   buscar?: string
   activo?: boolean
@@ -317,6 +318,14 @@ export const ProductsService = {
           queryParams.categoria_id = params.categoria_id
         }
       }
+      // ✅ NUEVO: Filtro por subcategoría (cuando el backend lo soporte)
+      if (params?.id_subcategoria !== undefined) {
+        if (Array.isArray(params.id_subcategoria)) {
+          queryParams.id_subcategoria = params.id_subcategoria.join(',')
+        } else {
+          queryParams.id_subcategoria = params.id_subcategoria
+        }
+      }
       if (params?.id_marca !== undefined) {
         // Si es array, convertir a string separado por comas; si es número, enviar como número
         if (Array.isArray(params.id_marca)) {
@@ -331,8 +340,18 @@ export const ProductsService = {
       if (params?.activo !== undefined) {
         queryParams.activo = params.activo
       }
-      // NOTA: El endpoint puede no soportar el parámetro visible_web, así que lo filtramos en el cliente
-      // No enviar visible_web al endpoint, filtrar después de recibir los datos
+      // ✅ Filtros de precio (P3)
+      if (params?.precioMin !== undefined) {
+        queryParams.precio_min = params.precioMin
+      }
+      if (params?.precioMax !== undefined) {
+        queryParams.precio_max = params.precioMax
+      }
+      // ✅ Ordenamiento (P2)
+      if (params?.ordenar) {
+        queryParams.ordenar = params.ordenar
+      }
+      // NOTA: El endpoint ahora filtra visible_web=true automáticamente para ecommerce
       
       const response = await api.get<ProductosResponse>('/api/test/productos/ecommerce', queryParams)
       
@@ -489,51 +508,39 @@ export const ProductsService = {
 
   /**
    * Busca un producto por su seo_slug en el API externo
-   * @param slug - Slug del producto (seo_slug)
+   * @param slug - Slug del producto (seo_slug ya normalizado)
    * @returns Producto encontrado o null si no existe
    */
   getProductoBySlug: async (slug: string): Promise<Producto | null> => {
     try {
-      // ✅ FIX 3: Estrategia de caché según entorno
-      // En desarrollo: revalidar cada 60 segundos para evitar saturar la API
-      // En producción: no cachear para respuestas grandes que excedan 2MB
       const cacheOptions = process.env.NODE_ENV === 'development'
-        ? { next: { revalidate: 60 } } // 1 minuto en desarrollo
-        : { cache: 'no-store' as RequestCache } // Sin caché en producción
+        ? { next: { revalidate: 60 } }
+        : { cache: 'no-store' as RequestCache }
       
-      // Estrategia optimizada: solo una petición con parámetro buscar
-      // Si no funciona, retornar null en lugar de hacer otra petición costosa
+      // ✅ Búsqueda directa O(1) por seo_slug exacto
       const response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
         method: 'GET',
         params: {
-          buscar: slug,
-          limit: 100, // Reducir a 100 para respuesta más rápida
+          seo_slug: slug,  // Búsqueda directa por slug
+          limit: 1,        // Solo necesitamos 1 resultado
         },
         ...cacheOptions,
       })
 
-      if (!response || !response.success || !response.data || !Array.isArray(response.data.productos)) {
+      if (!response?.success || !response.data?.productos?.length) {
         return null
       }
 
-      // Filtrar productos por visible_web y buscar el que coincida exactamente con el slug
-      const productoEncontrado = response.data.productos.find(
-        producto => producto.visible_web === true && producto.seo_slug === slug
-      )
-
-      if (!productoEncontrado) {
+      // El endpoint ya filtra por seo_slug exacto, tomar el primero
+      const producto = response.data.productos[0]
+      
+      if (!producto || producto.visible_web !== true) {
         return null
       }
 
-      // Mapear el producto encontrado
-      return mapProductoAPIToProducto(productoEncontrado)
+      return mapProductoAPIToProducto(producto)
     } catch (error) {
-      // Si es un timeout, loggear específicamente
-      if (error instanceof Error && error.message.includes('timeout')) {
-        console.error('Error: Timeout buscando producto por slug:', slug)
-      } else {
-        console.error('Error buscando producto por slug:', error)
-      }
+      console.error('Error buscando producto por slug:', slug, error)
       return null
     }
   },

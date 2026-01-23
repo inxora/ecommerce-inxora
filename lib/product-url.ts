@@ -1,6 +1,12 @@
 /**
  * Función helper para construir URLs de productos de forma consistente
- * Asegura que todas las URLs sigan el mismo patrón: /{locale}/{categoria}/producto/{marca}/{slug}
+ * 
+ * ESTRUCTURA CANÓNICA: /{locale}/{categoria}/{subcategoria}/{marca}/{slug}
+ * 
+ * NOTA: Las URLs ya NO incluyen /producto/ para mejor SEO:
+ * - URLs más cortas y limpias
+ * - Mejor jerarquía semántica
+ * - Estándar en ecommerce profesionales
  */
 
 import { Product, Producto } from './supabase'
@@ -277,6 +283,59 @@ export function buildCategorySubcategoriaMarcaUrl(
   }
 
   return `/${locale}/${categorySlug}/${subcategoriaSlug}/${brandSlug}`
+}
+
+/**
+ * Construye la URL completa del producto (URL canónica)
+ * 
+ * ESTRUCTURA CANÓNICA: /{locale}/{categoria}/{subcategoria}/{marca}/{slug}
+ * 
+ * NOTA: Las URLs ya NO incluyen /producto/ para mejor SEO
+ * 
+ * @param category - Objeto Categoria con nombre
+ * @param subcategoria - Objeto Subcategoria con nombre
+ * @param brand - Objeto Marca con nombre
+ * @param productSlug - Slug del producto (seo_slug)
+ * @param locale - Locale (es, en, pt)
+ * @returns URL completa del producto
+ */
+export function buildProductFullUrl(
+  category: { nombre: string; id?: number },
+  subcategoria: { nombre: string; id?: number },
+  brand: { nombre: string; id?: number },
+  productSlug: string,
+  locale: string = 'es'
+): string {
+  const categorySlug = normalizeName(category.nombre)
+  const subcategoriaSlug = normalizeName(subcategoria.nombre)
+  const brandSlug = normalizeName(brand.nombre)
+  
+  // Normalizar el slug del producto si es necesario
+  let normalizedProductSlug = productSlug
+  if (!/^[a-z0-9-]+$/.test(productSlug)) {
+    const normalized = normalizeName(productSlug)
+    if (normalized) {
+      normalizedProductSlug = normalized
+    }
+  }
+
+  // Estructura canónica completa
+  if (categorySlug && subcategoriaSlug && brandSlug) {
+    return `/${locale}/${categorySlug}/${subcategoriaSlug}/${brandSlug}/${normalizedProductSlug}`
+  }
+
+  // Fallback: categoría y marca sin subcategoría
+  if (categorySlug && brandSlug) {
+    return `/${locale}/${categorySlug}/${brandSlug}/${normalizedProductSlug}`
+  }
+
+  // Fallback: solo categoría
+  if (categorySlug) {
+    return `/${locale}/${categorySlug}/${normalizedProductSlug}`
+  }
+
+  // Fallback mínimo: solo slug (no debería ocurrir en producción)
+  return `/${locale}/${normalizedProductSlug}`
 }
 
 /**

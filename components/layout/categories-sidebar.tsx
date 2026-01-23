@@ -130,31 +130,13 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     loadCategories()
   }, [serverCategories])
 
-  // Detectar cuando el sheet se abre/cierra usando el DOM
+  // Limpiar estado cuando se cierra el sheet
   useEffect(() => {
-    const checkSheetState = () => {
-      const sheetElement = document.querySelector('[data-state="open"]')
-      const isOpen = sheetElement !== null
-      setIsSheetOpen(isOpen)
-      if (!isOpen) {
-        setHoveredCategory(null)
-      }
+    if (!isSheetOpen) {
+      setHoveredCategory(null)
+      setExpandedCategoryMobile(null)
     }
-
-    // Verificar estado inicial
-    checkSheetState()
-
-    // Observar cambios en el DOM
-    const observer = new MutationObserver(checkSheetState)
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['data-state']
-    })
-
-    return () => observer.disconnect()
-  }, [])
+  }, [isSheetOpen])
 
   // Detectar tamaÃ±o de pantalla para mostrar panel solo en desktop
   useEffect(() => {
@@ -318,22 +300,15 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     </Button>
   )
 
-  // Limpiar estado cuando se cierra el sheet o cambia el modo desktop
+  // Limpiar hover en desktop cuando cambia a mobile, y viceversa
   useEffect(() => {
-    if (!isSheetOpen) {
-      setHoveredCategory(null)
-      setExpandedCategoryMobile(null)
-      setIsMouseOverBrandsPanel(false)
-    }
-    
-    // Limpiar hover en desktop cuando cambia a mobile, y viceversa
     if (!isDesktop) {
       setHoveredCategory(null)
       setIsMouseOverBrandsPanel(false)
     } else {
       setExpandedCategoryMobile(null)
     }
-  }, [isSheetOpen, isDesktop])
+  }, [isDesktop])
 
   // Actualizar posición del panel de marcas dinámicamente
   useEffect(() => {
@@ -414,36 +389,31 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     }
   }, [hoveredCategory, isSheetOpen, isDesktop])
 
-  // FunciÃ³n para cerrar el sheet
+  // Función para cerrar el sheet
   const closeSheet = () => {
-    // Solo cerrar si no se está haciendo clic en una marca
-    if (isClicking) {
-      return
-    }
-
+    console.log('[CategoriesSidebar] closeSheet called')
     setHoveredCategory(null)
-    // Cerrar el sheet usando el botÃ³n de cerrar de Radix UI
+    setExpandedCategoryMobile(null)
+    setIsSheetOpen(false)
+  }
+
+  // Función para navegar y cerrar el sheet
+  const handleNavigate = (url: string) => {
+    console.log('[CategoriesSidebar] handleNavigate called with URL:', url)
+    console.log('[CategoriesSidebar] Current state:', { isSheetOpen, isDesktop, hoveredCategory })
+    
+    closeSheet()
+    
+    // Pequeño delay para que la animación de cierre se vea suave
     setTimeout(() => {
-      const sheetElement = document.querySelector('[data-state="open"]')
-      if (sheetElement) {
-        // Buscar el botÃ³n de cerrar (tiene el Ã­cono X)
-        const closeButton = sheetElement.querySelector('button[class*="opacity-70"]') as HTMLButtonElement
-        if (closeButton) {
-          closeButton.click()
-        } else {
-          // Fallback: usar el overlay para cerrar
-          const overlay = document.querySelector('[data-radix-dialog-overlay]')
-          if (overlay) {
-            (overlay as HTMLElement).click()
-          }
-        }
-      }
-    }, 50) // PequeÃ±o delay para asegurar que el click se procese
+      console.log('[CategoriesSidebar] Navigating to:', url)
+      router.push(url)
+    }, 100)
   }
 
   return (
     <>
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen} modal={false}>
         <SheetTrigger asChild>
           {trigger || defaultTrigger}
         </SheetTrigger>
@@ -451,6 +421,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
           side="left"
           className="w-full sm:w-80 md:w-96 p-0 flex flex-col bg-white dark:bg-slate-900"
           ref={sheetContentRef}
+          disableOverlayPointerEvents={isDesktop && hoveredCategory !== null}
         >
           <div className="flex flex-col min-h-0 flex-1">
             <SheetHeader className="px-6 py-4 border-b flex-shrink-0">
@@ -535,12 +506,14 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                                   </div>
                                 ) : categorySubcategoriasData.length > 0 ? (
                                   <div className="space-y-4">
-                                    <Link
-                                      href={buildCategoryUrlFromObject(category, locale)}
-                                      className="block px-3 py-2 text-xs font-semibold text-[#139ED4] dark:text-[#88D4E4] hover:underline"
-                                    >
-                                      Ver todo →
-                                    </Link>
+                                    <SheetClose asChild>
+                                      <Link
+                                        href={buildCategoryUrlFromObject(category, locale)}
+                                        className="block px-3 py-2 text-xs font-semibold text-[#139ED4] dark:text-[#88D4E4] hover:underline"
+                                      >
+                                        Ver todo →
+                                      </Link>
+                                    </SheetClose>
                                     {categorySubcategoriasData.map((subcategoria) => (
                                       <div key={subcategoria.id} className="space-y-1">
                                         <div className="px-3 py-1">
@@ -549,28 +522,31 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                                           </h4>
                                         </div>
                                         {/* Link a la subcategoría */}
-                                        <Link
-                                          href={buildCategorySubcategoriaUrl(category, subcategoria, locale)}
-                                          className="block px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors mb-2"
-                                        >
-                                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                            Ver productos de {subcategoria.nombre}
-                                          </span>
-                                        </Link>
+                                        <SheetClose asChild>
+                                          <Link
+                                            href={buildCategorySubcategoriaUrl(category, subcategoria, locale)}
+                                            className="block px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors mb-2"
+                                          >
+                                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                              Ver productos de {subcategoria.nombre}
+                                            </span>
+                                          </Link>
+                                        </SheetClose>
                                         {/* Links a marcas individuales */}
                                         {subcategoria.marcas && subcategoria.marcas.length > 0 && (
                                           <div className="space-y-1">
                                             {subcategoria.marcas.map((brand) => (
-                                              <Link
-                                                key={brand.id}
-                                                href={buildCategorySubcategoriaMarcaUrl(category, subcategoria, brand, locale)}
-                                                className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors"
-                                              >
-                                                <BrandLogo brand={brand} />
-                                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                                  {brand.nombre}
-                                                </span>
-                                              </Link>
+                                              <SheetClose asChild key={brand.id}>
+                                                <Link
+                                                  href={buildCategorySubcategoriaMarcaUrl(category, subcategoria, brand, locale)}
+                                                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors"
+                                                >
+                                                  <BrandLogo brand={brand} />
+                                                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    {brand.nombre}
+                                                  </span>
+                                                </Link>
+                                              </SheetClose>
                                             ))}
                                           </div>
                                         )}
@@ -622,13 +598,17 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
             style={{
               width: '320px',
               left: `${panelLeft}px`,
-              zIndex: 9999, // Z-index muy alto para asegurar que esté por encima del SheetContent (z-50)
+              zIndex: 99999, // Z-index muy alto
               pointerEvents: 'auto',
-              cursor: 'auto', // Cambiar a 'auto' para no interferir con cursors de elementos internos
+              cursor: 'auto',
               opacity: hoveredCategory ? 1 : 0,
               visibility: hoveredCategory ? 'visible' : 'hidden',
               transition: 'opacity 0.2s ease-in-out, left 0.1s ease-out',
-              transform: 'translateZ(0)' // Forzar aceleración por hardware
+              transform: 'translateZ(0)',
+              isolation: 'isolate' // Crear nuevo contexto de stacking
+            }}
+            onClick={(e) => {
+              console.log('[CategoriesSidebar] Panel container clicked!', e.target)
             }}
             onMouseEnter={handleBrandsPanelEnter}
             onMouseLeave={(e) => {
@@ -657,23 +637,22 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                 <h3 className="text-lg font-bold text-inxora-dark-blue dark:text-white mb-2">
                   {hoveredCategoryData?.nombre}
                 </h3>
-                <Link
-                  href={hoveredCategoryData ? buildCategoryUrlFromObject(hoveredCategoryData, locale) : '#'}
+                <button
                   onClick={(e) => {
-                    // Cerrar el sheet al hacer clic
-                    setTimeout(() => {
-                      closeSheet()
-                    }, 100)
+                    console.log('[CategoriesSidebar] "Ver todo" clicked', { hoveredCategoryData, locale })
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (hoveredCategoryData) {
+                      const url = buildCategoryUrlFromObject(hoveredCategoryData, locale)
+                      console.log('[CategoriesSidebar] Built URL:', url)
+                      handleNavigate(url)
+                    }
                   }}
-                  style={{
-                    pointerEvents: 'auto',
-                    cursor: 'pointer'
-                  }}
-                  className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1"
+                  className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   Ver todo
                   <ChevronRight className="h-4 w-4" />
-                </Link>
+                </button>
               </div>
 
               {/* Lista de subcategorías con marcas */}
@@ -693,70 +672,52 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                       {/* Marcas de la subcategoría */}
                       {subcategoria.marcas && subcategoria.marcas.length > 0 ? (
                         <div className="space-y-2">
-                          {/* Link principal a la subcategoría */}
-                          <Link
-                            href={hoveredCategoryData
-                              ? buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)
-                              : '#'}
-                            className="block p-3 rounded-lg hover:bg-[#88D4E4]/10 dark:hover:bg-slate-800 transition-colors group border border-gray-200 dark:border-gray-700"
-                            onClick={(e) => {
-                              // Cerrar el panel y sheet al hacer click
-                              setHoveredCategory(null)
-                              setTimeout(() => {
-                                const sheetElement = document.querySelector('[data-state="open"]')
-                                if (sheetElement) {
-                                  const escEvent = new KeyboardEvent('keydown', {
-                                    key: 'Escape',
-                                    code: 'Escape',
-                                    keyCode: 27,
-                                    bubbles: true
-                                  })
-                                  document.dispatchEvent(escEvent)
+                          {/* Header de la subcategoría con link */}
+                          <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <button
+                              onClick={(e) => {
+                                console.log('[CategoriesSidebar] Subcategoria clicked:', subcategoria.nombre)
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (hoveredCategoryData) {
+                                  const url = buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)
+                                  console.log('[CategoriesSidebar] Subcategoria URL:', url)
+                                  handleNavigate(url)
                                 }
-                              }, 150)
-                            }}
-                          >
-                            <div className="flex items-center justify-between">
+                              }}
+                              className="flex items-center justify-between w-full hover:text-[#139ED4] transition-colors cursor-pointer"
+                            >
                               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {subcategoria.nombre}
                               </span>
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 Ver productos →
                               </span>
-                            </div>
+                            </button>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {subcategoria.marcas.slice(0, 6).map((brand) => (
-                                <Link
+                                <button
                                   key={brand.id}
-                                  href={hoveredCategoryData
-                                    ? buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)
-                                    : '#'}
-                                  className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors"
                                   onClick={(e) => {
+                                    console.log('[CategoriesSidebar] Brand clicked:', brand.nombre)
+                                    e.preventDefault()
                                     e.stopPropagation()
-                                    setHoveredCategory(null)
-                                    setTimeout(() => {
-                                      const sheetElement = document.querySelector('[data-state="open"]')
-                                      if (sheetElement) {
-                                        const escEvent = new KeyboardEvent('keydown', {
-                                          key: 'Escape',
-                                          code: 'Escape',
-                                          keyCode: 27,
-                                          bubbles: true
-                                        })
-                                        document.dispatchEvent(escEvent)
-                                      }
-                                    }, 150)
+                                    if (hoveredCategoryData) {
+                                      const url = buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)
+                                      console.log('[CategoriesSidebar] Brand URL:', url)
+                                      handleNavigate(url)
+                                    }
                                   }}
+                                  className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                                 >
                                   <BrandLogoDesktop brand={brand} />
                                   <span className="text-xs text-gray-600 dark:text-gray-400">
                                     {brand.nombre}
                                   </span>
-                                </Link>
+                                </button>
                               ))}
                             </div>
-                            </Link>
+                          </div>
                           </div>
                       ) : (
                         <p className="text-xs text-muted-foreground italic">

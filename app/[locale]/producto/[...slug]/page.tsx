@@ -1,167 +1,167 @@
-export const revalidate = 3600;
+/**
+ * Página de Redirección 301 para URLs Legacy de Productos
+ * 
+ * Esta página captura URLs antiguas con el formato:
+ * /{locale}/producto/{...cualquier-segmento}/{slug}
+ * 
+ * Y las redirige a la nueva estructura canónica:
+ * /{locale}/{categoria}/{subcategoria}/{marca}/{slug}
+ * 
+ * Esto preserva el SEO de las URLs antiguas que ya están indexadas
+ * y transfiere la autoridad a las nuevas URLs canónicas.
+ */
 
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { cache } from 'react'
-import { Producto } from '@/lib/supabase'
+import { redirect, notFound } from 'next/navigation'
 import { ProductsService } from '@/lib/services/products.service'
-import { buildCategoryUrlFromObject } from '@/lib/product-url'
-import { generateProductSeo } from '@/lib/product-seo'
-import ProductClient from './ProductClient'
+import { buildProductFullUrl, normalizeName } from '@/lib/product-url'
 
-interface PageProps {
-  params: Promise<{ slug: string[]; locale: string }>
+// Configuración para que Next.js maneje esto como dinámico
+export const dynamic = 'force-dynamic'
+
+interface LegacyProductPageProps {
+  params: Promise<{
+    slug: string[]
+    locale: string
+  }>
 }
 
-// Función cacheada para obtener el producto (evita queries duplicadas)
-// Solo usa el API externo, ya no usa Supabase
-const getProduct = cache(async (slugSegments: string[]): Promise<Producto | null> => {
-  const lastSegment = slugSegments[slugSegments.length - 1]
-  
-  // Buscar en el API externo usando el último segmento (el slug del producto)
-  let productData = await ProductsService.getProductoBySlug(lastSegment)
-  
-  // Si no se encuentra, intentar con el slug completo
-  if (!productData && slugSegments.length > 1) {
-    const fullSlug = slugSegments.join('/')
-    productData = await ProductsService.getProductoBySlug(fullSlug)
-  }
-  
-  return productData
-})
-
-// Generar metadata dinámico para SEO
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug, locale } = await params
-  const product = await getProduct(slug)
-
-  if (!product) {
-    return {
-      title: 'Producto no encontrado',
-      description: 'El producto que buscas no existe o no está disponible.',
-    }
-  }
-
-  // Generar todos los datos SEO optimizados
-  const seoData = generateProductSeo(product, locale)
-
-  return {
-    title: seoData.seoTitle,
-    description: seoData.seoDescription,
-    keywords: seoData.seoKeywords,
-    robots: product.meta_robots || 'index, follow',
-    alternates: {
-      canonical: seoData.canonicalUrl,
-    },
-    openGraph: {
-      title: seoData.seoTitle,
-      description: seoData.seoDescription,
-      url: seoData.canonicalUrl,
-      images: product.imagen_principal_url ? [
-        {
-          url: product.imagen_principal_url,
-          alt: `${product.marca && typeof product.marca === 'object' ? product.marca.nombre + ' ' : ''}${product.nombre}${product.cod_producto_marca ? ' modelo ' + product.cod_producto_marca : ''}`,
-        }
-      ] : [
-        {
-          url: 'https://tienda.inxora.com/inxora.png',
-          alt: 'INXORA - Suministros Industriales',
-        }
-      ],
-      locale: locale === 'es' ? 'es_PE' : locale === 'pt' ? 'pt_BR' : 'en_US',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: seoData.seoTitle,
-      description: seoData.seoDescription,
-      images: product.imagen_principal_url ? [product.imagen_principal_url] : undefined,
-    },
-  }
+/**
+ * Extrae el slug del producto del array de segmentos
+ * El último segmento siempre es el slug del producto
+ */
+function extractProductSlug(slugArray: string[]): string {
+  return slugArray[slugArray.length - 1]
 }
 
-export default async function ProductPage({ params }: PageProps) {
-  const { slug, locale } = await params
-  const product = await getProduct(slug)
+/**
+ * Valida que los parámetros no sean rutas del sistema
+ */
+function isSystemRoute(slug: string[]): boolean {
+  const systemPrefixes = ['.', '_', 'api', 'favicon', 'icon', 'manifest', 'robots', 'sitemap', 'well-known']
+  return slug.some(s => systemPrefixes.some(prefix => s.startsWith(prefix)))
+}
 
-  if (!product) {
+/**
+ * Página de redirección 301 para URLs legacy
+ * Busca el producto y redirige a la nueva URL canónica
+ */
+export default async function LegacyProductRedirect({ params }: LegacyProductPageProps) {
+  const { slug, locale } = await params
+  
+  // Validar locale
+  const validLocales = ['es', 'en', 'pt']
+  if (!validLocales.includes(locale)) {
     notFound()
   }
-
-  // Obtener productos relacionados desde el API externo
-  // Filtrar por marca y subcategoría
-  const idMarca = typeof product.marca === 'object' ? product.marca?.id : product.id_marca
-  const idSubcategoria = product.subcategoria_principal?.id
   
-  const relatedProducts = await ProductsService.getProductosRelacionados(
-    product.sku,
-    idMarca || 0, // Si no hay marca, usar 0 (no encontrará productos relacionados)
-    idSubcategoria,
-    8
-  )
-
-  // Generar datos SEO usando las nuevas funciones
-  const seoData = generateProductSeo(product, locale)
-  const canonicalUrl = seoData.canonicalUrl
-
-  // Construir categoría para breadcrumbs
-  const categoria = product.categorias && product.categorias.length > 0
-    ? product.categorias[0]
-    : (product.categoria && typeof product.categoria === 'object'
-        ? product.categoria
-        : undefined)
-
-  // Construir JSON-LD Schema para BreadcrumbList
-  const breadcrumbItems = [
-    {
-      '@type': 'ListItem',
-      position: 1,
-      name: 'Inicio',
-      item: `https://tienda.inxora.com/${locale}`,
-    },
-  ]
-
-  if (categoria && typeof categoria === 'object') {
-    const categoriaUrl = `https://tienda.inxora.com${buildCategoryUrlFromObject(categoria, locale)}`
-    breadcrumbItems.push({
-      '@type': 'ListItem',
-      position: 2,
-      name: categoria.nombre,
-      item: categoriaUrl,
+  // Validar que hay al menos un segmento
+  if (!slug || slug.length === 0) {
+    notFound()
+  }
+  
+  // Ignorar rutas del sistema
+  if (isSystemRoute(slug)) {
+    notFound()
+  }
+  
+  const productSlug = extractProductSlug(slug)
+  
+  // Log en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[LegacyRedirect] Processing legacy URL:', {
+      slug,
+      productSlug,
+      locale
     })
   }
-
-  breadcrumbItems.push({
-    '@type': 'ListItem',
-    position: breadcrumbItems.length + 1,
-    name: product.nombre,
-    item: canonicalUrl,
-  })
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: breadcrumbItems,
+  
+  try {
+    // Buscar el producto para obtener sus datos de categoría/subcategoría/marca
+    const product = await ProductsService.getProductoBySlug(productSlug)
+    
+    if (!product) {
+      // Si no se encuentra el producto, mostrar 404
+      notFound()
+    }
+    
+    // Extraer datos para construir la nueva URL
+    const categoriaNombre = product.categoria && typeof product.categoria === 'object' 
+      ? product.categoria.nombre 
+      : undefined
+    
+    const subcategoriaNombre = product.subcategoria_principal && typeof product.subcategoria_principal === 'object'
+      ? product.subcategoria_principal.nombre
+      : undefined
+    
+    let marcaNombre: string | undefined
+    if (product.marca) {
+      if (typeof product.marca === 'object' && 'nombre' in product.marca) {
+        marcaNombre = product.marca.nombre
+      } else if (typeof product.marca === 'string') {
+        marcaNombre = product.marca
+      }
+    }
+    
+    // Verificar que tenemos todos los datos necesarios
+    if (categoriaNombre && subcategoriaNombre && marcaNombre && product.seo_slug) {
+      // Construir la nueva URL canónica
+      const newUrl = buildProductFullUrl(
+        { nombre: categoriaNombre },
+        { nombre: subcategoriaNombre },
+        { nombre: marcaNombre },
+        product.seo_slug,
+        locale
+      )
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[LegacyRedirect] Redirecting to:', newUrl)
+      }
+      
+      // Redirección 301 permanente (SEO-friendly)
+      redirect(newUrl)
+    }
+    
+    // Si faltan datos, intentar construir URL con lo que tenemos
+    if (categoriaNombre && marcaNombre && product.seo_slug) {
+      const categorySlug = normalizeName(categoriaNombre)
+      const brandSlug = normalizeName(marcaNombre)
+      const productSlugNormalized = normalizeName(product.seo_slug) || product.seo_slug
+      
+      if (categorySlug && brandSlug) {
+        const fallbackUrl = `/${locale}/${categorySlug}/${brandSlug}/${productSlugNormalized}`
+        redirect(fallbackUrl)
+      }
+    }
+    
+    // Si no podemos construir una URL válida, mostrar 404
+    console.error('[LegacyRedirect] Cannot build redirect URL, missing data:', {
+      categoriaNombre,
+      subcategoriaNombre,
+      marcaNombre,
+      seoSlug: product.seo_slug
+    })
+    notFound()
+    
+  } catch (error) {
+    // Si es un error de redirección de Next.js, dejarlo pasar
+    if (error && typeof error === 'object' && 'digest' in error) {
+      throw error
+    }
+    
+    console.error('[LegacyRedirect] Error processing redirect:', error)
+    notFound()
   }
+}
 
-  // Usar el JSON-LD generado por la función utilitaria
-  const productSchema = seoData.jsonLd
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
-      />
-      <ProductClient 
-        product={product} 
-        relatedProducts={relatedProducts} 
-        locale={locale} 
-      />
-    </>
-  )
+/**
+ * Metadata para páginas de redirección
+ * No debería indexarse ya que redirige inmediatamente
+ */
+export async function generateMetadata() {
+  return {
+    robots: {
+      index: false,
+      follow: true,
+    },
+  }
 }

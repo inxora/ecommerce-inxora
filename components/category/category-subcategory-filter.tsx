@@ -13,37 +13,55 @@ import { cn } from '@/lib/utils'
 interface CategorySubcategoryFilterProps {
   category: Categoria
   locale: string
+  subcategorias?: SubcategoriaNavegacion[]  // ✅ Opcional: pasar desde el servidor
+  currentSubcategoria?: SubcategoriaNavegacion | null  // ✅ Subcategoría actual seleccionada
 }
 
-export function CategorySubcategoryFilter({ category, locale }: CategorySubcategoryFilterProps) {
+export function CategorySubcategoryFilter({ 
+  category, 
+  locale, 
+  subcategorias: initialSubcategorias,
+  currentSubcategoria: initialSelectedSubcategoria 
+}: CategorySubcategoryFilterProps) {
   const router = useRouter()
-  const pathname = usePathname()
-  const params = useParams() as { locale?: string; slug?: string; subcategoria?: string; marca?: string }
-  const [subcategorias, setSubcategorias] = useState<SubcategoriaNavegacion[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedSubcategoria, setSelectedSubcategoria] = useState<SubcategoriaNavegacion | null>(null)
+  const params = useParams() as { locale?: string; subcategoria?: string }
   
-  // ✅ FIX: Estabilizar params.subcategoria con useRef para evitar bucles infinitos
-  const subcategoriaRef = useRef<string | undefined>(params.subcategoria)
-  const categoryIdRef = useRef<number>(category.id)
+  // ✅ Usar datos del servidor si están disponibles (evita loading flash)
+  const [subcategorias, setSubcategorias] = useState<SubcategoriaNavegacion[]>(initialSubcategorias || [])
+  const [loading, setLoading] = useState(!initialSubcategorias) // Solo loading si no hay datos iniciales
+  const [selectedSubcategoria, setSelectedSubcategoria] = useState<SubcategoriaNavegacion | null>(
+    initialSelectedSubcategoria || null
+  )
+  
   const lastCategoryIdRef = useRef<number>(category.id)
   const lastSubcategoriaRef = useRef<string | undefined>(params.subcategoria)
 
-  // Cargar subcategorías de la categoría
+  // Solo cargar desde API si no hay datos iniciales
   useEffect(() => {
-    // Actualizar refs cuando cambien los valores
-    subcategoriaRef.current = params.subcategoria
-    categoryIdRef.current = category.id
-    
-    // Solo ejecutar si realmente cambió el categoryId o subcategoria
-    const categoryIdChanged = lastCategoryIdRef.current !== category.id
-    const subcategoriaChanged = lastSubcategoriaRef.current !== params.subcategoria
-    
-    if (!categoryIdChanged && !subcategoriaChanged) {
-      return // No hacer nada si no hay cambios reales
+    // Si ya tenemos subcategorías del servidor, solo actualizar selección
+    if (initialSubcategorias && initialSubcategorias.length > 0) {
+      setSubcategorias(initialSubcategorias)
+      setSelectedSubcategoria(initialSelectedSubcategoria || null)
+      setLoading(false)
+      return
     }
     
-    // Actualizar los refs de seguimiento
+    // Solo cargar si realmente cambió el categoryId
+    const categoryIdChanged = lastCategoryIdRef.current !== category.id
+    
+    if (!categoryIdChanged && subcategorias.length > 0) {
+      // Solo actualizar selección basada en URL
+      if (params.subcategoria) {
+        const subcategoriaFromUrl = subcategorias.find(
+          sub => normalizeName(sub.nombre) === params.subcategoria
+        )
+        setSelectedSubcategoria(subcategoriaFromUrl || null)
+      } else {
+        setSelectedSubcategoria(null)
+      }
+      return
+    }
+    
     lastCategoryIdRef.current = category.id
     lastSubcategoriaRef.current = params.subcategoria
     
@@ -54,20 +72,14 @@ export function CategorySubcategoryFilter({ category, locale }: CategorySubcateg
         const categoriaNavegacion = categoriasNavegacion.find(c => c.id === category.id)
         
         if (categoriaNavegacion) {
-          // Filtrar solo subcategorías activas
           const subcategoriasActivas = categoriaNavegacion.subcategorias.filter(sub => sub.activo)
           setSubcategorias(subcategoriasActivas)
           
-          // Si hay una subcategoría en la URL, establecerla como seleccionada
           if (params.subcategoria) {
             const subcategoriaFromUrl = subcategoriasActivas.find(
               sub => normalizeName(sub.nombre) === params.subcategoria
             )
-            if (subcategoriaFromUrl) {
-              setSelectedSubcategoria(subcategoriaFromUrl)
-            } else {
-              setSelectedSubcategoria(null)
-            }
+            setSelectedSubcategoria(subcategoriaFromUrl || null)
           } else {
             setSelectedSubcategoria(null)
           }
@@ -80,7 +92,7 @@ export function CategorySubcategoryFilter({ category, locale }: CategorySubcateg
     }
 
     loadSubcategorias()
-  }, [category.id, params.subcategoria])
+  }, [category.id, params.subcategoria, initialSubcategorias, initialSelectedSubcategoria, subcategorias])
 
   const handleSubcategoriaClick = (subcategoria: SubcategoriaNavegacion) => {
     // Si ya está seleccionada, deseleccionar (volver a categoría)

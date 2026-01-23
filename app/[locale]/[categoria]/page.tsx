@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import { getCategorias, getMarcas, getMarcasByCategoria, Categoria, Marca } from '@/lib/supabase'
 import { ProductsService } from '@/lib/services/products.service'
+import { CategoriesService } from '@/lib/services/categories.service'
 import { CategoryClient } from '@/components/category/category-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
 interface CategoryPageProps {
-  params: Promise<{ slug: string; locale: string }>
+  params: Promise<{ categoria: string; locale: string }>
   searchParams: Promise<{
     page?: string
     categoria?: string | string[]
@@ -26,10 +27,10 @@ interface CategoryPageProps {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const { slug, locale } = await params
+  const { categoria: categorySlug, locale } = await params
   
   const categoriesData = await getCategorias()
-  const category = categoriesData.data?.find(c => normalizeName(c.nombre) === slug)
+  const category = categoriesData.data?.find(c => normalizeName(c.nombre) === categorySlug)
   
   if (!category) {
     return { title: 'Categoría no encontrada' }
@@ -55,11 +56,18 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const { slug: categorySlug, locale } = await params
+  const { categoria: categorySlug, locale } = await params
   
-  // Validar que el locale sea válido y que no sea una ruta especial (como .well-known)
+  // Validar que el locale sea válido (rutas especiales no deben llegar aquí)
   const validLocales = ['es', 'en', 'pt']
-  if (!validLocales.includes(locale) || locale.startsWith('.') || locale.startsWith('_')) {
+  if (!validLocales.includes(locale)) {
+    // Si el locale no es válido, es una ruta del sistema (como .well-known)
+    notFound()
+  }
+  
+  // Validar categorySlug - evitar rutas del sistema
+  const invalidPrefixes = ['.', '_', 'api', 'favicon', 'icon', 'manifest', 'robots', 'sitemap']
+  if (invalidPrefixes.some(prefix => categorySlug.startsWith(prefix) || categorySlug === prefix)) {
     notFound()
   }
   
@@ -96,8 +104,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const allCategoriaIds = [String(categoryId)]
 
   // Fetch remaining data in parallel
-  // OPTIMIZACIÓN: Usar getMarcasByCategoria en lugar de consultar 500 productos
-  const [brandsData, productsData, relatedBrandsData] = await Promise.all([
+  // OPTIMIZACIÓN: Obtener subcategorías junto con el resto de datos
+  const [brandsData, productsData, relatedBrandsData, categoriasNavegacion] = await Promise.all([
     getMarcas(),
     ProductsService.getProductos({
       page,
@@ -107,11 +115,16 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       buscar: resolvedSearchParams.buscar,
       visible_web: true,
     }),
-    getMarcasByCategoria(categoryId) // Consulta optimizada directa a relaciones
+    getMarcasByCategoria(categoryId),
+    CategoriesService.getCategorias() // ✅ Obtener subcategorías
   ])
 
   const { products, total } = productsData
   const relatedBrands = relatedBrandsData || []
+  
+  // ✅ Obtener subcategorías de la categoría actual
+  const categoriaNavegacion = categoriasNavegacion.find(c => c.id === categoryId)
+  const subcategorias = categoriaNavegacion?.subcategorias.filter(s => s.activo) || []
 
   const { data: categories } = categoriesData
   const { data: brands } = brandsData
@@ -136,6 +149,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     <Suspense fallback={<PageLoader />}>
       <CategoryClient
         category={category}
+        subcategorias={subcategorias}
         products={products || []}
         categories={categories || []}
         brands={brands || []}

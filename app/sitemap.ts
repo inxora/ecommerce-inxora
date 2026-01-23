@@ -19,6 +19,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // PRODUCTOS
   // ===============================
 
+  // ✅ OPTIMIZACIÓN: En build/preview de Vercel, limitar a 100 productos para evitar timeout
+  // El resto se generará dinámicamente cuando los usuarios visiten las páginas (ISR)
+  const isBuildTime = 
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    (process.env.VERCEL_ENV === 'production' && !process.env.VERCEL_URL) ||
+    process.env.VERCEL_ENV === 'preview'
+  const maxProductsForBuild = isBuildTime ? 100 : 5000 // Solo 100 en build/preview, 5000 en runtime
+  
+  if (isBuildTime) {
+    console.log('🔧 [Sitemap] Build/Preview mode detected - limiting to 100 products for faster build')
+  }
+  
   // Generar URLs de productos de forma incremental para evitar alto consumo de memoria
   // Solo obtener los campos mínimos necesarios y procesar en lotes pequeños
   const productPages: MetadataRoute.Sitemap = []
@@ -30,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const limit = 100 // Reducir a 100 productos por página para menor consumo
     let hasMore = true
     let totalProcessed = 0
-    const maxProducts = 5000 // Limitar a 5000 productos máximo para el sitemap
+    const maxProducts = maxProductsForBuild
 
     while (hasMore && page <= 50 && totalProcessed < maxProducts) { // Máximo 50 páginas
       try {
@@ -48,6 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             if (product.seo_slug) {
               try {
                 const canonicalUrl = generateCanonicalUrl(product, locale)
+                // ✅ URLs con estructura: /producto/{categoria}/{subcategoria}/{marca}/{slug}
                 productPages.push({
                   url: canonicalUrl,
                   lastModified: product.fecha_actualizacion
