@@ -17,18 +17,6 @@ interface HomeClientProps {
   categories?: Categoria[];
 }
 
-// Configuración de banners promocionales (placeholder - actualizar cuando tengas las imágenes)
-const PROMO_BANNER = {
-  title: 'OFERTA ESPECIAL',
-  subtitle: '¡Goe nefustakos aPORTa nod clienlas, as o milientas agula.',
-  productImage: '/placeholder-promo-product.png', // Reemplazar con imagen real
-  originalPrice: 50,
-  currentPrice: 35,
-  discount: 30,
-  ctaText: 'COMPRA YA',
-  ctaLink: '/es/catalogo',
-}
-
 // Helper para construir la URL del producto
 function getProductUrl(product: Producto, locale: string): string {
   // Si tenemos todos los datos necesarios, construir URL canónica
@@ -336,54 +324,6 @@ export default function HomeClient({ locale, featuredProducts = [], newProducts 
               </div>
             </div>
 
-            {/* Lado Derecho - Banner Promocional */}
-            <div className="flex-shrink-0 w-full sm:w-auto">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden max-w-sm mx-auto lg:mx-0">
-                {/* Header del Banner */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 text-center">
-                  <span className="text-sm font-bold tracking-wider">OFERTA ESPECIAL</span>
-                </div>
-                
-                {/* Contenido del Banner */}
-                <div className="p-4 sm:p-6">
-                  {/* Badge de descuento */}
-                  <div className="absolute top-12 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                    {PROMO_BANNER.discount}% DTO
-                  </div>
-                  
-                  {/* Imagen del producto promocional */}
-                  <div className="relative h-40 sm:h-48 mb-4 bg-gray-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                    {/* Placeholder - Reemplazar con imagen real */}
-                    <div className="text-center text-gray-400 dark:text-gray-500">
-                      <div className="w-24 h-24 mx-auto bg-gray-200 dark:bg-slate-600 rounded-lg flex items-center justify-center mb-2">
-                        <span className="text-4xl">📦</span>
-                      </div>
-                      <p className="text-xs">Imagen promocional</p>
-                    </div>
-                  </div>
-                  
-                  {/* Texto promocional */}
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    ¡Aprovecha nuestras ofertas especiales para clientes y distribuidores!
-                  </p>
-                  
-                  {/* Precios */}
-                  <div className="flex items-baseline gap-3 mb-4">
-                    <span className="text-gray-400 line-through text-sm">Antes: S/{PROMO_BANNER.originalPrice}</span>
-                    <span className="text-3xl font-bold text-inxora-blue">S/{PROMO_BANNER.currentPrice}</span>
-                  </div>
-                  
-                  {/* CTA */}
-                  <Link 
-                    href={`/${locale}/catalogo`}
-                    className="flex items-center justify-center gap-2 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-                  >
-                    COMPRA YA
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
