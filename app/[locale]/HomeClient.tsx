@@ -1,28 +1,272 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Producto, Categoria } from '@/lib/supabase';
 import { ProductCard } from '@/components/catalog/product-card';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
 import { CategoriesCarousel } from '@/components/home/categories-carousel';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { buildProductFullUrl } from '@/lib/product-url';
 
 interface HomeClientProps {
   locale: string;
   featuredProducts?: Producto[];
+  newProducts?: Producto[];
   categories?: Categoria[];
 }
 
-export default function HomeClient({ locale, featuredProducts = [], categories = [] }: HomeClientProps) {
-  // ✅ FIX 1: Los datos ahora vienen del servidor, no necesitamos fetch en el cliente
-  const loading = false; // Ya no hay loading porque los datos vienen del servidor
+// Configuración de banners promocionales (placeholder - actualizar cuando tengas las imágenes)
+const PROMO_BANNER = {
+  title: 'OFERTA ESPECIAL',
+  subtitle: '¡Goe nefustakos aPORTa nod clienlas, as o milientas agula.',
+  productImage: '/placeholder-promo-product.png', // Reemplazar con imagen real
+  originalPrice: 50,
+  currentPrice: 35,
+  discount: 30,
+  ctaText: 'COMPRA YA',
+  ctaLink: '/es/catalogo',
+}
 
+// Helper para construir la URL del producto
+function getProductUrl(product: Producto, locale: string): string {
+  // Si tenemos todos los datos necesarios, construir URL canónica
+  if (product.categoria && product.subcategoria_principal && product.marca && product.seo_slug) {
+    return buildProductFullUrl(
+      { nombre: typeof product.categoria === 'string' ? product.categoria : product.categoria.nombre },
+      { nombre: product.subcategoria_principal.nombre },
+      { nombre: product.marca.nombre },
+      product.seo_slug,
+      locale
+    )
+  }
+  
+  // Fallback: URL con seo_slug
+  if (product.seo_slug) {
+    return `/${locale}/producto/${product.seo_slug}`
+  }
+  
+  // Último fallback
+  return `/${locale}/catalogo`
+}
+
+// Interfaz para el componente de Slider
+interface ProductSliderProps {
+  products: Producto[]
+  locale: string
+  title?: string
+  subtitle?: string
+  badgeText?: string
+  badgeColor?: string
+  bgColor?: string
+  maxProducts?: number
+}
+
+// Componente de Slider reutilizable para productos
+function FeaturedProductsSlider({ 
+  products, 
+  locale, 
+  title = "Productos Destacados",
+  subtitle = "Los favoritos de nuestros clientes",
+  badgeText = "Destacado",
+  badgeColor = "bg-inxora-blue",
+  bgColor = "bg-white dark:bg-slate-900",
+  maxProducts = 20
+}: ProductSliderProps) {
+  const sliderRef = useRef<HTMLDivElement>(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  
+  // Duplicamos los productos para crear efecto infinito
+  const limitedProducts = products.slice(0, maxProducts)
+  const displayProducts = limitedProducts.length > 0 ? [...limitedProducts, ...limitedProducts] : []
+  const realProductsCount = limitedProducts.length
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (sliderRef.current && realProductsCount > 0) {
+      const cardWidth = sliderRef.current.querySelector('.product-card')?.clientWidth || 300
+      const gap = 24
+      const scrollAmount = cardWidth + gap
+      
+      if (direction === 'right') {
+        const newIndex = currentIndex + 1
+        if (newIndex >= realProductsCount) {
+          // Llegamos al final, saltar al inicio sin animación
+          sliderRef.current.scrollTo({ left: 0, behavior: 'auto' })
+          setCurrentIndex(0)
+          // Luego hacer scroll suave al segundo
+          setTimeout(() => {
+            sliderRef.current?.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+            setCurrentIndex(1)
+          }, 50)
+        } else {
+          sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+          setCurrentIndex(newIndex)
+        }
+      } else {
+        const newIndex = currentIndex - 1
+        if (newIndex < 0) {
+          // Llegamos al inicio, saltar al final sin animación
+          const maxScroll = (realProductsCount - 1) * scrollAmount
+          sliderRef.current.scrollTo({ left: maxScroll, behavior: 'auto' })
+          setCurrentIndex(realProductsCount - 1)
+        } else {
+          sliderRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+          setCurrentIndex(newIndex)
+        }
+      }
+    }
+  }
 
   return (
+    <section className={`py-12 sm:py-16 lg:py-20 ${bgColor}`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header de la sección */}
+        <div className="flex items-center justify-between mb-8 sm:mb-10">
+          <div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-inxora-dark-blue dark:text-white">
+              {title}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
+              {subtitle}
+            </p>
+          </div>
+          
+          {/* Controles del slider - siempre activos para infinito */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => scroll('left')}
+              className="p-2 sm:p-3 rounded-full border-2 border-inxora-blue text-inxora-blue hover:bg-inxora-blue hover:text-white transition-all"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+            <button
+              onClick={() => scroll('right')}
+              className="p-2 sm:p-3 rounded-full border-2 border-inxora-blue text-inxora-blue hover:bg-inxora-blue hover:text-white transition-all"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Slider de productos - infinito */}
+        <div className="relative overflow-hidden">
+          <div 
+            ref={sliderRef}
+            className="flex gap-6 overflow-x-auto scrollbar-hide pb-4"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            {displayProducts.length > 0 ? (
+              displayProducts.map((product, index) => (
+                <div 
+                  key={`${product.sku}-${index}`} 
+                  className="product-card flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]"
+                >
+                  <Link 
+                    href={getProductUrl(product, locale)}
+                    className="block bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 group hover:-translate-y-1"
+                  >
+                    {/* Imagen del producto */}
+                    <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 p-4">
+                      {product.imagen_principal_url ? (
+                        <Image
+                          src={product.imagen_principal_url}
+                          alt={product.nombre}
+                          fill
+                          className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-6xl">📦</span>
+                        </div>
+                      )}
+                      
+                      {/* Badge dinámico */}
+                      <div className={`absolute top-3 left-3 ${badgeColor} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}>
+                        {badgeText}
+                      </div>
+                    </div>
+                    
+                    {/* Información del producto */}
+                    <div className="p-5">
+                      {/* Categoría */}
+                      <p className="text-xs text-inxora-blue font-medium uppercase tracking-wide mb-2">
+                        {typeof product.categoria === 'string' ? product.categoria : (product.categoria?.nombre || 'Producto')}
+                      </p>
+                      
+                      {/* Nombre */}
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white line-clamp-2 mb-3 min-h-[3rem] group-hover:text-inxora-blue transition-colors">
+                        {product.nombre}
+                      </h3>
+                      
+                      {/* SKU */}
+                      <p className="text-xs text-gray-400 mb-3">
+                        SKU: {product.sku_producto || product.sku}
+                      </p>
+                      
+                      {/* Precio - usando precio_venta del producto (costo_venta_con_igv mapeado) */}
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-2xl sm:text-3xl font-bold text-inxora-dark-blue dark:text-white">
+                            S/{product.precio_venta?.toFixed(2) || product.precios?.[0]?.precio_venta?.toFixed(2) || '0.00'}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Inc. IGV
+                          </p>
+                        </div>
+                        
+                        {/* Botón */}
+                        <div className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-xl transition-colors group-hover:scale-110">
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))
+            ) : (
+              // Placeholders
+              Array.from({ length: 5 }).map((_, index) => (
+                <div 
+                  key={index} 
+                  className="product-card flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]"
+                >
+                  <div className="bg-gray-100 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-pulse">
+                    <div className="aspect-square bg-gray-200 dark:bg-slate-700" />
+                    <div className="p-5 space-y-3">
+                      <div className="h-3 bg-gray-300 dark:bg-slate-600 rounded w-1/3" />
+                      <div className="h-5 bg-gray-300 dark:bg-slate-600 rounded w-full" />
+                      <div className="h-5 bg-gray-300 dark:bg-slate-600 rounded w-2/3" />
+                      <div className="h-8 bg-gray-300 dark:bg-slate-600 rounded w-1/2 mt-4" />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Ver todos los productos */}
+        <div className="mt-10 text-center">
+          <Link 
+            href={`/${locale}/catalogo`}
+            className="inline-flex items-center gap-2 bg-inxora-dark-blue hover:bg-inxora-blue text-white font-semibold py-3 px-8 rounded-xl transition-colors shadow-lg hover:shadow-xl"
+          >
+            Ver todos los productos
+            <ChevronRight className="w-5 h-5" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export default function HomeClient({ locale, featuredProducts = [], newProducts = [], categories = [] }: HomeClientProps) {
+  return (
     <div className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="relative flex min-h-[60vh] items-center justify-center py-20 overflow-hidden">
+      {/* Hero Section - Diseño Dual */}
+      <section className="relative min-h-[500px] lg:min-h-[600px] overflow-hidden">
+        {/* Fondo con imagen */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg"
@@ -32,48 +276,212 @@ export default function HomeClient({ locale, featuredProducts = [], categories =
             className="object-cover"
             sizes="100vw"
             quality={85}
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/10"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"></div>
         </div>
-        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-            Suministros Industriales de Calidad
-          </h1>
-          <p className="mt-6 max-w-2xl mx-auto text-lg leading-8 text-gray-200">
-            Encuentra todo lo que necesitas para tu negocio en un solo lugar. Explora nuestra amplia gama de productos y aprovecha nuestras ofertas exclusivas.
-          </p>
-          <div className="mt-10">
-            <Link 
-              href={`/${locale}/catalogo`}
-              className="inline-block rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105"
-            >
-              Explorar Catálogo
-            </Link>
+
+        {/* Contenido del Hero */}
+        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 h-full">
+          {/* Barra de Beneficios - Superpuesta en el Hero */}
+          <div className="flex flex-wrap items-center gap-4 lg:gap-8 pt-6 lg:pt-8 text-white">
+            {/* Productos de Calidad */}
+            <div className="flex items-center gap-2 lg:gap-3">
+              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-white/50 flex items-center justify-center">
+                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="text-xs lg:text-sm font-medium">Productos de Calidad</span>
+            </div>
+            
+            {/* Envíos a Todo el Perú - Camión */}
+            <div className="flex items-center gap-2 lg:gap-3">
+              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-white/50 flex items-center justify-center">
+                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 17h.01M16 17h.01M9 11h6M3 13h2l.4-2M7 13l1.6-8H20l1 5h-1M7 13h13m-5 0v4m-8-4v4m0 0a2 2 0 104 0m4 0a2 2 0 104 0" />
+                </svg>
+              </div>
+              <span className="text-xs lg:text-sm font-medium">Envíos a Todo el Perú</span>
+            </div>
+            
+            {/* Asesoría Profesional - Persona con audífonos (headset) */}
+            <div className="flex items-center gap-2 lg:gap-3">
+              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-white/50 flex items-center justify-center">
+                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 18v-6a9 9 0 0118 0v6M3 18a3 3 0 003 3h1a1 1 0 001-1v-4a1 1 0 00-1-1H4a1 1 0 00-1 1v2zM21 18a3 3 0 01-3 3h-1a1 1 0 01-1-1v-4a1 1 0 011-1h3a1 1 0 011 1v2z" />
+                </svg>
+              </div>
+              <span className="text-xs lg:text-sm font-medium">Asesoría Profesional</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 py-8 lg:py-16">
+            
+            {/* Lado Izquierdo - Texto Principal */}
+            <div className="flex-1 text-white max-w-xl">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight leading-tight">
+                Suministros Industriales de Calidad
+              </h1>
+              <p className="mt-4 lg:mt-6 text-base sm:text-lg leading-7 text-gray-200">
+                Todo lo necesitas para tu negocio en un solo lugar. Explora nuestra amplia gama de productos y aprovecha nuestras ofertas exclusivas.
+              </p>
+              <div className="mt-6 lg:mt-10">
+                <Link 
+                  href={`/${locale}/catalogo`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-6 sm:px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                >
+                  Explorar Catálogo
+                  <ChevronRight className="w-5 h-5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Lado Derecho - Banner Promocional */}
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden max-w-sm mx-auto lg:mx-0">
+                {/* Header del Banner */}
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 text-center">
+                  <span className="text-sm font-bold tracking-wider">OFERTA ESPECIAL</span>
+                </div>
+                
+                {/* Contenido del Banner */}
+                <div className="p-4 sm:p-6">
+                  {/* Badge de descuento */}
+                  <div className="absolute top-12 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                    {PROMO_BANNER.discount}% DTO
+                  </div>
+                  
+                  {/* Imagen del producto promocional */}
+                  <div className="relative h-40 sm:h-48 mb-4 bg-gray-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                    {/* Placeholder - Reemplazar con imagen real */}
+                    <div className="text-center text-gray-400 dark:text-gray-500">
+                      <div className="w-24 h-24 mx-auto bg-gray-200 dark:bg-slate-600 rounded-lg flex items-center justify-center mb-2">
+                        <span className="text-4xl">📦</span>
+                      </div>
+                      <p className="text-xs">Imagen promocional</p>
+                    </div>
+                  </div>
+                  
+                  {/* Texto promocional */}
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    ¡Aprovecha nuestras ofertas especiales para clientes y distribuidores!
+                  </p>
+                  
+                  {/* Precios */}
+                  <div className="flex items-baseline gap-3 mb-4">
+                    <span className="text-gray-400 line-through text-sm">Antes: S/{PROMO_BANNER.originalPrice}</span>
+                    <span className="text-3xl font-bold text-inxora-blue">S/{PROMO_BANNER.currentPrice}</span>
+                  </div>
+                  
+                  {/* CTA */}
+                  <Link 
+                    href={`/${locale}/catalogo`}
+                    className="flex items-center justify-center gap-2 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    COMPRA YA
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Products Section */}
-      <section className="py-16 sm:py-24">
+      {/* Barra de Categorías Rápidas - Slider Infinito */}
+      <section className="bg-gray-100 dark:bg-slate-800 py-4 lg:py-5 border-y border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-12 text-center">
-            Productos Destacados
-          </h2>
-          {featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.sku} product={product} />
-              ))}
+          <div className="relative">
+            {/* Slider con animación CSS */}
+            <div className="overflow-hidden">
+              <div 
+                className="flex items-center gap-2 sm:gap-4 animate-scroll-x"
+                style={{
+                  animationDuration: `${Math.max(categories.length * 4, 20)}s`,
+                }}
+              >
+                {/* Duplicamos las categorías para crear el efecto infinito */}
+                {[...categories, ...categories].map((category, index) => (
+                  <React.Fragment key={`${category.id}-${index}`}>
+                    {/* Categoría con icono y texto */}
+                    <Link
+                      href={`/${locale}/${category.nombre.toLowerCase().replace(/\s+/g, '-').replace(/[áàäâ]/g, 'a').replace(/[éèëê]/g, 'e').replace(/[íìïî]/g, 'i').replace(/[óòöô]/g, 'o').replace(/[úùüû]/g, 'u').replace(/ñ/g, 'n').replace(/[^a-z0-9-]/g, '')}`}
+                      className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors group flex-shrink-0"
+                    >
+                      {/* Imagen de la categoría */}
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 flex-shrink-0">
+                        {category.logo_url ? (
+                          <Image
+                            src={category.logo_url}
+                            alt={category.nombre}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 dark:bg-slate-600 rounded flex items-center justify-center">
+                            <span className="text-lg">📦</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Nombre */}
+                      <span className="text-xs sm:text-sm lg:text-base font-semibold text-inxora-dark-blue dark:text-white whitespace-nowrap group-hover:text-inxora-blue transition-colors">
+                        {category.nombre}
+                      </span>
+                    </Link>
+                    
+                    {/* Separador ">" */}
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">No hay productos destacados disponibles</p>
-            </div>
-          )}
+            
+            {/* Gradientes en los bordes para efecto de desvanecimiento */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-gray-100 dark:from-slate-800 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-gray-100 dark:from-slate-800 to-transparent z-10 pointer-events-none" />
+          </div>
         </div>
+        
+        {/* CSS para la animación del slider */}
+        <style jsx>{`
+          @keyframes scroll-x {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          .animate-scroll-x {
+            animation: scroll-x linear infinite;
+          }
+          .animate-scroll-x:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
       </section>
+
+      {/* Productos Destacados Section */}
+      <FeaturedProductsSlider 
+        products={featuredProducts} 
+        locale={locale} 
+        title="Productos Destacados"
+        subtitle="Los favoritos de nuestros clientes"
+        badgeText="Destacado"
+        badgeColor="bg-inxora-blue"
+      />
+
+      {/* Productos Nuevos Section */}
+      <FeaturedProductsSlider 
+        products={newProducts} 
+        locale={locale} 
+        title="Nuevos Productos"
+        subtitle="Lo más reciente en nuestro catálogo"
+        badgeText="Nuevo"
+        badgeColor="bg-green-500"
+        bgColor="bg-gray-50 dark:bg-slate-800"
+      />
 
       {/* Main Categories Section */}
       <section className="bg-background-light dark:bg-background-dark py-16 sm:py-24">

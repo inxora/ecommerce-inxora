@@ -68,8 +68,19 @@ export default async function HomePage({ params }: PageProps) {
   
   // ✅ OPTIMIZACIÓN CRÍTICA: Usar Promise.allSettled con timeout para evitar bloqueos
   // Si una petición tarda más de 5 segundos, continuar sin ella
-  const productosPromise = Promise.race([
-    ProductsService.getProductosRecientes(4),
+  
+  // Productos destacados (20 productos para el slider principal)
+  const productosDestacadosPromise = Promise.race([
+    ProductsService.getProductosRecientes(20),
+    new Promise<{ products: any[], total: number }>((resolve) => 
+      setTimeout(() => resolve({ products: [], total: 0 }), 5000)
+    )
+  ])
+  
+  // Productos nuevos (10 productos más recientes por fecha_creacion)
+  // Nota: getProductosRecientes ordena por fecha_creacion DESC en el frontend
+  const productosNuevosPromise = Promise.race([
+    ProductsService.getProductosRecientes(10),
     new Promise<{ products: any[], total: number }>((resolve) => 
       setTimeout(() => resolve({ products: [], total: 0 }), 5000)
     )
@@ -83,14 +94,19 @@ export default async function HomePage({ params }: PageProps) {
   ])
   
   // Ejecutar en paralelo con manejo de errores
-  const [productosResult, categoriasResult] = await Promise.allSettled([
-    productosPromise,
+  const [productosDestacadosResult, productosNuevosResult, categoriasResult] = await Promise.allSettled([
+    productosDestacadosPromise,
+    productosNuevosPromise,
     categoriasPromise
   ])
   
   // Procesar resultados con manejo de errores
-  const featuredProducts = productosResult.status === 'fulfilled' 
-    ? (productosResult.value?.products || [])
+  const featuredProducts = productosDestacadosResult.status === 'fulfilled' 
+    ? (productosDestacadosResult.value?.products || [])
+    : []
+  
+  const newProducts = productosNuevosResult.status === 'fulfilled' 
+    ? (productosNuevosResult.value?.products || [])
     : []
   
   const categoriesData = categoriasResult.status === 'fulfilled'
@@ -107,8 +123,11 @@ export default async function HomePage({ params }: PageProps) {
   
   // Log de errores si ocurrieron (solo en desarrollo)
   if (process.env.NODE_ENV === 'development') {
-    if (productosResult.status === 'rejected') {
-      console.warn('[HomePage] Error loading featured products:', productosResult.reason)
+    if (productosDestacadosResult.status === 'rejected') {
+      console.warn('[HomePage] Error loading featured products:', productosDestacadosResult.reason)
+    }
+    if (productosNuevosResult.status === 'rejected') {
+      console.warn('[HomePage] Error loading new products:', productosNuevosResult.reason)
     }
     if (categoriasResult.status === 'rejected') {
       console.warn('[HomePage] Error loading categories:', categoriasResult.reason)
@@ -141,6 +160,7 @@ export default async function HomePage({ params }: PageProps) {
       <HomeClient 
         locale={locale} 
         featuredProducts={featuredProducts}
+        newProducts={newProducts}
         categories={filteredCategories}
       />
     </>

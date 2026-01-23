@@ -19,7 +19,7 @@ GET /api/test/productos/ecommerce
 | `id_subcategoria` | `number` | No | **NUEVO** - Filtra por ID de subcategoría |
 | `categoria_id` | `number` o `number[]` | No | Filtra por ID de categoría (legacy) |
 | `id_marca` | `number` o `number[]` | No | Filtra por ID de marca |
-| `buscar` | `string` | No | Búsqueda por nombre, SKU o slug |
+| `search` | `string` | No | Búsqueda por nombre, SKU o slug |
 | `activo` | `boolean` | No | Filtrar por estado activo |
 | `visible_web` | `boolean` | No | Filtrar productos visibles en web |
 | `precio_min` | `number` | No | Precio mínimo |

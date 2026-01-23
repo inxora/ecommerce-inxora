@@ -336,7 +336,7 @@ export const ProductsService = {
         }
       }
       if (params?.buscar) {
-        queryParams.buscar = params.buscar
+        queryParams.buscar = params.buscar // El backend usa alias="buscar" en FastAPI
       }
       if (params?.activo !== undefined) {
         queryParams.activo = params.activo
@@ -439,19 +439,22 @@ export const ProductsService = {
         console.log('[ProductsService] getProductosRecientes: Iniciando, limit:', limit);
       }
       
-      // Optimización: Obtener solo un poco más de productos de los necesarios
-      // Reducir de limit * 5 a limit * 2 para menor consumo de datos
-      const fetchLimit = Math.max(limit * 2, 10) // Mínimo 10 productos, máximo limit * 2
-      
+      // ✅ IMPORTANTE: Pedir exactamente los productos que necesitamos con ordenamiento del backend
+      // El parámetro 'ordenar: nuevo' le dice al backend que ordene por fecha_creacion DESC
       const response = await ProductsService.getProductos({
         page: 1,
-        limit: fetchLimit, // Reducido de limit * 5 a limit * 2
+        limit: limit, // Pedir exactamente la cantidad necesaria
         activo: true,
-        visible_web: true, // Filtrar visible_web desde el inicio
+        visible_web: true,
+        ordenar: 'nuevo', // ✅ ORDER BY fecha_creacion DESC (según API_SPECIFICATION_PRODUCTOS.md)
       })
       
       if (shouldLog) {
         console.log('[ProductsService] getProductosRecientes: Productos obtenidos:', response.products.length);
+        if (response.products.length > 0) {
+          console.log('[ProductsService] getProductosRecientes: Primer producto SKU:', response.products[0].sku);
+          console.log('[ProductsService] getProductosRecientes: Último producto SKU:', response.products[response.products.length - 1].sku);
+        }
       }
       
       if (!response.products || response.products.length === 0) {
@@ -464,32 +467,28 @@ export const ProductsService = {
         }
       }
       
+      // ✅ FALLBACK: Si el backend no soporta 'ordenar', ordenamos en el frontend
       // Ordenar productos por fecha_creacion descendente (más recientes primero)
-      // Si hay fecha_creacion válida, usar esa; si no, usar SKU descendente como fallback
       const productosOrdenados = [...response.products].sort((a, b) => {
         // Intentar ordenar por fecha_creacion si está disponible y es válida
         if (a.fecha_creacion && b.fecha_creacion) {
           const fechaA = new Date(a.fecha_creacion).getTime()
           const fechaB = new Date(b.fecha_creacion).getTime()
-          // Si las fechas son válidas (no son NaN), usarlas
           if (!isNaN(fechaA) && !isNaN(fechaB)) {
             return fechaB - fechaA // Descendente (más reciente primero)
           }
         }
-        // Fallback: ordenar por SKU descendente (SKUs más altos suelen ser más recientes)
+        // Fallback: ordenar por SKU descendente (SKUs más altos = más recientes)
         return b.sku - a.sku
       })
       
-      // Limitar al número solicitado
-      const productosLimitados = productosOrdenados.slice(0, limit)
-      
       if (shouldLog) {
-        console.log('[ProductsService] getProductosRecientes: Productos limitados:', productosLimitados.length);
+        console.log('[ProductsService] getProductosRecientes: Productos ordenados, primer SKU:', productosOrdenados[0]?.sku);
       }
       
       return {
-        products: productosLimitados,
-        total: productosLimitados.length
+        products: productosOrdenados,
+        total: productosOrdenados.length
       }
     } catch (error) {
       console.error('[ProductsService] getProductosRecientes: Error:', error);
