@@ -168,9 +168,9 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.nombre}
             </h3>
 
-            {product.sku && (
+            {(product.sku_producto || product.sku) && (
               <p className="text-xs text-muted-foreground">
-                SKU: {product.sku}
+                SKU: {product.sku_producto || product.sku}
               </p>
             )}
 

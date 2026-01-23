@@ -46,6 +46,7 @@ export interface CategoriaProducto {
 
 export interface ProductoAPI {
   sku: number
+  sku_producto: string | null  // Nuevo campo agregado al API
   nombre: string
   cod_producto_marca: string | null
   descripcion_corta: string | null
@@ -228,7 +229,7 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
   // Producto mapeado
   return {
     sku: productoAPI.sku,
-    sku_producto: productoAPI.cod_producto_marca || String(productoAPI.sku),
+    sku_producto: productoAPI.sku_producto || productoAPI.cod_producto_marca || String(productoAPI.sku),
     cod_producto_marca: productoAPI.cod_producto_marca || '',
     nombre: productoAPI.nombre,
     descripcion_corta: productoAPI.descripcion_corta || '',

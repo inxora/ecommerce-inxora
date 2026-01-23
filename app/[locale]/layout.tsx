@@ -3,6 +3,7 @@ import { getMessages } from 'next-intl/server'
 import { CurrencyProviderWrapper } from '@/components/providers/currency-provider-wrapper'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { WhatsAppFloat } from '@/components/layout/whatsapp-float'
 import { Metadata } from 'next'
 import { CategoriesService } from '@/lib/services/categories.service'
 
@@ -114,6 +115,7 @@ export default async function LocaleLayout({
         </main>
 
         <Footer />
+        <WhatsAppFloat />
       </CurrencyProviderWrapper>
     </NextIntlClientProvider>
     )
@@ -128,6 +130,7 @@ export default async function LocaleLayout({
             <Header categories={categories} />
             <main>{children}</main>
             <Footer />
+            <WhatsAppFloat />
           </CurrencyProviderWrapper>
         </NextIntlClientProvider>
       )
@@ -139,6 +142,7 @@ export default async function LocaleLayout({
           <Header categories={categories} />
           <main>{children}</main>
           <Footer />
+          <WhatsAppFloat />
         </CurrencyProviderWrapper>
       )
     }

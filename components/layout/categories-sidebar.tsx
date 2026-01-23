@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { ChevronRight, Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -11,7 +10,6 @@ import { CategoriesService, MarcaNavegacion, SubcategoriaNavegacion, CategoriaNa
 import { buildCategoryUrlFromObject, buildCategoryUrl, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import { createPortal } from 'react-dom'
 
 // Componente para mostrar el logo de la marca con manejo de errores
 function BrandLogo({ brand }: { brand: MarcaNavegacion }) {
@@ -84,7 +82,6 @@ interface CategoriesSidebarProps {
 }
 
 export function CategoriesSidebar({ locale, trigger, categories: serverCategories = [] }: CategoriesSidebarProps) {
-  const router = useRouter()
   const [categories, setCategories] = useState<CategoriaNavegacion[]>(serverCategories)
   const [loadingCategories, setLoadingCategories] = useState(serverCategories.length === 0)
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null)
@@ -391,24 +388,9 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
 
   // Función para cerrar el sheet
   const closeSheet = () => {
-    console.log('[CategoriesSidebar] closeSheet called')
     setHoveredCategory(null)
     setExpandedCategoryMobile(null)
     setIsSheetOpen(false)
-  }
-
-  // Función para navegar y cerrar el sheet
-  const handleNavigate = (url: string) => {
-    console.log('[CategoriesSidebar] handleNavigate called with URL:', url)
-    console.log('[CategoriesSidebar] Current state:', { isSheetOpen, isDesktop, hoveredCategory })
-    
-    closeSheet()
-    
-    // Pequeño delay para que la animación de cierre se vea suave
-    setTimeout(() => {
-      console.log('[CategoriesSidebar] Navigating to:', url)
-      router.push(url)
-    }, 100)
   }
 
   return (
@@ -586,106 +568,80 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
         </SheetContent>
       </Sheet>
 
-      {/* Panel de marcas renderizado como portal - SOLO EN DESKTOP */}
-      {hoveredCategory && isSheetOpen && isDesktop && typeof window !== 'undefined' && createPortal(
-        <div key={`brand-panel-${hoveredCategory}-${panelKey}`}>
-          {/* Zona de conexión REMOVIDA temporalmente para testing - podría estar bloqueando eventos */}
-
-          <div
-            ref={brandsPanelRef}
-            data-brand-panel
-            className="fixed top-0 h-screen bg-white dark:bg-slate-900 shadow-2xl border-l border-gray-200 dark:border-gray-700 overflow-y-auto"
-            style={{
-              width: '320px',
-              left: `${panelLeft}px`,
-              zIndex: 99999, // Z-index muy alto
-              pointerEvents: 'auto',
-              cursor: 'auto',
-              opacity: hoveredCategory ? 1 : 0,
-              visibility: hoveredCategory ? 'visible' : 'hidden',
-              transition: 'opacity 0.2s ease-in-out, left 0.1s ease-out',
-              transform: 'translateZ(0)',
-              isolation: 'isolate' // Crear nuevo contexto de stacking
-            }}
-            onClick={(e) => {
-              console.log('[CategoriesSidebar] Panel container clicked!', e.target)
-            }}
-            onMouseEnter={handleBrandsPanelEnter}
-            onMouseLeave={(e) => {
-              // No cerrar si se está haciendo clic en algún elemento del panel
-              if (isClicking) {
-                return
-              }
-
-              // Verificar si el elemento relacionado es clickeable o está dentro del panel
-              const relatedTarget = e.relatedTarget
-              // Verificar que relatedTarget sea un Element (tiene el método closest)
-              if (relatedTarget && relatedTarget instanceof Element && (
-                relatedTarget.closest('[data-brand-panel]') ||
-                relatedTarget.closest('a') ||
-                relatedTarget.closest('button')
-              )) {
-                return
-              }
-
-              handleBrandsPanelLeave()
-            }}
-          >
-            <div className="p-6">
-              {/* Header del panel de marcas */}
-              <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-bold text-inxora-dark-blue dark:text-white mb-2">
-                  {hoveredCategoryData?.nombre}
-                </h3>
-                <button
+      {/* Panel de marcas - SOLO EN DESKTOP - Renderizado como componente hermano, NO como portal */}
+      {hoveredCategory && isSheetOpen && isDesktop && (
+        <div
+          ref={brandsPanelRef}
+          data-brand-panel
+          className="fixed top-0 h-screen bg-white dark:bg-slate-900 shadow-2xl border-l border-gray-200 dark:border-gray-700 overflow-y-auto"
+          style={{
+            width: '320px',
+            left: `${panelLeft}px`,
+            zIndex: 99999,
+            pointerEvents: 'auto',
+          }}
+          onMouseEnter={handleBrandsPanelEnter}
+          onMouseLeave={(e) => {
+            if (isClicking) return
+            const relatedTarget = e.relatedTarget
+            if (relatedTarget && relatedTarget instanceof Element && (
+              relatedTarget.closest('[data-brand-panel]') ||
+              relatedTarget.closest('a') ||
+              relatedTarget.closest('button')
+            )) {
+              return
+            }
+            handleBrandsPanelLeave()
+          }}
+        >
+          <div className="p-6">
+            {/* Header del panel de marcas */}
+            <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-inxora-dark-blue dark:text-white mb-2">
+                {hoveredCategoryData?.nombre}
+              </h3>
+              {hoveredCategoryData && (
+                <Link
+                  href={buildCategoryUrlFromObject(hoveredCategoryData, locale)}
                   onClick={(e) => {
-                    console.log('[CategoriesSidebar] "Ver todo" clicked', { hoveredCategoryData, locale })
-                    e.preventDefault()
                     e.stopPropagation()
-                    if (hoveredCategoryData) {
-                      const url = buildCategoryUrlFromObject(hoveredCategoryData, locale)
-                      console.log('[CategoriesSidebar] Built URL:', url)
-                      handleNavigate(url)
-                    }
+                    closeSheet()
                   }}
-                  className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1 cursor-pointer"
+                  className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1"
                 >
                   Ver todo
                   <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+                </Link>
+              )}
+            </div>
 
-              {/* Lista de subcategorías con marcas */}
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-sm text-muted-foreground">Cargando...</div>
-                </div>
-              ) : currentSubcategorias.length > 0 ? (
-                <div className="space-y-6">
-                  {currentSubcategorias.map((subcategoria) => (
-                    <div key={subcategoria.id} className="space-y-3">
-                      {/* Título de la subcategoría */}
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
-                        {subcategoria.nombre}
-                      </h4>
-                      
-                      {/* Marcas de la subcategoría */}
-                      {subcategoria.marcas && subcategoria.marcas.length > 0 ? (
-                        <div className="space-y-2">
-                          {/* Header de la subcategoría con link */}
-                          <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <button
+            {/* Lista de subcategorías con marcas */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-sm text-muted-foreground">Cargando...</div>
+              </div>
+            ) : currentSubcategorias.length > 0 ? (
+              <div className="space-y-6">
+                {currentSubcategorias.map((subcategoria) => (
+                  <div key={subcategoria.id} className="space-y-3">
+                    {/* Título de la subcategoría */}
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                      {subcategoria.nombre}
+                    </h4>
+                    
+                    {/* Marcas de la subcategoría */}
+                    {subcategoria.marcas && subcategoria.marcas.length > 0 ? (
+                      <div className="space-y-2">
+                        {/* Header de la subcategoría con link */}
+                        <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                          {hoveredCategoryData && (
+                            <Link
+                              href={buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)}
                               onClick={(e) => {
-                                console.log('[CategoriesSidebar] Subcategoria clicked:', subcategoria.nombre)
-                                e.preventDefault()
                                 e.stopPropagation()
-                                if (hoveredCategoryData) {
-                                  const url = buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)
-                                  console.log('[CategoriesSidebar] Subcategoria URL:', url)
-                                  handleNavigate(url)
-                                }
+                                closeSheet()
                               }}
-                              className="flex items-center justify-between w-full hover:text-[#139ED4] transition-colors cursor-pointer"
+                              className="flex items-center justify-between w-full hover:text-[#139ED4] transition-colors"
                             >
                               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {subcategoria.nombre}
@@ -693,51 +649,46 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 Ver productos →
                               </span>
-                            </button>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {subcategoria.marcas.slice(0, 6).map((brand) => (
-                                <button
-                                  key={brand.id}
-                                  onClick={(e) => {
-                                    console.log('[CategoriesSidebar] Brand clicked:', brand.nombre)
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    if (hoveredCategoryData) {
-                                      const url = buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)
-                                      console.log('[CategoriesSidebar] Brand URL:', url)
-                                      handleNavigate(url)
-                                    }
-                                  }}
-                                  className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                                >
-                                  <BrandLogoDesktop brand={brand} />
-                                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                                    {brand.nombre}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
+                            </Link>
+                          )}
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {hoveredCategoryData && subcategoria.marcas.slice(0, 6).map((brand) => (
+                              <Link
+                                key={brand.id}
+                                href={buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  closeSheet()
+                                }}
+                                className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors"
+                              >
+                                <BrandLogoDesktop brand={brand} />
+                                <span className="text-xs text-gray-600 dark:text-gray-400">
+                                  {brand.nombre}
+                                </span>
+                              </Link>
+                            ))}
                           </div>
-                          </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">
-                          No hay marcas disponibles
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-sm text-muted-foreground">
-                    No hay subcategorías disponibles para esta categoría
-                  </p>
-                </div>
-              )}
-            </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        No hay marcas disponibles
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-sm text-muted-foreground">
+                  No hay subcategorías disponibles para esta categoría
+                </p>
+              </div>
+            )}
           </div>
         </div>
-        , document.body)}
+      )}
     </>
   )
 }

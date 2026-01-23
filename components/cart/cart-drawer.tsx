@@ -110,7 +110,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
                       {item.nombre}
                     </h4>
                     <p className="text-xs text-muted-foreground mb-2">
-                      SKU: {item.sku}
+                      SKU: {item.sku_producto || item.sku}
                     </p>
                     <p className="font-semibold text-inxora-blue">
                       {formatPrice(item.precio)}
