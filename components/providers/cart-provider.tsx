@@ -5,8 +5,14 @@ import { Product } from '@/lib/supabase'
 import { cartUtils } from '@/lib/utils'
 import { useToast } from '@/lib/hooks/use-toast'
 
+/** Minimal product shape used in cart (persisted in storage and in-memory). Accepts full Product when adding. */
+export type CartProduct = Pick<Product, 'sku' | 'nombre' | 'imagen_principal_url' | 'seo_slug'> & {
+  precio_venta?: number
+  sku_producto?: string
+}
+
 type CartItemInternal = {
-  product: Product & { precio_venta?: number; sku_producto?: string }
+  product: CartProduct
   quantity: number
   selectedSize?: string
 }
