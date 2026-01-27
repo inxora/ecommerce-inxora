@@ -55,6 +55,7 @@ export function Header({ categories = [] }: HeaderProps) {
             height={68}
             className="h-11 sm:h-12 md:h-14 lg:h-16 w-auto object-contain"
             priority
+            unoptimized
           />
         </Link>
 
