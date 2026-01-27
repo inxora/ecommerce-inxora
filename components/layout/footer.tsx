@@ -53,7 +53,7 @@ export function Footer() {
           <div className="lg:col-span-1 space-y-4">
             <div className="flex items-center space-x-2">
               <Image 
-                src="/LOGO-35.png" 
+                src="/LOGO-30.png" 
                 alt="INXORA" 
                 width={120} 
                 height={40} 

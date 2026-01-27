@@ -15,23 +15,23 @@ export function OrderSummary() {
       <h3 className="text-lg font-semibold mb-4">Resumen del pedido</h3>
       
       <div className="space-y-3">
-        {items.map((item) => (
-          <div key={`${item.product.id}-${item.selectedSize || 'no-size'}`} className="flex justify-between">
-            <div className="flex-1">
-              <p className="font-medium">{item.product.nombre}</p>
-              {item.selectedSize && (
-                <p className="text-sm text-gray-500">Talla: {item.selectedSize}</p>
-              )}
-              <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+        {items.map((item) => {
+          const precio = (item.product as { precio_venta?: number }).precio_venta ?? 0
+          return (
+            <div key={`${item.product.sku}-${item.selectedSize || 'no-size'}`} className="flex justify-between">
+              <div className="flex-1">
+                <p className="font-medium">{item.product.nombre}</p>
+                {item.selectedSize && (
+                  <p className="text-sm text-gray-500">Talla: {item.selectedSize}</p>
+                )}
+                <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+              </div>
+              <p className="font-medium">
+                {precio > 0 ? formatPrice(precio * item.quantity) : 'Consultar precio'}
+              </p>
             </div>
-            <p className="font-medium">
-              {item.product.precios_por_moneda?.soles 
-                ? `${item.product.precios_por_moneda.soles.moneda.simbolo} ${(item.product.precios_por_moneda.soles.precio_venta * item.quantity).toFixed(2)}`
-                : 'Consultar precio'
-              }
-            </p>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="border-t pt-4 mt-4 space-y-2">

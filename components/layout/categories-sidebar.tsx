@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ChevronRight, Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { buildBrandLogoUrl } from '@/lib/supabase'
 import { CategoriesService, MarcaNavegacion, SubcategoriaNavegacion, CategoriaNavegacion } from '@/lib/services/categories.service'
-import { buildCategoryUrlFromObject, buildCategoryUrl, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
+import { buildCategoryUrlFromObject, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
@@ -82,12 +83,11 @@ interface CategoriesSidebarProps {
 }
 
 export function CategoriesSidebar({ locale, trigger, categories: serverCategories = [] }: CategoriesSidebarProps) {
+  const pathname = usePathname()
   const [categories, setCategories] = useState<CategoriaNavegacion[]>(serverCategories)
   const [loadingCategories, setLoadingCategories] = useState(serverCategories.length === 0)
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null)
   const [expandedCategoryMobile, setExpandedCategoryMobile] = useState<number | null>(null)
-  const [categorySubcategorias, setCategorySubcategorias] = useState<Record<number, SubcategoriaNavegacion[]>>({})
-  const [loadingSubcategorias, setLoadingSubcategorias] = useState<Record<number, boolean>>({})
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isMouseOverBrandsPanel, setIsMouseOverBrandsPanel] = useState(false)
   const [isClicking, setIsClicking] = useState(false)
@@ -97,6 +97,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const brandsPanelRef = useRef<HTMLDivElement>(null)
   const sheetContentRef = useRef<HTMLDivElement | null>(null)
+  const panelPointerDownRef = useRef(false)
 
   // Cargar categorías desde el endpoint solo si no se proporcionaron desde el servidor
   useEffect(() => {
@@ -135,6 +136,14 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     }
   }, [isSheetOpen])
 
+  // Estilo Falabella: cerrar el sheet cuando la navegación termina (pathname cambia)
+  useEffect(() => {
+    if (pathname) {
+      panelPointerDownRef.current = false
+      setIsSheetOpen(false)
+    }
+  }, [pathname])
+
   // Detectar tamaÃ±o de pantalla para mostrar panel solo en desktop
   useEffect(() => {
     const checkIsDesktop = () => {
@@ -149,23 +158,18 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     return () => window.removeEventListener('resize', checkIsDesktop)
   }, [])
 
-  // Cargar subcategorías con marcas cuando se hace hover sobre una categorÃ­a (desktop) o se expande (mobile)
+  // Subcategorías y marcas vienen del árbol (payload arbol-navegacion); no se hace fetch en hover/expand.
+
+  // Marcar "clic en panel" con listener nativo en capture (antes de Radix) para no cerrar al hacer clic en subcategorías/marcas
   useEffect(() => {
-    const categoryToLoad = isDesktop ? hoveredCategory : expandedCategoryMobile
-    
-    if (categoryToLoad && !categorySubcategorias[categoryToLoad] && !loadingSubcategorias[categoryToLoad]) {
-      setLoadingSubcategorias(prev => ({ ...prev, [categoryToLoad]: true }))
-      CategoriesService.getSubcategoriasConMarcas(categoryToLoad, 6)
-        .then((subcategorias) => {
-          setCategorySubcategorias(prev => ({ ...prev, [categoryToLoad]: subcategorias }))
-          setLoadingSubcategorias(prev => ({ ...prev, [categoryToLoad]: false }))
-        })
-        .catch((error) => {
-          console.error('Error loading subcategories:', error)
-          setLoadingSubcategorias(prev => ({ ...prev, [categoryToLoad]: false }))
-        })
+    const el = brandsPanelRef.current
+    if (!el) return
+    const onDown = () => {
+      panelPointerDownRef.current = true
     }
-  }, [hoveredCategory, expandedCategoryMobile, categorySubcategorias, loadingSubcategorias, isDesktop])
+    el.addEventListener('pointerdown', onDown, true)
+    return () => el.removeEventListener('pointerdown', onDown, true)
+  }, [hoveredCategory, isSheetOpen, isDesktop])
 
   // Limpiar paneles de marcas antiguos del DOM cuando cambia la categoría
   useEffect(() => {
@@ -267,9 +271,9 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     }
   }
 
-  const currentSubcategorias = hoveredCategory ? categorySubcategorias[hoveredCategory] || [] : []
-  const isLoading = hoveredCategory ? loadingSubcategorias[hoveredCategory] || false : false
   const hoveredCategoryData = categories.find(c => c.id === hoveredCategory)
+  const currentSubcategorias = hoveredCategoryData?.subcategorias ?? []
+  const isLoading = false
 
   // Calcular la posición del panel de marcas dinámicamente
   const calculatePanelPosition = () => {
@@ -393,9 +397,18 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     setIsSheetOpen(false)
   }
 
+  // Evitar que Radix cierre el sheet al hacer clic en el panel derecho (subcategorías/marcas)
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open && panelPointerDownRef.current) {
+      panelPointerDownRef.current = false
+      return
+    }
+    setIsSheetOpen(open)
+  }
+
   return (
     <>
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen} modal={false}>
+      <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange} modal={false}>
         <SheetTrigger asChild>
           {trigger || defaultTrigger}
         </SheetTrigger>
@@ -430,8 +443,8 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                       {categories.map((category) => {
                         const isActive = hoveredCategory === category.id
                         const isExpandedMobile = expandedCategoryMobile === category.id
-                        const categorySubcategoriasData = categorySubcategorias[category.id] || []
-                        const isLoadingData = loadingSubcategorias[category.id] || false
+                        const categorySubcategoriasData = category.subcategorias ?? []
+                        const isLoadingData = false
                         
                         return (
                           <div
@@ -460,7 +473,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                               onClick={(e) => handleCategoryClickMobile(category.id, e)}
                               className={cn(
                                 "flex items-center justify-between px-4 py-3 rounded-lg",
-                                "text-sm font-medium text-gray-700 dark:text-gray-300",
+                                "text-base font-semibold text-gray-700 dark:text-gray-300",
                                 "hover:bg-[#88D4E4]/20 hover:text-[#139ED4]",
                                 "dark:hover:bg-[#88D4E4]/10 dark:hover:text-[#88D4E4]",
                                 "transition-all duration-200",
@@ -470,7 +483,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                                 isExpandedMobile && "bg-[#88D4E4]/20 dark:bg-[#88D4E4]/10"
                               )}
                             >
-                              <span className="flex-1 truncate pr-2">{category.nombre}</span>
+                              <span className="flex-1 truncate pr-2 text-[15px] sm:text-base">{category.nombre}</span>
                               {/* En desktop: mostrar ChevronRight, en mobile: mostrar ChevronDown con rotación */}
                               <ChevronRight className={cn(
                                 "h-4 w-4 text-muted-foreground group-hover:text-[#139ED4] dark:group-hover:text-[#88D4E4] transition-all duration-200 flex-shrink-0",
@@ -558,17 +571,21 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                 </div>
             </div>
 
-            {/* Footer con contador */}
-            <div className="px-6 py-4 border-t bg-muted/50 flex-shrink-0">
-              <p className="text-xs text-muted-foreground text-center">
-                {categories?.length || 0} {(categories?.length || 0) === 1 ? 'categorÃ­a' : 'categorÃ­as'}
-              </p>
+            {/* Footer - Ver catálogo completo */}
+            <div className="px-4 py-4 border-t bg-muted/50 flex-shrink-0">
+              <Link
+                href={`/${locale}/catalogo`}
+                className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 text-white font-semibold text-sm transition-colors"
+              >
+                Ver catálogo completo
+                <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* Panel de marcas - SOLO EN DESKTOP - Renderizado como componente hermano, NO como portal */}
+      {/* Panel de marcas - SOLO EN DESKTOP - clic aquí no debe cerrar el sheet (estilo Falabella) */}
       {hoveredCategory && isSheetOpen && isDesktop && (
         <div
           ref={brandsPanelRef}
@@ -603,10 +620,6 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
               {hoveredCategoryData && (
                 <Link
                   href={buildCategoryUrlFromObject(hoveredCategoryData, locale)}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    closeSheet()
-                  }}
                   className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1"
                 >
                   Ver todo
@@ -615,12 +628,8 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
               )}
             </div>
 
-            {/* Lista de subcategorías con marcas */}
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-sm text-muted-foreground">Cargando...</div>
-              </div>
-            ) : currentSubcategorias.length > 0 ? (
+            {/* Lista de subcategorías con marcas (del árbol, sin loading) */}
+            {currentSubcategorias.length > 0 ? (
               <div className="space-y-6">
                 {currentSubcategorias.map((subcategoria) => (
                   <div key={subcategoria.id} className="space-y-3">
@@ -637,10 +646,6 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                           {hoveredCategoryData && (
                             <Link
                               href={buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                closeSheet()
-                              }}
                               className="flex items-center justify-between w-full hover:text-[#139ED4] transition-colors"
                             >
                               <span className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -656,10 +661,6 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                               <Link
                                 key={brand.id}
                                 href={buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  closeSheet()
-                                }}
                                 className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors"
                               >
                                 <BrandLogoDesktop brand={brand} />

@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { CurrencyProviderWrapper } from '@/components/providers/currency-provider-wrapper'
+import { CartProvider } from '@/components/providers/cart-provider'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { WhatsAppFloat } from '@/components/layout/whatsapp-float'
@@ -108,14 +109,16 @@ export default async function LocaleLayout({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
       />
       <CurrencyProviderWrapper>
-        <Header categories={categories} />
+        <CartProvider>
+          <Header categories={categories} />
 
-        <main>
-          {children}
-        </main>
+          <main>
+            {children}
+          </main>
 
-        <Footer />
-        <WhatsAppFloat />
+          <Footer />
+          <WhatsAppFloat />
+        </CartProvider>
       </CurrencyProviderWrapper>
     </NextIntlClientProvider>
     )
@@ -127,10 +130,12 @@ export default async function LocaleLayout({
       return (
         <NextIntlClientProvider locale="es" messages={fallbackMessages}>
           <CurrencyProviderWrapper>
-            <Header categories={categories} />
-            <main>{children}</main>
-            <Footer />
-            <WhatsAppFloat />
+            <CartProvider>
+              <Header categories={categories} />
+              <main>{children}</main>
+              <Footer />
+              <WhatsAppFloat />
+            </CartProvider>
           </CurrencyProviderWrapper>
         </NextIntlClientProvider>
       )
@@ -139,10 +144,12 @@ export default async function LocaleLayout({
       // Último recurso: renderizar sin mensajes
       return (
         <CurrencyProviderWrapper>
-          <Header categories={categories} />
-          <main>{children}</main>
-          <Footer />
-          <WhatsAppFloat />
+          <CartProvider>
+            <Header categories={categories} />
+            <main>{children}</main>
+            <Footer />
+            <WhatsAppFloat />
+          </CartProvider>
         </CurrencyProviderWrapper>
       )
     }

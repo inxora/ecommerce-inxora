@@ -6,12 +6,12 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`
 /**
  * Botón flotante de WhatsApp
  * 
- * Dimensiones basadas en el chat widget (conejito):
- * - Desktop (≥1024px): 120x120px, bottom: 20px, right: 20px
- * - Tablet/Default: 100x100px, bottom: 20px, right: 20px  
- * - Mobile (<768px): 65x65px, bottom: 15px, right: 15px
+ * Tamaños reducidos para no competir con el carrito (z-index por debajo del Sheet del carrito):
+ * - Desktop (≥1024px): 80x80px
+ * - Tablet/Default: 64x64px  
+ * - Mobile (<768px): 50x50px
  * 
- * El botón de WhatsApp se posiciona ENCIMA del conejito
+ * El botón de WhatsApp se posiciona ENCIMA del conejito (chat).
  */
 export function WhatsAppFloat() {
   return (
@@ -21,7 +21,7 @@ export function WhatsAppFloat() {
         .whatsapp-float-btn {
           position: fixed;
           right: 20px;
-          z-index: 999999;
+          z-index: 999000;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -32,11 +32,9 @@ export function WhatsAppFloat() {
           transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
           text-decoration: none;
           
-          /* Default/Tablet: mismo tamaño que el conejito (100px) */
-          width: 100px;
-          height: 100px;
-          /* Posicionado encima del conejito (bottom: 20px + height: 100px + gap: 10px) */
-          bottom: 130px;
+          width: 64px;
+          height: 64px;
+          bottom: 94px; /* conejito 64px + 20 + 10 gap */
         }
         
         .whatsapp-float-btn:hover {
@@ -46,39 +44,35 @@ export function WhatsAppFloat() {
         }
         
         .whatsapp-float-btn svg {
-          width: 55px;
-          height: 55px;
+          width: 36px;
+          height: 36px;
           fill: white;
         }
         
-        /* Desktop: 120x120px como el conejito */
         @media (min-width: 1024px) {
           .whatsapp-float-btn {
-            width: 120px;
-            height: 120px;
-            /* bottom: 20px (conejito) + 120px (altura conejito) + 10px (gap) */
-            bottom: 150px;
+            width: 80px;
+            height: 80px;
+            bottom: 100px;
           }
           
           .whatsapp-float-btn svg {
-            width: 65px;
-            height: 65px;
+            width: 44px;
+            height: 44px;
           }
         }
         
-        /* Mobile: 65x65px como el conejito */
         @media (max-width: 767px) {
           .whatsapp-float-btn {
-            width: 65px;
-            height: 65px;
+            width: 50px;
+            height: 50px;
             right: 15px;
-            /* bottom: 15px (conejito) + 65px (altura conejito) + 8px (gap) */
-            bottom: 88px;
+            bottom: 73px; /* conejito 50px + 15 + 8 gap */
           }
           
           .whatsapp-float-btn svg {
-            width: 35px;
-            height: 35px;
+            width: 28px;
+            height: 28px;
           }
         }
         

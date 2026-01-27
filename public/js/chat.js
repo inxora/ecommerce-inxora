@@ -80,9 +80,9 @@
 
             background: ${config.style.backgroundColor} !important;
 
-            width: 100px !important;
+            width: 64px !important;
 
-            height: 100px !important;
+            height: 64px !important;
 
             border-radius: 50% !important;
 
@@ -94,7 +94,7 @@
 
             cursor: pointer !important;
 
-            z-index: 999999 !important;
+            z-index: 999000 !important;
 
             display: flex !important;
 
@@ -116,9 +116,9 @@
 
             #chatbot-burbuja {
 
-                width: 120px !important;
+                width: 80px !important;
 
-                height: 120px !important;
+                height: 80px !important;
 
             }
 
@@ -182,7 +182,7 @@
 
             box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
 
-            z-index: 999998 !important;
+            z-index: 998999 !important;
 
             font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 
@@ -676,9 +676,9 @@
 
                 right: 15px !important;
 
-                width: 65px !important;
+                width: 50px !important;
 
-                height: 65px !important;
+                height: 50px !important;
 
             }
 
@@ -686,9 +686,9 @@
 
             #chatbot-burbuja img {
 
-                width: 40px !important;
+                width: 32px !important;
 
-                height: 40px !important;
+                height: 32px !important;
 
             }
 

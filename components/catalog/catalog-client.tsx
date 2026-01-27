@@ -4,7 +4,6 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { startTransition, useCallback, useRef } from 'react'
 import { ProductCard } from '@/components/catalog/product-card'
 import { ProductFilters, FilterState } from '@/components/catalog/product-filters'
-import { ProductSearch } from '@/components/catalog/product-search'
 import { ProductPagination } from '@/components/catalog/product-pagination'
 import { Producto, Categoria, Marca } from '@/lib/supabase'
 import { Search, Filter, Package } from 'lucide-react'
@@ -164,7 +163,7 @@ export function CatalogClient({
       <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6 sm:py-8">
         {/* Header Section */}
         <div className="mb-8 sm:mb-10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -177,13 +176,6 @@ export function CatalogClient({
                   Descubre nuestra amplia gama de productos de calidad
                 </p>
               </div>
-            </div>
-            
-            <div className="w-full sm:w-auto sm:max-w-md">
-              <ProductSearch 
-                searchTerm={searchTerm}
-                onSearchChange={(term) => updateURL({ buscar: term })}
-              />
             </div>
           </div>
         </div>

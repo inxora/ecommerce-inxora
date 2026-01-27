@@ -50,7 +50,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
         )}
       </SheetTrigger>
 
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col z-[1000000]" overlayClassName="z-[1000000]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
@@ -84,79 +84,72 @@ export function CartDrawer({ children }: CartDrawerProps) {
           </div>
         ) : (
           <>
-            {/* Lista de productos */}
+            {/* Lista de productos - cada item es { product, quantity } */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              {items.map((item) => (
-                <div key={item.sku} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
-                  {/* Imagen */}
-                  <div className="relative w-20 h-20 flex-shrink-0 bg-white rounded-md overflow-hidden">
-                    {item.imagen ? (
-                      <Image
-                        src={item.imagen}
-                        alt={item.nombre}
-                        fill
-                        className="object-contain p-2"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingCart className="h-8 w-8 text-muted-foreground/50" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Información */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                      {item.nombre}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      SKU: {item.sku_producto || item.sku}
-                    </p>
-                    <p className="font-semibold text-inxora-blue">
-                      {formatPrice(item.precio)}
-                    </p>
-
-                    {/* Controles de cantidad */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex items-center border rounded-md">
+              {items.map((item) => {
+                const p = item.product
+                const precio = p.precio_venta ?? 0
+                const skuDisplay = (p as { sku_producto?: string }).sku_producto || String(p.sku)
+                return (
+                  <div key={`${p.sku}-${item.selectedSize ?? ''}`} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
+                    <div className="relative w-20 h-20 flex-shrink-0 bg-white rounded-md overflow-hidden">
+                      {p.imagen_principal_url ? (
+                        <Image
+                          src={p.imagen_principal_url}
+                          alt={p.nombre}
+                          fill
+                          className="object-contain p-2"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingCart className="h-8 w-8 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm line-clamp-2 mb-1">{p.nombre}</h4>
+                      <p className="text-xs text-muted-foreground mb-2">SKU: {skuDisplay}</p>
+                      <p className="font-semibold text-inxora-blue">{formatPrice(precio)}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center border rounded-md">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => {
+                              if (item.quantity > 1) {
+                                updateQuantity(p.sku, item.quantity - 1, item.selectedSize)
+                              }
+                            }}
+                            disabled={item.quantity <= 1}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="px-3 text-sm font-medium min-w-[2rem] text-center">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => updateQuantity(p.sku, item.quantity + 1, item.selectedSize)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
-                          onClick={() => {
-                            if (item.cantidad > 1) {
-                              updateQuantity(item.sku, item.cantidad - 1)
-                            }
-                          }}
-                          disabled={item.cantidad <= 1}
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => removeItem(p.sku, item.selectedSize)}
                         >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="px-3 text-sm font-medium min-w-[2rem] text-center">
-                          {item.cantidad}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(item.sku, item.cantidad + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => removeItem(item.sku)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             <Separator className="my-4" />

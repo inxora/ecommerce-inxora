@@ -7,8 +7,9 @@ import { Producto, Categoria } from '@/lib/supabase';
 import { ProductCard } from '@/components/catalog/product-card';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
 import { CategoriesCarousel } from '@/components/home/categories-carousel';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ShoppingCart } from 'lucide-react';
 import { buildProductFullUrl } from '@/lib/product-url';
+import { useCart } from '@/lib/hooks/use-cart';
 
 interface HomeClientProps {
   locale: string;
@@ -64,6 +65,7 @@ function FeaturedProductsSlider({
 }: ProductSliderProps) {
   const sliderRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const { addItem } = useCart()
   
   // Duplicamos los productos para crear efecto infinito
   const limitedProducts = products.slice(0, maxProducts)
@@ -148,12 +150,9 @@ function FeaturedProductsSlider({
               displayProducts.map((product, index) => (
                 <div 
                   key={`${product.sku}-${index}`} 
-                  className="product-card flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]"
+                  className="product-card flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px] bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 group hover:-translate-y-1"
                 >
-                  <Link 
-                    href={getProductUrl(product, locale)}
-                    className="block bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 group hover:-translate-y-1"
-                  >
+                  <Link href={getProductUrl(product, locale)} className="block">
                     {/* Imagen del producto */}
                     <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 p-4">
                       {product.imagen_principal_url ? (
@@ -168,48 +167,54 @@ function FeaturedProductsSlider({
                           <span className="text-6xl">📦</span>
                         </div>
                       )}
-                      
-                      {/* Badge dinámico */}
                       <div className={`absolute top-3 left-3 ${badgeColor} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}>
                         {badgeText}
                       </div>
                     </div>
-                    
-                    {/* Información del producto */}
-                    <div className="p-5">
-                      {/* Categoría */}
-                      <p className="text-xs text-inxora-blue font-medium uppercase tracking-wide mb-2">
+                    {/* Nombre, categoría, SKU - tamaños reducidos para no cortar botones */}
+                    <div className="p-4 pb-0">
+                      <p className="text-[10px] sm:text-xs text-inxora-blue font-medium uppercase tracking-wide mb-1">
                         {typeof product.categoria === 'string' ? product.categoria : (product.categoria?.nombre || 'Producto')}
                       </p>
-                      
-                      {/* Nombre */}
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white line-clamp-2 mb-3 min-h-[3rem] group-hover:text-inxora-blue transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 min-h-[2.5rem] group-hover:text-inxora-blue transition-colors">
                         {product.nombre}
                       </h3>
-                      
-                      {/* SKU */}
-                      <p className="text-xs text-gray-400 mb-3">
+                      <p className="text-[10px] sm:text-xs text-gray-400 mb-2">
                         SKU: {product.sku_producto || product.sku}
                       </p>
-                      
-                      {/* Precio - usando precio_venta del producto (costo_venta_con_igv mapeado) */}
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <p className="text-2xl sm:text-3xl font-bold text-inxora-dark-blue dark:text-white">
-                            S/{product.precio_venta?.toFixed(2) || product.precios?.[0]?.precio_venta?.toFixed(2) || '0.00'}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            Inc. IGV
-                          </p>
-                        </div>
-                        
-                        {/* Botón */}
-                        <div className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-xl transition-colors group-hover:scale-110">
-                          <ChevronRight className="w-5 h-5" />
-                        </div>
-                      </div>
                     </div>
                   </Link>
+                  {/* Precio y botones - precio más pequeño, botones siempre visibles */}
+                  <div className="p-4 pt-1">
+                    <div className="flex items-end justify-between gap-2 min-h-[52px]">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white truncate" title={product.precio_venta ? `S/${product.precio_venta.toFixed(2)}` : undefined}>
+                          S/{product.precio_venta?.toFixed(2) || product.precios?.[0]?.precio_venta?.toFixed(2) || '0.00'}
+                        </p>
+                        <p className="text-[10px] text-gray-400">Inc. IGV</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const precio = product.precio_venta ?? product.precios?.[0]?.precio_venta ?? 0
+                            addItem({ ...product, precio_venta: precio }, 1)
+                          }}
+                          className="flex items-center gap-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white text-xs sm:text-sm font-semibold py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl transition-colors shadow-md hover:shadow-lg"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                          Agregar
+                        </button>
+                        <Link
+                          href={getProductUrl(product, locale)}
+                          className="flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-colors shrink-0"
+                          aria-label="Ver producto"
+                        >
+                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))
             ) : (

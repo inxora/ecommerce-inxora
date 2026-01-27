@@ -58,14 +58,15 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
   disableOverlayPointerEvents?: boolean
+  overlayClassName?: string
 }
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, disableOverlayPointerEvents, ...props }, ref) => (
+>(({ side = "right", className, children, disableOverlayPointerEvents, overlayClassName, ...props }, ref) => (
   <SheetPortal>
-    <SheetOverlay disablePointerEvents={disableOverlayPointerEvents} />
+    <SheetOverlay className={overlayClassName} disablePointerEvents={disableOverlayPointerEvents} />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}

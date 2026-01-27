@@ -74,9 +74,8 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     
-    // addItem espera un Product completo, simplemente pasar el producto
-    // El precio ya está calculado en la variable precio
-    addItem(product, 1)
+    // Pasar producto con precio_venta para que el carrito muestre precio correcto
+    addItem({ ...product, precio_venta: precio }, 1)
 
     toast({
       title: 'Producto agregado',
