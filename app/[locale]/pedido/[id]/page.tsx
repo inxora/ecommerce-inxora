@@ -122,6 +122,7 @@ function OrderContent({ orderId, locale }: { orderId: string, locale: string }) 
                       <Image
                         src={item.images[0]}
                         alt={item.name}
+                        title={item.name}
                         fill
                         className="object-cover"
                       />

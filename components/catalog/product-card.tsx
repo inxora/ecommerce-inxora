@@ -138,6 +138,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <Image
                 src={product.imagen_principal_url}
                 alt={product.nombre}
+                title={product.nombre}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 className={`object-contain p-4 group-hover:scale-110 transition-transform duration-300 ${

@@ -97,6 +97,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
                         <Image
                           src={p.imagen_principal_url}
                           alt={p.nombre}
+                          title={p.nombre}
                           fill
                           className="object-contain p-2"
                         />

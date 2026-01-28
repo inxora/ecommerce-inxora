@@ -20,6 +20,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'app.inxora.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
     // Cache 31 días: reduce transformaciones y cache writes (imágenes de producto no cambian a diario)
     minimumCacheTTL: 2678400, // 31 días

@@ -39,6 +39,7 @@ function BrandLogo({ brand }: BrandLogoProps) {
       <Image
         src={logoUrl}
         alt={brand.nombre}
+        title={brand.nombre}
         width={120}
         height={120}
         className="object-contain w-[85%] h-[85%]"

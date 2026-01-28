@@ -61,6 +61,7 @@ export function ProductImageZoom({ src, alt, className = '', priority = false }:
           <Image
             src={src}
             alt={alt || 'Imagen del producto'}
+            title={alt || 'Imagen del producto'}
             fill
             className="object-cover"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"

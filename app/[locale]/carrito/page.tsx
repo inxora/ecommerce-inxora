@@ -100,6 +100,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                           <Image
                             src={item.product.imagen_principal_url}
                             alt={item.product.nombre || 'Producto sin nombre'}
+                            title={item.product.nombre || 'Producto sin nombre'}
                             fill
                             className="object-cover"
                           />

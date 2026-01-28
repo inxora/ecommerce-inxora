@@ -123,6 +123,7 @@ export function CategoriesCarousel({ categories, locale }: CategoriesCarouselPro
                   <Image
                     src={category.logo_url}
                     alt={`Categoría ${category.nombre} - Suministros industriales`}
+                    title={`Categoría ${category.nombre} - Suministros industriales`}
                     fill
                     sizes="(max-width: 640px) 140px, (max-width: 1024px) 180px, 200px"
                     className="object-contain p-3 sm:p-4 transition-transform duration-500 group-hover:scale-110"

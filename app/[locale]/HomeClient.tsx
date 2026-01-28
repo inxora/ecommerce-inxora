@@ -159,6 +159,7 @@ function FeaturedProductsSlider({
                         <Image
                           src={product.imagen_principal_url}
                           alt={product.nombre}
+                          title={product.nombre}
                           fill
                           className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
                         />
@@ -264,6 +265,7 @@ export default function HomeClient({ locale, featuredProducts = [], newProducts 
           <Image
             src="/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg"
             alt="Suministros Industriales INXORA - Herramientas y equipos industriales de alta calidad"
+            title="Suministros Industriales INXORA - Herramientas y equipos industriales de alta calidad"
             fill
             priority
             className="object-cover"
@@ -380,6 +382,7 @@ export default function HomeClient({ locale, featuredProducts = [], newProducts 
                           <Image
                             src={category.logo_url}
                             alt={category.nombre}
+                            title={category.nombre}
                             width={56}
                             height={56}
                             className="w-full h-full object-contain"

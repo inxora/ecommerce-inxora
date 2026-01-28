@@ -61,6 +61,7 @@ export interface ProductoAPI {
   galeria_imagenes_urls: string[] | null
   unidad_codigo: string
   seo_title: string | null
+  seo_description: string | null
   seo_keywords: string | null
   seo_slug: string | null
   meta_robots: string | null
@@ -248,7 +249,7 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     imagen_principal_url: imagenPrincipalUrl,
     galeria_imagenes_urls: galeriaImagenesUrls,
     seo_title: productoAPI.seo_title || '',
-    seo_description: '',
+    seo_description: productoAPI.seo_description ?? '',
     seo_keywords: productoAPI.seo_keywords || '',
     seo_slug: productoAPI.seo_slug || generateProductSlug(productoAPI.nombre, marca.nombre),
     meta_robots: productoAPI.meta_robots || '',

@@ -51,6 +51,7 @@ export function Header({ categories = [] }: HeaderProps) {
           <Image
             src="/LOGO-30.png"
             alt="INXORA"
+            title="INXORA"
             width={200}
             height={68}
             className="h-11 sm:h-12 md:h-14 lg:h-16 w-auto object-contain"

@@ -203,6 +203,7 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
                       <img
                         src={image || '/placeholder-product.svg'}
                         alt={`${product.nombre} ${index + 1}`}
+                        title={`${product.nombre} - Imagen ${index + 1}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement

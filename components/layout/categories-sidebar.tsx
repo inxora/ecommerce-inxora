@@ -24,6 +24,7 @@ function BrandLogo({ brand }: { brand: MarcaNavegacion }) {
         <Image
           src={logoUrl}
           alt={brandName}
+          title={brandName}
           width={32}
           height={32}
           className="object-contain w-full h-full"
@@ -56,6 +57,7 @@ function BrandLogoDesktop({ brand }: { brand: MarcaNavegacion }) {
         <Image
           src={logoUrl}
           alt={brandName}
+          title={brandName}
           width={40}
           height={40}
           className="object-contain w-full h-full"
