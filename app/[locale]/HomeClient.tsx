@@ -274,58 +274,79 @@ export default function HomeClient({ locale, featuredProducts = [], newProducts 
         </div>
 
         {/* Contenido del Hero */}
-        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 h-full">
+        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
           {/* Barra de Beneficios - Superpuesta en el Hero */}
-          <div className="flex flex-wrap items-center gap-4 lg:gap-8 pt-6 lg:pt-8 text-white">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-8 pt-4 sm:pt-6 lg:pt-8 text-white flex-shrink-0">
             {/* Productos de Calidad */}
             <div className="flex items-center gap-2 lg:gap-3">
-              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-white/50 flex items-center justify-center">
-                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white/50 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <span className="text-xs lg:text-sm font-medium">Productos de Calidad</span>
+              <span className="text-sm sm:text-base lg:text-lg font-medium">Productos de Calidad</span>
             </div>
             
             {/* Envíos a Todo el Perú - Camión */}
             <div className="flex items-center gap-2 lg:gap-3">
-              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-white/50 flex items-center justify-center">
-                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white/50 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 17h.01M16 17h.01M9 11h6M3 13h2l.4-2M7 13l1.6-8H20l1 5h-1M7 13h13m-5 0v4m-8-4v4m0 0a2 2 0 104 0m4 0a2 2 0 104 0" />
                 </svg>
               </div>
-              <span className="text-xs lg:text-sm font-medium">Envíos a Todo el Perú</span>
+              <span className="text-sm sm:text-base lg:text-lg font-medium">Envíos a Todo el Perú</span>
             </div>
             
             {/* Asesoría Profesional - Persona con audífonos (headset) */}
             <div className="flex items-center gap-2 lg:gap-3">
-              <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-white/50 flex items-center justify-center">
-                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white/50 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 18v-6a9 9 0 0118 0v6M3 18a3 3 0 003 3h1a1 1 0 001-1v-4a1 1 0 00-1-1H4a1 1 0 00-1 1v2zM21 18a3 3 0 01-3 3h-1a1 1 0 01-1-1v-4a1 1 0 011-1h3a1 1 0 011 1v2z" />
                 </svg>
               </div>
-              <span className="text-xs lg:text-sm font-medium">Asesoría Profesional</span>
+              <span className="text-sm sm:text-base lg:text-lg font-medium">Asesoría Profesional</span>
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 py-8 lg:py-16">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 py-8 lg:py-12 flex-1 min-h-0 justify-center">
             
             {/* Lado Izquierdo - Texto Principal */}
-            <div className="flex-1 text-white max-w-xl">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight leading-tight">
-                Suministros Industriales de Calidad
+            <div className="flex-1 text-white max-w-3xl w-full">
+              <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-[2.25rem] md:text-[2.5rem] lg:text-[3rem] xl:text-[3.5rem] 2xl:text-5xl">
+                El{' '}
+                <span className="relative inline-block">
+                  <span className="relative z-10 px-1.5 py-0.5 sm:px-2 rounded-md bg-gradient-to-r from-[#88D4E4] to-white/90 text-[#171D4C] font-black shadow-lg text-[1em] leading-none align-baseline">
+                    PRIMER
+                  </span>
+                </span>{' '}
+                Marketplace Industrial del Perú potenciado con{' '}
+                <span className="text-[#88D4E4] font-black drop-shadow-sm">
+                  Inteligencia Artificial
+                </span>
               </h1>
-              <p className="mt-4 lg:mt-6 text-base sm:text-lg leading-7 text-gray-200">
-                Todo lo necesitas para tu negocio en un solo lugar. Explora nuestra amplia gama de productos y aprovecha nuestras ofertas exclusivas.
+              <p className="mt-3 sm:mt-4 lg:mt-6 text-base sm:text-lg md:text-xl leading-relaxed sm:leading-8 text-white/90 max-w-lg">
+                Encuentra suministros industriales, cotiza al instante y recibe asesoría 24/7 con el respaldo de IA.
               </p>
-              <div className="mt-6 lg:mt-10">
+              <div className="mt-5 sm:mt-6 lg:mt-10 flex flex-wrap items-center gap-2 sm:gap-3">
                 <Link 
                   href={`/${locale}/catalogo`}
-                  className="inline-flex items-center gap-2 rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-6 sm:px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  className="inline-flex items-center gap-2 rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 text-sm sm:text-base md:text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
                 >
                   Explorar Catálogo
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
                 </Link>
+                <a
+                  href="https://wa.me/51946885531"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] hover:bg-[#20BD5A] px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 text-sm sm:text-base md:text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  aria-label="Solicitar cotización por WhatsApp"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" viewBox="0 0 32 32" fill="currentColor" aria-hidden>
+                    <path d="M16.002 3C8.833 3 3 8.833 3 16.002c0 2.292.6 4.533 1.737 6.504L3 29l6.695-1.756A12.94 12.94 0 0 0 16.002 29C23.169 29 29 23.169 29 16.002 29 8.833 23.169 3 16.002 3zm0 23.545a10.5 10.5 0 0 1-5.354-1.463l-.384-.228-3.977 1.043 1.062-3.882-.25-.398a10.46 10.46 0 0 1-1.606-5.615c0-5.8 4.72-10.52 10.52-10.52 5.799 0 10.52 4.72 10.52 10.52 0 5.8-4.72 10.52-10.52 10.52v.023zm5.77-7.882c-.316-.158-1.872-.924-2.162-1.03-.29-.105-.502-.158-.713.158-.21.316-.818 1.03-.999 1.24-.184.21-.368.237-.684.079-.316-.158-1.334-.492-2.54-1.569-.94-.838-1.573-1.872-1.757-2.188-.184-.316-.02-.486.138-.644.141-.141.316-.368.474-.553.158-.184.21-.316.316-.526.105-.21.052-.395-.026-.553-.079-.158-.713-1.716-.977-2.35-.257-.617-.52-.533-.713-.543-.184-.01-.394-.012-.605-.012-.21 0-.553.079-.842.395-.29.316-1.108 1.082-1.108 2.64 0 1.556 1.134 3.06 1.293 3.27.158.211 2.232 3.41 5.41 4.782.756.326 1.346.52 1.806.667.759.241 1.45.207 1.996.125.61-.09 1.872-.765 2.135-1.504.263-.738.263-1.372.184-1.504-.079-.131-.29-.21-.605-.368z" />
+                  </svg>
+                  Solicitar Cotización
+                </a>
               </div>
             </div>
 

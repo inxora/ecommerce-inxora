@@ -1,6 +1,6 @@
 'use client'
 
-const WHATSAPP_NUMBER = '946885531' // Número de WhatsApp de INXORA (sin +)
+const WHATSAPP_NUMBER = '51946885531' // Número de WhatsApp de INXORA (sin +)
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`
 
 /**
