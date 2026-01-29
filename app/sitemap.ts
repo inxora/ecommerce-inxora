@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
-import { getCategorias } from '@/lib/supabase'
-import { buildCategoryUrlFromObject, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
+import { getCategorias, getMarcas } from '@/lib/supabase'
+import { buildCategoryUrlFromObject, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl, normalizeName } from '@/lib/product-url'
 import { generateCanonicalUrl } from '@/lib/product-seo'
 import { CategoriesService } from '@/lib/services/categories.service'
 import { ProductsService } from '@/lib/services/products.service'
@@ -19,16 +19,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // PRODUCTOS
   // ===============================
 
-  // ✅ OPTIMIZACIÓN: En build/preview de Vercel, limitar a 100 productos para evitar timeout
-  // El resto se generará dinámicamente cuando los usuarios visiten las páginas (ISR)
-  const isBuildTime = 
+  // En build/preview limitamos a 100 productos para no alargar el build.
+  // En runtime (cuando Google o un usuario piden /sitemap.xml) se usan hasta 5000 productos.
+  // Si "Páginas descubiertas" en Search Console no sube: Google puede estar leyendo una versión
+  // cacheada; revalidar en GSC o esperar a que Google vuelva a leer el sitemap (revalidate = 3600 s).
+  const isBuildTime =
     process.env.NEXT_PHASE === 'phase-production-build' ||
     (process.env.VERCEL_ENV === 'production' && !process.env.VERCEL_URL) ||
     process.env.VERCEL_ENV === 'preview'
-  const maxProductsForBuild = isBuildTime ? 100 : 5000 // Solo 100 en build/preview, 5000 en runtime
-  
+  const maxProductsForBuild = isBuildTime ? 100 : 5000
+
   if (isBuildTime) {
-    console.log('🔧 [Sitemap] Build/Preview mode detected - limiting to 100 products for faster build')
+    console.log('🔧 [Sitemap] Build/Preview mode - limiting to 100 products for faster build')
   }
   
   // Generar URLs de productos de forma incremental para evitar alto consumo de memoria
@@ -182,8 +184,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   
   console.log(`✅ Sitemap: Found ${categorySubcategoriaMarcaPages.length} category-subcategoria-marca combinations`)
 
-  // Los productos ya fueron procesados arriba de forma incremental
-  // productPages ya contiene todas las URLs de productos generadas
+  // ===============================
+  // PÁGINAS DE MARCA (/marca/[slug])
+  // ===============================
+  let marcaPages: MetadataRoute.Sitemap = []
+  try {
+    const { data: marcas } = await getMarcas()
+    if (marcas?.length) {
+      marcaPages = marcas.map((marca) => {
+        const slug = normalizeName(marca.nombre) || String(marca.id)
+        return {
+          url: `${baseUrl}/${locale}/marca/${slug}`,
+          lastModified: new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }
+      })
+      console.log(`✅ Sitemap: Found ${marcaPages.length} brand (marca) pages`)
+    }
+  } catch (error) {
+    console.error('❌ Error fetching marcas for sitemap:', error)
+  }
 
-  return [...staticPages, ...categoryPages, ...categorySubcategoriaMarcaPages, ...productPages]
+  return [...staticPages, ...categoryPages, ...categorySubcategoriaMarcaPages, ...marcaPages, ...productPages]
 }

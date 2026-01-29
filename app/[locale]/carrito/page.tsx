@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 
 // Nota: metadata no funciona en Client Components, pero esta página no necesita SEO (noindex)
-import Image from 'next/image'
+import { ProductImage } from '@/components/ui/product-image'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Package, Heart } from 'lucide-react'
 import { useCart } from '@/lib/hooks/use-cart'
 import { formatPrice } from '@/lib/utils'
@@ -97,13 +97,12 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                       {/* Product Image */}
                       <div className="relative w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600 rounded-xl flex-shrink-0 overflow-hidden">
                         {item.product.imagen_principal_url && item.product.imagen_principal_url.trim() !== '' ? (
-                          <Image
+                          <ProductImage
                             src={item.product.imagen_principal_url}
                             alt={item.product.nombre || 'Producto sin nombre'}
                             title={item.product.nombre || 'Producto sin nombre'}
                             fill
                             className="object-cover"
-                            unoptimized
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center p-2">

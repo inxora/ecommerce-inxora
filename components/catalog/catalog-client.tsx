@@ -17,6 +17,10 @@ interface CatalogClientProps {
   currentPage: number
   filters: FilterState
   searchTerm: string
+  pageTitle?: string
+  pageSubtitle?: string
+  brandLogoUrl?: string | null
+  hideBrandFilter?: boolean
 }
 
 export function CatalogClient({
@@ -27,7 +31,11 @@ export function CatalogClient({
   totalPages,
   currentPage,
   filters,
-  searchTerm
+  searchTerm,
+  pageTitle,
+  pageSubtitle,
+  brandLogoUrl,
+  hideBrandFilter = false,
 }: CatalogClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -165,15 +173,22 @@ export function CatalogClient({
         <div className="mb-8 sm:mb-10">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
+              {brandLogoUrl ? (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-600 flex items-center justify-center flex-shrink-0 overflow-hidden p-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={brandLogoUrl} alt={pageTitle || 'Marca'} className="max-w-full max-h-full object-contain" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+              )}
               <div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  Catálogo de Productos
+                  {pageTitle ?? 'Catálogo de Productos'}
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
-                  Descubre nuestra amplia gama de productos de calidad
+                  {pageSubtitle ?? 'Descubre nuestra amplia gama de productos de calidad'}
                 </p>
               </div>
             </div>
@@ -196,6 +211,7 @@ export function CatalogClient({
                 filters={filters}
                 totalProducts={total}
                 onFiltersChange={(newFilters) => updateURL(newFilters)}
+                hideBrandFilter={hideBrandFilter}
               />
             </div>
           </div>

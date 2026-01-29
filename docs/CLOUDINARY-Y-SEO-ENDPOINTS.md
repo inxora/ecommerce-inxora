@@ -31,6 +31,14 @@ El front tiene:
 
 **Conclusión:** Los enlaces de Cloudinary en categorías, marcas y productos son correctos y compatibles con el front actual.
 
+### Imágenes de producto: carga directa (unoptimized)
+
+Las URLs en BD son correctas (ej. `https://res.cloudinary.com/dxnw5ewnx/image/upload/v.../productos/<SKU>/<nombre>.jpg`). Para evitar fallos del optimizador de Vercel (proxy/timeout), las imágenes de producto se cargan **directamente desde Cloudinary** (sin pasar por `/_next/image`).
+
+- **Componente centralizado:** `components/ui/product-image.tsx` — envuelve `next/image` con `unoptimized`. Usar `<ProductImage>` en lugar de `<Image>` donde se muestren imágenes de producto o catálogo.
+- **Dónde usarlo:** tarjetas de producto (ProductCard), ficha de producto (ProductImageZoom), carrito, home destacados, etc.
+- **Por qué:** grandes e-commerce (Falabella, Amazon, Tailey) sirven imágenes desde su CDN directamente; no usan un proxy de optimización por imagen. Cloudinary ya actúa como CDN; el navegador pide la URL y Cloudinary responde. Mantener `unoptimized` en un solo componente facilita cambiar el comportamiento en el futuro si hace falta.
+
 ---
 
 ## 2. SEO en productos (BD / API)
@@ -95,13 +103,27 @@ No es obligatorio para un buen posicionamiento; es una mejora opcional para rich
 
 ---
 
-## 3. Resumen
+## 3. Sitemap y páginas de marca
+
+- **Sitemap:** El sitemap (`app/sitemap.ts`) se regenera automáticamente (revalidate 3600 s). Incluye:
+  - Páginas estáticas (inicio, catálogo, contacto, nosotros).
+  - Categorías y combinaciones categoría/subcategoría/marca.
+  - **Páginas de marca** (`/[locale]/marca/[slug]`): se generan a partir de `getMarcas()`; cada marca tiene una entrada con su slug normalizado. No hace falta “volver a subir” nada: al desplegar, el sitemap se genera con las marcas actuales.
+- **SEO de marcas:** Tener URLs dedicadas por marca (`/es/marca/mitutoyo`, etc.) y mostrarlas en el árbol de categorías (sección “Marcas”) mejora el SEO porque:
+  - Los buscadores indexan páginas de colección por marca (más palabras clave y contenido estructurado).
+  - El sitemap incluye esas URLs, lo que facilita el rastreo.
+  - Cada página de marca tiene título, descripción y breadcrumbs propios (JSON-LD y meta tags).
+
+---
+
+## 4. Resumen
 
 | Tema              | Conclusión                                                                 |
 |-------------------|----------------------------------------------------------------------------|
 | Links Cloudinary  | Correctos en categorías, marcas y productos; front ya los soporta.          |
 | SEO de productos  | Campos actuales (title, slug, canonical, robots, keywords, nombre, imagen) son suficientes para un buen posicionamiento. |
 | SEO de imágenes   | Alt/title implementados; URLs Cloudinary adecuadas.                        |
+| Sitemap           | Incluye estáticas, categorías, categoría/subcategoria/marca y **páginas de marca** (`/marca/[slug]`); se regenera solo. |
 | Mejoras opcionales | Añadir/usar `seo_description`, revisar longitud de `seo_title`, considerar `structured_data` o JSON-LD generado en front. |
 
 Con la migración a Cloudinary y los datos de SEO que ya expone el API, la base para un buen posicionamiento está cubierta; las mejoras anteriores son opcionales y graduales.

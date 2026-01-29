@@ -227,12 +227,27 @@ export default async function CatalogPage({ params, searchParams }: CatalogPageP
       id_marca: marcaArray.length > 0 ? marcaArray.map(m => parseInt(m)) : undefined,
       buscar: searchTerm,
       visible_web: true,
+      precioMin: resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined,
+      precioMax: resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined,
+      ordenar: resolvedSearchParams.ordenar,
     }),
     getCategorias(),
     getMarcas(),
   ])
 
-  const { products, total } = productsData
+  let { products, total } = productsData
+
+  // Respaldo: si el API no filtra por precio, filtrar en servidor para que lo mostrado sea correcto
+  const precioMinNum = resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined
+  const precioMaxNum = resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined
+  if ((precioMinNum !== undefined || precioMaxNum !== undefined) && products?.length) {
+    products = products.filter((p) => {
+      const price = p.precio_venta ?? 0
+      if (precioMinNum !== undefined && price < precioMinNum) return false
+      if (precioMaxNum !== undefined && price > precioMaxNum) return false
+      return true
+    })
+  }
   const { data: categories } = categoriesData
   const { data: brands } = marcasData
   const totalPages = productsData.totalPages || Math.ceil((total || 0) / itemsPerPage)

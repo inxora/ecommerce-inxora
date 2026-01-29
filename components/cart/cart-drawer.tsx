@@ -7,7 +7,7 @@ import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useParams, useRouter } from 'next/navigation'
-import Image from 'next/image'
+import { ProductImage } from '@/components/ui/product-image'
 import { Separator } from '@/components/ui/separator'
 import { formatPrice as formatCurrency } from '@/lib/utils'
 
@@ -94,13 +94,12 @@ export function CartDrawer({ children }: CartDrawerProps) {
                   <div key={`${p.sku}-${item.selectedSize ?? ''}`} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
                     <div className="relative w-20 h-20 flex-shrink-0 bg-white rounded-md overflow-hidden">
                       {p.imagen_principal_url ? (
-                        <Image
+                        <ProductImage
                           src={p.imagen_principal_url}
                           alt={p.nombre}
                           title={p.nombre}
                           fill
                           className="object-contain p-2"
-                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

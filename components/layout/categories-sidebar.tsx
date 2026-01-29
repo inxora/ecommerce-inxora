@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { Button } from '@/components/ui/button'
 import { buildBrandLogoUrl } from '@/lib/supabase'
 import { CategoriesService, MarcaNavegacion, SubcategoriaNavegacion, CategoriaNavegacion } from '@/lib/services/categories.service'
-import { buildCategoryUrlFromObject, buildCategorySubcategoriaUrl, buildCategorySubcategoriaMarcaUrl } from '@/lib/product-url'
+import { buildCategoryUrlFromObject, buildCategorySubcategoriaUrl, normalizeName } from '@/lib/product-url'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
@@ -89,9 +89,11 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
   const [categories, setCategories] = useState<CategoriaNavegacion[]>(serverCategories)
   const [loadingCategories, setLoadingCategories] = useState(serverCategories.length === 0)
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null)
+  const [hoveredMarcas, setHoveredMarcas] = useState(false)
   const [expandedCategoryMobile, setExpandedCategoryMobile] = useState<number | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isMouseOverBrandsPanel, setIsMouseOverBrandsPanel] = useState(false)
+  const [isMouseOverMarcasPanel, setIsMouseOverMarcasPanel] = useState(false)
   const [isClicking, setIsClicking] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   const [panelKey, setPanelKey] = useState(0) // Key única para forzar re-render del panel
@@ -130,10 +132,24 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     loadCategories()
   }, [serverCategories])
 
+  // Todas las marcas únicas del árbol (para la sección Marcas)
+  const allBrands = (() => {
+    const map = new Map<number, MarcaNavegacion>()
+    categories.forEach((cat) => {
+      cat.subcategorias?.forEach((sub) => {
+        sub.marcas?.forEach((m) => {
+          if (m?.id && !map.has(m.id)) map.set(m.id, m)
+        })
+      })
+    })
+    return Array.from(map.values())
+  })()
+
   // Limpiar estado cuando se cierra el sheet
   useEffect(() => {
     if (!isSheetOpen) {
       setHoveredCategory(null)
+      setHoveredMarcas(false)
       setExpandedCategoryMobile(null)
     }
   }, [isSheetOpen])
@@ -171,24 +187,19 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     }
     el.addEventListener('pointerdown', onDown, true)
     return () => el.removeEventListener('pointerdown', onDown, true)
-  }, [hoveredCategory, isSheetOpen, isDesktop])
+  }, [hoveredCategory, hoveredMarcas, isSheetOpen, isDesktop])
 
-  // Limpiar paneles de marcas antiguos del DOM cuando cambia la categoría
+  // Limpiar paneles de marcas antiguos del DOM cuando cambia la categoría o Marcas
   useEffect(() => {
-    // Buscar todos los paneles de marcas en el DOM
     const allPanels = document.querySelectorAll('[data-brand-panel]')
-
-    // Si hay más de un panel (solapamiento), eliminar los antiguos
     if (allPanels.length > 1) {
-      // Mantener solo el último panel (el más reciente)
       for (let i = 0; i < allPanels.length - 1; i++) {
         allPanels[i].parentElement?.remove()
       }
     }
-  }, [hoveredCategory, panelKey])
+  }, [hoveredCategory, hoveredMarcas, panelKey])
 
   const handleCategoryHover = (categoryId: number) => {
-    // Solo activar hover en desktop
     if (!isDesktop) return
 
     if (hoverTimeoutRef.current) {
@@ -196,27 +207,19 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
       hoverTimeoutRef.current = null
     }
 
-    // Si cambia la categoría, incrementar la key para forzar re-render
     if (hoveredCategory !== categoryId) {
       setPanelKey(prev => prev + 1)
     }
 
+    setHoveredMarcas(false)
     setHoveredCategory(categoryId)
   }
 
   const handleCategoryLeave = () => {
-    // Solo cerrar si el mouse no estÃ¡ sobre el panel de marcas
-    // Si el panel estÃ¡ visible, no cerrar la categorÃ­a
-    if (isMouseOverBrandsPanel || hoveredCategory) {
-      return // No cerrar si el mouse estÃ¡ sobre el panel o hay una categorÃ­a activa
-    }
-
-    // Solo cerrar si realmente no hay hover activo
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
+    if (isMouseOverBrandsPanel || isMouseOverMarcasPanel || hoveredCategory) return
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
     hoverTimeoutRef.current = setTimeout(() => {
-      if (!isMouseOverBrandsPanel && !hoveredCategory) {
+      if (!isMouseOverBrandsPanel && !isMouseOverMarcasPanel && !hoveredCategory) {
         setHoveredCategory(null)
       }
       hoverTimeoutRef.current = null
@@ -255,6 +258,39 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
       }
       hoverTimeoutRef.current = null
     }, 500) // Delay aumentado para permitir clics
+  }
+
+  const handleMarcasEnter = () => {
+    if (!isDesktop) return
+    setHoveredMarcas(true)
+    setHoveredCategory(null)
+    setIsMouseOverBrandsPanel(false)
+  }
+
+  const handleMarcasLeave = () => {
+    if (isMouseOverMarcasPanel) return
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!isMouseOverMarcasPanel) setHoveredMarcas(false)
+      hoverTimeoutRef.current = null
+    }, 200)
+  }
+
+  const handleMarcasPanelEnter = () => {
+    setIsMouseOverMarcasPanel(true)
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+  }
+
+  const handleMarcasPanelLeave = () => {
+    setIsMouseOverMarcasPanel(false)
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredMarcas(false)
+      hoverTimeoutRef.current = null
+    }, 300)
   }
 
   // Handler para click en categoría en mobile/tablet
@@ -307,16 +343,17 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
   useEffect(() => {
     if (!isDesktop) {
       setHoveredCategory(null)
+      setHoveredMarcas(false)
       setIsMouseOverBrandsPanel(false)
+      setIsMouseOverMarcasPanel(false)
     } else {
       setExpandedCategoryMobile(null)
     }
   }, [isDesktop])
 
-  // Actualizar posición del panel de marcas dinámicamente
+  // Actualizar posición del panel lateral dinámicamente
   useEffect(() => {
-    if (!isSheetOpen || !isDesktop || !hoveredCategory) {
-      // No resetear a 0, mantener la última posición calculada
+    if (!isSheetOpen || !isDesktop || (!hoveredCategory && !hoveredMarcas)) {
       return
     }
 
@@ -345,7 +382,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
           const calculatedLeft = Math.ceil(rect.right)
 
           // Asegurar que el panel no se salga de la pantalla
-          const panelWidth = 320 // w-80 = 320px
+          const panelWidth = 420
           const maxLeft = window.innerWidth - panelWidth
           const finalLeft = Math.min(calculatedLeft, maxLeft)
 
@@ -390,11 +427,12 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
     }
-  }, [hoveredCategory, isSheetOpen, isDesktop])
+  }, [hoveredCategory, hoveredMarcas, isSheetOpen, isDesktop])
 
   // Función para cerrar el sheet
   const closeSheet = () => {
     setHoveredCategory(null)
+    setHoveredMarcas(false)
     setExpandedCategoryMobile(null)
     setIsSheetOpen(false)
   }
@@ -418,7 +456,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
           side="left"
           className="w-full sm:w-80 md:w-96 p-0 flex flex-col bg-white dark:bg-slate-900"
           ref={sheetContentRef}
-          disableOverlayPointerEvents={isDesktop && hoveredCategory !== null}
+          disableOverlayPointerEvents={isDesktop && (hoveredCategory !== null || hoveredMarcas)}
         >
           <div className="flex flex-col min-h-0 flex-1">
             <SheetHeader className="px-6 py-4 border-b flex-shrink-0">
@@ -442,6 +480,36 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                     </div>
                   ) : categories && categories.length > 0 ? (
                     <div className="space-y-1">
+                      {/* Sección Marcas - arriba; al pasar el mouse se despliega panel con todas las marcas */}
+                      {allBrands.length > 0 && (
+                        <div
+                          className={cn(
+                            "relative",
+                            hoveredMarcas && "z-10"
+                          )}
+                          onMouseEnter={handleMarcasEnter}
+                          onMouseLeave={handleMarcasLeave}
+                        >
+                          <Link
+                            href={`/${locale}/catalogo`}
+                            className={cn(
+                              "flex items-center justify-between px-4 py-3 rounded-lg",
+                              "text-lg font-bold text-inxora-dark-blue dark:text-[#88D4E4]",
+                              "hover:bg-[#88D4E4]/20 hover:text-[#139ED4]",
+                              "dark:hover:bg-[#88D4E4]/10",
+                              "transition-all duration-200 group cursor-pointer",
+                              "shadow-sm",
+                              hoveredMarcas && "bg-[#88D4E4]/20 dark:bg-[#88D4E4]/10"
+                            )}
+                          >
+                            <span className="flex-1 min-w-0 break-words pr-2 text-[15px] sm:text-base">Marcas</span>
+                            <ChevronRight className={cn(
+                              "h-4 w-4 text-muted-foreground group-hover:text-[#139ED4] dark:group-hover:text-[#88D4E4] transition-all duration-200 flex-shrink-0",
+                              isDesktop ? "opacity-0 group-hover:opacity-100 group-hover:translate-x-1" : "opacity-100"
+                            )} />
+                          </Link>
+                        </div>
+                      )}
                       {categories.map((category) => {
                         const isActive = hoveredCategory === category.id
                         const isExpandedMobile = expandedCategoryMobile === category.id
@@ -485,7 +553,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                                 isExpandedMobile && "bg-[#88D4E4]/20 dark:bg-[#88D4E4]/10"
                               )}
                             >
-                              <span className="flex-1 truncate pr-2 text-[15px] sm:text-base">{category.nombre}</span>
+                              <span className="flex-1 min-w-0 break-words pr-2 text-[15px] sm:text-base leading-snug">{category.nombre}</span>
                               {/* En desktop: mostrar ChevronRight, en mobile: mostrar ChevronDown con rotación */}
                               <ChevronRight className={cn(
                                 "h-4 w-4 text-muted-foreground group-hover:text-[#139ED4] dark:group-hover:text-[#88D4E4] transition-all duration-200 flex-shrink-0",
@@ -518,7 +586,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                                             {subcategoria.nombre}
                                           </h4>
                                         </div>
-                                        {/* Link a la subcategoría */}
+                                        {/* Link a la subcategoría (solo subcategorías, sin marcas en mobile) */}
                                         <SheetClose asChild>
                                           <Link
                                             href={buildCategorySubcategoriaUrl(category, subcategoria, locale)}
@@ -529,24 +597,6 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                                             </span>
                                           </Link>
                                         </SheetClose>
-                                        {/* Links a marcas individuales */}
-                                        {subcategoria.marcas && subcategoria.marcas.length > 0 && (
-                                          <div className="space-y-1">
-                                            {subcategoria.marcas.map((brand) => (
-                                              <SheetClose asChild key={brand.id}>
-                                                <Link
-                                                  href={buildCategorySubcategoriaMarcaUrl(category, subcategoria, brand, locale)}
-                                                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white dark:hover:bg-slate-700 transition-colors"
-                                                >
-                                                  <BrandLogo brand={brand} />
-                                                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                                    {brand.nombre}
-                                                  </span>
-                                                </Link>
-                                              </SheetClose>
-                                            ))}
-                                          </div>
-                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -587,19 +637,22 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
         </SheetContent>
       </Sheet>
 
-      {/* Panel de marcas - SOLO EN DESKTOP - clic aquí no debe cerrar el sheet (estilo Falabella) */}
-      {hoveredCategory && isSheetOpen && isDesktop && (
+      {/* Panel lateral - SOLO EN DESKTOP: Marcas (todas) o Categoría (solo subcategorías) */}
+      {(hoveredMarcas || hoveredCategory) && isSheetOpen && isDesktop && (
         <div
           ref={brandsPanelRef}
           data-brand-panel
           className="fixed top-0 h-screen bg-white dark:bg-slate-900 shadow-2xl border-l border-gray-200 dark:border-gray-700 overflow-y-auto"
           style={{
-            width: '320px',
+            width: '420px',
             left: `${panelLeft}px`,
             zIndex: 99999,
             pointerEvents: 'auto',
           }}
-          onMouseEnter={handleBrandsPanelEnter}
+          onMouseEnter={() => {
+            if (hoveredMarcas) handleMarcasPanelEnter()
+            else handleBrandsPanelEnter()
+          }}
           onMouseLeave={(e) => {
             if (isClicking) return
             const relatedTarget = e.relatedTarget
@@ -610,84 +663,82 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
             )) {
               return
             }
-            handleBrandsPanelLeave()
+            if (hoveredMarcas) handleMarcasPanelLeave()
+            else handleBrandsPanelLeave()
           }}
         >
           <div className="p-6">
-            {/* Header del panel de marcas */}
-            <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-bold text-inxora-dark-blue dark:text-white mb-2">
-                {hoveredCategoryData?.nombre}
-              </h3>
-              {hoveredCategoryData && (
-                <Link
-                  href={buildCategoryUrlFromObject(hoveredCategoryData, locale)}
-                  className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1"
-                >
-                  Ver todo
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              )}
-            </div>
-
-            {/* Lista de subcategorías con marcas (del árbol, sin loading) */}
-            {currentSubcategorias.length > 0 ? (
-              <div className="space-y-6">
-                {currentSubcategorias.map((subcategoria) => (
-                  <div key={subcategoria.id} className="space-y-3">
-                    {/* Título de la subcategoría */}
-                    <h4 className="text-sm font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
-                      {subcategoria.nombre}
-                    </h4>
-                    
-                    {/* Marcas de la subcategoría */}
-                    {subcategoria.marcas && subcategoria.marcas.length > 0 ? (
-                      <div className="space-y-2">
-                        {/* Header de la subcategoría con link */}
-                        <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                          {hoveredCategoryData && (
-                            <Link
-                              href={buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)}
-                              className="flex items-center justify-between w-full hover:text-[#139ED4] transition-colors"
-                            >
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {subcategoria.nombre}
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Ver productos →
-                              </span>
-                            </Link>
-                          )}
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {hoveredCategoryData && subcategoria.marcas.slice(0, 6).map((brand) => (
-                              <Link
-                                key={brand.id}
-                                href={buildCategorySubcategoriaMarcaUrl(hoveredCategoryData, subcategoria, brand, locale)}
-                                className="flex items-center gap-1.5 p-1.5 rounded hover:bg-[#88D4E4]/20 dark:hover:bg-slate-700 transition-colors"
-                              >
-                                <BrandLogoDesktop brand={brand} />
-                                <span className="text-xs text-gray-600 dark:text-gray-400">
-                                  {brand.nombre}
-                                </span>
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">
-                        No hay marcas disponibles
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+            {hoveredMarcas ? (
+              /* Panel Marcas: todas las marcas con imagen, link a /marca/[slug] */
+              <>
+                <div className="mb-6 pb-4 border-b-2 border-inxora-blue/30 dark:border-[#88D4E4]/30">
+                  <h3 className="text-xl font-extrabold text-inxora-dark-blue dark:text-[#88D4E4] mb-1 tracking-tight">
+                    Marcas
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Explora productos por marca
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {allBrands.map((brand) => {
+                    const brandSlug = normalizeName(brand.nombre) || String(brand.id)
+                    return (
+                      <Link
+                        key={brand.id}
+                        href={`/${locale}/marca/${brandSlug}`}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-[#88D4E4]/10 hover:border-[#139ED4]/30 dark:hover:bg-slate-700/50 transition-colors"
+                      >
+                        <BrandLogoDesktop brand={brand} />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white min-w-0 break-words line-clamp-none">
+                          {brand.nombre}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-sm text-muted-foreground">
-                  No hay subcategorías disponibles para esta categoría
-                </p>
-              </div>
+              /* Panel Categoría: solo subcategorías (sin marcas) */
+              <>
+                <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-bold text-inxora-dark-blue dark:text-white mb-2">
+                    {hoveredCategoryData?.nombre}
+                  </h3>
+                  {hoveredCategoryData && (
+                    <Link
+                      href={buildCategoryUrlFromObject(hoveredCategoryData, locale)}
+                      className="text-sm text-[#139ED4] hover:text-[#88D4E4] dark:text-[#88D4E4] dark:hover:text-[#139ED4] transition-colors flex items-center gap-1"
+                    >
+                      Ver todo
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  )}
+                </div>
+                {currentSubcategorias.length > 0 ? (
+                  <div className="space-y-2">
+                    {currentSubcategorias.map((subcategoria) => (
+                      hoveredCategoryData && (
+                        <Link
+                          key={subcategoria.id}
+                          href={buildCategorySubcategoriaUrl(hoveredCategoryData, subcategoria, locale)}
+                          className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-[#88D4E4]/10 hover:border-[#139ED4]/30 dark:hover:bg-slate-700/50 transition-colors"
+                        >
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {subcategoria.nombre}
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        </Link>
+                      )
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-sm text-muted-foreground">
+                      No hay subcategorías disponibles para esta categoría
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

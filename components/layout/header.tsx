@@ -35,7 +35,8 @@ export function Header({ categories = [] }: HeaderProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      window.location.href = `/${locale}/catalogo?buscar=${encodeURIComponent(searchQuery.trim())}`
+      // /buscar redirige a /marca/[slug] si coincide con una marca, o a /catalogo?buscar=... si no
+      window.location.href = `/${locale}/buscar?q=${encodeURIComponent(searchQuery.trim())}`
     }
   }
 
@@ -81,11 +82,14 @@ export function Header({ categories = [] }: HeaderProps) {
         {/* Buscador - ancho completo del espacio central, sin lupa a la izquierda, botón buscar destacado */}
         <div className="flex-1 flex items-stretch min-w-0 px-1 sm:px-2">
           <form
+            action={`/${locale}/buscar`}
+            method="get"
             onSubmit={handleSearch}
             className="w-full flex-1 flex items-stretch rounded-xl overflow-hidden bg-white shadow-sm min-w-0"
           >
             <Input
               type="search"
+              name="q"
               placeholder="¿Qué estás buscando?"
               className={cn(
                 "flex-1 min-w-0 h-12 md:h-14 pl-4 pr-4 rounded-l-xl rounded-r-none border-0",
@@ -194,9 +198,10 @@ export function Header({ categories = [] }: HeaderProps) {
                 <SheetTitle>Menú</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-4">
-                <form onSubmit={handleSearch} className="flex gap-2">
+                <form action={`/${locale}/buscar`} method="get" onSubmit={handleSearch} className="flex gap-2">
                   <Input
                     type="search"
+                    name="q"
                     placeholder="¿Qué estás buscando?"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

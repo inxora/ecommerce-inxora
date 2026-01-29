@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
+import { ProductImage } from '@/components/ui/product-image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -135,7 +135,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardContent className="p-4">
           <div className="aspect-square relative mb-4 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
             {product.imagen_principal_url && !imageError ? (
-              <Image
+              <ProductImage
                 src={product.imagen_principal_url}
                 alt={product.nombre}
                 title={product.nombre}
@@ -144,7 +144,6 @@ export function ProductCard({ product }: ProductCardProps) {
                 className={`object-contain p-4 group-hover:scale-110 transition-transform duration-300 ${
                   isImageLoading ? 'blur-sm' : 'blur-0'
                 }`}
-                unoptimized
                 onLoad={() => setIsImageLoading(false)}
                 onError={() => {
                   setImageError(true)

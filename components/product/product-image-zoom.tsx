@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { ZoomIn } from 'lucide-react'
-import Image from 'next/image'
+import { ProductImage } from '@/components/ui/product-image'
 
 interface ProductImageZoomProps {
   src: string
@@ -58,7 +58,7 @@ export function ProductImageZoom({ src, alt, className = '', priority = false }:
             transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
           }}
         >
-          <Image
+          <ProductImage
             src={src}
             alt={alt || 'Imagen del producto'}
             title={alt || 'Imagen del producto'}
@@ -71,17 +71,16 @@ export function ProductImageZoom({ src, alt, className = '', priority = false }:
             quality={priority ? 90 : 75}
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-            unoptimized
-              onError={(e) => {
-                // Silenciar el error para evitar que cierre el servidor
-                console.warn(`Error cargando imagen: ${src}`)
-                setImageError(true)
-                // Prevenir propagación del error
-                e.stopPropagation()
-              }}
-              onLoad={() => {
-                setImageError(false)
-              }}
+            onError={(e) => {
+              // Silenciar el error para evitar que cierre el servidor
+              console.warn(`Error cargando imagen: ${src}`)
+              setImageError(true)
+              // Prevenir propagación del error
+              e.stopPropagation()
+            }}
+            onLoad={() => {
+              setImageError(false)
+            }}
           />
         </div>
           {/* Fallback que se muestra si la imagen falla */}

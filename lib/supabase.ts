@@ -16,4 +16,4 @@ export type {
 } from './types'
 
 export { buildProductImageUrl, buildBrandLogoUrl } from './utils/image-urls'
-export { getCategorias, getMarcas, getMarcasByCategoria } from './api/data'
+export { getCategorias, getMarcas, getMarcasByCategoria, getMarcaBySlug } from './api/data'

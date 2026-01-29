@@ -78,3 +78,53 @@ export async function getMarcasByCategoria(categoriaId: number): Promise<Marca[]
     return []
   }
 }
+
+/** Normaliza nombre a slug para URL (igual que product-url) */
+function normalizeName(name: string | undefined | null): string | undefined {
+  if (!name || typeof name !== 'string') return undefined
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/ñ/g, 'n')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+/**
+ * Resuelve un slug de marca (ej. "lenovo", "ridgid") al objeto Marca.
+ * 1) Coincidencia exacta del slug normalizado con el nombre normalizado.
+ * 2) Si no hay exacta: coincidencia donde el slug normalizado está contenido en el nombre normalizado (ej. "3m" en "3m").
+ * 3) Coincidencia sin guiones internos (ej. "ridgid" con "RIDGID").
+ */
+export async function getMarcaBySlug(slug: string): Promise<Marca | null> {
+  if (!slug || !slug.trim()) return null
+  const slugNorm = normalizeName(slug) || ''
+  if (!slugNorm) return null
+  const { data: marcas } = await getMarcas()
+  if (!marcas?.length) return null
+
+  const slugNormCompact = slugNorm.replace(/-/g, '')
+
+  const exact = marcas.find((m) => normalizeName(m.nombre) === slugNorm)
+  if (exact) return exact
+
+  const byCompact = marcas.find((m) => {
+    const nameNorm = normalizeName(m.nombre) || ''
+    const nameCompact = nameNorm.replace(/-/g, '')
+    return nameCompact === slugNormCompact || slugNormCompact === nameCompact
+  })
+  if (byCompact) return byCompact
+
+  const byContains = marcas.find((m) => {
+    const nameNorm = normalizeName(m.nombre) || ''
+    return nameNorm === slugNorm || nameNorm.includes(slugNorm) || slugNorm.includes(nameNorm)
+  })
+  return byContains ?? null
+}

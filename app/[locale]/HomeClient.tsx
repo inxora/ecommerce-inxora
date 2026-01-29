@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ProductImage } from '@/components/ui/product-image';
 import { Producto, Categoria } from '@/lib/supabase';
 import { ProductCard } from '@/components/catalog/product-card';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
@@ -156,13 +157,12 @@ function FeaturedProductsSlider({
                     {/* Imagen del producto */}
                     <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 p-4">
                       {product.imagen_principal_url ? (
-                        <Image
+                        <ProductImage
                           src={product.imagen_principal_url}
                           alt={product.nombre}
                           title={product.nombre}
                           fill
                           className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
-                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
