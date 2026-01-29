@@ -144,6 +144,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 className={`object-contain p-4 group-hover:scale-110 transition-transform duration-300 ${
                   isImageLoading ? 'blur-sm' : 'blur-0'
                 }`}
+                unoptimized
                 onLoad={() => setIsImageLoading(false)}
                 onError={() => {
                   setImageError(true)

@@ -19,15 +19,21 @@ export function buildProductImageUrl(
 ): string | null {
   if (!imageUrl || (typeof imageUrl === 'string' && imageUrl.trim() === '')) return null
 
-  const urlString = typeof imageUrl === 'string' ? imageUrl.trim() : String(imageUrl).trim()
+  let urlString = typeof imageUrl === 'string' ? imageUrl.trim() : String(imageUrl).trim()
   if (urlString.length === 0) return null
+
+  // Normalizar protocolo relativo (//res.cloudinary.com/...) a https
+  if (urlString.startsWith('//') && urlString.includes('res.cloudinary.com')) {
+    urlString = 'https:' + urlString
+  }
 
   const isSupabase =
     urlString.startsWith('https://') &&
     urlString.includes('supabase.co') &&
     urlString.includes('/storage/v1/object/public/')
   const isCloudinary =
-    urlString.startsWith('https://') && urlString.includes('res.cloudinary.com')
+    (urlString.startsWith('https://') || urlString.startsWith('http://')) &&
+    urlString.includes('res.cloudinary.com')
 
   if (isSupabase || isCloudinary) {
     if (

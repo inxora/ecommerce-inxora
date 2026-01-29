@@ -162,6 +162,7 @@ function FeaturedProductsSlider({
                           title={product.nombre}
                           fill
                           className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

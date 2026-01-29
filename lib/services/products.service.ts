@@ -128,9 +128,13 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
   // Procesar imagen principal
   let imagenPrincipalUrl = ''
   if (productoAPI.imagen_principal_url && typeof productoAPI.imagen_principal_url === 'string' && productoAPI.imagen_principal_url.trim() !== '') {
-    const processedUrl = buildProductImageUrl(productoAPI.imagen_principal_url.trim(), skuProducto)
+    const rawUrl = productoAPI.imagen_principal_url.trim()
+    const processedUrl = buildProductImageUrl(rawUrl, skuProducto)
     if (processedUrl) {
       imagenPrincipalUrl = processedUrl
+    } else if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+      // Fallback: si el API envía URL absoluta pero buildProductImageUrl no la reconoce, usarla tal cual
+      imagenPrincipalUrl = rawUrl
     }
   }
   

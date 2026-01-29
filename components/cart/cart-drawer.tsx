@@ -100,6 +100,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
                           title={p.nombre}
                           fill
                           className="object-contain p-2"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
