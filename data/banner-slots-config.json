@@ -1,0 +1,139 @@
+{
+  "description": "Banner slots configuration for INXORA e-commerce - Home & Layout. Replicable en CRM.",
+  "version": "1.0",
+  "page": "home",
+  "updated_at": "2025-02-03",
+  "slots": [
+    {
+      "posicion_slug": "home-hero",
+      "nombre": "Hero Principal",
+      "descripcion": "Banner principal above-the-fold. Actualmente usa imagen estática en HomeClient.tsx (líneas 269-283). Ocupa todo el ancho con min-height 500px (mobile) / 600px (desktop).",
+      "ubicacion": "HomeClient - primera sección, antes de barra de categorías",
+      "existe_actualmente": true,
+      "aspect_ratio": {
+        "desktop": "21:9",
+        "mobile": "4:3",
+        "notas": "Desktop: formato cinematográfico para hero full-width. Mobile: más cuadrado para mejor legibilidad en viewport reducido."
+      },
+      "lcp_priority": 1,
+      "lcp_notas": "Elemento LCP principal. Debe cargarse con priority/fetchpriority=high. Crítico para Core Web Vitals."
+    },
+    {
+      "posicion_slug": "home-below-hero",
+      "nombre": "Strip Post-Hero",
+      "descripcion": "Slot entre Hero y Barra de Categorías Rápidas. No existe en diseño actual; espacio ideal para promos horizontales (envío gratis, ofertas flash).",
+      "ubicacion": "Entre Hero (section) y Barra de Categorías (section)",
+      "existe_actualmente": false,
+      "aspect_ratio": {
+        "desktop": "8:1",
+        "mobile": "4:1",
+        "notas": "Strip horizontal bajo. Formato banner tipo 'marquee' o anuncio promocional."
+      },
+      "lcp_priority": 4,
+      "lcp_notas": "Below the fold. Carga diferida recomendada (lazy)."
+    },
+    {
+      "posicion_slug": "home-below-categories",
+      "nombre": "Entre Categorías y Productos Destacados",
+      "descripcion": "Slot entre la barra de categorías (slider infinito) y la sección Productos Destacados. Ideal para banner promocional de campaña.",
+      "ubicacion": "HomeClient - después de CategoriesCarousel strip, antes de FeaturedProductsSlider",
+      "existe_actualmente": false,
+      "aspect_ratio": {
+        "desktop": "3:1",
+        "mobile": "2:1",
+        "notas": "Banner ancho estándar. Desktop 3:1 tipo leaderboard ampliado. Mobile 2:1 para buena visibilidad."
+      },
+      "lcp_priority": 5,
+      "lcp_notas": "Below the fold. Carga lazy."
+    },
+    {
+      "posicion_slug": "home-middle",
+      "nombre": "Middle Banner (Entre Sliders)",
+      "descripcion": "Entre Productos Destacados y Productos Nuevos. Slot clásico para banners promocionales en e-commerce.",
+      "ubicacion": "HomeClient - entre FeaturedProductsSlider (Destacados) y FeaturedProductsSlider (Nuevos)",
+      "existe_actualmente": false,
+      "aspect_ratio": {
+        "desktop": "16:5",
+        "mobile": "16:6",
+        "notas": "Formato intermedio. 16:5 ≈ 3.2:1 en desktop. Mobile ligeramente más alto para tap targets."
+      },
+      "lcp_priority": 6,
+      "lcp_notas": "Below the fold. Carga lazy."
+    },
+    {
+      "posicion_slug": "home-between-sections",
+      "nombre": "Entre Productos Nuevos y Categorías Principales",
+      "descripcion": "Entre el slider de Productos Nuevos y la sección Categorías Principales (CategoriesCarousel).",
+      "ubicacion": "HomeClient - entre segundo FeaturedProductsSlider y Main Categories Section",
+      "existe_actualmente": false,
+      "aspect_ratio": {
+        "desktop": "3:1",
+        "mobile": "2:1",
+        "notas": "Consistente con home-below-categories para coherencia visual."
+      },
+      "lcp_priority": 7,
+      "lcp_notas": "Below the fold. Carga lazy."
+    },
+    {
+      "posicion_slug": "home-pre-footer",
+      "nombre": "Pre-Footer / CTA Strip",
+      "descripcion": "Reemplaza o complementa la sección CTA actual ('Explora Nuestro Catálogo Completo'). Puede ser banner con CTA integrado.",
+      "ubicacion": "HomeClient - sección CTA (líneas 381-394), antes del cierre del main",
+      "existe_actualmente": true,
+      "aspect_ratio": {
+        "desktop": "21:5",
+        "mobile": "3:1",
+        "notas": "Strip ancho pre-footer. Actualmente es sección de texto + botón; puede convertirse en banner visual."
+      },
+      "lcp_priority": 8,
+      "lcp_notas": "Above the fold en scroll largo. Carga lazy."
+    },
+    {
+      "posicion_slug": "layout-header-strip",
+      "nombre": "Header Promo Strip",
+      "descripcion": "Banner delgado encima o debajo del header sticky. Común para 'Envío gratis', 'Oferta limitada', etc. No existe actualmente.",
+      "ubicacion": "Layout - header.tsx. Encima del header o como primera fila debajo del logo",
+      "existe_actualmente": false,
+      "aspect_ratio": {
+        "desktop": "20:1",
+        "mobile": "10:1",
+        "notas": "Strip muy bajo. Solo texto o icono + texto. Altura ~40-50px."
+      },
+      "lcp_priority": 2,
+      "lcp_notas": "Visible en viewport inicial. Prioridad alta pero menor que Hero."
+    },
+    {
+      "posicion_slug": "layout-footer-strip",
+      "nombre": "Footer Strip / Newsletter",
+      "descripcion": "Banner en el footer, típicamente para newsletter, trust badges o última promoción. No existe actualmente.",
+      "ubicacion": "Layout - footer.tsx. Antes del grid de links o en la bottom bar",
+      "existe_actualmente": false,
+      "aspect_ratio": {
+        "desktop": "4:1",
+        "mobile": "2:1",
+        "notas": "Footer strip. Puede ser newsletter signup o trust badges."
+      },
+      "lcp_priority": 9,
+      "lcp_notas": "Último en la página. Carga lazy, menor prioridad."
+    }
+  ],
+  "lcp_summary": {
+    "orden_recomendado": [
+      "1 - home-hero (LCP principal)",
+      "2 - layout-header-strip (si se implementa)",
+      "3 - (resto below the fold, lazy)",
+      "4-9 - slots restantes en orden de aparición"
+    ],
+    "recomendaciones": [
+      "Hero debe usar priority en Next/Image y fetchpriority='high'",
+      "Slots 4-9: usar loading='lazy' y/o Intersection Observer",
+      "Considerar placeholder con aspect-ratio para evitar CLS"
+    ]
+  },
+  "dimensiones_referencia": {
+    "container_max": "1920px",
+    "hero_min_height_mobile": "500px",
+    "hero_min_height_desktop": "600px",
+    "strip_altura_estimada": "80-120px (desktop), 100-150px (mobile)"
+  }
+}
