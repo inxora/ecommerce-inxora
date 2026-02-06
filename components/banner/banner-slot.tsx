@@ -95,7 +95,12 @@ function BannerLayerElement({
   locale: string
 }) {
   const rawContenido = layer.contenido
-  const contenidoStr = typeof rawContenido === 'string' ? rawContenido : Array.isArray(rawContenido) ? rawContenido.join('') : String(rawContenido || '')
+  const contenidoStr =
+    typeof rawContenido === 'string'
+      ? rawContenido
+      : Array.isArray(rawContenido)
+        ? rawContenido.join('')
+        : String(rawContenido ?? '')
   if (!contenidoStr) return null
   if (banner.todo_clicable && layer.tipo === 'button') return null
 

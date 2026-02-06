@@ -135,7 +135,7 @@ export type Product = Producto
 export interface BannerLayer {
   id: string
   tipo: 'h1' | 'p' | 'button'
-  contenido: string
+  contenido: string | string[]
   x: number
   y: number
   x_mobile?: number
