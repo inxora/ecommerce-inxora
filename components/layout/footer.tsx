@@ -4,10 +4,17 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
+import { BannerSlot } from "@/components/banner/banner-slot"
+import type { Banner } from "@/lib/types"
 
-export function Footer() {
+interface FooterProps {
+  bannersFooterStrip?: Banner[]
+  locale?: string
+}
+
+export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterProps) {
   const pathname = usePathname()
-  const locale = pathname?.split('/')?.[1] || 'es'
+  const locale = localeProp ?? pathname?.split('/')?.[1] ?? 'es'
 
   const footerLinks = {
     company: [
@@ -40,6 +47,16 @@ export function Footer() {
 
   return (
     <footer className="relative bg-gradient-to-br from-inxora-blue via-inxora-blue to-inxora-purple text-white overflow-hidden">
+      {/* layout-footer-strip — Strip antes del contenido del footer */}
+      {bannersFooterStrip && bannersFooterStrip.length > 0 && (
+        <div className="relative container mx-auto px-4 pt-4 max-w-[1920px]">
+          <BannerSlot
+            posicionSlug="layout-footer-strip"
+            banners={bannersFooterStrip}
+            locale={locale}
+          />
+        </div>
+      )}
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{

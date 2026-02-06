@@ -5,7 +5,17 @@ module.exports = {
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+  ],
+  safelist: [
+    // Aspect-ratios dinámicos para BannerSlot (GUIA-GESTOR-BANNERS.md)
+    'aspect-[4/3]', 'md:aspect-[21/9]',
+    'aspect-[2/3]', 'aspect-[24/1]',
+    'aspect-[4/1]', 'md:aspect-[8/1]',
+    'aspect-[24/5]', 'md:aspect-[24/5]',
+    'aspect-[2/1]', 'md:aspect-[3/1]',
+    'aspect-[32/5]', 'md:aspect-[32/5]',
   ],
   theme: {
     container: {
@@ -16,6 +26,9 @@ module.exports = {
       },
     },
     extend: {
+      screens: {
+        'fullhd': '1920px',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

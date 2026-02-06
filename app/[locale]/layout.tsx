@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/footer'
 import { WhatsAppFloat } from '@/components/layout/whatsapp-float'
 import { Metadata } from 'next'
 import { CategoriesService } from '@/lib/services/categories.service'
+import { getBannersActivos } from '@/lib/services/banners.service'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://tienda.inxora.com'),
@@ -52,6 +53,20 @@ export default async function LocaleLayout({
   } catch (error) {
     console.error('Error loading categories in layout:', error)
     // Continuar con array vacío si hay error
+  }
+
+  // Banners de layout (header strip y footer strip)
+  let bannersHeaderStrip: Awaited<ReturnType<typeof getBannersActivos>> = []
+  let bannersFooterStrip: Awaited<ReturnType<typeof getBannersActivos>> = []
+  try {
+    const [headerResult, footerResult] = await Promise.all([
+      getBannersActivos('layout-header-strip'),
+      getBannersActivos('layout-footer-strip'),
+    ])
+    bannersHeaderStrip = headerResult
+    bannersFooterStrip = footerResult
+  } catch (error) {
+    console.error('Error loading layout banners:', error)
   }
   
   try {
@@ -110,13 +125,13 @@ export default async function LocaleLayout({
       />
       <CurrencyProviderWrapper>
         <CartProvider>
-          <Header categories={categories} />
+          <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
 
           <main>
             {children}
           </main>
 
-          <Footer />
+          <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
           <WhatsAppFloat />
         </CartProvider>
       </CurrencyProviderWrapper>
@@ -131,9 +146,9 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale="es" messages={fallbackMessages}>
           <CurrencyProviderWrapper>
             <CartProvider>
-              <Header categories={categories} />
+              <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
               <main>{children}</main>
-              <Footer />
+              <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
               <WhatsAppFloat />
             </CartProvider>
           </CurrencyProviderWrapper>
@@ -145,9 +160,9 @@ export default async function LocaleLayout({
       return (
         <CurrencyProviderWrapper>
           <CartProvider>
-            <Header categories={categories} />
+            <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
             <main>{children}</main>
-            <Footer />
+            <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
             <WhatsAppFloat />
           </CartProvider>
         </CurrencyProviderWrapper>

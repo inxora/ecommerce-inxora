@@ -16,18 +16,22 @@ import Link from 'next/link'
 import { CategoriesSidebar } from '@/components/layout/categories-sidebar'
 import { CategoriaNavegacion } from '@/lib/services/categories.service'
 import { cn } from '@/lib/utils'
+import { BannerSlot } from '@/components/banner/banner-slot'
+import type { Banner } from '@/lib/types'
 
 interface HeaderProps {
   categories?: CategoriaNavegacion[]
+  bannersHeaderStrip?: Banner[]
+  locale?: string
 }
 
-export function Header({ categories = [] }: HeaderProps) {
+export function Header({ categories = [], bannersHeaderStrip = [], locale: localeProp }: HeaderProps) {
   const { getItemsCount } = useCart()
   const { currency, setCurrency, currencySymbol } = useCurrency()
   const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
   const pathname = usePathname() || '/es'
-  const locale = (pathname.split('/')[1] || 'es') || 'es'
+  const locale = localeProp ?? (pathname.split('/')[1] || 'es') ?? 'es'
 
   const itemsCount = getItemsCount()
   const favoritesCount = getFavoritesCount()
@@ -42,6 +46,16 @@ export function Header({ categories = [] }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-inxora-blue shadow-lg">
+      {/* layout-header-strip — Strip promo encima del header */}
+      {bannersHeaderStrip && bannersHeaderStrip.length > 0 && (
+        <div className="w-full max-w-[1920px] mx-auto">
+          <BannerSlot
+            posicionSlug="layout-header-strip"
+            banners={bannersHeaderStrip}
+            locale={locale}
+          />
+        </div>
+      )}
       <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-3 md:px-4 lg:px-6 flex h-16 sm:h-[72px] md:h-20 items-center justify-between gap-2 sm:gap-4 lg:gap-5">
         {/* Logo / Marca - más grande */}
         <Link

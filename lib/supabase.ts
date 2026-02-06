@@ -13,6 +13,7 @@ export type {
   Moneda,
   Disponibilidad,
   ProductoPrecio,
+  Banner,
 } from './types'
 
 export { buildProductImageUrl, buildBrandLogoUrl } from './utils/image-urls'

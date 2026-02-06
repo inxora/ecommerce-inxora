@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 import HomeClient from './HomeClient'
 import { ProductsService } from '@/lib/services/products.service'
-import { CategoriesService } from '@/lib/services/categories.service'
 import { getCategorias } from '@/lib/supabase'
+import { getBannersActivos } from '@/lib/services/banners.service'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -92,12 +92,41 @@ export default async function HomePage({ params }: PageProps) {
       setTimeout(() => resolve({ data: [] }), 5000)
     )
   ])
+
+  const bannersHeroPromise = getBannersActivos('home-hero')
+  const bannersRightDestacadosPromise = getBannersActivos('home-right-destacados')
+  const bannersRightNuevosPromise = getBannersActivos('home-right-nuevos')
+  const bannersBelowHeroPromise = getBannersActivos('home-below-hero')
+  const bannersBelowCategoriesPromise = getBannersActivos('home-below-categories')
+  const bannersMiddlePromise = getBannersActivos('home-middle')
+  const bannersBetweenSectionsPromise = getBannersActivos('home-between-sections')
+  const bannersPreFooterPromise = getBannersActivos('home-pre-footer')
   
   // Ejecutar en paralelo con manejo de errores
-  const [productosDestacadosResult, productosNuevosResult, categoriasResult] = await Promise.allSettled([
+  const [
+    productosDestacadosResult,
+    productosNuevosResult,
+    categoriasResult,
+    bannersHeroResult,
+    bannersRightDestacadosResult,
+    bannersRightNuevosResult,
+    bannersBelowHeroResult,
+    bannersBelowCategoriesResult,
+    bannersMiddleResult,
+    bannersBetweenSectionsResult,
+    bannersPreFooterResult,
+  ] = await Promise.allSettled([
     productosDestacadosPromise,
     productosNuevosPromise,
-    categoriasPromise
+    categoriasPromise,
+    bannersHeroPromise,
+    bannersRightDestacadosPromise,
+    bannersRightNuevosPromise,
+    bannersBelowHeroPromise,
+    bannersBelowCategoriesPromise,
+    bannersMiddlePromise,
+    bannersBetweenSectionsPromise,
+    bannersPreFooterPromise,
   ])
   
   // Procesar resultados con manejo de errores
@@ -112,6 +141,15 @@ export default async function HomePage({ params }: PageProps) {
   const categoriesData = categoriasResult.status === 'fulfilled'
     ? (categoriasResult.value?.data || [])
     : []
+  
+  const bannersHero = bannersHeroResult.status === 'fulfilled' ? bannersHeroResult.value : []
+  const bannersRightDestacados = bannersRightDestacadosResult.status === 'fulfilled' ? bannersRightDestacadosResult.value : []
+  const bannersRightNuevos = bannersRightNuevosResult.status === 'fulfilled' ? bannersRightNuevosResult.value : []
+  const bannersBelowHero = bannersBelowHeroResult.status === 'fulfilled' ? bannersBelowHeroResult.value : []
+  const bannersBelowCategories = bannersBelowCategoriesResult.status === 'fulfilled' ? bannersBelowCategoriesResult.value : []
+  const bannersMiddle = bannersMiddleResult.status === 'fulfilled' ? bannersMiddleResult.value : []
+  const bannersBetweenSections = bannersBetweenSectionsResult.status === 'fulfilled' ? bannersBetweenSectionsResult.value : []
+  const bannersPreFooter = bannersPreFooterResult.status === 'fulfilled' ? bannersPreFooterResult.value : []
   
   // Filtrar categorías (misma lógica que en HomeClient)
   const filteredCategories = categoriesData.filter(
@@ -162,6 +200,14 @@ export default async function HomePage({ params }: PageProps) {
         featuredProducts={featuredProducts}
         newProducts={newProducts}
         categories={filteredCategories}
+        bannersHero={bannersHero}
+        bannersRightDestacados={bannersRightDestacados}
+        bannersRightNuevos={bannersRightNuevos}
+        bannersBelowHero={bannersBelowHero}
+        bannersBelowCategories={bannersBelowCategories}
+        bannersMiddle={bannersMiddle}
+        bannersBetweenSections={bannersBetweenSections}
+        bannersPreFooter={bannersPreFooter}
       />
     </>
   )

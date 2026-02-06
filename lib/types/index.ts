@@ -130,3 +130,52 @@ export interface Producto {
 }
 
 export type Product = Producto
+
+/** Capa de diseño del banner (texto, párrafo, botón) - configuracion_diseno */
+export interface BannerLayer {
+  id: string
+  tipo: 'h1' | 'p' | 'button'
+  contenido: string
+  x: number
+  y: number
+  x_mobile?: number
+  y_mobile?: number
+  estilos?: {
+    color?: string
+    fontSize?: number
+    fontFamily?: string
+    fontWeight?: 'normal' | 'bold' | number
+    fontStyle?: 'normal' | 'italic'
+    textDecoration?: 'none' | 'underline'
+    backgroundColor?: string
+    borderRadius?: number
+  }
+  url?: string
+}
+
+/**
+ * Banner dinámico - estructura de /api/banners/public
+ * Soporta configuracion_diseno (capas) y campos legacy (titulo_h1, subtitulo_p, boton_texto)
+ */
+export interface Banner {
+  id: number
+  posicion_slug: string
+  titulo_h1: string | null
+  subtitulo_p: string | null
+  url_imagen_desktop: string
+  url_imagen_mobile: string | null
+  url_destino: string | null
+  boton_texto: string | null
+  todo_clicable: boolean
+  focal_point: string | null
+  focal_point_mobile?: string | null
+  object_fit?: 'cover' | 'contain'
+  object_fit_mobile?: 'cover' | 'contain' | null
+  configuracion_diseno?: BannerLayer[]
+  orden: number
+  activo: boolean
+  fecha_inicio: string | null
+  fecha_fin: string | null
+  fecha_creacion: string
+  fecha_actualizacion: string
+}
