@@ -192,7 +192,10 @@ function SingleBannerContent({
         <source media="(max-width: 767px)" srcSet={urlMobile} />
         <img
           src={urlDesktop}
-          alt={banner.titulo_h1 || banner.configuracion_diseno?.[0]?.contenido || 'Banner'}
+          alt={banner.titulo_h1 || (() => {
+            const c = banner.configuracion_diseno?.[0]?.contenido
+            return (Array.isArray(c) ? c : c ? [c] : []).join(' ') || 'Banner'
+          })()}
           className="block w-full h-full"
           style={{ objectFit, objectPosition }}
           loading={config.loading}
