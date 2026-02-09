@@ -4,6 +4,11 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Proxy /api/* al backend para evitar CORS (dev y prod cuando se usa API_BASE_URL vacío)
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL || 'https://app.inxora.com'
+    return [{ source: '/api/:path*', destination: `${backendUrl.replace(/\/$/, '')}/api/:path*` }]
+  },
   images: {
     // Allowlist de orígenes (Vercel: limitar qué imágenes se optimizan)
     remotePatterns: [

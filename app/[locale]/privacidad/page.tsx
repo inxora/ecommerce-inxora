@@ -19,7 +19,7 @@ export default function PrivacidadPage({ params }: { params: { locale: string } 
 
           <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 space-y-6">
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Esta Política de Privacidad establece los términos en que INXORA, con RUC 20603436475 (TECNOTOTAL S.A.C.), utiliza y protege la información que es proporcionada por sus usuarios al momento de utilizar su sitio web. Esta compañía está comprometida con la seguridad de los datos de sus usuarios. Cuando le pedimos llenar los campos de información personal con la cual usted pueda ser identificado, lo hacemos asegurando que sólo se empleará de acuerdo con los términos de este documento.
+              Esta Política de Privacidad establece los términos en que INXORA, con INXORA S.A.C. (RUC: 20614841681), utiliza y protege la información que es proporcionada por sus usuarios al momento de utilizar su sitio web. Esta compañía está comprometida con la seguridad de los datos de sus usuarios. Cuando le pedimos llenar los campos de información personal con la cual usted pueda ser identificado, lo hacemos asegurando que sólo se empleará de acuerdo con los términos de este documento.
             </p>
 
             <section>

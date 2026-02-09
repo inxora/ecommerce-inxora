@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
 import { BannerSlot } from "@/components/banner/banner-slot"
 import type { Banner } from "@/lib/types"
@@ -15,6 +16,7 @@ interface FooterProps {
 export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterProps) {
   const pathname = usePathname()
   const locale = localeProp ?? pathname?.split('/')?.[1] ?? 'es'
+  const t = useTranslations('footer')
 
   const footerLinks = {
     company: [
@@ -23,12 +25,13 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
       { name: 'FAQ', href: `/${locale}/faq` },
       { name: 'Cotizaciones', href: `/${locale}/cotizaciones` },
     ],
-    legal: [
-      { name: 'Términos y Condiciones', href: `/${locale}/terminos` },
-      { name: 'Política de Privacidad', href: `/${locale}/privacidad` },
-      { name: 'Política de Cookies', href: `/${locale}/cookies` },
-      { name: 'Envíos', href: `/${locale}/envios` },
-      { name: 'Devoluciones', href: `/${locale}/devoluciones` },
+    enlacesUtiles: [
+      { name: t('avisoLegal'), href: `/${locale}/terminos` },
+      { name: t('legal.privacy'), href: `/${locale}/privacidad` },
+      { name: t('legal.cookies'), href: `/${locale}/cookies` },
+      { name: t('legal.terms'), href: `/${locale}/terminos` },
+      { name: t('legal.shipping'), href: `/${locale}/envios` },
+      { name: t('legal.returns'), href: `/${locale}/devoluciones` },
     ],
     categories: [
       { name: 'Catálogo', href: `/${locale}/catalogo` },
@@ -158,14 +161,14 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Enlaces Útiles */}
           <div className="space-y-3">
             <h3 className="font-medium text-white mb-3 relative">
-              Legal
+              {t('enlacesUtiles')}
               <div className="absolute -bottom-1 left-0 w-6 h-0.5 bg-gradient-to-r from-inxora-cyan to-inxora-pink rounded-full" />
             </h3>
             <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
+              {footerLinks.enlacesUtiles.map((link) => (
                 <li key={link.name}>
                   <Link 
                     href={link.href}
@@ -176,6 +179,22 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
                 </li>
               ))}
             </ul>
+            {/* Libro de Reclamaciones - imagen debajo de Enlaces Útiles */}
+            <div className="flex flex-col items-center mt-4">
+              <Link
+                href={`/${locale}/libro-reclamaciones`}
+                className="group flex flex-col items-center"
+                aria-label={t('libroReclamacionesAlt')}
+              >
+                <Image
+                  src="/libro_reclamaciones.png"
+                  alt={t('libroReclamacionesAlt')}
+                  width={100}
+                  height={100}
+                  className="w-[100px] h-auto opacity-90 transition-transform duration-200 group-hover:scale-110 drop-shadow"
+                />
+              </Link>
+            </div>
           </div>
         </div>
 

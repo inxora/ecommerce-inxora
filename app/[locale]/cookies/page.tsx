@@ -19,7 +19,7 @@ export default function CookiesPage({ params }: { params: { locale: string } }) 
 
           <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 space-y-6">
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Esta Política de Cookies explica qué son las cookies y cómo las utiliza INXORA, con RUC 20603436475 (TECNOTOTAL S.A.C.), en su sitio web. Al navegar o utilizar nuestros servicios, el usuario acepta el uso que hacemos de las cookies, de acuerdo con lo establecido en esta política.
+              Esta Política de Cookies explica qué son las cookies y cómo las utiliza INXORA, con INXORA S.A.C. (RUC: 20614841681), en su sitio web. Al navegar o utilizar nuestros servicios, el usuario acepta el uso que hacemos de las cookies, de acuerdo con lo establecido en esta política.
             </p>
 
             <section>

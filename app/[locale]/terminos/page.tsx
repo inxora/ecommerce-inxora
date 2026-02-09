@@ -19,13 +19,13 @@ export default function TerminosPage({ params }: { params: { locale: string } })
 
           <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 space-y-6">
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Estos Términos y Condiciones regulan el acceso y uso del sitio web de INXORA, con RUC 20603436475 (TECNOTOTAL S.A.C.), así como la contratación de productos y servicios ofrecidos a través del mismo. Al acceder y utilizar este sitio web, el usuario acepta estos términos en su totalidad.
+              Estos Términos y Condiciones regulan el acceso y uso del sitio web de INXORA, con INXORA S.A.C. (RUC: 20614841681), así como la contratación de productos y servicios ofrecidos a través del mismo. Al acceder y utilizar este sitio web, el usuario acepta estos términos en su totalidad.
             </p>
 
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">1. Información General</h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                INXORA es una plataforma digital dedicada a la comercialización de suministros industriales en Perú. El titular del sitio web es TECNOTOTAL S.A.C., con RUC 20603436475.
+                INXORA es una plataforma digital dedicada a la comercialización de suministros industriales en Perú. El titular del sitio web es INXORA S.A.C. (RUC: 20614841681).
               </p>
             </section>
 

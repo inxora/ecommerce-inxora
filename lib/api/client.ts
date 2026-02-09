@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://app.inxora.com'
+// Usar '' para pasar por el proxy de Next.js (evita CORS). Si se define NEXT_PUBLIC_API_URL, se usa directo.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 interface ApiOptions extends Omit<RequestInit, 'next'> {
   params?: Record<string, string | number | boolean | undefined>
