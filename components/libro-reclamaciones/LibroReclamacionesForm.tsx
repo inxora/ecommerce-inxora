@@ -150,22 +150,12 @@ export function LibroReclamacionesForm() {
     e.preventDefault()
     setError('')
 
-    if (!form.nombre || !form.apellido1 || !form.tipoDoc || !form.numDoc || !form.celular || !form.departamento || !form.direccion || !form.email || !form.descripcion || !form.detalle || !form.acepta) {
-      setError(t('validaciones.camposObligatorios'))
-      return
-    }
-
-    if (!form.pedidoCliente?.trim() && !form.numPedido?.trim()) {
-      setError(t('validaciones.camposObligatorios'))
-      return
-    }
-
-    if (!form.celular.match(/^[0-9]{9}$/)) {
+    // Ley N° 29571: ningún campo es obligatorio, se puede enviar de forma anónima
+    if (form.celular && !form.celular.match(/^[0-9]{9}$/)) {
       setError(t('validaciones.telefonoFormato'))
       return
     }
-
-    if (!form.email.match(/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    if (form.email && !form.email.match(/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       setError(t('validaciones.emailInvalido'))
       return
     }
@@ -226,7 +216,7 @@ export function LibroReclamacionesForm() {
       <button
         type="button"
         onClick={() => router.back()}
-        className="mb-6 px-4 py-2 bg-inxora-cyan text-white rounded-lg hover:bg-inxora-blue transition-colors font-medium shadow"
+        className="mb-6 px-4 py-2 bg-[#139ED4] text-white rounded-lg hover:bg-[#171D4C] transition-colors font-medium shadow border border-[#139ED4]"
       >
         {t('atras')}
       </button>
@@ -252,7 +242,6 @@ export function LibroReclamacionesForm() {
                   value={form.nombre}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   autoComplete="given-name"
                 />
               </div>
@@ -263,7 +252,6 @@ export function LibroReclamacionesForm() {
                   value={form.apellido1}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   autoComplete="family-name"
                 />
               </div>
@@ -298,10 +286,8 @@ export function LibroReclamacionesForm() {
                   value={form.numDoc}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   autoComplete="off"
                   maxLength={11}
-                  pattern="[0-9]{8,11}"
                 />
               </div>
               <div>
@@ -311,10 +297,8 @@ export function LibroReclamacionesForm() {
                   value={form.celular}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   autoComplete="tel"
                   maxLength={9}
-                  pattern="[0-9]{9}"
                 />
               </div>
               <div>
@@ -324,7 +308,6 @@ export function LibroReclamacionesForm() {
                   value={usaUbigeoApi ? (idCiudadSelected ?? '') : form.departamento}
                   onChange={handleDepartamentoChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   disabled={loadingUbigeo.ciudades}
                 >
                   <option value="">{loadingUbigeo.ciudades ? t('cargando') : t('selecciona')}</option>
@@ -404,7 +387,6 @@ export function LibroReclamacionesForm() {
                   value={form.direccion}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   autoComplete="street-address"
                 />
               </div>
@@ -425,7 +407,6 @@ export function LibroReclamacionesForm() {
                   value={form.email}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   autoComplete="email"
                 />
               </div>
@@ -565,7 +546,6 @@ export function LibroReclamacionesForm() {
                   value={form.descripcion}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   rows={2}
                 />
               </div>
@@ -606,7 +586,6 @@ export function LibroReclamacionesForm() {
                   value={form.detalle}
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800"
-                  required
                   rows={3}
                 />
               </div>
@@ -638,7 +617,6 @@ export function LibroReclamacionesForm() {
               checked={form.acepta}
               onChange={handleChange}
               className="rounded"
-              required
             />
             <label htmlFor="acepta" className="text-sm">
               {t('politicaPrivacidad')}
@@ -652,7 +630,7 @@ export function LibroReclamacionesForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-inxora-cyan hover:bg-inxora-blue text-white px-4 py-3 rounded-lg font-semibold shadow transition-colors flex items-center justify-center disabled:opacity-60"
+            className="w-full bg-[#139ED4] hover:bg-[#171D4C] text-white px-4 py-3 rounded-lg font-semibold shadow transition-colors flex items-center justify-center disabled:opacity-60 border border-[#139ED4]"
           >
             {submitting ? (
               <>

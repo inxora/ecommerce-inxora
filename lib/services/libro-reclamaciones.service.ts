@@ -5,14 +5,15 @@
 
 import { api } from '@/lib/api/client'
 
+/** Ley N° 29571: todos los campos son opcionales (permite reclamos anónimos) */
 export interface LibroReclamacionesPayload {
-  nombre: string
-  apellido1: string
+  nombre?: string
+  apellido1?: string
   apellido2?: string
   tipoDoc?: string
-  numDoc: string
-  celular: string
-  email: string
+  numDoc?: string
+  celular?: string
+  email?: string
   departamento?: string
   provincia?: string
   distrito?: string
@@ -29,13 +30,13 @@ export interface LibroReclamacionesPayload {
   fechaReclamo?: string
   idEmpresaEmisora?: number
   monto?: number | string
-  descripcion: string
+  descripcion?: string
   fechaCompra?: string
   fechaConsumo?: string
   fechaCaducidad?: string
-  detalle: string
+  detalle?: string
   pedidoCliente?: string
-  acepta: boolean | string
+  acepta?: boolean | string
 }
 
 export interface LibroReclamacionesResponse {
@@ -57,13 +58,13 @@ export const LibroReclamacionesService = {
    */
   async crearReclamo(payload: LibroReclamacionesPayload): Promise<LibroReclamacionesResponse> {
     const body = {
-      nombre: payload.nombre,
-      apellido1: payload.apellido1,
+      nombre: payload.nombre || null,
+      apellido1: payload.apellido1 || null,
       apellido2: payload.apellido2 || null,
       tipoDoc: payload.tipoDoc || 'DNI',
-      numDoc: payload.numDoc,
-      celular: payload.celular,
-      email: payload.email,
+      numDoc: payload.numDoc || null,
+      celular: payload.celular || null,
+      email: payload.email || null,
       departamento: payload.departamento || null,
       provincia: payload.provincia || null,
       distrito: payload.distrito || null,
@@ -80,13 +81,13 @@ export const LibroReclamacionesService = {
       fechaReclamo: payload.fechaReclamo || null,
       idEmpresaEmisora: payload.idEmpresaEmisora ?? 1,
       monto: payload.monto ? Number(payload.monto) : null,
-      descripcion: payload.descripcion,
+      descripcion: payload.descripcion || null,
       fechaCompra: payload.fechaCompra || null,
       fechaConsumo: payload.fechaConsumo || null,
       fechaCaducidad: payload.fechaCaducidad || null,
-      detalle: payload.detalle,
+      detalle: payload.detalle || null,
       pedidoCliente: payload.pedidoCliente || null,
-      acepta: payload.acepta === true || String(payload.acepta).toLowerCase() === 'si',
+      acepta: payload.acepta === true || String(payload.acepta || '').toLowerCase() === 'si',
     }
 
     return api.post<LibroReclamacionesResponse>('/api/libro-reclamaciones/', body)
