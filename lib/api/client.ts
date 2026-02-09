@@ -1,5 +1,9 @@
-// Usar '' para pasar por el proxy de Next.js (evita CORS). Si se define NEXT_PUBLIC_API_URL, se usa directo.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+// En cliente: '' = proxy (app/api/[...path]) evita CORS. En servidor (SSR): fetch() requiere URL absoluta.
+const getApiBaseUrl = () => {
+  const configured = process.env.NEXT_PUBLIC_API_URL ?? ''
+  if (configured) return configured
+  return typeof window !== 'undefined' ? '' : 'https://app.inxora.com'
+}
 
 interface ApiOptions extends Omit<RequestInit, 'next'> {
   params?: Record<string, string | number | boolean | undefined>
@@ -23,8 +27,8 @@ export async function apiClient<T>(
 ): Promise<T> {
   const { params, next, ...fetchOptions } = options || {}
 
-  // Construir URL con query params - siempre usar API_BASE_URL externo
-  let url = `${API_BASE_URL}${endpoint}`
+  const baseUrl = getApiBaseUrl()
+  let url = `${baseUrl}${endpoint}`
   if (params) {
     const searchParams = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
