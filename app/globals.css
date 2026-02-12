@@ -203,6 +203,12 @@
     @apply bg-background text-foreground;
   }
   
+  /* Ocultar botón WhatsApp cuando el chat de Sara está abierto */
+  body.chat-open #whatsapp-float-btn,
+  body:has(#chat-container.open) #whatsapp-float-btn {
+    display: none !important;
+  }
+
   /* Ocultar widget de chat cuando el carrito está abierto */
   body.cart-drawer-open #chatbot-burbuja,
   body.cart-drawer-open #chat-container {

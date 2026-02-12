@@ -145,6 +145,10 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     return Array.from(map.values())
   })()
 
+  const MARCAS_LIMIT = 18
+  const displayedBrands = allBrands.slice(0, MARCAS_LIMIT)
+  const hasMoreBrands = allBrands.length > MARCAS_LIMIT
+
   // Limpiar estado cuando se cierra el sheet
   useEffect(() => {
     if (!isSheetOpen) {
@@ -669,7 +673,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
         >
           <div className="p-6">
             {hoveredMarcas ? (
-              /* Panel Marcas: todas las marcas con imagen, link a /marca/[slug] */
+              /* Panel Marcas: hasta 16 marcas + link a ver todas */
               <>
                 <div className="mb-6 pb-4 border-b-2 border-inxora-blue/30 dark:border-[#88D4E4]/30">
                   <h3 className="text-xl font-extrabold text-inxora-dark-blue dark:text-[#88D4E4] mb-1 tracking-tight">
@@ -680,7 +684,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {allBrands.map((brand) => {
+                  {displayedBrands.map((brand) => {
                     const brandSlug = normalizeName(brand.nombre) || String(brand.id)
                     return (
                       <Link
@@ -696,6 +700,15 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                     )
                   })}
                 </div>
+                {hasMoreBrands && (
+                  <Link
+                    href={`/${locale}/marcas`}
+                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg border-2 border-inxora-blue text-inxora-blue hover:bg-inxora-blue hover:text-white font-semibold text-sm transition-colors"
+                  >
+                    Ver todas las marcas ({allBrands.length})
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                )}
               </>
             ) : (
               /* Panel Categoría: solo subcategorías (sin marcas) */

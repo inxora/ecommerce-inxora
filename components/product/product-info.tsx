@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, createWhatsAppUrl } from '@/lib/utils'
+import { buildProductUrl } from '@/lib/product-seo'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useCurrency } from '@/lib/hooks/use-currency'
-import { Shield, Truck, Star, Heart } from 'lucide-react'
+import { Shield, Truck, Star, Heart, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useFavorites } from '@/lib/hooks/use-favorites'
@@ -28,6 +29,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
   
   const isFavorited = isFavorite(product.sku)
+
+  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51946885531'
+  const skuDisplay = product.sku_producto || product.sku || ''
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tienda.inxora.com'
+  const productUrl = `${baseUrl}${buildProductUrl(product, locale)}`
+  const whatsappMessage = `Hola Sara Xora, me interesa consultar sobre:\n• Producto: ${product.nombre}\n• SKU: ${skuDisplay}\n• Link: ${productUrl}`
+  const whatsappUrl = createWhatsAppUrl(WHATSAPP_NUMBER, whatsappMessage)
+
+  const handleWhatsAppClick = () => {
+    if (typeof window !== 'undefined' && window.dataLayer) {
+      window.dataLayer.push({
+        event: 'whatsapp_click',
+        whatsapp_click_page: 'producto',
+        whatsapp_click_source: 'product_detail',
+        whatsapp_click_sku: skuDisplay,
+      })
+    }
+  }
 
   const handleAddToCart = () => {
     console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity)
@@ -180,14 +199,32 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       <div className="space-y-3">
-        <div className="flex gap-2">
-          <Button 
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+          <Button
             onClick={handleAddToCart}
-            className="flex-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white"
+            className="col-span-2 sm:col-span-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white py-3 sm:py-4 text-sm sm:text-base"
             size="lg"
           >
-            Agregar al carrito
+            <span className="hidden sm:inline">Agregar al carrito</span>
+            <span className="sm:hidden">Agregar</span>
           </Button>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleWhatsAppClick}
+            className="col-span-2 sm:col-span-1"
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366] py-3 sm:py-4 text-sm sm:text-base"
+            >
+              <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="hidden sm:inline">Consultar por WhatsApp</span>
+              <span className="sm:hidden">WhatsApp</span>
+            </Button>
+          </a>
           <Button
             onClick={() => toggleFavorite(product)}
             variant={isFavorited ? "default" : "outline"}
@@ -198,7 +235,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             <Heart className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`} />
           </Button>
         </div>
-        
+
         {(() => {
           // Usar primera categoría del array categorias, o categoria como fallback
           const categoria = product?.categorias && product.categorias.length > 0

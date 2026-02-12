@@ -780,6 +780,8 @@
 
         bubble.classList.add("hidden");
 
+        document.body.classList.add("chat-open");
+
         chatVisible = true;
 
         
@@ -803,6 +805,8 @@
         chatContainer.classList.remove("open");
 
         bubble.classList.remove("hidden");
+
+        document.body.classList.remove("chat-open");
 
         chatVisible = false;
 
