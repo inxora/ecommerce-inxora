@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItemIndicatorRight, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useFavorites } from '@/lib/hooks/use-favorites'
+import { CURRENCIES, getCurrencyByCode } from '@/lib/constants/currencies'
+import { CurrencyFlag } from '@/components/ui/currency-flag'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
@@ -27,7 +29,8 @@ interface HeaderProps {
 
 export function Header({ categories = [], bannersHeaderStrip = [], locale: localeProp }: HeaderProps) {
   const { getItemsCount } = useCart()
-  const { currency, setCurrency, currencySymbol } = useCurrency()
+  const { currency, setCurrency } = useCurrency()
+  const currentCurrency = getCurrencyByCode(currency)
   const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
   const pathname = usePathname() || '/es'
@@ -132,16 +135,31 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             <span>Envíos a todo el Perú</span>
           </div>
 
-          {/* Selector moneda - más grande */}
-          <Select value={currency} onValueChange={(v) => setCurrency(v as 'PEN' | 'USD')}>
-            <SelectTrigger className="flex w-[90px] sm:w-[100px] md:w-[110px] h-10 sm:h-11 bg-white/10 border-white/20 text-white hover:bg-white/20 [&>span]:text-white text-sm">
+          {/* Selector moneda — diseño: bandera + Nombre (símbolo) - CODE */}
+          <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+            <SelectTrigger className="flex w-[200px] sm:w-[220px] h-10 sm:h-11 bg-white/10 border-white/20 text-white hover:bg-white/20 [&>span]:text-white text-sm gap-2.5">
               <SelectValue>
-                <span className="text-white">{currencySymbol} {currency}</span>
+                <span className="flex items-center gap-2.5 text-white">
+                  <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />
+                  <span className="truncate text-left">
+                    {currentCurrency.name} ({currentCurrency.symbol}) - {currentCurrency.code}
+                  </span>
+                </span>
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PEN">S/ Soles</SelectItem>
-              <SelectItem value="USD">$ Dólares</SelectItem>
+            <SelectContent className="max-h-[min(70vh,400px)] min-w-[280px] p-1.5" align="end">
+              {CURRENCIES.map((c) => (
+                <SelectItemIndicatorRight
+                  key={c.code}
+                  value={c.code}
+                  className="flex items-center gap-3 py-2.5 cursor-pointer rounded-md focus:bg-inxora-blue/10 data-[highlighted]:bg-inxora-blue/10"
+                >
+                  <CurrencyFlag countryCode={c.countryCode} size="md" className="shrink-0" />
+                  <span className="min-w-0 flex-1 text-left text-sm">
+                    {c.name} ({c.symbol}) - {c.code}
+                  </span>
+                </SelectItemIndicatorRight>
+              ))}
             </SelectContent>
           </Select>
 
@@ -212,6 +230,32 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                 <SheetTitle>Menú</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-4">
+                {/* Selector moneda en menú móvil — mismo diseño: bandera + Nombre (símbolo) - CODE */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Moneda</label>
+                  <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+                    <SelectTrigger className="w-full bg-muted/50">
+                      <SelectValue>
+                        <span className="flex items-center gap-2.5">
+                          <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" />
+                          <span className="truncate text-left">
+                            {currentCurrency.name} ({currentCurrency.symbol}) - {currentCurrency.code}
+                          </span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[70vh] min-w-[280px] p-1.5">
+                      {CURRENCIES.map((c) => (
+                        <SelectItemIndicatorRight key={c.code} value={c.code} className="flex items-center gap-3 py-2.5 cursor-pointer rounded-md">
+                          <CurrencyFlag countryCode={c.countryCode} size="md" className="shrink-0" />
+                          <span className="min-w-0 flex-1 text-left text-sm">
+                            {c.name} ({c.symbol}) - {c.code}
+                          </span>
+                        </SelectItemIndicatorRight>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <form action={`/${locale}/buscar`} method="get" onSubmit={handleSearch} className="flex gap-2">
                   <Input
                     type="search"

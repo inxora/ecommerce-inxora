@@ -1,14 +1,18 @@
 'use client'
 
-import { formatPrice } from '@/lib/utils'
+import { formatPriceWithThousands } from '@/lib/utils'
 import { useCart } from '@/lib/hooks/use-cart'
+import { useCurrency } from '@/lib/hooks/use-currency'
 
 export function OrderSummary() {
   const { items, getTotalPrice } = useCart()
+  const { currencySymbol } = useCurrency()
 
   const subtotal = getTotalPrice()
   const shipping = 0 // Envío gratis
   const total = subtotal + shipping
+
+  const formatPrice = (price: number) => `${currencySymbol} ${formatPriceWithThousands(price)}`
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg">

@@ -1,39 +1,48 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-
-type Currency = 'PEN' | 'USD'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { getCurrencyByCode, isValidCurrency, type CurrencyCode } from '@/lib/constants/currencies'
 
 interface CurrencyContextType {
-  currency: Currency
-  setCurrency: (currency: Currency) => void
+  currency: CurrencyCode
+  setCurrency: (currency: CurrencyCode) => void
   currencySymbol: string
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
 
 const CURRENCY_STORAGE_KEY = 'inxora-selected-currency'
+const CURRENCY_COOKIE_KEY = 'inxora-selected-currency'
+
+/** Sincroniza la moneda en cookie para que el servidor la lea (SSR, moneda_usuario en API) */
+function setCurrencyCookie(value: string) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${CURRENCY_COOKIE_KEY}=${value};path=/;max-age=31536000`
+}
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>('PEN')
+  const [currency, setCurrencyState] = useState<CurrencyCode>('PEN')
+  const router = useRouter()
+  const currencyInfo = getCurrencyByCode(currency)
 
   useEffect(() => {
-    // Cargar moneda desde localStorage al montar
-    const savedCurrency = localStorage.getItem(CURRENCY_STORAGE_KEY) as Currency
-    if (savedCurrency === 'PEN' || savedCurrency === 'USD') {
+    const savedCurrency = localStorage.getItem(CURRENCY_STORAGE_KEY)
+    if (savedCurrency && isValidCurrency(savedCurrency)) {
       setCurrencyState(savedCurrency)
+      setCurrencyCookie(savedCurrency)
     }
   }, [])
 
-  const setCurrency = (newCurrency: Currency) => {
+  const setCurrency = useCallback((newCurrency: CurrencyCode) => {
     setCurrencyState(newCurrency)
     localStorage.setItem(CURRENCY_STORAGE_KEY, newCurrency)
-  }
-
-  const currencySymbol = currency === 'PEN' ? 'S/' : '$'
+    setCurrencyCookie(newCurrency)
+    router.refresh()
+  }, [router])
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, currencySymbol }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, currencySymbol: currencyInfo.symbol }}>
       {children}
     </CurrencyContext.Provider>
   )

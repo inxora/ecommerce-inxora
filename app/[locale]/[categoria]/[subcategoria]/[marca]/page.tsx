@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { getCategorias, getMarcas, getMarcasByCategoria } from '@/lib/supabase'
 import { ProductsService } from '@/lib/services/products.service'
 import { CategoryClient } from '@/components/category/category-client'
+import { getServerCurrency } from '@/lib/utils/server-currency'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 import { notFound } from 'next/navigation'
@@ -158,6 +159,7 @@ export default async function CategorySubcategoriaMarcaPage({ params, searchPara
   const categoryId = category.id
   const subcategoriaId = subcategoria.id
   const brandId = brand.id
+  const moneda = await getServerCurrency()
 
   // Fetch remaining data in parallel
   // ✅ Ahora usa id_subcategoria para filtrado preciso
@@ -170,6 +172,7 @@ export default async function CategorySubcategoriaMarcaPage({ params, searchPara
       id_marca: [brandId], // Solo esta marca
       buscar: resolvedSearchParams.buscar,
       visible_web: true,
+      moneda_usuario: moneda,
     }),
     getMarcasByCategoria(categoryId) // Para mostrar otras marcas disponibles
   ])

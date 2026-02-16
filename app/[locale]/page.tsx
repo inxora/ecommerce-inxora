@@ -3,6 +3,9 @@ import HomeClient from './HomeClient'
 import { ProductsService } from '@/lib/services/products.service'
 import { getCategorias } from '@/lib/supabase'
 import { getBannersActivos } from '@/lib/services/banners.service'
+import { getServerCurrency } from '@/lib/utils/server-currency'
+
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -65,13 +68,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function HomePage({ params }: PageProps) {
   const { locale } = await params
+  const moneda = await getServerCurrency()
   
   // ✅ OPTIMIZACIÓN CRÍTICA: Usar Promise.allSettled con timeout para evitar bloqueos
   // Si una petición tarda más de 5 segundos, continuar sin ella
   
   // Productos destacados (20 productos para el slider principal)
   const productosDestacadosPromise = Promise.race([
-    ProductsService.getProductosRecientes(20),
+    ProductsService.getProductosRecientes(20, moneda),
     new Promise<{ products: any[], total: number }>((resolve) => 
       setTimeout(() => resolve({ products: [], total: 0 }), 5000)
     )
@@ -80,7 +84,7 @@ export default async function HomePage({ params }: PageProps) {
   // Productos nuevos (10 productos más recientes por fecha_creacion)
   // Nota: getProductosRecientes ordena por fecha_creacion DESC en el frontend
   const productosNuevosPromise = Promise.race([
-    ProductsService.getProductosRecientes(10),
+    ProductsService.getProductosRecientes(10, moneda),
     new Promise<{ products: any[], total: number }>((resolve) => 
       setTimeout(() => resolve({ products: [], total: 0 }), 5000)
     )

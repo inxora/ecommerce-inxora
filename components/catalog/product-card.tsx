@@ -13,8 +13,9 @@ import { useCart } from '@/lib/hooks/use-cart'
 import { useFavorites } from '@/lib/hooks/use-favorites'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useToast } from '@/lib/hooks/use-toast'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatPriceWithThousands } from '@/lib/utils'
 import { buildProductUrl } from '@/lib/product-seo'
+import { getDisplaySymbol } from '@/lib/constants/currencies'
 
 interface ProductCardProps {
   product: Producto
@@ -33,7 +34,13 @@ export function ProductCard({ product }: ProductCardProps) {
   const productUrl = buildProductUrl(product, locale)
   const isFav = isFavorite(product.sku)
 
-  // Obtener precio según la moneda seleccionada
+  // Precio: priorizar precio_simbolo + precio_mostrar del API; símbolo correcto y miles con coma
+  const precioFormateado =
+    product.precio_simbolo != null && product.precio_mostrar != null
+      ? `${getDisplaySymbol(product.precio_simbolo)}${formatPriceWithThousands(product.precio_mostrar)}`
+      : null
+
+  // Obtener precio numérico según la moneda seleccionada (fallback cuando no viene del API)
   const getPrecio = () => {
     if (product.precios_por_moneda) {
       if (currency === 'PEN' && product.precios_por_moneda.soles) {
@@ -43,39 +50,32 @@ export function ProductCard({ product }: ProductCardProps) {
         return product.precios_por_moneda.dolares.precio_venta
       }
     }
-    
-    // Fallback a array de precios
     if (product.precios && product.precios.length > 0) {
       const precio = product.precios.find(p => p.moneda?.codigo === currency) || product.precios[0]
       return precio?.precio_venta || 0
     }
-    
     return 0
   }
 
   const precio = getPrecio()
 
-  // Función para formatear precio con símbolo de moneda
-  // formatPrice ya incluye el símbolo de moneda, así que solo lo usamos directamente
   const formatCurrencyPrice = (price: number) => {
-    // formatPrice ya formatea con el símbolo de moneda, pero está hardcodeado a PEN
-    // Necesitamos formatear según la moneda seleccionada
-    if (currency === 'USD') {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(price)
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency }).format(price)
+    } catch {
+      return formatPrice(price)
     }
-    // Para PEN, usar formatPrice que ya está configurado para soles
-    return formatPrice(price)
   }
+
+  const precioDisplay = precioFormateado ?? formatCurrencyPrice(precio)
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
     // Pasar producto con precio_venta para que el carrito muestre precio correcto
-    addItem({ ...product, precio_venta: precio }, 1)
+    const precioParaCarrito = precio > 0 ? precio : (product.precio_mostrar ? parseFloat(String(product.precio_mostrar)) : 0)
+    addItem({ ...product, precio_venta: precioParaCarrito }, 1)
 
     toast({
       title: 'Producto agregado',
@@ -176,7 +176,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
             <div className="flex items-baseline gap-2">
               <p className="text-lg font-bold text-inxora-blue dark:text-inxora-light-blue">
-                {formatCurrencyPrice(precio)}
+                {precioDisplay}
               </p>
             </div>
           </div>

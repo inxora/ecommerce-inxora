@@ -13,6 +13,13 @@ export function formatPrice(price: number): string {
   }).format(price)
 }
 
+/** Formatea la parte numérica del precio con separador de miles (ej. 450025.69 → "450,025.69") */
+export function formatPriceWithThousands(value: string | number): string {
+  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value
+  if (Number.isNaN(num)) return String(value)
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // Generar ID único para pedidos
 export function generateOrderId(): string {
   const date = new Date()

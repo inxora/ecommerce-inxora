@@ -2,6 +2,7 @@ import { api, apiClient } from '@/lib/api/client'
 import { Producto } from '@/lib/supabase'
 import { buildProductImageUrl } from '@/lib/supabase'
 import { generateProductSlug, normalizeName } from '@/lib/product-url'
+import type { CurrencyCode } from '@/lib/constants/currencies'
 
 // Tipos para la respuesta del endpoint de productos
 export interface UnidadProducto {
@@ -48,6 +49,10 @@ export interface ProductoAPI {
   sku: number
   sku_producto: string | null  // Nuevo campo agregado al API
   nombre: string
+  /** Precio ya convertido cuando el API recibe moneda_usuario (ej: "S/" o "$") */
+  precio_simbolo?: string
+  /** Precio formateado cuando el API recibe moneda_usuario (ej: "27.50") */
+  precio_mostrar?: string
   cod_producto_marca: string | null
   descripcion_corta: string | null
   descripcion_detallada: string | null
@@ -106,6 +111,8 @@ export interface GetProductosParams {
   precioMin?: number
   precioMax?: number
   ordenar?: string
+  /** Moneda del usuario para conversión en el API (precio_simbolo, precio_mostrar) */
+  moneda_usuario?: CurrencyCode
 }
 
 /**
@@ -292,7 +299,10 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     // Agregar subcategoria_principal para poder construir URLs correctas
     subcategoria_principal: productoAPI.subcategoria_principal || undefined,
     precios: [],
-    precios_por_moneda: preciosPorMoneda
+    precios_por_moneda: preciosPorMoneda,
+    // Precio ya convertido por el API cuando se pasa moneda_usuario
+    precio_simbolo: productoAPI.precio_simbolo,
+    precio_mostrar: productoAPI.precio_mostrar
   }
 }
 
@@ -356,6 +366,10 @@ export const ProductsService = {
       // ✅ Ordenamiento (P2)
       if (params?.ordenar) {
         queryParams.ordenar = params.ordenar
+      }
+      // ✅ Moneda del usuario para conversión en el API (precio_simbolo, precio_mostrar)
+      if (params?.moneda_usuario) {
+        queryParams.moneda_usuario = params.moneda_usuario
       }
       // NOTA: El endpoint ahora filtra visible_web=true automáticamente para ecommerce
       
@@ -431,9 +445,10 @@ export const ProductsService = {
    * Obtiene los productos más recientes (para mostrar como "Productos Destacados")
    * Ordena por fecha de creación descendente (más recientes primero)
    * @param limit - Número de productos a obtener (default: 4)
+   * @param moneda_usuario - Moneda para conversión (precio_simbolo, precio_mostrar)
    * @returns Productos más recientes mapeados al formato Producto
    */
-  getProductosRecientes: async (limit: number = 4): Promise<{
+  getProductosRecientes: async (limit: number = 4, moneda_usuario?: CurrencyCode): Promise<{
     products: Producto[]
     total: number
   }> => {
@@ -452,6 +467,7 @@ export const ProductsService = {
         activo: true,
         visible_web: true,
         ordenar: 'nuevo', // ✅ ORDER BY fecha_creacion DESC (según API_SPECIFICATION_PRODUCTOS.md)
+        moneda_usuario,
       })
       
       if (shouldLog) {
@@ -514,21 +530,25 @@ export const ProductsService = {
   /**
    * Busca un producto por su seo_slug en el API externo
    * @param slug - Slug del producto (seo_slug ya normalizado)
+   * @param moneda_usuario - Moneda para conversión (precio_simbolo, precio_mostrar)
    * @returns Producto encontrado o null si no existe
    */
-  getProductoBySlug: async (slug: string): Promise<Producto | null> => {
+  getProductoBySlug: async (slug: string, moneda_usuario?: CurrencyCode): Promise<Producto | null> => {
     try {
       const cacheOptions = process.env.NODE_ENV === 'development'
         ? { next: { revalidate: 60 } }
         : { cache: 'no-store' as RequestCache }
       
+      const params: Record<string, string | number> = {
+        seo_slug: slug,
+        limit: 1,
+      }
+      if (moneda_usuario) params.moneda_usuario = moneda_usuario
+      
       // ✅ Búsqueda directa O(1) por seo_slug exacto
       const response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
         method: 'GET',
-        params: {
-          seo_slug: slug,  // Búsqueda directa por slug
-          limit: 1,        // Solo necesitamos 1 resultado
-        },
+        params,
         ...cacheOptions,
       })
 
@@ -556,13 +576,15 @@ export const ProductsService = {
    * @param idMarca - ID de la marca (requerido)
    * @param idSubcategoria - ID de la subcategoría (opcional, puede ser array para múltiples subcategorías)
    * @param limit - Número máximo de productos a retornar (default: 8)
+   * @param moneda_usuario - Moneda para conversión (precio_simbolo, precio_mostrar)
    * @returns Array de productos relacionados
    */
   getProductosRelacionados: async (
     currentSku: number,
     idMarca: number,
     idSubcategoria?: number | number[],
-    limit: number = 8
+    limit: number = 8,
+    moneda_usuario?: CurrencyCode
   ): Promise<Producto[]> => {
     try {
       // Reducir el límite para evitar respuestas muy grandes
@@ -574,6 +596,7 @@ export const ProductsService = {
 
       // Filtrar por marca (requerido)
       queryParams.id_marca = idMarca
+      if (moneda_usuario) queryParams.moneda_usuario = moneda_usuario
 
       const response = await api.get<ProductosResponse>('/api/test/productos/ecommerce', queryParams)
 
@@ -621,35 +644,36 @@ export const ProductsService = {
   /**
    * Busca un producto por su SKU en el API externo
    * @param sku - SKU del producto
+   * @param moneda_usuario - Moneda para conversión (precio_simbolo, precio_mostrar)
    * @returns Producto encontrado o null si no existe
    */
-  getProductoBySku: async (sku: number): Promise<Producto | null> => {
+  getProductoBySku: async (sku: number, moneda_usuario?: CurrencyCode): Promise<Producto | null> => {
     try {
       // ✅ FIX 3: Estrategia de caché según entorno
       const cacheOptions = process.env.NODE_ENV === 'development'
         ? { next: { revalidate: 60 } } // 1 minuto en desarrollo
         : { cache: 'no-store' as RequestCache } // Sin caché en producción
       
+      const baseParams: Record<string, string | number> = {
+        buscar: String(sku),
+        limit: 100,
+      }
+      if (moneda_usuario) baseParams.moneda_usuario = moneda_usuario
+      
       // Intentar buscar usando el parámetro 'buscar' con el SKU
-      // Si el endpoint soporta búsqueda por SKU, esto debería funcionar
       let response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
         method: 'GET',
-        params: {
-          buscar: String(sku), // Buscar por SKU como string
-          limit: 100, // Limitar a 100 productos para respuesta más rápida
-        },
+        params: baseParams,
         ...cacheOptions,
       })
 
       // Verificar si la respuesta es válida
       if (!response || !response.success || !response.data || !Array.isArray(response.data.productos)) {
-        // Fallback: buscar sin parámetro buscar en la primera página
+        const fallbackParams: Record<string, string | number> = { page: 1, limit: 100 }
+        if (moneda_usuario) fallbackParams.moneda_usuario = moneda_usuario
         response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
           method: 'GET',
-          params: {
-            page: 1,
-            limit: 100,
-          },
+          params: fallbackParams,
           ...cacheOptions,
         })
       }

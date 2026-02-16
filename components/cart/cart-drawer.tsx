@@ -9,7 +9,7 @@ import { useCurrency } from '@/lib/hooks/use-currency'
 import { useParams, useRouter } from 'next/navigation'
 import { ProductImage } from '@/components/ui/product-image'
 import { Separator } from '@/components/ui/separator'
-import { formatPrice as formatCurrency } from '@/lib/utils'
+import { formatPriceWithThousands } from '@/lib/utils'
 
 interface CartDrawerProps {
   children?: React.ReactNode
@@ -27,7 +27,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
   const itemsCount = getItemsCount()
 
   const formatPrice = (price: number) => {
-    return `${currencySymbol} ${formatCurrency(price)}`
+    return `${currencySymbol} ${formatPriceWithThousands(price)}`
   }
 
   const handleCheckout = () => {

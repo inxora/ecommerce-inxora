@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useFavorites } from '@/lib/hooks/use-favorites'
+import { useCurrency } from '@/lib/hooks/use-currency'
 import { ProductCard } from '@/components/catalog/product-card'
 import { Producto } from '@/lib/supabase'
 import { ProductsService } from '@/lib/services/products.service'
@@ -19,6 +20,7 @@ type SortOption = 'date' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc'
 
 export default function FavoritesPage() {
   const { favorites, clearFavorites, getFavoritesCount, removeFavorite } = useFavorites()
+  const { currency } = useCurrency()
   const { addItem } = useCart()
   const { toast } = useToast()
   const [products, setProducts] = useState<Producto[]>([])
@@ -44,7 +46,7 @@ export default function FavoritesPage() {
         for (let i = 0; i < favorites.length; i += maxConcurrent) {
           const batch = favorites.slice(i, i + maxConcurrent)
           const productPromises = batch.map(fav => 
-            ProductsService.getProductoBySku(fav.sku).catch(() => null)
+            ProductsService.getProductoBySku(fav.sku, currency).catch(() => null)
           )
           
           const batchResults = await Promise.all(productPromises)
@@ -66,7 +68,7 @@ export default function FavoritesPage() {
       setProducts([])
       setLoading(false)
     }
-  }, [favorites])
+  }, [favorites, currency])
 
   const favoritesCount = getFavoritesCount()
 

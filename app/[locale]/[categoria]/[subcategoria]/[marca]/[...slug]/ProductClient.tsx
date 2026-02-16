@@ -248,10 +248,6 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
         {product.descripcion_detallada && product.descripcion_detallada.trim() !== '' && (
           <div className="w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700">
             <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-              {/* <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
-                <div className="w-2 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full mr-3"></div>
-                Descripción Detallada
-              </h3> */}
               <div className="relative">
                 <div 
                   className={`text-gray-700 dark:text-gray-300 prose prose-lg max-w-none dark:prose-invert

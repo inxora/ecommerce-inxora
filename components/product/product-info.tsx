@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatPrice, createWhatsAppUrl } from '@/lib/utils'
+import { formatPrice, formatPriceWithThousands, createWhatsAppUrl } from '@/lib/utils'
 import { buildProductUrl } from '@/lib/product-seo'
+import { getDisplaySymbol } from '@/lib/constants/currencies'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -51,10 +52,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const handleAddToCart = () => {
     console.log('ProductInfo - Adding to cart:', product, 'quantity:', quantity)
     
-    // Obtener el precio del producto
+    // Obtener el precio del producto - priorizar precio_mostrar del API (moneda_usuario)
     let precioPrincipal = 0
+    if (product.precio_mostrar != null) {
+      const parsed = parseFloat(String(product.precio_mostrar))
+      if (!Number.isNaN(parsed)) precioPrincipal = parsed
+    }
     
-    if (product.precios && product.precios.length > 0) {
+    if (precioPrincipal === 0 && product.precios && product.precios.length > 0) {
       // Filtrar precios activos y vigentes
       const hoy = new Date().toISOString().split('T')[0]
       const preciosVigentes = product.precios.filter(precio => {
@@ -80,7 +85,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
       // Priorizar soles, luego dólares, luego el primero disponible
       const precioSeleccionado = precioSoles || precioDolares || preciosVigentes[0]
       precioPrincipal = precioSeleccionado?.precio_venta || 0
-    } else {
+    }
+    if (precioPrincipal === 0) {
       // Fallback a precios_por_moneda si no hay precios directos
       precioPrincipal = product.precios_por_moneda?.soles?.precio_venta || 
                        product.precios_por_moneda?.dolares?.precio_venta || 
@@ -148,23 +154,21 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       )}
 
-      {/* Precio debajo de la descripción */}
+      {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}
       <div className="pt-2">
-        {currency === 'PEN' && product.precios_por_moneda?.soles && (
+        {product.precio_simbolo != null && product.precio_mostrar != null ? (
+          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
+            {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
+          </p>
+        ) : currency === 'PEN' && product.precios_por_moneda?.soles ? (
           <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
             {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
           </p>
-        )}
-        
-        {currency === 'USD' && product.precios_por_moneda?.dolares && (
+        ) : currency === 'USD' && product.precios_por_moneda?.dolares ? (
           <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
             {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
           </p>
-        )}
-        
-        {/* Fallback si no hay precio en la moneda seleccionada */}
-        {((currency === 'PEN' && !product.precios_por_moneda?.soles) || 
-          (currency === 'USD' && !product.precios_por_moneda?.dolares)) && (
+        ) : (
           <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">Consultar precio</p>
         )}
       </div>

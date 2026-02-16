@@ -120,6 +120,9 @@ export interface Producto {
     soles?: { precio_venta: number; precio_referencia: number; moneda: Moneda } | null
     dolares?: { precio_venta: number; precio_referencia: number; moneda: Moneda } | null
   }
+  /** Precio ya convertido y formateado por el API cuando se pasa moneda_usuario */
+  precio_simbolo?: string
+  precio_mostrar?: string
   subcategoria_principal?: {
     id: number
     nombre: string

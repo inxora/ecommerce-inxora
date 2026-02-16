@@ -17,6 +17,8 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { ProductsService } from '@/lib/services/products.service'
+import { getServerCurrency } from '@/lib/utils/server-currency'
+import type { CurrencyCode } from '@/lib/constants/currencies'
 import { 
   generateCanonicalUrl, 
   generateSeoTitle, 
@@ -40,20 +42,22 @@ interface ProductPageProps {
 }
 
 // Cache de React para evitar múltiples llamadas a la API en la misma request
-const getProduct = cache(async (slug: string) => {
-  return await ProductsService.getProductoBySlug(slug)
+const getProduct = cache(async (slug: string, moneda?: CurrencyCode) => {
+  return await ProductsService.getProductoBySlug(slug, moneda)
 })
 
 const getRelatedProducts = cache(async (
   currentSku: number,
   idMarca: number,
-  idSubcategoria?: number
+  idSubcategoria: number | undefined,
+  moneda: CurrencyCode
 ) => {
   return await ProductsService.getProductosRelacionados(
     currentSku,
     idMarca,
     idSubcategoria,
-    8 // Máximo 8 productos relacionados
+    8, // Máximo 8 productos relacionados
+    moneda
   )
 })
 
@@ -105,9 +109,10 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
   
   const productSlug = extractProductSlug(slug)
+  const moneda = await getServerCurrency()
   
   try {
-    const product = await getProduct(productSlug)
+    const product = await getProduct(productSlug, moneda)
     
     if (!product) {
       return {
@@ -225,9 +230,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
   
   const productSlug = extractProductSlug(slug)
+  const moneda = await getServerCurrency()
   
   // Obtener el producto
-  const product = await getProduct(productSlug)
+  const product = await getProduct(productSlug, moneda)
   
   if (!product) {
     notFound()
@@ -258,7 +264,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       relatedProducts = await getRelatedProducts(
         product.sku,
         idMarca,
-        idSubcategoria
+        idSubcategoria,
+        moneda
       )
     } catch (error) {
       console.error('Error fetching related products:', error)

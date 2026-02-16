@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getMarcaBySlug, getCategorias, getMarcas } from '@/lib/supabase'
 import { ProductsService } from '@/lib/services/products.service'
+import { getServerCurrency } from '@/lib/utils/server-currency'
 import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
@@ -65,6 +66,7 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
   }
 
   const searchTerm = resolvedSearchParams.buscar || ''
+  const moneda = await getServerCurrency()
 
   const [productsData, categoriesData, marcasData] = await Promise.all([
     ProductsService.getProductos({
@@ -77,6 +79,7 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
       precioMin: resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined,
       precioMax: resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined,
       ordenar: resolvedSearchParams.ordenar,
+      moneda_usuario: moneda,
     }),
     getCategorias(),
     getMarcas(),

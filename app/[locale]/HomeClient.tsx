@@ -6,13 +6,15 @@ import Image from 'next/image';
 import { ProductImage } from '@/components/ui/product-image';
 import { Producto, Categoria } from '@/lib/supabase';
 import type { Banner } from '@/lib/types';
-import { ProductCard } from '@/components/catalog/product-card';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
 import { CategoriesCarousel } from '@/components/home/categories-carousel';
 import { BannerSlot } from '@/components/banner/banner-slot';
 import { ChevronRight, ChevronLeft, ShoppingCart } from 'lucide-react';
 import { buildProductFullUrl } from '@/lib/product-url';
 import { useCart } from '@/lib/hooks/use-cart';
+import { useCurrency } from '@/lib/hooks/use-currency';
+import { getDisplaySymbol } from '@/lib/constants/currencies';
+import { formatPriceWithThousands } from '@/lib/utils';
 
 const HERO_FALLBACK_IMAGE = '/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg'
 
@@ -81,6 +83,21 @@ function FeaturedProductsSlider({
   const sliderRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const { addItem } = useCart()
+  const { currencySymbol } = useCurrency()
+
+  // Precio: priorizar precio_simbolo + precio_mostrar del API (moneda seleccionada)
+  const getPrecioDisplay = (product: Producto) => {
+    if (product.precio_simbolo != null && product.precio_mostrar != null) {
+      return `${getDisplaySymbol(product.precio_simbolo)}${formatPriceWithThousands(product.precio_mostrar)}`
+    }
+    const precio = product.precio_venta ?? product.precios?.[0]?.precio_venta ?? 0
+    return `${currencySymbol}${formatPriceWithThousands(precio)}`
+  }
+
+  const getPrecioNumerico = (product: Producto) => {
+    if (product.precio_mostrar != null) return parseFloat(String(product.precio_mostrar))
+    return product.precio_venta ?? product.precios?.[0]?.precio_venta ?? 0
+  }
   
   // Duplicamos los productos para crear efecto infinito
   const limitedProducts = products.slice(0, maxProducts)
@@ -206,8 +223,8 @@ function FeaturedProductsSlider({
                   <div className="p-4 pt-1">
                     <div className="flex items-end justify-between gap-2 min-h-[52px]">
                       <div className="min-w-0 flex-1">
-                        <p className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white truncate" title={product.precio_venta ? `S/${product.precio_venta.toFixed(2)}` : undefined}>
-                          S/{product.precio_venta?.toFixed(2) || product.precios?.[0]?.precio_venta?.toFixed(2) || '0.00'}
+                        <p className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white truncate" title={getPrecioDisplay(product)}>
+                          {getPrecioDisplay(product)}
                         </p>
                         <p className="text-[10px] text-gray-400">Inc. IGV</p>
                       </div>
@@ -215,8 +232,7 @@ function FeaturedProductsSlider({
                         <button
                           type="button"
                           onClick={() => {
-                            const precio = product.precio_venta ?? product.precios?.[0]?.precio_venta ?? 0
-                            addItem({ ...product, precio_venta: precio }, 1)
+                            addItem({ ...product, precio_venta: getPrecioNumerico(product) }, 1)
                           }}
                           className="flex items-center gap-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white text-xs sm:text-sm font-semibold py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl transition-colors shadow-md hover:shadow-lg"
                         >
