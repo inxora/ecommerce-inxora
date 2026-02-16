@@ -65,10 +65,13 @@ function getPageContext(pathname: string): PageContext {
         message: `Hola Sara Xora, tengo una consulta desde la página de ${mainSegment}.`,
       }
     default:
-      // Categoría o subcategoría (ej: /es/herrajes/...)
+      // Categoría, subcategoría o producto (ej: /es/herrajes/... o /es/cat/sub/marca/slug)
+      const isProduct = segments.length >= 5
       return {
-        pageType: 'categoria',
-        message: `Hola Sara Xora, necesito asesoría sobre productos de ${mainSegment}.`,
+        pageType: isProduct ? 'producto' : 'categoria',
+        message: isProduct
+          ? 'Hola Sara Xora, tengo una consulta sobre un producto que vi en su catálogo.'
+          : `Hola Sara Xora, necesito asesoría sobre productos de ${mainSegment}.`,
       }
   }
 }
@@ -104,10 +107,25 @@ declare global {
 export function WhatsAppFloat() {
   const pathname = usePathname() ?? ''
   const { pageType, message } = getPageContext(pathname)
+
+  const getWhatsAppMessage = (): string => {
+    if (pageType === 'producto' && typeof document !== 'undefined') {
+      const productName = document.body.dataset?.productName
+      if (productName) {
+        return `Hola Sara Xora, me interesa consultar sobre el producto: ${productName}.`
+      }
+    }
+    return message
+  }
+
   const whatsappUrl = createWhatsAppUrl(WHATSAPP_NUMBER, message)
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const finalMessage = getWhatsAppMessage()
+    const url = createWhatsAppUrl(WHATSAPP_NUMBER, finalMessage)
     trackWhatsAppClick(pageType)
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -208,6 +226,7 @@ export function WhatsAppFloat() {
         className="whatsapp-float-btn whatsapp-float"
         aria-label="Contáctanos por WhatsApp"
         onClick={handleClick}
+        role="button"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
           <path d="M16.002 3C8.833 3 3 8.833 3 16.002c0 2.292.6 4.533 1.737 6.504L3 29l6.695-1.756A12.94 12.94 0 0 0 16.002 29C23.169 29 29 23.169 29 16.002 29 8.833 23.169 3 16.002 3zm0 23.545a10.5 10.5 0 0 1-5.354-1.463l-.384-.228-3.977 1.043 1.062-3.882-.25-.398a10.46 10.46 0 0 1-1.606-5.615c0-5.8 4.72-10.52 10.52-10.52 5.799 0 10.52 4.72 10.52 10.52 0 5.8-4.72 10.52-10.52 10.52v.023zm5.77-7.882c-.316-.158-1.872-.924-2.162-1.03-.29-.105-.502-.158-.713.158-.21.316-.818 1.03-.999 1.24-.184.21-.368.237-.684.079-.316-.158-1.334-.492-2.54-1.569-.94-.838-1.573-1.872-1.757-2.188-.184-.316-.02-.486.138-.644.141-.141.316-.368.474-.553.158-.184.21-.316.316-.526.105-.21.052-.395-.026-.553-.079-.158-.713-1.716-.977-2.35-.257-.617-.52-.533-.713-.543-.184-.01-.394-.012-.605-.012-.21 0-.553.079-.842.395-.29.316-1.108 1.082-1.108 2.64 0 1.556 1.134 3.06 1.293 3.27.158.211 2.232 3.41 5.41 4.782.756.326 1.346.52 1.806.667.759.241 1.45.207 1.996.125.61-.09 1.872-.765 2.135-1.504.263-.738.263-1.372.184-1.504-.079-.131-.29-.21-.605-.368z"/>

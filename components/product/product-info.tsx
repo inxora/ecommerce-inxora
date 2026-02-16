@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -30,6 +30,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
   
   const isFavorited = isFavorite(product.sku)
+
+  // Exponer nombre del producto para que el widget flotante de WhatsApp lo use
+  useEffect(() => {
+    if (typeof document !== 'undefined' && product?.nombre) {
+      document.body.dataset.productName = product.nombre
+      return () => {
+        delete document.body.dataset.productName
+      }
+    }
+  }, [product?.nombre])
 
   const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51946885531'
   const skuDisplay = product.sku_producto || product.sku || ''
