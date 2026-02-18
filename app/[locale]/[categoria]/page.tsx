@@ -38,21 +38,46 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   }
 
   // Generar URL canónica base (sin query parameters)
-  // Esto evita contenido duplicado cuando hay filtros como ?marca=49
   const baseUrl = 'https://tienda.inxora.com'
   const canonicalUrl = `${baseUrl}${buildCategoryUrlFromObject(category, locale)}`
+  const title = `${category.nombre} | TIENDA INXORA - Suministros Industriales`
+  const description = `Encuentra productos de ${category.nombre} en TIENDA INXORA. Los mejores suministros industriales en Perú con envío a todo el país.`
+  const keywords = `${category.nombre}, suministros industriales, TIENDA INXORA, Perú, ${category.nombre} productos`
 
   return {
-    title: `${category.nombre} | TIENDA INXORA - Suministros Industriales`,
-    description: `Encuentra productos de ${category.nombre} en TIENDA INXORA. Los mejores suministros industriales en Perú con envío a todo el país.`,
+    title,
+    description,
+    keywords,
+    authors: [{ name: 'INXORA' }],
+    creator: 'INXORA',
+    publisher: 'INXORA',
     alternates: {
-      canonical: canonicalUrl, // URL base sin query parameters
+      canonical: canonicalUrl,
+      languages: {
+        es: canonicalUrl.replace(`/${locale}/`, '/es/'),
+        en: canonicalUrl.replace(`/${locale}/`, '/en/'),
+        pt: canonicalUrl.replace(`/${locale}/`, '/pt/'),
+        'x-default': canonicalUrl.replace(`/${locale}/`, '/es/'),
+      },
     },
     openGraph: {
       title: `${category.nombre} | TIENDA INXORA`,
       description: `Productos de ${category.nombre} - Suministros industriales de calidad.`,
-      url: canonicalUrl, // URL base sin query parameters
+      url: canonicalUrl,
+      siteName: 'TIENDA INXORA',
+      locale: locale === 'es' ? 'es_PE' : locale === 'pt' ? 'pt_BR' : 'en_US',
+      type: 'website',
+      images: [{ url: `${baseUrl}/inxora.png`, width: 800, height: 600, alt: category.nombre, type: 'image/jpeg' as const }],
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${category.nombre} | TIENDA INXORA`,
+      description: `Productos de ${category.nombre} - Suministros industriales de calidad.`,
+      images: [`${baseUrl}/inxora.png`],
+      creator: '@inxora',
+      site: '@inxora',
+    },
+    robots: { index: true, follow: true },
   }
 }
 

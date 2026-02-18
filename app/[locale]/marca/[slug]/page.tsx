@@ -8,6 +8,7 @@ import { CatalogClient } from '@/components/catalog/catalog-client'
 import { FilterState } from '@/components/catalog/product-filters'
 import { PageLoader } from '@/components/ui/loader'
 import { normalizeName } from '@/lib/product-url'
+import { cleanHtmlForMeta, parseMetaRobots } from '@/lib/product-seo'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
@@ -30,15 +31,81 @@ export async function generateMetadata({ params }: MarcaPageProps): Promise<Meta
   if (!brand) return { title: 'Marca no encontrada' }
 
   const baseUrl = 'https://tienda.inxora.com'
+  const defaultCanonical = `${baseUrl}/${locale}/marca/${slug}`
+
+  // SEO desde el endpoint de productos (marca del primer producto)
+  let seoTitle = `Productos ${brand.nombre} | Suministros Industriales | Inxora Perú`
+  let seoDescription = `Encuentra productos ${brand.nombre} en TIENDA INXORA. Distribuidor autorizado en Perú. Precios competitivos y envíos a todo el país.`
+  let seoKeywords: string | undefined
+  let canonicalUrl = defaultCanonical
+  let metaRobots: string | null = null
+  let logoUrl: string | null = null
+
+  try {
+    const { products } = await ProductsService.getProductos({
+      page: 1,
+      limit: 1,
+      id_marca: brand.id,
+      visible_web: true,
+    })
+    if (products?.length > 0 && products[0].marca) {
+      const m = products[0].marca
+      if (m.seo_title?.trim()) seoTitle = m.seo_title.trim()
+      if (m.seo_description?.trim()) seoDescription = cleanHtmlForMeta(m.seo_description, 160)
+      if (m.seo_keywords?.trim()) seoKeywords = m.seo_keywords.trim()
+      if (m.canonical_url?.trim()) canonicalUrl = m.canonical_url.trim()
+      if (m.meta_robots?.trim()) metaRobots = m.meta_robots.trim()
+      if (m.logo_url?.trim()) logoUrl = m.logo_url.trim()
+    }
+  } catch {
+    // Mantener valores por defecto
+  }
+
+  const robots = parseMetaRobots(metaRobots)
+  const ogImage = logoUrl || 'https://tienda.inxora.com/inxora.png'
+
   return {
-    title: `Productos ${brand.nombre} | Suministros Industriales | Inxora Perú`,
-    description: `Encuentra productos ${brand.nombre} en TIENDA INXORA. Distribuidor autorizado en Perú. Precios competitivos y envíos a todo el país.`,
-    openGraph: {
-      title: `Productos ${brand.nombre} | Inxora Perú`,
-      description: `Compra ${brand.nombre} en TIENDA INXORA. Suministros industriales de calidad.`,
-      url: `${baseUrl}/${locale}/marca/${slug}`,
+    title: seoTitle,
+    description: seoDescription,
+    keywords: seoKeywords,
+    authors: [{ name: 'INXORA' }],
+    creator: 'INXORA',
+    publisher: 'INXORA',
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        es: canonicalUrl.replace(`/${locale}/`, '/es/'),
+        en: canonicalUrl.replace(`/${locale}/`, '/en/'),
+        pt: canonicalUrl.replace(`/${locale}/`, '/pt/'),
+        'x-default': canonicalUrl.replace(`/${locale}/`, '/es/'),
+      },
     },
-    alternates: { canonical: `${baseUrl}/${locale}/marca/${slug}` },
+    openGraph: {
+      title: seoTitle,
+      description: seoDescription,
+      url: canonicalUrl,
+      siteName: 'TIENDA INXORA',
+      locale: locale === 'es' ? 'es_PE' : locale === 'pt' ? 'pt_BR' : 'en_US',
+      type: 'website',
+      images: [
+        {
+          url: ogImage,
+          width: 800,
+          height: 600,
+          alt: brand.nombre,
+          type: 'image/jpeg',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seoTitle,
+      description: seoDescription,
+      images: [ogImage],
+      creator: '@inxora',
+      site: '@inxora',
+    },
+    robots,
   }
 }
 
@@ -89,6 +156,12 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
   const { data: allCategories } = categoriesData
   const { data: brands } = marcasData
 
+  // Nombre, descripción y logo de la marca: usar los del endpoint de productos (primer producto) si hay resultados; si no, fallback a getMarcaBySlug
+  const marcaFromApi = products && products.length > 0 ? products[0].marca : null
+  const displayNombre = marcaFromApi?.nombre ?? brand.nombre
+  const displayDescripcion = marcaFromApi?.descripcion ?? null
+  const displayLogoUrl = (marcaFromApi?.logo_url && marcaFromApi.logo_url.trim() !== '') ? marcaFromApi.logo_url : (brand.logo_url || null)
+
   // Respaldo: si el API no filtra por precio, filtrar en servidor para que lo mostrado sea correcto
   const precioMinNum = resolvedSearchParams.precioMin ? parseInt(resolvedSearchParams.precioMin) : undefined
   const precioMaxNum = resolvedSearchParams.precioMax ? parseInt(resolvedSearchParams.precioMax) : undefined
@@ -120,8 +193,8 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
   const collectionPageSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: `Productos ${brand.nombre}`,
-    description: `Catálogo de productos ${brand.nombre} en TIENDA INXORA.`,
+    name: `Productos ${displayNombre}`,
+    description: displayDescripcion?.replace(/<[^>]*>/g, '').slice(0, 200) || `Catálogo de productos ${displayNombre} en TIENDA INXORA.`,
     url: `${baseUrl}/${locale}/marca/${brandSlugForUrl}`,
     numberOfItems: total,
     provider: { '@type': 'Organization', name: 'TIENDA INXORA', url: baseUrl },
@@ -138,7 +211,7 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
           image: product.imagen_principal_url || `${baseUrl}/placeholder-product.png`,
           sku: product.sku_producto || String(product.sku),
           url: `${baseUrl}/${locale}/marca/${brandSlugForUrl}`,
-          brand: { '@type': 'Brand', name: brand.nombre },
+          brand: { '@type': 'Brand', name: displayNombre },
           offers: {
             '@type': 'Offer',
             price: product.precio_venta || 0,
@@ -156,7 +229,7 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${baseUrl}/${locale}` },
       { '@type': 'ListItem', position: 2, name: 'Catálogo', item: `${baseUrl}/${locale}/catalogo` },
-      { '@type': 'ListItem', position: 3, name: brand.nombre, item: `${baseUrl}/${locale}/marca/${brandSlugForUrl}` },
+      { '@type': 'ListItem', position: 3, name: displayNombre, item: `${baseUrl}/${locale}/marca/${brandSlugForUrl}` },
     ],
   }
 
@@ -174,9 +247,10 @@ export default async function MarcaPage({ params, searchParams }: MarcaPageProps
           currentPage={page}
           filters={filters}
           searchTerm={searchTerm}
-          pageTitle={brand.nombre}
-          pageSubtitle={`Productos de ${brand.nombre} en TIENDA INXORA`}
-          brandLogoUrl={brand.logo_url || null}
+          pageTitle={displayNombre}
+          pageSubtitle={displayDescripcion ? undefined : `Productos de ${displayNombre} en TIENDA INXORA`}
+          brandLogoUrl={displayLogoUrl}
+          brandDescription={displayDescripcion}
           hideBrandFilter
         />
       </Suspense>

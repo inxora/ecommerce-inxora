@@ -20,6 +20,8 @@ interface CatalogClientProps {
   pageTitle?: string
   pageSubtitle?: string
   brandLogoUrl?: string | null
+  /** Descripción HTML de la marca (desde el endpoint de productos) */
+  brandDescription?: string | null
   hideBrandFilter?: boolean
 }
 
@@ -35,6 +37,7 @@ export function CatalogClient({
   pageTitle,
   pageSubtitle,
   brandLogoUrl,
+  brandDescription,
   hideBrandFilter = false,
 }: CatalogClientProps) {
   const router = useRouter()
@@ -169,30 +172,34 @@ export function CatalogClient({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-6 sm:py-8">
-        {/* Header Section */}
+        {/* Header Section: logo + nombre a la derecha del logo, descripción debajo */}
         <div className="mb-8 sm:mb-10">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
-            <div className="flex items-center space-x-3">
-              {brandLogoUrl ? (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-600 flex items-center justify-center flex-shrink-0 overflow-hidden p-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={brandLogoUrl} alt={pageTitle || 'Marca'} className="max-w-full max-h-full object-contain" />
-                </div>
-              ) : (
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  {pageTitle ?? 'Catálogo de Productos'}
-                </h1>
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
-                  {pageSubtitle ?? 'Descubre nuestra amplia gama de productos de calidad'}
-                </p>
+          <div className="flex flex-row items-center gap-3 sm:gap-4 mb-4">
+            {brandLogoUrl ? (
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-600 flex items-center justify-center flex-shrink-0 overflow-hidden p-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={brandLogoUrl} alt={pageTitle || 'Marca'} className="max-w-full max-h-full object-contain" />
               </div>
-            </div>
+            ) : (
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+            )}
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+              {pageTitle ?? 'Catálogo de Productos'}
+            </h1>
           </div>
+          {(!brandDescription || (pageSubtitle && pageSubtitle.trim() !== '')) && (
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
+              {pageSubtitle ?? 'Descubre nuestra amplia gama de productos de calidad'}
+            </p>
+          )}
+          {brandDescription && brandDescription.trim() !== '' && (
+            <div
+              className="text-sm sm:text-base text-gray-600 dark:text-gray-400 prose prose-sm dark:prose-invert max-w-none prose-p:mb-2 prose-ul:my-2 prose-li:my-0"
+              dangerouslySetInnerHTML={{ __html: brandDescription }}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">

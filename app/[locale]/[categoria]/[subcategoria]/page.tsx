@@ -51,18 +51,44 @@ export async function generateMetadata({ params }: SubcategoryPageProps): Promis
     // Generar URL canónica
     const baseUrl = 'https://tienda.inxora.com'
     const canonicalUrl = `${baseUrl}${buildCategorySubcategoriaUrl(category, subcategoria, locale)}`
+    const title = `${subcategoria.nombre} - ${category.nombre} | TIENDA INXORA - Suministros Industriales`
+    const description = `Encuentra productos de ${subcategoria.nombre} en ${category.nombre} en TIENDA INXORA. Los mejores suministros industriales en Perú con envío a todo el país.`
+    const keywords = `${subcategoria.nombre}, ${category.nombre}, suministros industriales, TIENDA INXORA, Perú`
 
     return {
-      title: `${subcategoria.nombre} - ${category.nombre} | TIENDA INXORA - Suministros Industriales`,
-      description: `Encuentra productos de ${subcategoria.nombre} en ${category.nombre} en TIENDA INXORA. Los mejores suministros industriales en Perú con envío a todo el país.`,
+      title,
+      description,
+      keywords,
+      authors: [{ name: 'INXORA' }],
+      creator: 'INXORA',
+      publisher: 'INXORA',
       alternates: {
         canonical: canonicalUrl,
+        languages: {
+          es: canonicalUrl.replace(`/${locale}/`, '/es/'),
+          en: canonicalUrl.replace(`/${locale}/`, '/en/'),
+          pt: canonicalUrl.replace(`/${locale}/`, '/pt/'),
+          'x-default': canonicalUrl.replace(`/${locale}/`, '/es/'),
+        },
       },
       openGraph: {
         title: `${subcategoria.nombre} - ${category.nombre} | TIENDA INXORA`,
         description: `Productos de ${subcategoria.nombre} en ${category.nombre} - Suministros industriales de calidad.`,
         url: canonicalUrl,
+        siteName: 'TIENDA INXORA',
+        locale: locale === 'es' ? 'es_PE' : locale === 'pt' ? 'pt_BR' : 'en_US',
+        type: 'website',
+        images: [{ url: `${baseUrl}/inxora.png`, width: 800, height: 600, alt: subcategoria.nombre, type: 'image/jpeg' as const }],
       },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${subcategoria.nombre} - ${category.nombre} | TIENDA INXORA`,
+        description: `Productos de ${subcategoria.nombre} en ${category.nombre} - Suministros industriales de calidad.`,
+        images: [`${baseUrl}/inxora.png`],
+        creator: '@inxora',
+        site: '@inxora',
+      },
+      robots: { index: true, follow: true },
     }
   } catch (error) {
     console.error('Error in generateMetadata for SubcategoryPage:', error)

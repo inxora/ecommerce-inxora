@@ -67,6 +67,12 @@ export interface Marca {
   pais_origen: string
   activo: boolean
   fecha_creacion: string
+  /** SEO: desde API (productos/marca) */
+  seo_title?: string | null
+  seo_description?: string | null
+  seo_keywords?: string | null
+  meta_robots?: string | null
+  canonical_url?: string | null
 }
 
 export interface Producto {

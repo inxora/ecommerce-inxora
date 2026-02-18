@@ -15,6 +15,15 @@ export interface UnidadProducto {
 export interface MarcaProducto {
   id: number
   nombre: string
+  codigo?: string | null
+  descripcion?: string | null
+  logo_url?: string | null
+  seo_title?: string | null
+  seo_description?: string | null
+  seo_keywords?: string | null
+  seo_slug?: string | null
+  meta_robots?: string | null
+  canonical_url?: string | null
 }
 
 export interface ProveedorProducto {
@@ -192,17 +201,23 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     fecha_creacion: new Date().toISOString()
   }
   
-  // Mapear marca
+  // Mapear marca (nombre, descripcion, logo_url y campos SEO del endpoint de productos)
   const marca = {
     id: productoAPI.marca.id,
     nombre: productoAPI.marca.nombre,
-    codigo: '',
-    descripcion: '',
-    logo_url: '',
+    codigo: productoAPI.marca.codigo ?? '',
+    descripcion: productoAPI.marca.descripcion ?? '',
+    logo_url: productoAPI.marca.logo_url ?? '',
     sitio_web: '',
     pais_origen: '',
     activo: true,
-    fecha_creacion: new Date().toISOString()
+    fecha_creacion: new Date().toISOString(),
+    seo_title: productoAPI.marca.seo_title ?? undefined,
+    seo_description: productoAPI.marca.seo_description ?? undefined,
+    seo_keywords: productoAPI.marca.seo_keywords ?? undefined,
+    seo_slug: productoAPI.marca.seo_slug ?? undefined,
+    meta_robots: productoAPI.marca.meta_robots ?? undefined,
+    canonical_url: productoAPI.marca.canonical_url ?? undefined,
   }
   
   // Mapear disponibilidad (usar valores por defecto)

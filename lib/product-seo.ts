@@ -239,6 +239,48 @@ function cleanHtmlDescription(html: string | null | undefined): string {
 }
 
 /**
+ * Limpia HTML y trunca para meta description (marca, categoría, etc.)
+ * @param html - Texto con posible HTML
+ * @param maxLength - Longitud máxima (default 160)
+ */
+export function cleanHtmlForMeta(html: string | null | undefined, maxLength: number = 160): string {
+  if (!html || typeof html !== 'string') return ''
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (text.length <= maxLength) return text
+  return text.slice(0, maxLength - 1).trim() + '…'
+}
+
+/**
+ * Parsea meta_robots (ej. "index,follow" o "noindex,nofollow") al formato de Next.js Metadata.
+ */
+export function parseMetaRobots(
+  metaRobots: string | null | undefined
+): { index: boolean; follow: boolean; nocache?: boolean; googleBot?: Record<string, unknown> } {
+  if (!metaRobots || typeof metaRobots !== 'string') {
+    return { index: true, follow: true }
+  }
+  const s = metaRobots.toLowerCase().trim()
+  const index = !s.includes('noindex')
+  const follow = !s.includes('nofollow')
+  return {
+    index,
+    follow,
+    nocache: false,
+    googleBot: {
+      index,
+      follow,
+      noimageindex: false,
+      'max-video-preview': -1,
+      'max-image-preview': 'large' as const,
+      'max-snippet': -1,
+    },
+  }
+}
+
+/**
  * Genera el título SEO optimizado para productos
  * ✅ PRIORIDAD: Usa seo_title de la base de datos si existe, sino genera uno optimizado
  * Formato: [Nombre del Producto] | [Marca] | Inxora Perú
