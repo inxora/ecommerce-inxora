@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { User, MapPin, CreditCard, Truck, Mail, Phone, ShoppingBag, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
+import { User, MapPin, CreditCard, Truck, Mail, Phone, ShoppingBag, FileText, CheckCircle, AlertCircle, QrCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +17,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
+import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import Link from 'next/link'
 
 const checkoutSchema = z.object({
   // Información personal
@@ -31,8 +34,8 @@ const checkoutSchema = z.object({
   zipCode: z.string().min(4, 'Código postal requerido'),
   country: z.string().min(2, 'País requerido'),
   
-  // Método de pago
-  paymentMethod: z.enum(['card', 'transfer', 'cash']),
+  // Método de pago (solo transferencia bancaria y Yape)
+  paymentMethod: z.enum(['transfer', 'yape']),
   
   // Información adicional
   notes: z.string().optional(),
@@ -49,17 +52,34 @@ export function CheckoutForm() {
   const router = useRouter()
   const { toast } = useToast()
   const { items, clearCart, getTotalPrice } = useCart()
+  const { isLoggedIn, cliente } = useClienteAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      paymentMethod: 'card',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      paymentMethod: 'transfer',
       acceptTerms: false,
       newsletter: false,
-      country: 'Colombia',
+      country: 'Perú',
     },
   })
+
+  // Prellenar Información personal con los datos del cliente logueado
+  useEffect(() => {
+    if (!isLoggedIn || !cliente) return
+    if (cliente.nombre) form.setValue('firstName', cliente.nombre)
+    if (cliente.apellidos) form.setValue('lastName', cliente.apellidos)
+    if (cliente.correo) form.setValue('email', cliente.correo)
+  }, [isLoggedIn, cliente, form])
 
   const onSubmit = async (data: CheckoutFormData) => {
     setIsSubmitting(true)
@@ -151,7 +171,36 @@ export function CheckoutForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      {/* Información Personal */}
+      {/* Aviso: iniciar sesión o registrarse cuando no está logueado */}
+      {!isLoggedIn && (
+        <Card className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-2xl shadow-lg overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-10 w-10 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                  Para continuar con tu compra debes iniciar sesión o registrarte
+                </h3>
+                <p className="text-amber-800 dark:text-amber-200 mb-4">
+                  Inicia sesión si ya tienes cuenta o crea una nueva para finalizar tu pedido.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" asChild variant="outline" className="border-amber-600 text-amber-700 hover:bg-amber-100 dark:border-amber-500 dark:text-amber-300 dark:hover:bg-amber-900/50">
+                    <Link href={`/${locale}/login?redirect=checkout`}>Iniciar sesión</Link>
+                  </Button>
+                  <Button type="button" asChild className="bg-amber-600 hover:bg-amber-700 text-white">
+                    <Link href={`/${locale}/registro?redirect=checkout`}>Registrarse</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Información Personal y Dirección: solo cuando está logueado */}
+      {isLoggedIn && (
+        <>
       <Card className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardTitle className="flex items-center gap-3">
@@ -209,7 +258,6 @@ export function CheckoutForm() {
         </CardContent>
       </Card>
 
-      {/* Dirección de Envío */}
       <Card className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white">
           <CardTitle className="flex items-center gap-3">
@@ -271,8 +319,10 @@ export function CheckoutForm() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
 
-      {/* Método de Pago */}
+      {/* Método de Pago: solo Transferencia bancaria y Yape */}
       <Card className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
           <CardTitle className="flex items-center gap-3">
@@ -285,24 +335,9 @@ export function CheckoutForm() {
         <CardContent className="p-6">
           <RadioGroup
             value={form.watch('paymentMethod')}
-            onValueChange={(value) => form.setValue('paymentMethod', value as 'card' | 'transfer' | 'cash')}
+            onValueChange={(value) => form.setValue('paymentMethod', value as 'transfer' | 'yape')}
             className="space-y-3"
           >
-            <div className="flex items-center space-x-3 p-4 border border-gray-200 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors duration-200">
-              <RadioGroupItem value="card" id="card" />
-              <Label htmlFor="card" className="flex-1 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">Tarjeta de Crédito/Débito</div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Pago seguro con tarjeta</p>
-                  </div>
-                </div>
-              </Label>
-            </div>
-            
             <div className="flex items-center space-x-3 p-4 border border-gray-200 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors duration-200">
               <RadioGroupItem value="transfer" id="transfer" />
               <Label htmlFor="transfer" className="flex-1 cursor-pointer">
@@ -317,26 +352,70 @@ export function CheckoutForm() {
                 </div>
               </Label>
             </div>
-            
+
             <div className="flex items-center space-x-3 p-4 border border-gray-200 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors duration-200">
-              <RadioGroupItem value="cash" id="cash" />
-              <Label htmlFor="cash" className="flex-1 cursor-pointer">
+              <RadioGroupItem value="yape" id="yape" />
+              <Label htmlFor="yape" className="flex-1 cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                    <MapPin className="h-4 w-4 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                    <QrCode className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">Pago Contra Entrega</div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Paga cuando recibas el producto</p>
+                    <div className="font-medium text-gray-900 dark:text-white">{t('checkout.payment.yape')}</div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('checkout.payment.yapeDescription')}</p>
                   </div>
                 </div>
               </Label>
             </div>
           </RadioGroup>
+
+          {/* Datos de transferencia BCP - visible solo cuando está seleccionado */}
+          {form.watch('paymentMethod') === 'transfer' && (
+            <div className="mt-6 p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+              <p className="font-medium text-gray-900 dark:text-white mb-4">BCP – Transferencia bancaria</p>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="font-semibold text-green-800 dark:text-green-200 mb-1">Soles (PEN)</p>
+                  <p className="text-gray-700 dark:text-gray-300">Cta Cte 192-7293189-0-73</p>
+                  <p className="text-gray-600 dark:text-gray-400">CCI: 002-192-007293189073-34</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-green-800 dark:text-green-200 mb-1">Dólares (USD)</p>
+                  <p className="text-gray-700 dark:text-gray-300">Cta Cte 1917331690183</p>
+                  <p className="text-gray-600 dark:text-gray-400">CCI: 00219100733169018351</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* QR de Yape - visible solo cuando está seleccionado */}
+          {form.watch('paymentMethod') === 'yape' && (
+            <div className="mt-6 p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+              <p className="text-center font-medium text-gray-900 dark:text-white mb-4">
+                {t('checkout.payment.yapeInstructions')}
+              </p>
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative w-48 h-48 bg-white rounded-xl p-3 shadow-lg">
+                  <Image
+                    src="/qr_inxora.jpeg"
+                    alt="QR Yape - Inxora"
+                    fill
+                    className="object-contain rounded-lg"
+                    sizes="192px"
+                  />
+                </div>
+                <p className="text-sm text-center text-gray-600 dark:text-gray-400">
+                  {t('checkout.payment.yapeScan')}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Notas Adicionales */}
+      {/* Notas Adicionales y Términos: solo cuando está logueado */}
+      {isLoggedIn && (
+        <>
       <Card className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-gray-500 to-gray-600 text-white">
           <CardTitle className="flex items-center gap-3">
@@ -355,7 +434,6 @@ export function CheckoutForm() {
         </CardContent>
       </Card>
 
-      {/* Términos y Condiciones */}
       <Card className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg">
         <CardContent className="p-6 space-y-4">
           <div className="flex items-start space-x-3">
@@ -383,11 +461,13 @@ export function CheckoutForm() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
 
-      {/* Botón de Envío */}
+      {/* Botón de Envío: deshabilitado si no está logueado */}
       <Button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !isLoggedIn}
         className="w-full h-14 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
       >
         {isSubmitting ? (

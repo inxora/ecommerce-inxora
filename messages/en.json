@@ -107,7 +107,11 @@
       "transfer": "Bank Transfer",
       "transferDescription": "Payment by transfer",
       "cash": "Cash on Delivery",
-      "cashDescription": "Pay when you receive the product"
+      "cashDescription": "Pay when you receive the product",
+      "yape": "Yape (QR)",
+      "yapeDescription": "Pay with Yape by scanning the QR code",
+      "yapeInstructions": "Scan the QR code with the Yape app to complete your payment",
+      "yapeScan": "Open Yape, scan the QR and complete the total amount payment"
     },
     "notes": {
       "title": "Additional Notes",

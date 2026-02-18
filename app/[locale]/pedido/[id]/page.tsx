@@ -52,6 +52,7 @@ function OrderContent({ orderId, locale }: { orderId: string, locale: string }) 
       case 'card': return t('checkout.payment.card')
       case 'transfer': return t('checkout.payment.transfer')
       case 'cash': return t('checkout.payment.cash')
+      case 'yape': return t('checkout.payment.yape')
       default: return method
     }
   }
@@ -207,10 +208,33 @@ function OrderContent({ orderId, locale }: { orderId: string, locale: string }) 
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Método de pago */}
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <CreditCard className="h-4 w-4" />
                 <span className="text-sm">{getPaymentMethodName(order.paymentMethod)}</span>
               </div>
+
+              {/* QR Yape - mostrar cuando el pago es por Yape */}
+              {order.paymentMethod === 'yape' && (
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+                  <p className="text-center font-medium text-sm text-gray-900 dark:text-white mb-3">
+                    {t('checkout.payment.yapeInstructions')}
+                  </p>
+                  <div className="flex justify-center">
+                    <div className="relative w-40 h-40 bg-white rounded-xl p-2 shadow-lg">
+                      <Image
+                        src="/qr_inxora.jpeg"
+                        alt="QR Yape - Inxora"
+                        fill
+                        className="object-contain rounded-lg"
+                        sizes="160px"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-2">
+                    {t('checkout.payment.yapeScan')}
+                  </p>
+                </div>
+              )}
 
               <Separator />
 

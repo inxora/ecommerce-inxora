@@ -8,6 +8,8 @@ const getApiBaseUrl = () => {
 interface ApiOptions extends Omit<RequestInit, 'next'> {
   params?: Record<string, string | number | boolean | undefined>
   next?: { revalidate?: number | false } | { cache?: RequestCache }
+  /** Timeout en milisegundos (por defecto 10000). Para registro/login usar 30000. */
+  timeout?: number
 }
 
 export class ApiError extends Error {
@@ -21,11 +23,13 @@ export class ApiError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT_MS = 10000
+
 export async function apiClient<T>(
   endpoint: string,
   options?: ApiOptions
 ): Promise<T> {
-  const { params, next, ...fetchOptions } = options || {}
+  const { params, next, timeout = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options || {}
 
   const baseUrl = getApiBaseUrl()
   let url = `${baseUrl}${endpoint}`
@@ -67,9 +71,9 @@ export async function apiClient<T>(
       headers['Content-Type'] = 'application/json'
     }
     
-    // Crear un AbortController para timeout (10 segundos por defecto)
+    // Crear un AbortController para timeout configurable
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
     
     let response: Response
     try {
@@ -94,8 +98,8 @@ export async function apiClient<T>(
       
       // Detectar errores de timeout/abort
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error(`[API Client] Request timeout for ${url} (10s)`)
-        throw new Error(`Request timeout: The API request took longer than 10 seconds`)
+        console.error(`[API Client] Request timeout for ${url} (${timeout / 1000}s)`)
+        throw new Error(`Request timeout: The API request took longer than ${timeout / 1000} seconds`)
       }
       
       throw fetchError // Re-lanzar otros errores de fetch
@@ -173,8 +177,8 @@ export async function apiClient<T>(
     
     // Detectar errores de timeout/abort (por si acaso no se capturaron antes)
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error(`[API Client] Request timeout for ${url} (10s)`)
-      throw new Error(`Request timeout: The API request took longer than 10 seconds`)
+      console.error(`[API Client] Request timeout for ${url} (${timeout / 1000}s)`)
+      throw new Error(`Request timeout: The API request took longer than ${timeout / 1000} seconds`)
     }
     
     // Re-lanzar otros errores con más contexto

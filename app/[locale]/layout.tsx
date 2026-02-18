@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { CurrencyProviderWrapper } from '@/components/providers/currency-provider-wrapper'
 import { CartProvider } from '@/components/providers/cart-provider'
+import { ClienteAuthProvider } from '@/lib/contexts/cliente-auth-context'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { WhatsAppFloat } from '@/components/layout/whatsapp-float'
@@ -125,6 +126,7 @@ export default async function LocaleLayout({
       />
       <CurrencyProviderWrapper>
         <CartProvider>
+          <ClienteAuthProvider>
           <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
 
           <main>
@@ -133,6 +135,7 @@ export default async function LocaleLayout({
 
           <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
           <WhatsAppFloat />
+          </ClienteAuthProvider>
         </CartProvider>
       </CurrencyProviderWrapper>
     </NextIntlClientProvider>
@@ -146,10 +149,12 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale="es" messages={fallbackMessages}>
           <CurrencyProviderWrapper>
             <CartProvider>
-              <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
-              <main>{children}</main>
-              <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
-              <WhatsAppFloat />
+              <ClienteAuthProvider>
+                <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
+                <main>{children}</main>
+                <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
+                <WhatsAppFloat />
+              </ClienteAuthProvider>
             </CartProvider>
           </CurrencyProviderWrapper>
         </NextIntlClientProvider>
@@ -160,10 +165,12 @@ export default async function LocaleLayout({
       return (
         <CurrencyProviderWrapper>
           <CartProvider>
-            <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
-            <main>{children}</main>
-            <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
-            <WhatsAppFloat />
+            <ClienteAuthProvider>
+              <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
+              <main>{children}</main>
+              <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
+              <WhatsAppFloat />
+            </ClienteAuthProvider>
           </CartProvider>
         </CurrencyProviderWrapper>
       )
