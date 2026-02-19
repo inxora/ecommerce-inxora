@@ -212,40 +212,40 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       <div className="space-y-3">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3 min-w-0">
           <Button
             onClick={handleAddToCart}
-            className="col-span-2 sm:col-span-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white py-3 sm:py-4 text-sm sm:text-base"
+            className="col-span-2 sm:col-span-1 min-w-0 bg-inxora-blue hover:bg-inxora-blue/90 text-white py-3 sm:py-4 text-xs sm:text-sm md:text-base"
             size="lg"
           >
-            <span className="hidden sm:inline">Agregar al carrito</span>
-            <span className="sm:hidden">Agregar</span>
+            <span className="hidden sm:inline truncate">Agregar al carrito</span>
+            <span className="sm:hidden truncate">Agregar</span>
           </Button>
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWhatsAppClick}
-            className="col-span-2 sm:col-span-1"
+            className="col-span-2 sm:col-span-1 min-w-0"
           >
             <Button
               variant="outline"
               size="lg"
-              className="w-full border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366] py-3 sm:py-4 text-sm sm:text-base"
+              className="w-full min-w-0 border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366] py-3 sm:py-4 text-xs sm:text-sm md:text-base inline-flex items-center justify-center"
             >
-              <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 flex-shrink-0" />
-              <span className="hidden sm:inline">Consultar por WhatsApp</span>
-              <span className="sm:hidden">WhatsApp</span>
+              <MessageCircle className="h-4 w-4 flex-shrink-0 mr-1.5 sm:mr-2" />
+              <span className="hidden md:inline truncate min-w-0">Consultar por WhatsApp</span>
+              <span className="md:hidden truncate min-w-0">WhatsApp</span>
             </Button>
           </a>
           <Button
             onClick={() => toggleFavorite(product)}
             variant={isFavorited ? "default" : "outline"}
             size="lg"
-            className="px-4"
+            className="px-2 min-w-0 shrink-0 py-3 sm:py-4"
             aria-label={isFavorited ? "Eliminar de favoritos" : "Agregar a favoritos"}
           >
-            <Heart className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`} />
+            <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isFavorited ? 'fill-current' : ''}`} />
           </Button>
         </div>
 
