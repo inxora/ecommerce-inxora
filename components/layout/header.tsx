@@ -127,7 +127,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
           </form>
         </div>
 
-        {/* Acciones derecha - responsive */}
+        {/* Acciones derecha: en móvil estrecho (sm) ocultamos moneda en header para que quepa el menú hamburguesa; moneda está en el Sheet */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 overflow-hidden">
           {/* Envíos - más grande en desktop */}
           <div className="hidden xl:flex items-center gap-2 text-white/95 text-sm whitespace-nowrap">
@@ -135,9 +135,9 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             <span>Envíos a todo el Perú</span>
           </div>
 
-          {/* Selector moneda — diseño: bandera + Nombre (símbolo) - CODE */}
+          {/* Selector moneda — oculto en viewports &lt; 640px para que el menú hamburguesa siempre sea visible */}
           <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
-            <SelectTrigger className="flex w-[200px] sm:w-[220px] h-10 sm:h-11 bg-white/10 border-white/20 text-white hover:bg-white/20 [&>span]:text-white text-sm gap-2.5">
+            <SelectTrigger className="hidden sm:flex w-[200px] sm:w-[220px] h-10 sm:h-11 bg-white/10 border-white/20 text-white hover:bg-white/20 [&>span]:text-white text-sm gap-2.5">
               <SelectValue>
                 <span className="flex items-center gap-2.5 text-white">
                   <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />

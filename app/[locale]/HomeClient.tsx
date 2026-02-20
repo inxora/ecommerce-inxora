@@ -142,8 +142,8 @@ function FeaturedProductsSlider({
 
   return (
     <section className={`py-14 sm:py-20 lg:py-24 ${bgColor}`}>
-      <div className="container mx-auto px-6 lg:px-8 xl:px-12 2xl:px-16 max-w-screen-2xl 2xl:max-w-[1920px]">
-        <div className={`grid gap-8 2xl:gap-10 ${rightBannerSlot ? 'grid-cols-1 2xl:grid-cols-[1fr_minmax(320px,380px)]' : 'grid-cols-1'}`}>
+      <div className="container mx-auto px-6 lg:px-8 xl:px-12 min-[1600px]:px-16 max-w-screen-2xl min-[1600px]:max-w-[1920px]">
+        <div className={`grid gap-8 min-[1600px]:gap-10 ${rightBannerSlot ? 'grid-cols-1 min-[1600px]:grid-cols-[1fr_minmax(320px,380px)]' : 'grid-cols-1'}`}>
           <div className="min-w-0 flex flex-col overflow-hidden">
         {/* Header de la secciÃ³n */}
         <div className="flex items-center justify-between mb-8 sm:mb-10">
@@ -177,14 +177,14 @@ function FeaturedProductsSlider({
         <div className="relative overflow-hidden min-w-0">
           <div 
             ref={sliderRef}
-            className="flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-2 pr-8 2xl:pr-4 min-w-0"
+            className="flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-2 pr-8 min-[1600px]:pr-4 min-w-0"
             style={{ scrollBehavior: 'smooth' }}
           >
             {displayProducts.length > 0 ? (
               displayProducts.map((product, index) => (
                 <div 
                   key={`${product.sku}-${index}`} 
-                  className={`product-card flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[340px] xl:w-[360px] ${rightBannerSlot ? '2xl:w-[320px]' : ''} bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 group hover:-translate-y-1`}
+                  className={`product-card flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[340px] xl:w-[360px] ${rightBannerSlot ? 'min-[1600px]:w-[320px]' : ''} bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 group hover:-translate-y-1`}
                 >
                   <Link href={getProductUrl(product, locale)} className="block">
                     {/* Imagen del producto */}
@@ -287,7 +287,7 @@ function FeaturedProductsSlider({
 
           {/* Banner lateral derecho - columna hermana sin absolute */}
           {rightBannerSlot && (
-            <div className="hidden 2xl:flex 2xl:justify-end 2xl:self-center w-full shrink-0">
+            <div className="hidden min-[1600px]:flex min-[1600px]:justify-end min-[1600px]:self-center w-full shrink-0">
               <div className="w-[320px] max-w-full sticky top-24">
                 <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/50 dark:border-slate-600/50 bg-white dark:bg-slate-800">
                   {rightBannerSlot}
