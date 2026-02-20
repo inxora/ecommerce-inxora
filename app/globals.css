@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  /* Evitar scroll horizontal y franja blanca al hacer zoom en móvil */
+  html {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
