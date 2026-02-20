@@ -11,7 +11,7 @@ import { Product } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useCurrency } from '@/lib/hooks/use-currency'
-import { Shield, Truck, Star, Heart, MessageCircle } from 'lucide-react'
+import { Shield, Truck, Star, Heart, MessageCircle, Info } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useFavorites } from '@/lib/hooks/use-favorites'
@@ -165,21 +165,37 @@ export function ProductInfo({ product }: ProductInfoProps) {
       )}
 
       {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}
-      <div className="pt-2">
-        {product.precio_simbolo != null && product.precio_mostrar != null ? (
-          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
-            {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
-          </p>
-        ) : currency === 'PEN' && product.precios_por_moneda?.soles ? (
-          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
-            {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
-          </p>
-        ) : currency === 'USD' && product.precios_por_moneda?.dolares ? (
-          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
-            {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
-          </p>
-        ) : (
-          <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">Consultar precio</p>
+      <div className="pt-2 flex items-center gap-2 flex-wrap">
+        <div>
+          {product.precio_simbolo != null && product.precio_mostrar != null ? (
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
+              {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
+            </p>
+          ) : currency === 'PEN' && product.precios_por_moneda?.soles ? (
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
+              {product.precios_por_moneda.soles.moneda.simbolo} {product.precios_por_moneda.soles.precio_venta.toFixed(2)}
+            </p>
+          ) : currency === 'USD' && product.precios_por_moneda?.dolares ? (
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
+              {product.precios_por_moneda.dolares.moneda.simbolo} {product.precios_por_moneda.dolares.precio_venta.toFixed(2)}
+            </p>
+          ) : (
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">Consultar precio</p>
+          )}
+        </div>
+        {product.condicion_precio_venta != null && product.condicion_precio_venta.trim() !== '' && (
+          <span
+            className="relative group inline-flex flex-shrink-0"
+            title={product.condicion_precio_venta}
+          >
+            <Info
+              className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500 dark:text-gray-400 cursor-help hover:text-inxora-blue dark:hover:text-inxora-light-blue transition-colors"
+              aria-label={`Condición de precio: ${product.condicion_precio_venta}`}
+            />
+            <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-10 whitespace-normal max-w-[260px] text-center">
+              {product.condicion_precio_venta}
+            </span>
+          </span>
         )}
       </div>
 

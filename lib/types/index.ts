@@ -129,6 +129,8 @@ export interface Producto {
   /** Precio ya convertido y formateado por el API cuando se pasa moneda_usuario */
   precio_simbolo?: string
   precio_mostrar?: string
+  /** Condición del precio de venta (ej. sujeto a disponibilidad). Desde producto_proveedor/API. */
+  condicion_precio_venta?: string | null
   subcategoria_principal?: {
     id: number
     nombre: string

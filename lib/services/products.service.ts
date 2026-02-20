@@ -32,13 +32,16 @@ export interface ProveedorProducto {
   margen_aplicado: number
   costo_sin_igv: number
   costo_con_igv: number
-  costo_venta_sin_igv: number
+  costo_venta_sin_igv?: number
   costo_venta_con_igv: number
   id_moneda_costo: number
+  moneda_codigo?: string
   tiempo_entrega_dias: number
   es_proveedor_principal: boolean
   producto_proveedor_id: number
   tipo_cambio_usado: number | null
+  /** Condición del precio de venta (ej. "sujeto a disponibilidad"). Desde tabla producto_proveedor. */
+  condicion_precio_venta?: string | null
 }
 
 export interface SubcategoriaPrincipal {
@@ -81,6 +84,7 @@ export interface ProductoAPI {
   meta_robots: string | null
   canonical_url: string | null
   structured_data: any | null
+  condicion_precio_venta?: string | null
   unidad: UnidadProducto
   categoria: CategoriaProducto | null
   subcategoria_principal: SubcategoriaPrincipal | null
@@ -317,7 +321,9 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     precios_por_moneda: preciosPorMoneda,
     // Precio ya convertido por el API cuando se pasa moneda_usuario
     precio_simbolo: productoAPI.precio_simbolo,
-    precio_mostrar: productoAPI.precio_mostrar
+    precio_mostrar: productoAPI.precio_mostrar,
+    // Condición de precio (producto o proveedor principal)
+    condicion_precio_venta: productoAPI.condicion_precio_venta ?? proveedorPrincipal?.condicion_precio_venta ?? undefined,
   }
 }
 
