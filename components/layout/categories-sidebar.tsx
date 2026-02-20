@@ -145,7 +145,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
     return Array.from(map.values())
   })()
 
-  const MARCAS_LIMIT = 18
+  const MARCAS_LIMIT = 30
   const displayedBrands = allBrands.slice(0, MARCAS_LIMIT)
   const hasMoreBrands = allBrands.length > MARCAS_LIMIT
 
@@ -495,7 +495,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                           onMouseLeave={handleMarcasLeave}
                         >
                           <Link
-                            href={`/${locale}/catalogo`}
+                            href={`/${locale}/marcas`}
                             className={cn(
                               "flex items-center justify-between px-4 py-3 rounded-lg",
                               "text-lg font-bold text-inxora-dark-blue dark:text-[#88D4E4]",
@@ -671,11 +671,11 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
             else handleBrandsPanelLeave()
           }}
         >
-          <div className="p-6">
+          <div className={cn("p-6", hoveredMarcas && "h-full flex flex-col min-h-0")}>
             {hoveredMarcas ? (
-              /* Panel Marcas: hasta 16 marcas + link a ver todas */
+              /* Panel Marcas: 30 marcas con scroll + link Ver todas las marcas abajo; sin espacio vacío */
               <>
-                <div className="mb-6 pb-4 border-b-2 border-inxora-blue/30 dark:border-[#88D4E4]/30">
+                <div className="flex-shrink-0 mb-4 pb-3 border-b-2 border-inxora-blue/30 dark:border-[#88D4E4]/30">
                   <h3 className="text-xl font-extrabold text-inxora-dark-blue dark:text-[#88D4E4] mb-1 tracking-tight">
                     Marcas
                   </h3>
@@ -683,32 +683,34 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                     Explora productos por marca
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {displayedBrands.map((brand) => {
-                    const brandSlug = normalizeName(brand.nombre) || String(brand.id)
-                    return (
-                      <Link
-                        key={brand.id}
-                        href={`/${locale}/marca/${brandSlug}`}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-[#88D4E4]/10 hover:border-[#139ED4]/30 dark:hover:bg-slate-700/50 transition-colors"
-                      >
-                        <BrandLogoDesktop brand={brand} />
-                        <span className="text-sm font-medium text-gray-900 dark:text-white min-w-0 break-words line-clamp-none">
-                          {brand.nombre}
-                        </span>
-                      </Link>
-                    )
-                  })}
+                <div className="flex-1 min-h-0 flex flex-col overflow-y-auto pr-1 -mr-1">
+                  <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+                    {displayedBrands.map((brand) => {
+                      const brandSlug = normalizeName(brand.nombre) || String(brand.id)
+                      return (
+                        <Link
+                          key={brand.id}
+                          href={`/${locale}/marca/${brandSlug}`}
+                          className="flex items-center gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-[#88D4E4]/10 hover:border-[#139ED4]/30 dark:hover:bg-slate-700/50 transition-colors"
+                        >
+                          <BrandLogoDesktop brand={brand} />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white min-w-0 break-words line-clamp-1">
+                            {brand.nombre}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  {hasMoreBrands && (
+                    <Link
+                      href={`/${locale}/marcas`}
+                      className="mt-3 flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg border-2 border-inxora-blue text-inxora-blue hover:bg-inxora-blue hover:text-white font-semibold text-sm transition-colors flex-shrink-0"
+                    >
+                      Ver todas las marcas ({allBrands.length})
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  )}
                 </div>
-                {hasMoreBrands && (
-                  <Link
-                    href={`/${locale}/marcas`}
-                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg border-2 border-inxora-blue text-inxora-blue hover:bg-inxora-blue hover:text-white font-semibold text-sm transition-colors"
-                  >
-                    Ver todas las marcas ({allBrands.length})
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                )}
               </>
             ) : (
               /* Panel Categoría: solo subcategorías (sin marcas) */
