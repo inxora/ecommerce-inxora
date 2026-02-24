@@ -11,10 +11,12 @@ import { Product } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useCurrency } from '@/lib/hooks/use-currency'
-import { Shield, Truck, Star, Heart, MessageCircle, Info } from 'lucide-react'
+import { Shield, Truck, Star, Heart, MessageCircle, Info, PackageX } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useFavorites } from '@/lib/hooks/use-favorites'
+
+const ID_DISPONIBILIDAD_AGOTADO = 12
 
 interface ProductInfoProps {
   product: Product
@@ -30,6 +32,9 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const locale = typeof params?.locale === 'string' ? params.locale : 'es'
   
   const isFavorited = isFavorite(product.sku)
+  const isAgotado = product.id_disponibilidad === ID_DISPONIBILIDAD_AGOTADO
+  // Cuando está agotado (id 12) siempre mostramos "Agotado"; no usar product.disponibilidad.nombre porque puede venir incorrecto del API
+  const labelAgotado = 'Agotado'
 
   // Exponer nombre del producto para que el widget flotante de WhatsApp lo use
   useEffect(() => {
@@ -164,14 +169,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       )}
 
-      {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo. Si id_disponibilidad === 12 (AGOTADO), mostrar disponibilidad en lugar del precio */}
+      {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}
       <div className="pt-2 flex items-center gap-2 flex-wrap">
         <div>
-          {product.id_disponibilidad === 12 ? (
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-muted-foreground">
-              AGOTADO
-            </p>
-          ) : product.precio_simbolo != null && product.precio_mostrar != null ? (
+          {product.precio_simbolo != null && product.precio_mostrar != null ? (
             <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
               {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
             </p>
@@ -229,6 +230,18 @@ export function ProductInfo({ product }: ProductInfoProps) {
             </Button>
           </div>
         </div>
+        {isAgotado && (
+          <div
+            className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3 py-2.5"
+            role="status"
+            aria-label={`Estado del producto: ${labelAgotado}`}
+          >
+            <PackageX className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" aria-hidden />
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+              Estado del producto: <span className="font-semibold">{labelAgotado}</span>
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">

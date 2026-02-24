@@ -61,6 +61,8 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
     images.push('/placeholder-product.svg')
   }
 
+  const isAgotado = product.id_disponibilidad === 12
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
   }
@@ -150,7 +152,10 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 xl:gap-12" style={{ minHeight: '500px' }}>
             {/* Product Images */}
             <div className="space-y-4 lg:space-y-6 bg-white dark:bg-slate-800 p-4 lg:p-6">
-              <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-50 dark:bg-slate-700" style={{ minHeight: '400px' }}>
+              <div
+                className={`relative aspect-square overflow-hidden rounded-lg bg-gray-50 dark:bg-slate-700 ${isAgotado ? 'group' : ''}`}
+                style={{ minHeight: '400px' }}
+              >
                 <ProductImageZoom
                   src={images[currentImageIndex] || '/placeholder-product.svg'}
                   alt={product.nombre}
@@ -186,6 +191,16 @@ export default function ProductClient({ product, relatedProducts, locale }: Prod
                     />
                   ))}
                 </div>
+                {isAgotado && (
+                  <div
+                    className="absolute inset-0 rounded-lg bg-black/35 transition-colors duration-200 group-hover:bg-black/55 pointer-events-none flex items-center justify-center z-10"
+                    aria-hidden
+                  >
+                    <span className="text-white font-semibold text-lg drop-shadow-md px-4 py-2 rounded-lg bg-black/30">
+                      Agotado
+                    </span>
+                  </div>
+                )}
               </div>
               
               {images.length > 1 && (

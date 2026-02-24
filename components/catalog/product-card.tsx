@@ -17,6 +17,8 @@ import { formatPrice, formatPriceWithThousands } from '@/lib/utils'
 import { buildProductUrl } from '@/lib/product-seo'
 import { getDisplaySymbol } from '@/lib/constants/currencies'
 
+const ID_DISPONIBILIDAD_AGOTADO = 12
+
 interface ProductCardProps {
   product: Producto
 }
@@ -25,6 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const params = useParams()
   const locale = (params?.locale as string) || 'es'
   const { addItem } = useCart()
+  const isAgotado = product.id_disponibilidad === ID_DISPONIBILIDAD_AGOTADO
   const { addFavorite, removeFavorite, isFavorite } = useFavorites()
   const { currency, currencySymbol } = useCurrency()
   const { toast } = useToast()
@@ -68,10 +71,6 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   const precioDisplay = precioFormateado ?? formatCurrencyPrice(precio)
-
-  // Si id_disponibilidad === 12 (AGOTADO), mostrar "AGOTADO" en lugar del precio (no usar disponibilidad.nombre: el API lo mapea siempre como "Disponible")
-  const isAgotado = product.id_disponibilidad === 12
-  const priceOrAvailability = isAgotado ? 'AGOTADO' : precioDisplay
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -137,7 +136,9 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <CardContent className="p-4">
-          <div className="aspect-square relative mb-4 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
+          <div
+            className={`aspect-square relative mb-4 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden ${isAgotado ? 'group/agotado' : ''}`}
+          >
             {product.imagen_principal_url && !imageError ? (
               <ProductImage
                 src={product.imagen_principal_url}
@@ -145,9 +146,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 title={product.nombre}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                className={`object-contain p-4 group-hover:scale-110 transition-transform duration-300 ${
-                  isImageLoading ? 'blur-sm' : 'blur-0'
-                }`}
+                className={`object-contain p-4 transition-transform duration-300 ${
+                  isAgotado ? '' : 'group-hover:scale-110'
+                } ${isImageLoading ? 'blur-sm' : 'blur-0'}`}
                 onLoad={() => setIsImageLoading(false)}
                 onError={() => {
                   setImageError(true)
@@ -157,6 +158,16 @@ export function ProductCard({ product }: ProductCardProps) {
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Package className="h-16 w-16 text-gray-300 dark:text-gray-600" />
+              </div>
+            )}
+            {isAgotado && (
+              <div
+                className="absolute inset-0 rounded-lg bg-black/35 transition-colors duration-200 group-hover/agotado:bg-black/55 pointer-events-none flex items-center justify-center z-10"
+                aria-hidden
+              >
+                <span className="text-white font-semibold text-base sm:text-lg drop-shadow-md px-3 py-1.5 rounded-lg bg-black/30">
+                  Agotado
+                </span>
               </div>
             )}
           </div>
@@ -179,8 +190,8 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
 
             <div className="flex items-baseline gap-2">
-              <p className={`text-lg font-bold ${isAgotado ? 'text-muted-foreground' : 'text-inxora-blue dark:text-inxora-light-blue'}`}>
-                {priceOrAvailability}
+              <p className="text-lg font-bold text-inxora-blue dark:text-inxora-light-blue">
+                {precioDisplay}
               </p>
             </div>
           </div>
