@@ -246,14 +246,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       <div className="space-y-3">
         <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3 min-w-0">
-          <Button
-            onClick={handleAddToCart}
-            className="col-span-2 sm:col-span-1 min-w-0 bg-inxora-blue hover:bg-inxora-blue/90 text-white py-3 sm:py-4 text-xs sm:text-sm md:text-base"
-            size="lg"
-          >
-            <span className="hidden sm:inline truncate">Agregar al carrito</span>
-            <span className="sm:hidden truncate">Agregar</span>
-          </Button>
+          {!isAgotado && (
+            <Button
+              onClick={handleAddToCart}
+              className="col-span-2 sm:col-span-1 min-w-0 bg-inxora-blue hover:bg-inxora-blue/90 text-white py-3 sm:py-4 text-xs sm:text-sm md:text-base"
+              size="lg"
+            >
+              <span className="hidden sm:inline truncate">Agregar al carrito</span>
+              <span className="sm:hidden truncate">Agregar</span>
+            </Button>
+          )}
           <a
             href={whatsappUrl}
             target="_blank"

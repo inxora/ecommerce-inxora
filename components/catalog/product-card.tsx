@@ -198,13 +198,15 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardContent>
 
         <CardFooter className="p-4 pt-0 flex gap-2">
-          <Button
-            className="flex-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white"
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Agregar
-          </Button>
+          {!isAgotado && (
+            <Button
+              className="flex-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Agregar
+            </Button>
+          )}
           <Button
             variant="outline"
             size="icon"
