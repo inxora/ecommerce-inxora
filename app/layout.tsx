@@ -68,16 +68,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
 
         {children}
-
-        {/* Chat Widget */}
-        <Script
-          id="chat-widget-config"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `/* config */`,
-          }}
-        />
-        <Script src="/js/chat.js" strategy="afterInteractive" />
       </body>
     </html>
   )

@@ -5,7 +5,7 @@ import { CartProvider } from '@/components/providers/cart-provider'
 import { ClienteAuthProvider } from '@/lib/contexts/cliente-auth-context'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
-import { WhatsAppFloat } from '@/components/layout/whatsapp-float'
+import { FloatWidgetsWrapper } from '@/components/layout/float-widgets-wrapper'
 import { Metadata } from 'next'
 import { CategoriesService } from '@/lib/services/categories.service'
 import { getBannersActivos } from '@/lib/services/banners.service'
@@ -134,7 +134,7 @@ export default async function LocaleLayout({
           </main>
 
           <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
-          <WhatsAppFloat />
+          <FloatWidgetsWrapper />
           </ClienteAuthProvider>
         </CartProvider>
       </CurrencyProviderWrapper>
@@ -153,7 +153,7 @@ export default async function LocaleLayout({
                 <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
                 <main>{children}</main>
                 <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
-                <WhatsAppFloat />
+                <FloatWidgetsWrapper />
               </ClienteAuthProvider>
             </CartProvider>
           </CurrencyProviderWrapper>
@@ -169,7 +169,7 @@ export default async function LocaleLayout({
               <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
               <main>{children}</main>
               <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
-              <WhatsAppFloat />
+              <FloatWidgetsWrapper />
             </ClienteAuthProvider>
           </CartProvider>
         </CurrencyProviderWrapper>

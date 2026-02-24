@@ -69,6 +69,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const precioDisplay = precioFormateado ?? formatCurrencyPrice(precio)
 
+  // Si id_disponibilidad === 12 (AGOTADO), mostrar "AGOTADO" en lugar del precio (no usar disponibilidad.nombre: el API lo mapea siempre como "Disponible")
+  const isAgotado = product.id_disponibilidad === 12
+  const priceOrAvailability = isAgotado ? 'AGOTADO' : precioDisplay
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -175,8 +179,8 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
 
             <div className="flex items-baseline gap-2">
-              <p className="text-lg font-bold text-inxora-blue dark:text-inxora-light-blue">
-                {precioDisplay}
+              <p className={`text-lg font-bold ${isAgotado ? 'text-muted-foreground' : 'text-inxora-blue dark:text-inxora-light-blue'}`}>
+                {priceOrAvailability}
               </p>
             </div>
           </div>

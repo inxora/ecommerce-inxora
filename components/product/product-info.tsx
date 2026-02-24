@@ -164,10 +164,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       )}
 
-      {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}
+      {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo. Si id_disponibilidad === 12 (AGOTADO), mostrar disponibilidad en lugar del precio */}
       <div className="pt-2 flex items-center gap-2 flex-wrap">
         <div>
-          {product.precio_simbolo != null && product.precio_mostrar != null ? (
+          {product.id_disponibilidad === 12 ? (
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-muted-foreground">
+              AGOTADO
+            </p>
+          ) : product.precio_simbolo != null && product.precio_mostrar != null ? (
             <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
               {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
             </p>

@@ -98,13 +98,14 @@ declare global {
  * - Mensaje pre-rellenado contextual según la página
  * - Animación float sutil
  * - Tracking de clics vía dataLayer (GTM)
+ * - Se oculta cuando el chat de Sara está abierto (prop hidden)
  *
  * Tamaños:
  * - Desktop (≥1024px): 80x80px
  * - Tablet/Default: 64x64px
  * - Mobile (<768px): 50x50px
  */
-export function WhatsAppFloat() {
+export function WhatsAppFloat({ hidden = false }: { hidden?: boolean }) {
   const pathname = usePathname() ?? ''
   const { pageType, message } = getPageContext(pathname)
 
@@ -142,12 +143,16 @@ export function WhatsAppFloat() {
           border-radius: 50%;
           background-color: #25D366;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, bottom 0.3s ease;
+          transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, bottom 0.3s ease, opacity 0.2s ease, visibility 0.2s ease;
           text-decoration: none;
-          
           width: 64px;
           height: 64px;
           bottom: 120px;
+        }
+        .whatsapp-float-btn.hidden {
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
         }
         
         .whatsapp-float-btn:hover {
@@ -223,7 +228,7 @@ export function WhatsAppFloat() {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="whatsapp-float-btn whatsapp-float"
+        className={`whatsapp-float-btn whatsapp-float${hidden ? ' hidden' : ''}`}
         aria-label="Contáctanos por WhatsApp"
         onClick={handleClick}
         role="button"
