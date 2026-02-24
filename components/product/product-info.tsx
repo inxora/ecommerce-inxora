@@ -168,7 +168,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="pt-2 flex items-center gap-2 flex-wrap">
         <div>
           {product.id_disponibilidad === 12 ? (
-            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-muted-foreground">
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-muted-foreground">
               AGOTADO
             </p>
           ) : product.precio_simbolo != null && product.precio_mostrar != null ? (
