@@ -141,9 +141,10 @@ function FeaturedProductsSlider({
   }
 
   return (
-    <section className={`py-14 sm:py-20 lg:py-24 ${bgColor}`}>
-      <div className="container mx-auto px-6 lg:px-8 xl:px-12 min-[1600px]:px-16 max-w-screen-2xl min-[1600px]:max-w-[1920px]">
-        <div className={`grid gap-8 min-[1600px]:gap-10 ${rightBannerSlot ? 'grid-cols-1 min-[1600px]:grid-cols-[1fr_minmax(320px,380px)]' : 'grid-cols-1'}`}>
+    <section className={`py-14 sm:py-20 lg:py-24 ${bgColor} w-full`}>
+      <div className={`w-full px-6 lg:px-8 xl:px-12 ${rightBannerSlot ? 'min-[1600px]:flex min-[1600px]:items-stretch min-[1600px]:gap-10 min-[1600px]:pl-6 min-[1600px]:pr-6' : 'container mx-auto max-w-screen-2xl min-[1600px]:max-w-[1920px] min-[1600px]:px-16'}`}>
+        {/* Columna productos: flex-1 cuando hay banner; gap y pr evitan que la última card quede cortada */}
+        <div className={`${rightBannerSlot ? 'min-[1600px]:flex-1 min-[1600px]:min-w-0 min-[1600px]:pr-1' : ''} grid gap-8 min-[1600px]:gap-10 grid-cols-1`}>
           <div className="min-w-0 flex flex-col overflow-hidden">
         {/* Header de la secciÃ³n */}
         <div className="flex items-center justify-between mb-8 sm:mb-10">
@@ -177,7 +178,7 @@ function FeaturedProductsSlider({
         <div className="relative overflow-hidden min-w-0">
           <div 
             ref={sliderRef}
-            className="flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-2 pr-8 min-[1600px]:pr-4 min-w-0"
+            className={`flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-2 pr-8 min-w-0 ${rightBannerSlot ? 'min-[1600px]:pr-6' : 'min-[1600px]:pr-4'}`}
             style={{ scrollBehavior: 'smooth' }}
           >
             {displayProducts.length > 0 ? (
@@ -284,18 +285,18 @@ function FeaturedProductsSlider({
           </Link>
         </div>
           </div>
+        </div>
 
-          {/* Banner lateral derecho - columna hermana sin absolute */}
-          {rightBannerSlot && (
-            <div className="hidden min-[1600px]:flex min-[1600px]:justify-end min-[1600px]:self-center w-full shrink-0">
-              <div className="w-[320px] max-w-full sticky top-24">
-                <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/50 dark:border-slate-600/50 bg-white dark:bg-slate-800">
-                  {rightBannerSlot}
-                </div>
+        {/* Banner lateral derecho: hijo directo del contenedor flex para quedar pegado al borde derecho */}
+        {rightBannerSlot && (
+          <div className="hidden min-[1600px]:flex min-[1600px]:flex-shrink-0 min-[1600px]:self-center min-[1600px]:w-[600px]">
+            <div className="w-full sticky top-24">
+              <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/50 dark:border-slate-600/50 bg-white dark:bg-slate-800 min-w-0">
+                {rightBannerSlot}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   )
@@ -582,9 +583,9 @@ export default function HomeClient({
         </section>
       )}
 
-      {/* Main Categories Section */}
-      <section className="bg-background-light dark:bg-background-dark py-20 sm:py-28 lg:py-32">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl">
+      {/* Main Categories Section — mismo criterio de ancho: 100%, pegado a la derecha */}
+      <section className="bg-background-light dark:bg-background-dark py-20 sm:py-28 lg:py-32 w-full">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 min-[1600px]:pl-6 min-[1600px]:pr-0 max-w-[1920px] mx-auto">
           <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-10 sm:mb-14 text-center">
             Categorías Principales
           </h2>

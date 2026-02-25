@@ -158,9 +158,9 @@ Si `url` está vacío o no existe, usar `banner.url_destino` (la API devuelve `"
 | `layout-header-strip` | Encima del header | 1920×80 (24:1) | 750×31 (24:1) |
 | `home-below-hero` | Post-Hero | 1920×240 (8:1) | 750×188 (4:1) |
 | `home-below-categories` | Entre categorías y destacados | 1920×400 (24:5) | 375×78 (24:5) |
-| `home-right-destacados` | Lateral Productos Destacados (solo ≥1536px) | 400×600 (2:3) | — (oculto) |
+| `home-right-destacados` | Lateral Productos Destacados (solo ≥1600px) | **600×900** (2:3) | — (oculto) |
 | `home-middle` | Entre Destacados y Nuevos | 1920×400 (24:5) | 375×78 (24:5) |
-| `home-right-nuevos` | Lateral Nuevos Productos (solo ≥1536px) | 400×600 (2:3) | — (oculto) |
+| `home-right-nuevos` | Lateral Nuevos Productos (solo ≥1600px) | **600×900** (2:3) | — (oculto) |
 | `home-between-sections` | Entre Nuevos y Categorías | 1920×300 (3:1) | 375×188 (2:1) |
 | `home-pre-footer` | Pre-footer / CTA | 1920×300 (32:5) | 750×117 (32:5) |
 | `layout-footer-strip` | Arriba del footer | 1920×80 (24:1) | 750×31 (24:1) |
@@ -286,6 +286,22 @@ const objectPosition = /^\d+% \d+%$/.test(focalPoint) ? focalPoint : { north: 't
 
 ## Referencias
 
-- **Dimensiones detalladas:** `docs/GUIA-GESTOR-BANNERS.md`
+- **Dimensiones detalladas (fuente de verdad):** `docs/GUIA-GESTOR-BANNERS.md`
+
+  Resumen actual de dimensiones en pantalla:
+
+  | Slot | Desktop (px) | Mobile (px) |
+  |------|----------------|-------------|
+  | home-hero | 1920×823 | 750×562 |
+  | layout-header-strip | 1920×80 | 750×31 |
+  | home-below-hero | 1920×240 | 750×188 |
+  | home-below-categories | 1920×400 | 375×78 |
+  | home-right-destacados | **600×900** | — |
+  | home-middle | 1920×400 | 375×78 |
+  | home-right-nuevos | **600×900** | — |
+  | home-between-sections | 1920×300 | 375×188 |
+  | home-pre-footer | 1920×300 | 750×117 |
+  | layout-footer-strip | 1920×80 | 750×31 |
+
 - **API general:** `docs/API_TIENDA_INXORA.md`
 - **Estructura de página:** `docs/ESTRUCTURA_PAGINA_PRINCIPAL_TIENDA.md`

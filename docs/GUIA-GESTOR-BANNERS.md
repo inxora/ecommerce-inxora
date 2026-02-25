@@ -25,9 +25,9 @@ Este documento reúne toda la información necesaria para que el gestor de banne
 | 2 | `layout-header-strip` | Encima del header (todas las páginas) | 1920 × 80 | 750 × 31 | 24:1 |
 | 3 | `home-below-hero` | Entre Hero y barra de categorías | 1920 × 240 | 750 × 188 | 8:1 / 4:1 |
 | 4 | `home-below-categories` | Entre categorías y Productos Destacados | 1920 × 400 | 375 × 78 | 24:5 |
-| 5 | `home-right-destacados` | Lateral derecho de Productos Destacados | 400 × 600 | — (oculto) | 2:3 |
+| 5 | `home-right-destacados` | Lateral derecho de Productos Destacados | 600 × 900 | — (oculto) | 2:3 |
 | 6 | `home-middle` | Entre Productos Destacados y Nuevos | 1920 × 400 | 375 × 78 | 24:5 |
-| 7 | `home-right-nuevos` | Lateral derecho de Nuevos Productos | 400 × 600 | — (oculto) | 2:3 |
+| 7 | `home-right-nuevos` | Lateral derecho de Nuevos Productos | 600 × 900 | — (oculto) | 2:3 |
 | 8 | `home-between-sections` | Entre Nuevos Productos y Categorías | 1920 × 300 | 375 × 188 | 3:1 / 2:1 |
 | 9 | `home-pre-footer` | Pre-footer / CTA (antes del pie) | 1920 × 300 | 750 × 117 | 32:5 |
 | 10 | `layout-footer-strip` | Arriba del contenido del footer | 1920 × 80 | 750 × 31 | 24:1 |
@@ -79,10 +79,11 @@ Este documento reúne toda la información necesaria para que el gestor de banne
 ### 5. home-right-destacados — Lateral Productos Destacados
 
 - **posicion_slug:** `home-right-destacados`
-- **Ubicación:** Columna derecha junto al slider de Productos Destacados. Solo visible en pantallas ≥1536px.
-- **Dimensiones:** 400 × 600 px (ratio 2:3)
+- **Ubicación:** Columna derecha junto al slider de Productos Destacados. Solo visible en pantallas ≥1600px.
+- **Dimensiones en pantalla:** 600 × 900 px (ratio 2:3)
+- **Exportar imagen:** 600 × 900 px para buena nitidez.
 - **Mobile:** No se muestra en móvil.
-- **Nota:** El layout lo muestra a 320–380 px de ancho; exportar a 400×600 para buena nitidez.
+- **Nota:** El banner se muestra más grande que las cards de producto (320 px) para destacar mejor.
 
 ---
 
@@ -99,8 +100,9 @@ Este documento reúne toda la información necesaria para que el gestor de banne
 ### 7. home-right-nuevos — Lateral Nuevos Productos
 
 - **posicion_slug:** `home-right-nuevos`
-- **Ubicación:** Columna derecha junto al slider de Nuevos Productos. Solo visible en pantallas ≥1536px.
-- **Dimensiones:** 400 × 600 px (ratio 2:3)
+- **Ubicación:** Columna derecha junto al slider de Nuevos Productos. Solo visible en pantallas ≥1600px.
+- **Dimensiones en pantalla:** 600 × 900 px (ratio 2:3)
+- **Exportar imagen:** 600 × 900 px para buena nitidez.
 - **Mobile:** No se muestra en móvil.
 
 ---
@@ -144,9 +146,9 @@ Para diseño y exportación de imágenes:
 | layout-header-strip | 1920 × 80 | 750 × 31 |
 | home-below-hero | 1920 × 240 | 750 × 188 |
 | home-below-categories | 1920 × 400 | 375 × 78 |
-| home-right-destacados | 400 × 600 | — |
+| home-right-destacados | 600 × 900 | — |
 | home-middle | 1920 × 400 | 375 × 78 |
-| home-right-nuevos | 400 × 600 | — |
+| home-right-nuevos | 600 × 900 | — |
 | home-between-sections | 1920 × 300 | 375 × 188 |
 | home-pre-footer | 1920 × 300 | 750 × 117 |
 | layout-footer-strip | 1920 × 80 | 750 × 31 |
@@ -165,7 +167,7 @@ Para diseño y exportación de imágenes:
 
 - **Desktop:** 1920 px de ancho para banners full-width.
 - **Mobile:** 750 px o 1080 px de ancho para pantallas retina (2x–3x).
-- **Laterales (home-right-*):** 400×600 px fijo.
+- **Laterales (home-right-*):** 600×900 px en pantalla (exportar 600×900 para buena nitidez).
 
 ### Parámetros de referencia
 
