@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
+import { MessageSquarePlus } from 'lucide-react'
 import { sendSaraChatMessage, ApiError } from '@/lib/services/sara-chat.service'
 import { formatPhoneForWhatsApp } from '@/lib/utils'
 
@@ -26,6 +27,8 @@ const STYLE = {
   fontColor: '#333333',
 }
 const PLACEHOLDER = 'Escribe tu mensaje...'
+const CHAT_SESSION_STORAGE_KEY = 'inxora_chat_session_id'
+const CHAT_MESSAGES_STORAGE_KEY = 'inxora_chat_messages'
 
 const PHONE_REGEX = /(\+?51)?[\s.-]*([9]\d{2})[\s.-]*(\d{3})[\s.-]*(\d{3})\b/g
 
@@ -53,21 +56,11 @@ const markdownComponents = {
   ),
 }
 
-function getSessionId(): string {
-  if (typeof window === 'undefined') return ''
-  try {
-    return crypto.randomUUID()
-  } catch {
-    return Math.random().toString(36).slice(2) + Date.now().toString(36)
-  }
-}
-
 export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sessionId, setSessionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -76,14 +69,42 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     onOpenChange?.(open)
   }, [open, onOpenChange])
 
-  const ensureSession = useCallback(() => {
-    if (!sessionId) {
-      const id = getSessionId()
-      setSessionId(id)
-      return id
+  // Restaurar mensajes al montar (misma pestaña, tras recargar)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const raw = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+    if (!raw) return
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (Array.isArray(parsed) && parsed.every(m => m && typeof m === 'object' && 'role' in m && 'content' in m)) {
+        setMessages(parsed as Message[])
+      }
+    } catch {
+      // ignorar datos corruptos
     }
-    return sessionId
-  }, [sessionId])
+  }, [])
+
+  // Persistir mensajes en sessionStorage cuando cambien (solo escribir; no borrar aquí para no pisar la carga inicial)
+  useEffect(() => {
+    if (typeof window === 'undefined' || messages.length === 0) return
+    sessionStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages))
+  }, [messages])
+
+  /** Obtiene session_id desde sessionStorage (cada pestaña tiene el suyo; al recargar se mantiene). */
+  const getStoredSessionId = useCallback((): string | null => {
+    if (typeof window === 'undefined') return null
+    return sessionStorage.getItem(CHAT_SESSION_STORAGE_KEY)
+  }, [])
+
+  const startNewConversation = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(CHAT_SESSION_STORAGE_KEY)
+      sessionStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
+    }
+    setMessages([])
+    setError(null)
+    inputRef.current?.focus()
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -101,10 +122,12 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     setLoading(true)
     scrollToBottom()
 
-    const sid = ensureSession()
+    const sid = getStoredSessionId()
     try {
-      const res = await sendSaraChatMessage(text, sid)
-      setSessionId(res.session_id)
+      const res = await sendSaraChatMessage(text, sid ?? undefined)
+      if (res.session_id && typeof window !== 'undefined') {
+        sessionStorage.setItem(CHAT_SESSION_STORAGE_KEY, res.session_id)
+      }
       setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
       scrollToBottom()
     } catch (e) {
@@ -119,7 +142,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, ensureSession, scrollToBottom])
+  }, [input, loading, getStoredSessionId, scrollToBottom])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -283,6 +306,27 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           background: rgba(0,0,0,0.1);
           opacity: 1;
         }
+        .sara-new-chat-btn {
+          margin-left: auto;
+          background: rgba(0,0,0,0.05);
+          border: none;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          color: #333;
+          opacity: 0.7;
+          transition: all 0.2s;
+          margin-right: 8px;
+        }
+        .sara-new-chat-btn:hover {
+          background: rgba(0,0,0,0.1);
+          opacity: 1;
+        }
         @media (max-width: 767px) {
           .sara-brand-header span { font-size: 16px; }
         }
@@ -430,6 +474,15 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           <div className="sara-brand-header">
             <Image src={BRAND.logo} alt={BRAND.name} width={40} height={40} unoptimized />
             <span>{BRAND.name}</span>
+            <button
+              type="button"
+              className="sara-new-chat-btn"
+              aria-label="Nueva conversación"
+              title="Nueva conversación"
+              onClick={startNewConversation}
+            >
+              <MessageSquarePlus className="w-4 h-4" />
+            </button>
             <button type="button" className="sara-close-btn" aria-label="Cerrar chat" onClick={() => setOpen(false)}>
               ×
             </button>
