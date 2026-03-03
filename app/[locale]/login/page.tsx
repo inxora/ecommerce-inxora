@@ -14,12 +14,19 @@ export default function LoginPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  const redirect = searchParams?.get('redirect') || 'checkout'
+  const redirectParam = searchParams?.get('redirect') || 'checkout'
   const locale = (params?.locale as string) ?? 'es'
   const { login, error, clearError, isLoggedIn } = useClienteAuth()
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  /** URL de destino tras login: path absoluto (ej. /es/cuenta/chat-sara), 'checkout' → checkout, o inicio */
+  const redirectTo = redirectParam.startsWith('/')
+    ? redirectParam
+    : redirectParam === 'checkout'
+      ? `/${locale}/checkout`
+      : `/${locale}`
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,11 +34,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(correo, password)
-      if (redirect === 'checkout') {
-        router.push(`/${locale}/checkout`)
-      } else {
-        router.push(`/${locale}`)
-      }
+      router.push(redirectTo)
     } catch {
       // error ya está en context
     } finally {
@@ -41,9 +44,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      router.replace(redirect === 'checkout' ? `/${locale}/checkout` : `/${locale}`)
+      router.replace(redirectTo)
     }
-  }, [isLoggedIn, locale, redirect, router])
+  }, [isLoggedIn, locale, redirectTo, router])
 
   if (isLoggedIn) {
     return (
@@ -106,7 +109,7 @@ export default function LoginPage() {
             </Button>
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               ¿No tienes cuenta?{' '}
-              <Link href={`/${locale}/registro?redirect=${redirect}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <Link href={`/${locale}/registro?redirect=${encodeURIComponent(redirectParam)}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Regístrate
               </Link>
             </p>

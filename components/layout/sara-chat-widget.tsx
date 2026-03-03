@@ -9,7 +9,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
 import { MessageSquarePlus } from 'lucide-react'
-import { sendSaraChatMessage, ApiError } from '@/lib/services/sara-chat.service'
+import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { sendSaraChatMessage, getSaraConversation, ApiError } from '@/lib/services/sara-chat.service'
 import { formatPhoneForWhatsApp } from '@/lib/utils'
 
 type Message = { role: 'user' | 'assistant'; content: string }
@@ -57,6 +58,7 @@ const markdownComponents = {
 }
 
 export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
+  const { cliente } = useClienteAuth()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -69,18 +71,49 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     onOpenChange?.(open)
   }, [open, onOpenChange])
 
-  // Restaurar mensajes al montar (misma pestaña, tras recargar)
+  // Rehidratar mensajes al montar: primero desde backend (si hay session_id), sino desde sessionStorage
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const raw = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
-    if (!raw) return
-    try {
-      const parsed = JSON.parse(raw) as unknown
-      if (Array.isArray(parsed) && parsed.every(m => m && typeof m === 'object' && 'role' in m && 'content' in m)) {
-        setMessages(parsed as Message[])
+    const sessionId = sessionStorage.getItem(CHAT_SESSION_STORAGE_KEY)
+    if (sessionId) {
+      getSaraConversation(sessionId)
+        .then((res) => {
+          const msgs = res?.data?.mensajes
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            const valid = msgs.filter(
+              (m): m is Message =>
+                m && typeof m === 'object' && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string'
+            )
+            if (valid.length > 0) {
+              setMessages(valid)
+              sessionStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(valid))
+            }
+          }
+        })
+        .catch(() => {
+          // Fallback: cargar desde sessionStorage
+          const raw = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+          if (!raw) return
+          try {
+            const parsed = JSON.parse(raw) as unknown
+            if (Array.isArray(parsed) && parsed.every(m => m && typeof m === 'object' && 'role' in m && 'content' in m)) {
+              setMessages(parsed as Message[])
+            }
+          } catch {
+            // ignorar datos corruptos
+          }
+        })
+    } else {
+      const raw = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+      if (!raw) return
+      try {
+        const parsed = JSON.parse(raw) as unknown
+        if (Array.isArray(parsed) && parsed.every(m => m && typeof m === 'object' && 'role' in m && 'content' in m)) {
+          setMessages(parsed as Message[])
+        }
+      } catch {
+        // ignorar datos corruptos
       }
-    } catch {
-      // ignorar datos corruptos
     }
   }, [])
 
@@ -124,7 +157,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
 
     const sid = getStoredSessionId()
     try {
-      const res = await sendSaraChatMessage(text, sid ?? undefined)
+      const res = await sendSaraChatMessage(text, sid ?? undefined, cliente?.id)
       if (res.session_id && typeof window !== 'undefined') {
         sessionStorage.setItem(CHAT_SESSION_STORAGE_KEY, res.session_id)
       }
@@ -142,7 +175,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, getStoredSessionId, scrollToBottom])
+  }, [input, loading, getStoredSessionId, scrollToBottom, cliente?.id])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

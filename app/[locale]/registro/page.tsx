@@ -24,8 +24,13 @@ export default function RegistroPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  const redirect = searchParams?.get('redirect') || 'checkout'
+  const redirectParam = searchParams?.get('redirect') || 'checkout'
   const locale = (params?.locale as string) ?? 'es'
+  const redirectTo = redirectParam.startsWith('/')
+    ? redirectParam
+    : redirectParam === 'checkout'
+      ? `/${locale}/checkout`
+      : `/${locale}`
   const { register, error, clearError } = useClienteAuth()
   const [rubros, setRubros] = useState<Rubro[]>([])
   const [id_rubro, setIdRubro] = useState<number | ''>('')
@@ -68,11 +73,7 @@ export default function RegistroPage() {
         id_pais: 1,
         id_rubro: rubroId ?? (rubros[0]?.id),
       })
-      if (redirect === 'checkout') {
-        router.push(`/${locale}/checkout`)
-      } else {
-        router.push(`/${locale}`)
-      }
+      router.push(redirectTo)
     } catch {
       // error en context
     } finally {
@@ -200,7 +201,7 @@ export default function RegistroPage() {
             </Button>
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               ¿Ya tienes cuenta?{' '}
-              <Link href={`/${locale}/login?redirect=${redirect}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <Link href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Iniciar sesión
               </Link>
             </p>
