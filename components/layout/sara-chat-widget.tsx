@@ -13,7 +13,7 @@ import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { sendSaraChatMessage, getSaraConversation, ApiError } from '@/lib/services/sara-chat.service'
 import { formatPhoneForWhatsApp } from '@/lib/utils'
 
-type Message = { role: 'user' | 'assistant'; content: string }
+type Message = { role: 'user' | 'assistant' | 'asesor'; content: string }
 
 const BRAND = {
   logo: '/LOGO-03.png',
@@ -82,7 +82,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           if (Array.isArray(msgs) && msgs.length > 0) {
             const valid = msgs.filter(
               (m): m is Message =>
-                m && typeof m === 'object' && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string'
+                m && typeof m === 'object' && (m.role === 'user' || m.role === 'assistant' || m.role === 'asesor') && typeof m.content === 'string'
             )
             if (valid.length > 0) {
               setMessages(valid)
@@ -128,6 +128,29 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     if (typeof window === 'undefined') return null
     return sessionStorage.getItem(CHAT_SESSION_STORAGE_KEY)
   }, [])
+
+  // Refrescar conversación mientras el chat está abierto (polling) para ver mensajes del asesor en tiempo casi real
+  useEffect(() => {
+    if (!open) return
+    const sessionId = getStoredSessionId()
+    if (!sessionId) return
+    const POLL_INTERVAL_MS = 7000
+    const interval = setInterval(() => {
+      getSaraConversation(sessionId)
+        .then((res) => {
+          const msgs = res?.data?.mensajes
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            const valid = msgs.filter(
+              (m): m is Message =>
+                m && typeof m === 'object' && (m.role === 'user' || m.role === 'assistant' || m.role === 'asesor') && typeof m.content === 'string'
+            )
+            if (valid.length > 0) setMessages(valid)
+          }
+        })
+        .catch(() => {})
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [open, getStoredSessionId])
 
   const startNewConversation = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -398,12 +421,28 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           border-radius: 18px 4px 18px 18px;
           box-shadow: 0 2px 8px rgba(19, 160, 216, 0.15);
         }
-        .sara-msg.bot {
+        .sara-msg.assistant {
           background: #f8f8f8;
           color: ${STYLE.fontColor};
           border-radius: 4px 18px 18px 18px;
           border: 1px solid rgba(0,0,0,0.08);
           max-width: 85%;
+        }
+        .sara-msg.asesor {
+          background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+          color: #1b5e20;
+          border-radius: 4px 18px 18px 18px;
+          border: 1px solid rgba(30, 120, 60, 0.25);
+          max-width: 85%;
+        }
+        .sara-msg.asesor :global(.sara-asesor-label) {
+          display: block;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 6px;
+          color: #2e7d32;
         }
         .sara-msg.error {
           background: #fef2f2;
@@ -534,6 +573,13 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
               >
                 {msg.role === 'user' ? (
                   msg.content
+                ) : msg.role === 'asesor' ? (
+                  <>
+                    <span className="sara-asesor-label">Equipo Inxora</span>
+                    <ReactMarkdown components={markdownComponents}>
+                      {linkifyPhonesToWhatsApp(msg.content)}
+                    </ReactMarkdown>
+                  </>
                 ) : (
                   <ReactMarkdown components={markdownComponents}>
                     {linkifyPhonesToWhatsApp(msg.content)}

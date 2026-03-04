@@ -215,6 +215,11 @@ function FeaturedProductsSlider({
                       <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 min-h-[2.5rem] group-hover:text-inxora-blue transition-colors">
                         {product.nombre}
                       </h3>
+                      {product.marca && (
+                        <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          {typeof product.marca === 'string' ? product.marca : product.marca.nombre}
+                        </p>
+                      )}
                       <p className="text-[10px] sm:text-xs text-gray-400 mb-2">
                         SKU: {product.sku_producto || product.sku}
                       </p>

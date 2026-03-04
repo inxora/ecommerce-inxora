@@ -276,6 +276,7 @@ INCLUDE (sku, nombre, imagen_principal_url);
 | `precio_asc` | Precio menor a mayor | `ORDER BY precio_venta ASC` |
 | `precio_desc` | Precio mayor a menor | `ORDER BY precio_venta DESC` |
 | `nuevo` | Más recientes primero | `ORDER BY fecha_creacion DESC` |
+| `mas_visto` | Más visualizaciones primero (para Productos Destacados) | `ORDER BY visualizaciones DESC` (o equivalente) |
 | `nombre_asc` | Alfabético A-Z | `ORDER BY nombre ASC` |
 | `nombre_desc` | Alfabético Z-A | `ORDER BY nombre DESC` |
 

@@ -73,10 +73,13 @@ export default async function HomePage({ params }: PageProps) {
   // ✅ OPTIMIZACIÓN CRÍTICA: Usar Promise.allSettled con timeout para evitar bloqueos
   // Si una petición tarda más de 5 segundos, continuar sin ella
   
-  // Productos destacados (20 productos para el slider principal)
+  // Productos destacados (20 productos, diversificados por marca para no mostrar solo una marca)
   const productosDestacadosPromise = Promise.race([
-    ProductsService.getProductosRecientes(20, moneda),
-    new Promise<{ products: any[], total: number }>((resolve) => 
+    ProductsService.getProductosDestacados(20, moneda, {
+      diversificarPor: 'marca',
+      maxPorGrupo: 3,
+    }),
+    new Promise<{ products: any[], total: number }>((resolve) =>
       setTimeout(() => resolve({ products: [], total: 0 }), 5000)
     )
   ])

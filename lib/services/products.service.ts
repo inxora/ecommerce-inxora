@@ -1,4 +1,4 @@
-import { api, apiClient } from '@/lib/api/client'
+import { api, apiClient, ApiError } from '@/lib/api/client'
 import { Producto } from '@/lib/supabase'
 import { buildProductImageUrl } from '@/lib/supabase'
 import { generateProductSlug, normalizeName } from '@/lib/product-url'
@@ -460,6 +460,80 @@ export const ProductsService = {
       console.error('Error fetching productos:', error)
       throw error
     }
+  },
+
+  /**
+   * Opciones para diversificar la muestra de productos destacados (evitar que salgan todos de una misma marca/categoría).
+   */
+  getProductosDestacados: async (
+    limit: number,
+    moneda_usuario?: CurrencyCode,
+    opciones?: { diversificarPor?: 'marca' | 'categoria'; maxPorGrupo?: number }
+  ): Promise<{ products: Producto[]; total: number }> => {
+    const diversificarPor = opciones?.diversificarPor
+    const maxPorGrupo = opciones?.maxPorGrupo ?? 3
+
+    if (!diversificarPor) {
+      return ProductsService.getProductosRecientes(limit, moneda_usuario)
+    }
+
+    // El backend puede rechazar límites altos (ej. 422 con limit=120); usar máximo 50
+    const poolSize = Math.min(limit * 4, 50)
+    // Priorizar productos con más visualizaciones; si el backend no soporta 'mas_visto', usar 'nuevo'
+    let response: { products: Producto[]; total: number; totalPages: number }
+    try {
+      response = await ProductsService.getProductos({
+        page: 1,
+        limit: poolSize,
+        activo: true,
+        visible_web: true,
+        ordenar: 'mas_visto',
+        moneda_usuario,
+      })
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 422 || e.status === 400)) {
+        response = await ProductsService.getProductos({
+          page: 1,
+          limit: poolSize,
+          activo: true,
+          visible_web: true,
+          ordenar: 'nuevo',
+          moneda_usuario,
+        })
+      } else {
+        throw e
+      }
+    }
+
+    if (!response.products?.length) {
+      return { products: [], total: 0 }
+    }
+
+    // El backend ya devuelve ordenado (mas_visto o nuevo); mantener ese orden al diversificar
+    const productosOrdenados = [...response.products]
+
+    const getGrupoKey = (p: Producto): number | string => {
+      if (diversificarPor === 'marca') return p.id_marca
+      return p.categoria?.id ?? 'sin-categoria'
+    }
+
+    const grupos = new Map<number | string, Producto[]>()
+    for (const p of productosOrdenados) {
+      const key = getGrupoKey(p)
+      if (!grupos.has(key)) grupos.set(key, [])
+      const arr = grupos.get(key)!
+      if (arr.length < maxPorGrupo) arr.push(p)
+    }
+
+    const result: Producto[] = []
+    const entradas = Array.from(grupos.entries())
+    for (let i = 0; i < maxPorGrupo && result.length < limit; i++) {
+      for (const [, arr] of entradas) {
+        if (arr[i] && result.length < limit) result.push(arr[i])
+      }
+    }
+
+    return { products: result, total: result.length }
   },
 
   /**

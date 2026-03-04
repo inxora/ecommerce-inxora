@@ -21,9 +21,9 @@ export interface SaraChatResponse {
   session_id: string
 }
 
-/** Mensaje del historial (GET sesión) */
+/** Mensaje del historial (GET sesión); "asesor" = mensaje de un asesor humano. */
 export interface SaraMensaje {
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'asesor'
   content: string
 }
 

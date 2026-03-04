@@ -17,7 +17,7 @@ import type { SaraConversacionItem } from '@/lib/services/sara-chat.service'
 import { formatPhoneForWhatsApp } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
-type Message = { role: 'user' | 'assistant'; content: string }
+type Message = { role: 'user' | 'assistant' | 'asesor'; content: string }
 
 const BRAND = { logo: '/LOGO-03.png', name: 'SARA XORA', typingText: 'Sara está escribiendo...' }
 const STYLE = { primary: '#13A0D8', secondary: '#0d7ba8' }
@@ -102,13 +102,41 @@ export function ChatSaraPageClient({ locale }: { locale: string }) {
         setMessages(
           msgs.filter(
             (m): m is Message =>
-              m?.role === 'user' || m?.role === 'assistant'
+              m?.role === 'user' || m?.role === 'assistant' || m?.role === 'asesor'
           ) as Message[]
         )
       })
       .catch(() => setMessages([]))
       .finally(() => setLoadingChat(false))
   }, [selectedSessionId, loadKey])
+
+  // Refrescar conversación mientras hay una sesión seleccionada (polling) para ver mensajes del asesor en tiempo casi real
+  useEffect(() => {
+    if (!selectedSessionId) return
+    const POLL_INTERVAL_MS = 7000
+    const interval = setInterval(() => {
+      getSaraConversation(selectedSessionId)
+        .then((res) => {
+          let raw = res?.data?.mensajes
+          if (typeof raw === 'string') {
+            try {
+              raw = JSON.parse(raw) as Message[]
+            } catch {
+              raw = []
+            }
+          }
+          const msgs = Array.isArray(raw) ? raw : []
+          setMessages(
+            msgs.filter(
+              (m): m is Message =>
+                m?.role === 'user' || m?.role === 'assistant' || m?.role === 'asesor'
+            ) as Message[]
+          )
+        })
+        .catch(() => {})
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [selectedSessionId])
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -271,11 +299,36 @@ export function ChatSaraPageClient({ locale }: { locale: string }) {
                   className={`max-w-[85%] rounded-2xl px-4 py-2 ${
                     msg.role === 'user'
                       ? 'bg-[#13A0D8] text-white rounded-br-md'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-md border border-gray-200'
+                      : msg.role === 'asesor'
+                        ? 'bg-emerald-50 text-emerald-900 rounded-bl-md border border-emerald-200'
+                        : 'bg-gray-100 text-gray-800 rounded-bl-md border border-gray-200'
                   }`}
                 >
                   {msg.role === 'user' ? (
                     msg.content
+                  ) : msg.role === 'asesor' ? (
+                    <>
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-emerald-700 mb-1">
+                        Equipo Inxora
+                      </span>
+                      <ReactMarkdown
+                        components={{
+                          a: ({ href, children }) => (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                              style={{ color: STYLE.primary }}
+                            >
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {linkifyPhones(msg.content)}
+                      </ReactMarkdown>
+                    </>
                   ) : (
                     <ReactMarkdown
                       components={{
