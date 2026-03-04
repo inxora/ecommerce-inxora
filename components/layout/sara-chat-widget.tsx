@@ -562,7 +562,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
 
           <div className="sara-messages" ref={listRef}>
             {!hasMessages && (
-              <div className="sara-msg bot">
+              <div className="sara-msg assistant">
                 <ReactMarkdown components={markdownComponents}>{BRAND.welcomeText}</ReactMarkdown>
               </div>
             )}
