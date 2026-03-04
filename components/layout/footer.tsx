@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
+import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from "lucide-react"
 import { BannerSlot } from "@/components/banner/banner-slot"
 import type { Banner } from "@/lib/types"
 
@@ -42,10 +42,9 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
   }
 
   const socialLinks = [
-    { name: 'Facebook', href: '#', icon: Facebook },
-    { name: 'Instagram', href: '#', icon: Instagram },
-    { name: 'LinkedIn', href: '#', icon: Linkedin },
-    { name: 'Twitter', href: '#', icon: Twitter },
+    { name: 'Facebook', href: 'https://www.facebook.com/inxora.global/', icon: Facebook },
+    { name: 'Instagram', href: 'https://www.instagram.com/inxora.global', icon: Instagram },
+    { name: 'LinkedIn', href: 'https://www.linkedin.com/company/inxoraglobal/', icon: Linkedin },
   ]
 
   return (
