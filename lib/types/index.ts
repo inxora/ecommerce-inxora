@@ -108,6 +108,8 @@ export interface Producto {
   es_promocion: boolean
   activo: boolean
   visible_web: boolean
+  /** Contador de visualizaciones (viene del API cuando está disponible) */
+  visualizaciones?: number
   requiere_aprobacion: boolean
   fecha_creacion: string
   fecha_actualizacion: string

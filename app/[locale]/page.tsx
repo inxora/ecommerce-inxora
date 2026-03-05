@@ -137,11 +137,11 @@ export default async function HomePage({ params }: PageProps) {
   ])
   
   // Procesar resultados con manejo de errores
-  const featuredProducts = productosDestacadosResult.status === 'fulfilled' 
+  const featuredProducts = productosDestacadosResult.status === 'fulfilled'
     ? (productosDestacadosResult.value?.products || [])
     : []
-  
-  const newProducts = productosNuevosResult.status === 'fulfilled' 
+
+  const newProducts = productosNuevosResult.status === 'fulfilled'
     ? (productosNuevosResult.value?.products || [])
     : []
   

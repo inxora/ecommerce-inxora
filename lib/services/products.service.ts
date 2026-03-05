@@ -74,6 +74,8 @@ export interface ProductoAPI {
   id_unidad: number
   activo: boolean
   visible_web: boolean
+  /** Contador de visualizaciones del producto (para ordenar por mas_vistos) */
+  visualizaciones?: number
   imagen_principal_url: string | null
   galeria_imagenes_urls: string[] | null
   unidad_codigo: string
@@ -293,6 +295,7 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     es_promocion: false,
     activo: productoAPI.activo,
     visible_web: productoAPI.visible_web,
+    visualizaciones: productoAPI.visualizaciones,
     requiere_aprobacion: false,
     fecha_creacion: new Date().toISOString(),
     fecha_actualizacion: new Date().toISOString(),
@@ -479,7 +482,7 @@ export const ProductsService = {
 
     // El backend puede rechazar límites altos (ej. 422 con limit=120); usar máximo 50
     const poolSize = Math.min(limit * 4, 50)
-    // Priorizar productos con más visualizaciones; si el backend no soporta 'mas_visto', usar 'nuevo'
+    // Priorizar productos con más visualizaciones; si el backend no soporta 'mas_vistos', usar 'nuevo'
     let response: { products: Producto[]; total: number; totalPages: number }
     try {
       response = await ProductsService.getProductos({
@@ -487,11 +490,13 @@ export const ProductsService = {
         limit: poolSize,
         activo: true,
         visible_web: true,
-        ordenar: 'mas_visto',
+        ordenar: 'mas_vistos',
         moneda_usuario,
       })
     } catch (e) {
       if (e instanceof ApiError && (e.status === 422 || e.status === 400)) {
+        // En producción verás este log si el API no soporta ordenar=mas_vistos (se usa fallback a nuevo)
+        console.warn('[ProductsService] getProductosDestacados: ordenar=mas_vistos rechazado (', e.status, '), usando ordenar=nuevo')
         response = await ProductsService.getProductos({
           page: 1,
           limit: poolSize,
@@ -509,7 +514,7 @@ export const ProductsService = {
       return { products: [], total: 0 }
     }
 
-    // El backend ya devuelve ordenado (mas_visto o nuevo); mantener ese orden al diversificar
+    // El backend ya devuelve ordenado (mas_vistos o nuevo); mantener ese orden al diversificar
     const productosOrdenados = [...response.products]
 
     const getGrupoKey = (p: Producto): number | string => {
