@@ -4,7 +4,7 @@ import { CurrencyProviderWrapper } from '@/components/providers/currency-provide
 import { CartProvider } from '@/components/providers/cart-provider'
 import { ClienteAuthProvider } from '@/lib/contexts/cliente-auth-context'
 import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
+import { ConditionalFooter } from '@/components/layout/conditional-footer'
 import { FloatWidgetsWrapper } from '@/components/layout/float-widgets-wrapper'
 import { Metadata } from 'next'
 import { CategoriesService } from '@/lib/services/categories.service'
@@ -133,7 +133,7 @@ export default async function LocaleLayout({
             {children}
           </main>
 
-          <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
+          <ConditionalFooter bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
           <FloatWidgetsWrapper />
           </ClienteAuthProvider>
         </CartProvider>
@@ -152,7 +152,7 @@ export default async function LocaleLayout({
               <ClienteAuthProvider>
                 <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
                 <main>{children}</main>
-                <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
+                <ConditionalFooter bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
                 <FloatWidgetsWrapper />
               </ClienteAuthProvider>
             </CartProvider>
@@ -168,7 +168,7 @@ export default async function LocaleLayout({
             <ClienteAuthProvider>
               <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
               <main>{children}</main>
-              <Footer bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
+              <ConditionalFooter bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
               <FloatWidgetsWrapper />
             </ClienteAuthProvider>
           </CartProvider>
