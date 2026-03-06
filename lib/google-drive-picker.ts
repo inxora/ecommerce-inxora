@@ -4,6 +4,15 @@
  * Requiere NEXT_PUBLIC_GOOGLE_CLIENT_ID en el proyecto de Google Cloud (APIs: Picker, Drive).
  */
 
+interface PickerBuilderInstance {
+  enableFeature(f: string): PickerBuilderInstance
+  setOAuthToken(token: string): PickerBuilderInstance
+  setAppId(id: string): PickerBuilderInstance
+  addView(v: unknown): PickerBuilderInstance
+  setCallback(cb: (data: PickerCallbackData) => void): PickerBuilderInstance
+  build(): { setVisible: (v: boolean) => void }
+}
+
 declare global {
   interface Window {
     gapi?: {
@@ -25,14 +34,7 @@ declare global {
         View: new (id: string) => {
           setMimeTypes: (mimes: string) => void
         }
-        PickerBuilder: new () => {
-          enableFeature: (f: string) => unknown
-          setOAuthToken: (token: string) => unknown
-          setAppId: (id: string) => unknown
-          addView: (v: unknown) => unknown
-          setCallback: (cb: (data: PickerCallbackData) => void) => unknown
-          build: () => { setVisible: (v: boolean) => void }
-        }
+        PickerBuilder: new () => PickerBuilderInstance
         Action: { PICKED: string; CANCEL: string }
         Response: { DOCUMENTS: string }
         Document: { ID: string; MIME_TYPE: string; NAME: string; SIZE: string }
