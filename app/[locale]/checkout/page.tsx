@@ -1,14 +1,16 @@
 import { Suspense } from 'react'
-import { getTranslations } from 'next-intl/server'
 import { CheckoutForm } from '@/components/checkout/checkout-form'
 import { OrderSummary } from '@/components/checkout/order-summary'
-import { CheckoutSkeleton } from '@/components/checkout/checkout-skeleton'
+import { CheckoutShippingProvider } from '@/lib/contexts/checkout-shipping-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ShoppingBag, CreditCard, Shield } from 'lucide-react'
 
+export const metadata = {
+  title: 'Checkout | Finalizar compra',
+  description: 'Completa tu información para finalizar la compra de forma segura.',
+}
+
 export default async function CheckoutPage() {
-  const t = await getTranslations()
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -43,21 +45,20 @@ export default async function CheckoutPage() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Formulario de checkout */}
-          <div className="lg:col-span-2">
-            <Suspense fallback={<CheckoutFormSkeleton />}>
-              <CheckoutForm />
-            </Suspense>
+        <CheckoutShippingProvider>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Suspense fallback={<CheckoutFormSkeleton />}>
+                <CheckoutForm />
+              </Suspense>
+            </div>
+            <div>
+              <Suspense fallback={<CheckoutSummarySkeleton />}>
+                <OrderSummary />
+              </Suspense>
+            </div>
           </div>
-          
-          {/* Resumen del pedido */}
-          <div>
-            <Suspense fallback={<CheckoutSummarySkeleton />}>
-              <OrderSummary />
-            </Suspense>
-          </div>
-        </div>
+        </CheckoutShippingProvider>
       </div>
     </div>
   )
@@ -67,7 +68,7 @@ function CheckoutFormSkeleton() {
   return (
     <div className="space-y-6">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+        <div key={`checkout-skeleton-${i}`} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
           <div className="space-y-4">
             <Skeleton className="h-6 w-48" />
             <div className="grid grid-cols-2 gap-4">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
@@ -18,7 +18,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { useCheckoutShipping } from '@/lib/contexts/checkout-shipping-context'
+import { pedidosService, ApiError } from '@/lib/services/pedidos.service'
+import { UbigeoService, type Ciudad, type Provincia, type Distrito } from '@/lib/services/ubigeo.service'
+import { GoogleMapsService } from '@/lib/services/google-maps.service'
+import { DeliveryAddressMap } from '@/components/checkout/delivery-address-map'
 import Link from 'next/link'
+
+const DEBOUNCE_MS = 350
 
 const checkoutSchema = z.object({
   // Información personal
@@ -27,11 +34,11 @@ const checkoutSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Teléfono requerido'),
   
-  // Dirección de envío
-  address: z.string().min(5, 'Dirección requerida'),
-  city: z.string().min(2, 'Ciudad requerida'),
-  state: z.string().min(2, 'Estado/Provincia requerido'),
-  zipCode: z.string().min(4, 'Código postal requerido'),
+  // Dirección de entrega (ubigeo: departamento → provincia → distrito)
+  idCiudad: z.number().min(1, 'Seleccione departamento/región'),
+  idProvincia: z.number().min(1, 'Seleccione provincia'),
+  idDistrito: z.number().optional(),
+  address: z.string().min(5, 'Dirección requerida (calle, número, referencia)'),
   country: z.string().min(2, 'País requerido'),
   
   // Método de pago (solo transferencia bancaria y Yape)
@@ -45,15 +52,52 @@ const checkoutSchema = z.object({
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>
 
+const PAIS_DEFAULT = 'Perú'
+
+/** Convierte la respuesta de la API (string u objeto con address_components) a string para mostrar y guardar. */
+function toAddressString(value: unknown): string | null {
+  if (value == null) return null
+  if (typeof value === 'string') return value.trim() || null
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    const o = value as Record<string, unknown>
+    if (typeof o.formatted_address === 'string') return o.formatted_address.trim() || null
+    const parts = [
+      o.street_number,
+      o.route,
+      o.locality,
+      o.administrative_area_level_2,
+      o.administrative_area_level_1,
+      o.country,
+    ].filter((p): p is string => typeof p === 'string' && p.trim() !== '')
+    if (parts.length) return parts.join(', ')
+  }
+  return null
+}
+
 export function CheckoutForm() {
   const pathname = usePathname()
   const locale = (pathname?.split('/')?.[1] || 'es')
   const t = useTranslations()
   const router = useRouter()
   const { toast } = useToast()
-  const { items, clearCart, getTotalPrice } = useCart()
-  const { isLoggedIn, cliente } = useClienteAuth()
+  const { items, clearCart } = useCart()
+  const { isLoggedIn, cliente, token } = useClienteAuth()
+  const { setCheckoutShipping } = useCheckoutShipping()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ciudades, setCiudades] = useState<Ciudad[]>([])
+  const [provincias, setProvincias] = useState<Provincia[]>([])
+  const [distritos, setDistritos] = useState<Distrito[]>([])
+  const [tarifaPlana, setTarifaPlana] = useState<{ provincia_ids: number[]; costo_envio: number } | null>(null)
+  const [loadingUbigeo, setLoadingUbigeo] = useState({ ciudades: false, provincias: false, distritos: false, tarifa: false })
+  const [mapLat, setMapLat] = useState<number | null>(null)
+  const [mapLng, setMapLng] = useState<number | null>(null)
+  const [addressFromMap, setAddressFromMap] = useState<string | null>(null)
+  const [loadingMap, setLoadingMap] = useState({ geocode: false, reverse: false })
+  const [errorMap, setErrorMap] = useState<string | null>(null)
+  const [autocompleteQuery, setAutocompleteQuery] = useState('')
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<{ place_id: string; description: string }[]>([])
+  const [loadingAutocomplete, setLoadingAutocomplete] = useState(false)
+  const autocompleteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -62,16 +106,19 @@ export function CheckoutForm() {
       lastName: '',
       email: '',
       phone: '',
+      idCiudad: 0,
+      idProvincia: 0,
+      idDistrito: undefined,
       address: '',
-      city: '',
-      state: '',
-      zipCode: '',
+      country: PAIS_DEFAULT,
       paymentMethod: 'transfer',
       acceptTerms: false,
       newsletter: false,
-      country: 'Perú',
     },
   })
+
+  const idCiudad = form.watch('idCiudad')
+  const idProvincia = form.watch('idProvincia')
 
   // Prellenar Información personal con los datos del cliente logueado
   useEffect(() => {
@@ -81,55 +128,327 @@ export function CheckoutForm() {
     if (cliente.correo) form.setValue('email', cliente.correo)
   }, [isLoggedIn, cliente, form])
 
+  // Cargar ciudades (departamentos) y tarifa plana al montar
+  useEffect(() => {
+    let cancelled = false
+    setLoadingUbigeo((l) => ({ ...l, ciudades: true }))
+    UbigeoService.getCiudades(1)
+      .then((data) => {
+        if (!cancelled && Array.isArray(data) && data.length > 0) setCiudades(data)
+      })
+      .finally(() => setLoadingUbigeo((l) => ({ ...l, ciudades: false })))
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoadingUbigeo((l) => ({ ...l, tarifa: true }))
+    UbigeoService.getTarifaPlanaEnvio()
+      .then((data) => {
+        if (!cancelled) setTarifaPlana(data)
+      })
+      .finally(() => setLoadingUbigeo((l) => ({ ...l, tarifa: false })))
+    return () => { cancelled = true }
+  }, [])
+
+  // Cargar provincias cuando cambia el departamento (no resetear idProvincia si sigue válido en la nueva lista)
+  useEffect(() => {
+    if (!idCiudad || idCiudad < 1) {
+      setProvincias([])
+      setDistritos([])
+      form.setValue('idProvincia', 0)
+      form.setValue('idDistrito', undefined)
+      setCheckoutShipping({ costoEnvio: 0, envioLabel: '' })
+      return
+    }
+    let cancelled = false
+    setLoadingUbigeo((l) => ({ ...l, provincias: true }))
+    UbigeoService.getProvinciasByCiudad(idCiudad)
+      .then((data) => {
+        if (!cancelled) {
+          const list = data || []
+          setProvincias(list)
+          const currentProv = form.getValues('idProvincia')
+          const provValid = currentProv && list.some((p) => p.id === currentProv)
+          if (!provValid) {
+            setDistritos([])
+            form.setValue('idProvincia', 0)
+            form.setValue('idDistrito', undefined)
+            setCheckoutShipping({ costoEnvio: 0, envioLabel: '' })
+          }
+        }
+      })
+      .finally(() => setLoadingUbigeo((l) => ({ ...l, provincias: false })))
+    return () => { cancelled = true }
+  }, [idCiudad, form, setCheckoutShipping])
+
+  // Cargar distritos y actualizar costo de envío cuando cambia la provincia (no resetear idDistrito si sigue válido)
+  useEffect(() => {
+    if (!idProvincia || idProvincia < 1) {
+      setDistritos([])
+      form.setValue('idDistrito', undefined)
+      setCheckoutShipping({ costoEnvio: 0, envioLabel: '' })
+      return
+    }
+    let cancelled = false
+    setLoadingUbigeo((l) => ({ ...l, distritos: true }))
+    UbigeoService.getDistritosByProvincia(idProvincia)
+      .then((data) => {
+        if (!cancelled) {
+          const list = data || []
+          setDistritos(list)
+          const currentDist = form.getValues('idDistrito')
+          const distValid = currentDist != null && list.some((d) => d.id === currentDist)
+          if (!distValid) form.setValue('idDistrito', undefined)
+        }
+      })
+      .finally(() => setLoadingUbigeo((l) => ({ ...l, distritos: false })))
+
+    const aplicaTarifaPlana = tarifaPlana?.provincia_ids?.includes(idProvincia) ?? false
+    const costo = aplicaTarifaPlana ? (tarifaPlana?.costo_envio ?? 20) : 0
+    const label = aplicaTarifaPlana ? `S/ ${tarifaPlana?.costo_envio ?? 20}` : 'Envío a consultar según destino'
+    if (!cancelled) setCheckoutShipping({ costoEnvio: costo, envioLabel: label })
+
+    return () => { cancelled = true }
+  }, [idProvincia, tarifaPlana, form, setCheckoutShipping])
+
+  const idDistrito = form.watch('idDistrito')
+  const ciudadNombre = ciudades.find((c) => c.id === idCiudad)?.nombre ?? ''
+  const provinciaNombre = provincias.find((p) => p.id === idProvincia)?.nombre ?? ''
+  const distritoNombre = idDistrito ? (distritos.find((d) => d.id === idDistrito)?.nombre ?? '') : ''
+
+  // Selectores → mapa: al cambiar departamento/provincia/distrito, geocodificar y centrar mapa
+  useEffect(() => {
+    if (!idCiudad || idCiudad < 1 || !idProvincia || idProvincia < 1) {
+      setMapLat(null)
+      setMapLng(null)
+      setAddressFromMap(null)
+      setErrorMap(null)
+      return
+    }
+    const dep = ciudadNombre || ''
+    const prov = provinciaNombre || ''
+    const dist = distritoNombre || ''
+    const direccion = [dist, prov, dep].filter(Boolean).join(', ') + ', ' + PAIS_DEFAULT
+    let cancelled = false
+    setLoadingMap((m) => ({ ...m, geocode: true }))
+    setErrorMap(null)
+    GoogleMapsService.geocodificar({
+      direccion,
+      distrito: dist || undefined,
+      provincia: prov || undefined,
+      departamento: dep || undefined,
+    })
+      .then((res) => {
+        if (cancelled) return
+        if (res.lat != null && res.lng != null) {
+          setMapLat(res.lat)
+          setMapLng(res.lng)
+          const addr = toAddressString(res.address) ?? toAddressString(res.formatted_address) ?? null
+          if (addr) setAddressFromMap(addr)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setErrorMap('No se pudo ubicar en el mapa. Puedes arrastrar el marcador o indicar la dirección manualmente.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMap((m) => ({ ...m, geocode: false }))
+      })
+    return () => { cancelled = true }
+  }, [idCiudad, idProvincia, idDistrito, ciudadNombre, provinciaNombre, distritoNombre])
+
+  const handleMarkerMove = useCallback(
+    (lat: number, lng: number) => {
+      setLoadingMap((m) => ({ ...m, reverse: true }))
+      setErrorMap(null)
+      GoogleMapsService.reverse(lat, lng)
+        .then(async (res) => {
+          setMapLat(lat)
+          setMapLng(lng)
+          const addr = toAddressString(res.address) ?? toAddressString(res.direccion) ?? null
+          if (addr) {
+            setAddressFromMap(addr)
+            form.setValue('address', addr)
+          }
+          const hasIds = res.id_ciudad != null && res.id_provincia != null
+          const hasNames = Boolean(res.departamento ?? res.provincia ?? res.distrito)
+
+          if (hasIds) {
+            // Cargar provincias y distritos antes de asignar para que los dropdowns tengan opciones
+            const [provList, distList] = await Promise.all([
+              UbigeoService.getProvinciasByCiudad(res.id_ciudad!),
+              res.id_provincia != null ? UbigeoService.getDistritosByProvincia(res.id_provincia) : Promise.resolve([] as Distrito[]),
+            ])
+            setProvincias(provList || [])
+            setDistritos(distList || [])
+            form.setValue('idCiudad', res.id_ciudad!)
+            form.setValue('idProvincia', res.id_provincia ?? 0)
+            if (res.id_distrito != null) form.setValue('idDistrito', res.id_distrito)
+          } else if (hasNames && ciudades.length > 0) {
+            // El backend solo devolvió nombres: buscar por nombre en ciudades/provincias/distritos
+            const depNombre = String(res.departamento ?? '').trim()
+            let provNombre = String(res.provincia ?? '').trim().replace(/^Provincia\s+de\s+/i, '')
+            const distNombre = String(res.distrito ?? '').trim()
+            const ciudad = ciudades.find((c) => c.nombre.toLowerCase() === depNombre.toLowerCase())
+            if (ciudad) {
+              const provinciasList = await UbigeoService.getProvinciasByCiudad(ciudad.id)
+              setProvincias(provinciasList || [])
+              form.setValue('idCiudad', ciudad.id)
+              const provincia = (provinciasList || []).find(
+                (p) => p.nombre.toLowerCase() === provNombre.toLowerCase() || p.nombre.toLowerCase().replace(/^Provincia\s+de\s+/i, '') === provNombre.toLowerCase()
+              )
+              if (provincia) {
+                const distritosList = await UbigeoService.getDistritosByProvincia(provincia.id)
+                setDistritos(distritosList || [])
+                form.setValue('idProvincia', provincia.id)
+                const distrito = (distritosList || []).find((d) => d.nombre.toLowerCase() === distNombre.toLowerCase())
+                if (distrito) form.setValue('idDistrito', distrito.id)
+              }
+            }
+          }
+        })
+        .catch(() => {
+          setAddressFromMap(null)
+          setErrorMap('No se pudo obtener la dirección para esta ubicación.')
+        })
+        .finally(() => setLoadingMap((m) => ({ ...m, reverse: false })))
+    },
+    [form, ciudades]
+  )
+
+  // Autocompletado de dirección con debounce (opcional)
+  useEffect(() => {
+    if (!autocompleteQuery.trim()) {
+      setAutocompleteSuggestions([])
+      return
+    }
+    if (autocompleteDebounceRef.current) clearTimeout(autocompleteDebounceRef.current)
+    autocompleteDebounceRef.current = setTimeout(() => {
+      setLoadingAutocomplete(true)
+      GoogleMapsService.autocomplete(autocompleteQuery)
+        .then((list) => setAutocompleteSuggestions(list.map((p) => ({ place_id: p.place_id, description: p.description }))))
+        .catch(() => setAutocompleteSuggestions([]))
+        .finally(() => setLoadingAutocomplete(false))
+      autocompleteDebounceRef.current = null
+    }, DEBOUNCE_MS)
+    return () => {
+      if (autocompleteDebounceRef.current) clearTimeout(autocompleteDebounceRef.current)
+    }
+  }, [autocompleteQuery])
+
+  const handleSelectPlace = useCallback(
+    (placeId: string) => {
+      setLoadingMap((m) => ({ ...m, geocode: true }))
+      setAutocompleteSuggestions([])
+      setAutocompleteQuery('')
+      GoogleMapsService.getPlaceDetails(placeId)
+        .then((res) => {
+          if (res.lat != null && res.lng != null) {
+            setMapLat(res.lat)
+            setMapLng(res.lng)
+            const addr = toAddressString(res.address) ?? toAddressString(res.formatted_address) ?? null
+            if (addr) {
+              setAddressFromMap(addr)
+              form.setValue('address', addr)
+            }
+          }
+        })
+        .finally(() => setLoadingMap((m) => ({ ...m, geocode: false })))
+    },
+    [form]
+  )
+
   const onSubmit = async (data: CheckoutFormData) => {
+    if (!isLoggedIn || !cliente?.id || !token) {
+      toast({
+        title: t('checkout.error.title'),
+        description: 'Debe iniciar sesión para realizar el pedido.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const ciudadNombre = ciudades.find((c) => c.id === data.idCiudad)?.nombre ?? ''
+    const provinciaNombre = provincias.find((p) => p.id === data.idProvincia)?.nombre ?? ''
+    const distritoNombre = data.idDistrito ? (distritos.find((d) => d.id === data.idDistrito)?.nombre ?? '') : ''
+    const addrFromMapStr = toAddressString(addressFromMap)
+    const direccion_entrega = addrFromMapStr
+      ? [data.address, addrFromMapStr].filter(Boolean).join(', ')
+      : [data.address, distritoNombre, provinciaNombre, ciudadNombre, data.country].filter(Boolean).join(', ')
+
+    const aplicaTarifaPlana = tarifaPlana?.provincia_ids?.includes(data.idProvincia) ?? false
+    const costo_envio = aplicaTarifaPlana ? (tarifaPlana?.costo_envio ?? 20) : 0
+
     setIsSubmitting(true)
-    
+
     try {
-      // Simular procesamiento del pedido
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Crear objeto del pedido
-      const order = {
-        id: `ORD-${Date.now()}`,
-        customer: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
-        },
-        shipping: {
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          zipCode: data.zipCode,
-          country: data.country,
-        },
-        items: items,
-        total: getTotalPrice(),
-        paymentMethod: data.paymentMethod,
-        notes: data.notes,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
+      const body = {
+        id_cliente: cliente.id,
+        detalles: items.map((i) => ({
+          sku: i.product.sku,
+          cantidad: i.quantity,
+          precio_unitario: i.product.precio_venta ?? 0,
+        })),
+        direccion_entrega: direccion_entrega || undefined,
+        instrucciones_entrega: data.notes || undefined,
+        contacto_recepcion: [data.firstName, data.lastName].filter(Boolean).join(' ') || undefined,
+        telefono_contacto_entrega: data.phone || undefined,
+        costo_envio,
       }
 
-      // Guardar pedido en localStorage (en producción sería una API)
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]')
-      orders.push(order)
-      localStorage.setItem('orders', JSON.stringify(orders))
+      const res = await pedidosService.crearPedido(body, token)
 
-      // Limpiar carrito
+      if (!res.success || !res.data?.id) {
+        toast({
+          title: t('checkout.error.title'),
+          description: t('checkout.error.description'),
+          variant: 'destructive',
+        })
+        return
+      }
+
       clearCart()
+      const numero = res.data.numero ?? String(res.data.id)
 
-      // Mostrar mensaje de éxito
       toast({
         title: t('checkout.success.title'),
-        description: t('checkout.success.description', { orderId: order.id }),
+        description: t('checkout.success.description', { orderId: numero }),
       })
 
-      // Redirigir a página de confirmación
-      router.push(`/pedido/${order.id}`)
-      
+      router.push(`/${locale}/pedido/${res.data.id}?numero=${encodeURIComponent(numero)}`)
     } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 400) {
+          const msg =
+            error.detail?.message ||
+            'Algunos productos ya no están disponibles. Actualice el carrito o contacte a soporte.'
+          toast({
+            title: t('checkout.error.title'),
+            description: msg,
+            variant: 'destructive',
+          })
+          return
+        }
+        if (error.status === 401 || error.status === 403) {
+          toast({
+            title: 'Sesión requerida',
+            description: 'Inicie sesión para continuar con la compra.',
+            variant: 'destructive',
+          })
+          router.push(`/${locale}/login?redirect=checkout`)
+          return
+        }
+        if (error.status >= 500) {
+          toast({
+            title: t('checkout.error.title'),
+            description: 'No pudimos crear el pedido. Intente más tarde o contacte a soporte.',
+            variant: 'destructive',
+          })
+          return
+        }
+      }
       toast({
         title: t('checkout.error.title'),
         description: t('checkout.error.description'),
@@ -264,59 +583,171 @@ export function CheckoutForm() {
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
               <Truck className="h-5 w-5" />
             </div>
-            Dirección de Envío
+            Dirección de entrega
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="address" className="text-gray-700 dark:text-gray-300 font-medium">Dirección</Label>
+            <Label htmlFor="idCiudad" className="text-gray-700 dark:text-gray-300 font-medium">Departamento / Región</Label>
+            <select
+              id="idCiudad"
+              className="flex h-10 w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:border-green-500 dark:focus:border-green-400 focus:outline-none disabled:opacity-50"
+              value={form.watch('idCiudad') || ''}
+              onChange={(e) => form.setValue('idCiudad', e.target.value ? Number(e.target.value) : 0)}
+              disabled={loadingUbigeo.ciudades}
+            >
+              <option value="">{loadingUbigeo.ciudades ? 'Cargando...' : 'Seleccione departamento'}</option>
+              {ciudades.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+            {form.formState.errors.idCiudad && (
+              <p className="text-sm text-red-600 dark:text-red-400">{form.formState.errors.idCiudad.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="idProvincia" className="text-gray-700 dark:text-gray-300 font-medium">Provincia</Label>
+            <select
+              id="idProvincia"
+              className="flex h-10 w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:border-green-500 dark:focus:border-green-400 focus:outline-none disabled:opacity-50"
+              value={form.watch('idProvincia') || ''}
+              onChange={(e) => form.setValue('idProvincia', e.target.value ? Number(e.target.value) : 0)}
+              disabled={!idCiudad || idCiudad < 1 || loadingUbigeo.provincias}
+            >
+              <option value="">{loadingUbigeo.provincias ? 'Cargando...' : 'Seleccione provincia'}</option>
+              {provincias.map((p) => (
+                <option key={p.id} value={p.id}>{p.nombre}</option>
+              ))}
+            </select>
+            {form.formState.errors.idProvincia && (
+              <p className="text-sm text-red-600 dark:text-red-400">{form.formState.errors.idProvincia.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="idDistrito" className="text-gray-700 dark:text-gray-300 font-medium">Distrito (opcional)</Label>
+            <select
+              id="idDistrito"
+              className="flex h-10 w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:border-green-500 dark:focus:border-green-400 focus:outline-none disabled:opacity-50"
+              value={form.watch('idDistrito') ?? ''}
+              onChange={(e) => form.setValue('idDistrito', e.target.value ? Number(e.target.value) : undefined)}
+              disabled={!idProvincia || idProvincia < 1 || loadingUbigeo.distritos}
+            >
+              <option value="">{loadingUbigeo.distritos ? 'Cargando...' : 'Seleccione distrito'}</option>
+              {distritos.map((d) => (
+                <option key={d.id} value={d.id}>{d.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address" className="text-gray-700 dark:text-gray-300 font-medium">Dirección (calle, número, referencia)</Label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3 text-gray-400 h-4 w-4" />
               <Textarea
                 id="address"
+                placeholder="Ej: Av. Principal 123, Mz A Lt 5, ref. Frente al parque"
                 className="pl-10 border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
                 {...form.register('address')}
               />
             </div>
+            {form.formState.errors.address && (
+              <p className="text-sm text-red-600 dark:text-red-400">{form.formState.errors.address.message}</p>
+            )}
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city" className="text-gray-700 dark:text-gray-300 font-medium">Ciudad</Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="country" className="text-gray-700 dark:text-gray-300 font-medium">País</Label>
+            <Input
+              id="country"
+              className="border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
+              {...form.register('country')}
+            />
+          </div>
+
+          {/* Búsqueda de dirección (opcional): autocompletado con debounce */}
+          <div className="space-y-2">
+            <Label htmlFor="address-search" className="text-gray-700 dark:text-gray-300 font-medium">
+              Buscar dirección (opcional)
+            </Label>
+            <div className="relative">
               <Input
-                id="city"
-                className="border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
-                {...form.register('city')}
+                id="address-search"
+                type="text"
+                placeholder="Escribe para buscar y ubicar en el mapa..."
+                value={autocompleteQuery}
+                onChange={(e) => setAutocompleteQuery(e.target.value)}
+                onBlur={() => setTimeout(() => setAutocompleteSuggestions([]), 200)}
+                className="pr-10 border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
+                aria-autocomplete="list"
+                aria-expanded={autocompleteSuggestions.length > 0}
+                aria-label="Buscar dirección para ubicar en el mapa"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state" className="text-gray-700 dark:text-gray-300 font-medium">Estado/Provincia</Label>
-              <Input
-                id="state"
-                className="border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
-                {...form.register('state')}
-              />
+              {loadingAutocomplete && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">Buscando...</span>
+              )}
+              {autocompleteSuggestions.length > 0 && (
+                <ul
+                  className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg max-h-48 overflow-auto"
+                  role="listbox"
+                >
+                  {autocompleteSuggestions.map((s) => (
+                    <li
+                      key={s.place_id}
+                      role="option"
+                      aria-selected={false}
+                      className="px-3 py-2 text-sm cursor-pointer hover:bg-green-50 dark:hover:bg-slate-700 border-b border-gray-100 dark:border-slate-600 last:border-0"
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleSelectPlace(s.place_id)
+                      }}
+                    >
+                      {s.description}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="zipCode" className="text-gray-700 dark:text-gray-300 font-medium">Código Postal</Label>
-              <Input
-                id="zipCode"
-                className="border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
-                {...form.register('zipCode')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="country" className="text-gray-700 dark:text-gray-300 font-medium">País</Label>
-              <Input
-                id="country"
-                className="border-gray-200 dark:border-slate-600 focus:border-green-500 dark:focus:border-green-400 rounded-lg"
-                {...form.register('country')}
-              />
-            </div>
+
+          {/* Mapa: sincronizado con selectores; al arrastrar el marcador se actualiza la dirección (reverse) */}
+          <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300 font-medium">Ubicación en el mapa</Label>
+            {(() => {
+              const addrDisplay = toAddressString(addressFromMap)
+              return addrDisplay ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400" aria-live="polite">
+                  Dirección detectada: {addrDisplay}
+                </p>
+              ) : null
+            })()}
+            <DeliveryAddressMap
+              lat={mapLat}
+              lng={mapLng}
+              onMarkerMove={handleMarkerMove}
+              center={mapLat != null && mapLng != null ? undefined : { lat: -12.046374, lng: -77.042793 }}
+              zoom={14}
+              loading={loadingMap.geocode || loadingMap.reverse}
+              error={errorMap}
+              onErrorRetry={() => setErrorMap(null)}
+              height={280}
+              className="min-h-[280px]"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Arrastra el marcador para afinar la ubicación. La dirección se actualizará automáticamente.
+            </p>
           </div>
+
+          {idProvincia >= 1 && (
+            <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+              {tarifaPlana?.provincia_ids?.includes(idProvincia) ? (
+                <>Costo de envío: <strong>S/ {tarifaPlana?.costo_envio ?? 20}</strong> (tarifa plana Lima/Callao)</>
+              ) : (
+                <>Envío a consultar según destino</>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
         </>
@@ -444,7 +875,7 @@ export function CheckoutForm() {
               className="mt-1"
             />
             <Label htmlFor="acceptTerms" className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer">
-              Acepto los <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">términos y condiciones</a> y la <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">política de privacidad</a>
+              Acepto los <Link href={`/${locale}/terminos`} className="text-blue-600 dark:text-blue-400 hover:underline">términos y condiciones</Link> y la <Link href={`/${locale}/privacidad`} className="text-blue-600 dark:text-blue-400 hover:underline">política de privacidad</Link>
             </Label>
           </div>
           

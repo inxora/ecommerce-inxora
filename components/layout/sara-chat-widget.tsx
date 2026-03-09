@@ -8,13 +8,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
-import { MessageSquarePlus, ImagePlus, X, FileText, Paperclip, Cloud } from 'lucide-react'
+import { MessageSquarePlus, ImagePlus, X, FileText, Paperclip, Cloud, Image as ImageIcon } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import {
   sendSaraChatMessage,
   getSaraConversation,
   deleteSaraChatHistory,
   ApiError,
+  CHAT_GATEWAY_ERROR_MESSAGE,
+  isGatewayErrorBody,
   type SaraChatAttachmentContentType,
   type SaraChatDocumentContentType,
 } from '@/lib/services/sara-chat.service'
@@ -25,12 +27,19 @@ import {
   downloadDriveFileAsBase64,
 } from '@/lib/google-drive-picker'
 
-type Message = { role: 'user' | 'assistant' | 'asesor'; content: string }
+type Message = {
+  role: 'user' | 'assistant' | 'asesor'
+  content: string
+  attachmentPreviews?: string[]
+}
 
 const BRAND = {
   logo: '/LOGO-03.png',
   name: 'INXORA',
-  welcomeText: '¡Hola! Soy **SARA XORA**, tu asistente virtual. ¿En qué puedo ayudarte?',
+  /** Estado vacío: CTA para el primer mensaje. No se crea conversación en backend hasta que el usuario envíe. */
+  welcomeText: '¡Hola! Soy **SARA XORA**, tu asistente virtual.',
+  emptyStateCta: 'Escribe tu consulta o lo que necesites cotizar.',
+  emptyStateHint: 'Puedes preguntar por productos, pedir una cotización o hablar con un asesor. La conversación se inicia al enviar tu primer mensaje.',
   typingText: 'SARA XORA está escribiendo...',
 }
 const STYLE = {
@@ -70,6 +79,14 @@ function linkifyPhonesToWhatsApp(text: string): string {
   })
 }
 
+const IMAGE_PLACEHOLDER_REGEX = /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)\]|\[\d+ documento\(s\)\]/g
+function hasImagePlaceholder(content: string): boolean {
+  return /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)\]/.test(content)
+}
+function stripImagePlaceholder(content: string): string {
+  return content.replace(IMAGE_PLACEHOLDER_REGEX, '').replace(/\s{2,}/g, ' ').trim()
+}
+
 const markdownComponents = {
   a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
     <a
@@ -82,6 +99,11 @@ const markdownComponents = {
     >
       {children}
     </a>
+  ),
+  img: ({ src, alt }: { src?: string; alt?: string }) => (
+    <span className="sara-msg-img-wrap">
+      <img src={src} alt={alt ?? ''} className="sara-msg-img" />
+    </span>
   ),
 }
 
@@ -211,7 +233,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     }
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
-      // Mantenemos CHAT_SESSION_STORAGE_KEY para seguir usando la misma sesión (conversación nueva en backend)
+      // Mantenemos CHAT_SESSION_STORAGE_KEY si existía; la conversación en backend solo tiene sentido con mensajes
     }
     setMessages([])
     setError(null)
@@ -394,12 +416,13 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     if (hasAttachments) parts.push(`[${attachments.length} imagen(es)]`)
     if (hasDocuments) parts.push(`[${documents.length} documento(s)]`)
     const userContent = parts.length ? parts.join(' ') : ''
+    const previews = attachments.map((a) => a.preview)
 
     setInput('')
     setAttachments([])
     setDocuments([])
     setError(null)
-    setMessages((prev) => [...prev, { role: 'user', content: userContent }])
+    setMessages((prev) => [...prev, { role: 'user', content: userContent, attachmentPreviews: previews }])
     setLoading(true)
     scrollToBottom()
 
@@ -418,11 +441,13 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
       setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
       scrollToBottom()
     } catch (e) {
-      const msg =
+      let msg =
         e instanceof ApiError
           ? e.message || 'Error de conexión. Inténtalo de nuevo.'
           : 'No se pudo enviar el mensaje. Inténtalo de nuevo.'
       const is422 = e instanceof ApiError && e.status === 422
+      if (is422) msg = 'Solo imágenes (JPEG/PNG/WebP, máx. 5 y 5 MB c/u) y documentos (PDF/Word/Excel, máx. 3 y 10 MB c/u).'
+      if (isGatewayErrorBody(msg)) msg = CHAT_GATEWAY_ERROR_MESSAGE
       setError(
         is422
           ? 'Solo imágenes (JPEG/PNG/WebP, máx. 5 y 5 MB c/u) y documentos (PDF/Word/Excel, máx. 3 y 10 MB c/u).'
@@ -664,6 +689,23 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           border: 1px solid rgba(0,0,0,0.08);
           max-width: 85%;
         }
+        .sara-msg.sara-empty-state {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .sara-msg.sara-empty-state .sara-empty-cta {
+          margin: 0;
+          font-weight: 600;
+          color: ${STYLE.primaryColor};
+          font-size: 14px;
+        }
+        .sara-msg.sara-empty-state .sara-empty-hint {
+          margin: 0;
+          font-size: 12px;
+          color: #666;
+          line-height: 1.4;
+        }
         .sara-msg.asesor {
           background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
           color: #1b5e20;
@@ -684,6 +726,55 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           background: #fef2f2;
           border-color: #fecaca;
           color: #991b1b;
+        }
+        .sara-user-images {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-bottom: 8px;
+        }
+        .sara-user-img-wrap {
+          display: inline-block;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.3);
+          max-width: 80px;
+          max-height: 80px;
+        }
+        .sara-user-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          max-width: 80px;
+          max-height: 80px;
+          display: block;
+        }
+        .sara-user-image-placeholder {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          opacity: 0.95;
+        }
+        .sara-user-text-block {
+          display: block;
+          margin-top: 4px;
+        }
+        .sara-msg-img-wrap {
+          display: inline-block;
+          max-width: 200px;
+          max-height: 200px;
+          border-radius: 8px;
+          overflow: hidden;
+          margin: 4px 0;
+        }
+        .sara-msg-img {
+          max-width: 100%;
+          max-height: 200px;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+          display: block;
         }
         .sara-msg :global(.sara-chat-link) {
           color: ${STYLE.primaryColor};
@@ -930,8 +1021,8 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
             <button
               type="button"
               className="sara-new-chat-btn"
-              aria-label="Nueva conversación"
-              title="Nueva conversación"
+              aria-label="Limpiar chat y empezar de nuevo"
+              title="Limpiar chat y empezar de nuevo"
               onClick={startNewConversation}
             >
               <MessageSquarePlus className="w-4 h-4" />
@@ -943,8 +1034,10 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
 
           <div className="sara-messages" ref={listRef}>
             {!hasMessages && (
-              <div className="sara-msg assistant">
+              <div className="sara-msg assistant sara-empty-state">
                 <ReactMarkdown components={markdownComponents}>{BRAND.welcomeText}</ReactMarkdown>
+                <p className="sara-empty-cta">{BRAND.emptyStateCta}</p>
+                <p className="sara-empty-hint">{BRAND.emptyStateHint}</p>
               </div>
             )}
             {messages.map((msg, i) => (
@@ -953,7 +1046,28 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
                 className={`sara-msg ${msg.role} ${error && msg.role === 'assistant' && i === messages.length - 1 ? 'error' : ''}`}
               >
                 {msg.role === 'user' ? (
-                  msg.content
+                  <>
+                    {msg.attachmentPreviews && msg.attachmentPreviews.length > 0 && (
+                      <div className="sara-user-images">
+                        {msg.attachmentPreviews.map((src, j) => (
+                          <span key={j} className="sara-user-img-wrap">
+                            <img src={src} alt="" className="sara-user-img" />
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {!msg.attachmentPreviews?.length && hasImagePlaceholder(msg.content) && (
+                      <span className="sara-user-image-placeholder">
+                        <ImageIcon className="w-4 h-4 shrink-0" aria-hidden />
+                        Imagen adjunta
+                      </span>
+                    )}
+                    {(stripImagePlaceholder(msg.content) || (!msg.attachmentPreviews?.length && !hasImagePlaceholder(msg.content))) && (
+                      <span className={msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? 'sara-user-text-block' : ''}>
+                        {msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? stripImagePlaceholder(msg.content) : msg.content}
+                      </span>
+                    )}
+                  </>
                 ) : msg.role === 'asesor' ? (
                   <>
                     <span className="sara-asesor-label">Equipo Inxora</span>

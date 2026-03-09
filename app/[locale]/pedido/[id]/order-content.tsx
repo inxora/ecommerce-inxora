@@ -1,0 +1,310 @@
+'use client'
+
+import { useMemo } from 'react'
+import { notFound } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import Image from 'next/image'
+import Link from 'next/link'
+import { CheckCircle, Package, Truck, CreditCard, MapPin, User, Mail, Phone, Calendar, Clock } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { formatPrice } from '@/lib/utils'
+
+function getOrder(id: string) {
+  if (typeof window === 'undefined') return null
+  const orders = JSON.parse(localStorage.getItem('orders') || '[]')
+  return orders.find((order: { id: string }) => String(order.id) === String(id)) ?? null
+}
+
+export function OrderContent({
+  orderId,
+  locale,
+  numeroFromQuery,
+}: {
+  orderId: string
+  locale: string
+  numeroFromQuery?: string | null
+}) {
+  const t = useTranslations()
+  const order = useMemo(() => getOrder(orderId), [orderId])
+
+  if (!order && numeroFromQuery) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-lg text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
+          {t('order.confirmation.title')}
+        </h1>
+        <p className="text-muted-foreground mb-2">{t('order.confirmation.description')}</p>
+        <p className="text-sm text-muted-foreground mb-6">
+          {t('order.confirmation.orderId')}: <span className="font-mono font-medium">{numeroFromQuery}</span>
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button asChild>
+            <Link href={`/${locale}/catalogo`}>{t('order.actions.continueShopping')}</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/${locale}/cuenta`}>Ir a mi cuenta</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!order) {
+    notFound()
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800'
+      case 'confirmed': return 'bg-blue-100 text-blue-800'
+      case 'processing': return 'bg-purple-100 text-purple-800'
+      case 'shipped': return 'bg-indigo-100 text-indigo-800'
+      case 'delivered': return 'bg-green-100 text-green-800'
+      case 'cancelled': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getPaymentMethodName = (method: string) => {
+    switch (method) {
+      case 'card': return t('checkout.payment.card')
+      case 'transfer': return t('checkout.payment.transfer')
+      case 'cash': return t('checkout.payment.cash')
+      case 'yape': return t('checkout.payment.yape')
+      default: return method
+    }
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-green-600 mb-2">
+          {t('order.confirmation.title')}
+        </h1>
+        <p className="text-muted-foreground">
+          {t('order.confirmation.description')}
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          {t('order.confirmation.orderId')}: <span className="font-mono font-medium">{order.id}</span>
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                {t('order.status.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Badge className={getStatusColor(order.status)}>
+                    {t(`order.status.${order.status}`)}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {t('order.status.description')}
+                  </p>
+                </div>
+                <div className="text-right text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Clock className="h-4 w-4" />
+                    {new Date(order.createdAt).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('order.items.title')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {order.items.map((item: {
+                  product?: { nombre?: string; imagen_principal_url?: string; sku?: number; precio_venta?: number }
+                  images?: string[]
+                  name?: string
+                  nombre?: string
+                  brand?: string
+                  sku?: number
+                  selectedSize?: string
+                  price?: number
+                  precio_venta?: number
+                  quantity?: number
+                  cantidad?: number
+                }, index: number) => {
+                  const p = item.product
+                  const name = item.name ?? item.nombre ?? p?.nombre
+                  const img = (item.images && item.images[0]) ?? (item as { imagen_principal_url?: string }).imagen_principal_url ?? p?.imagen_principal_url ?? '/placeholder-product.png'
+                  const price = item.price ?? item.precio_venta ?? p?.precio_venta ?? 0
+                  const qty = item.quantity ?? item.cantidad ?? 1
+                  const sku = item.sku ?? p?.sku
+                  return (
+                    <div key={index} className="flex gap-4 p-4 border rounded-lg">
+                      <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
+                        <Image src={img} alt={name || 'Producto'} title={name || 'Producto'} fill className="object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{name}</h4>
+                        {item.brand && <p className="text-sm text-muted-foreground">{item.brand}</p>}
+                        {sku != null && <p className="text-sm text-muted-foreground">SKU: {sku}</p>}
+                        {item.selectedSize && (
+                          <p className="text-sm text-muted-foreground">{t('product.size')}: {item.selectedSize}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{formatPrice(price)}</p>
+                        <p className="text-sm text-muted-foreground">{t('cart.quantity')}: {qty}</p>
+                        <p className="text-sm font-medium">{formatPrice(price * qty)}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                {t('order.customer.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span>{order.customer.firstName} {order.customer.lastName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>{order.customer.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span>{order.customer.phone}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                {t('order.shipping.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                <div>
+                  <p>{order.shipping.address}</p>
+                  <p>{order.shipping.city}, {order.shipping.state}</p>
+                  <p>{order.shipping.zipCode}, {order.shipping.country}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle>{t('order.summary.title')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                <CreditCard className="h-4 w-4" />
+                <span className="text-sm">{getPaymentMethodName(order.paymentMethod)}</span>
+              </div>
+
+              {order.paymentMethod === 'yape' && (
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+                  <p className="text-center font-medium text-sm text-gray-900 dark:text-white mb-3">
+                    {t('checkout.payment.yapeInstructions')}
+                  </p>
+                  <div className="flex justify-center">
+                    <div className="relative w-40 h-40 bg-white rounded-xl p-2 shadow-lg">
+                      <Image
+                        src="/qr_inxora.jpeg"
+                        alt="QR Yape - Inxora"
+                        fill
+                        className="object-contain rounded-lg"
+                        sizes="160px"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-2">
+                    {t('checkout.payment.yapeScan')}
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>{t('checkout.orderSummary.subtotal')}</span>
+                  <span>{formatPrice(order.total * 0.84)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{t('checkout.orderSummary.shipping')}</span>
+                  <span>{formatPrice(15000)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{t('checkout.orderSummary.tax')} (19%)</span>
+                  <span>{formatPrice(order.total * 0.16)}</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex justify-between font-semibold text-lg">
+                <span>{t('checkout.orderSummary.total')}</span>
+                <span className="text-inxora-blue">{formatPrice(order.total)}</span>
+              </div>
+
+              {order.notes && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">{t('order.notes')}</h4>
+                    <p className="text-sm text-muted-foreground">{order.notes}</p>
+                  </div>
+                </>
+              )}
+
+              <div className="space-y-2 pt-4">
+                <Button asChild className="w-full">
+                  <Link href={`/${locale}/catalogo`}>
+                    {t('order.actions.continueShopping')}
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full">
+                  {t('order.actions.downloadInvoice')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}

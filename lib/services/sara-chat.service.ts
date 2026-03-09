@@ -5,7 +5,7 @@
  */
 import { apiClient, ApiError } from '@/lib/api/client'
 
-const CHAT_ENDPOINT = '/api/chat'
+const CHAT_BASE = '/api/chat'
 const CHAT_TIMEOUT_MS = 90000
 
 /** Adjunto de imagen para el chat (máx. 5 por mensaje, 5 MB cada una). */
@@ -74,7 +74,7 @@ export async function getSaraConversation(
   sessionId: string
 ): Promise<SaraConversacionResponse> {
   return apiClient<SaraConversacionResponse>(
-    `${CHAT_ENDPOINT}/sesion/${encodeURIComponent(sessionId)}`,
+    `${CHAT_BASE}/sesion/${encodeURIComponent(sessionId)}`,
     { method: 'GET', timeout: 15000 }
   )
 }
@@ -94,7 +94,7 @@ export async function deleteSaraChatHistory(
   sessionId: string
 ): Promise<SaraDeleteHistorialResponse> {
   return apiClient<SaraDeleteHistorialResponse>(
-    `${CHAT_ENDPOINT}/sesion/${encodeURIComponent(sessionId)}/historial`,
+    `${CHAT_BASE}/sesion/${encodeURIComponent(sessionId)}/historial`,
     { method: 'DELETE', timeout: 10000 }
   )
 }
@@ -129,7 +129,7 @@ export async function getSaraConversaciones(
   if (params?.limit != null) search.set('limit', String(params.limit))
   if (params?.offset != null) search.set('offset', String(params.offset))
   return apiClient<SaraConversacionesListResponse>(
-    `${CHAT_ENDPOINT}/conversaciones?${search.toString()}`,
+    `${CHAT_BASE}/conversaciones?${search.toString()}`,
     { method: 'GET', timeout: 15000 }
   )
 }
@@ -155,11 +155,31 @@ export async function sendSaraChatMessage(
     ...(attachments && attachments.length > 0 && { attachments }),
     ...(documents && documents.length > 0 && { documents }),
   }
-  return apiClient<SaraChatResponse>(CHAT_ENDPOINT, {
+  return apiClient<SaraChatResponse>(`${CHAT_BASE}/`, {
     method: 'POST',
     body: JSON.stringify(body),
     timeout: CHAT_TIMEOUT_MS,
   })
+}
+
+/** Mensaje mostrado al usuario cuando el backend devuelve 502/503/504 (no se usa el body HTML). */
+export const CHAT_GATEWAY_ERROR_MESSAGE =
+  'La solicitud tardó demasiado. Por favor, intente de nuevo. Si envió una imagen, puede probar con una más pequeña o sin imagen.'
+
+/** Comprueba si un texto parece una página de error (HTML de nginx, etc.) para no mostrarlo en el chat. */
+export function isGatewayErrorBody(text: string): boolean {
+  if (!text || typeof text !== 'string') return false
+  const t = text.trim().toLowerCase()
+  return (
+    t.includes('<html') ||
+    t.includes('<head') ||
+    t.includes('504') ||
+    t.includes('502') ||
+    t.includes('503') ||
+    t.includes('gateway time-out') ||
+    t.includes('bad gateway') ||
+    t.includes('service unavailable')
+  )
 }
 
 export { ApiError }

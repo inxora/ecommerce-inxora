@@ -6,16 +6,18 @@ import { Truck } from 'lucide-react'
 import { formatPriceWithThousands } from '@/lib/utils'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
+import { useCheckoutShipping } from '@/lib/contexts/checkout-shipping-context'
 
 export function OrderSummary() {
   const pathname = usePathname()
   const locale = (pathname?.split('/')?.[1] || 'es')
   const { items, getTotalPrice } = useCart()
   const { currencySymbol } = useCurrency()
+  const { shipping } = useCheckoutShipping()
 
   const subtotal = getTotalPrice()
-  const shipping = 0 // Envío gratis
-  const total = subtotal + shipping
+  const shippingCost = shipping.costoEnvio ?? 0
+  const total = subtotal + shippingCost
 
   const formatPrice = (price: number) => `${currencySymbol} ${formatPriceWithThousands(price)}`
 
@@ -50,7 +52,11 @@ export function OrderSummary() {
         </div>
         <div className="flex justify-between">
           <span>Envío</span>
-          <span>{shipping === 0 ? 'Gratis' : formatPrice(shipping)}</span>
+          <span>
+            {shippingCost === 0
+              ? (shipping.envioLabel || 'Seleccione provincia')
+              : formatPrice(shippingCost)}
+          </span>
         </div>
         <div className="flex justify-between font-semibold text-lg border-t border-gray-200 dark:border-slate-600 pt-2">
           <span>Total</span>

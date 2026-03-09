@@ -13,13 +13,17 @@ interface ApiOptions extends Omit<RequestInit, 'next'> {
 }
 
 export class ApiError extends Error {
+  /** Respuesta de error del backend (ej. 400 con detail.message / detail.skus_invalidos) */
+  public detail?: { message?: string; skus_invalidos?: number[] }
   constructor(
     public status: number,
     public statusText: string,
-    message?: string
+    message?: string,
+    detail?: { message?: string; skus_invalidos?: number[] }
   ) {
     super(message || `API Error: ${status} ${statusText}`)
     this.name = 'ApiError'
+    this.detail = detail
   }
 }
 
@@ -120,22 +124,30 @@ export async function apiClient<T>(
 
     // Si hay error HTTP, intentar leer el mensaje de error del cuerpo
     if (!response.ok) {
+      const isGatewayError = response.status === 502 || response.status === 503 || response.status === 504
       let errorMessage = response.statusText
-      try {
-        const errorText = await response.text()
-        if (errorText) {
-          try {
-            const errorJson = JSON.parse(errorText)
-            errorMessage = errorJson.message || errorJson.error || errorText
-          } catch {
-            errorMessage = errorText
+      let errorDetail: { message?: string; skus_invalidos?: number[] } | undefined
+      if (!isGatewayError) {
+        try {
+          const errorText = await response.text()
+          if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText) as { message?: string; error?: string; detail?: { message?: string; skus_invalidos?: number[] } }
+              errorMessage = errorJson.message || errorJson.error || errorText
+              if (errorJson.detail) errorDetail = errorJson.detail
+            } catch {
+              errorMessage = errorText
+            }
           }
+        } catch (e) {
+          // Si no se puede leer el cuerpo, usar el statusText
         }
-      } catch (e) {
-        // Si no se puede leer el cuerpo, usar el statusText
+      } else {
+        // 502/503/504: no usar el body (suele ser HTML de nginx). Mensaje fijo para el usuario.
+        errorMessage = 'La solicitud tardó demasiado. Por favor, intente de nuevo. Si envió una imagen, puede probar con una más pequeña o sin imagen.'
       }
-      console.error(`[API Client] Error response: ${response.status} - ${errorMessage}`)
-      throw new ApiError(response.status, response.statusText, errorMessage)
+      console.error(`[API Client] Error response: ${response.status} - ${isGatewayError ? '(gateway/timeout)' : errorMessage}`)
+      throw new ApiError(response.status, response.statusText, errorMessage, errorDetail)
     }
 
     // Manejar respuestas vacías

@@ -53,4 +53,21 @@ export const UbigeoService = {
     if (Array.isArray(res)) return res
     return Array.isArray((res as { data?: Distrito[] }).data) ? (res as { data: Distrito[] }).data : []
   },
+
+  /** Tarifa plana de envío: provincias con S/ fijo (Lima 1, Callao 11, PROV. CONST. DEL CALLAO 187) */
+  async getTarifaPlanaEnvio(): Promise<{ provincia_ids: number[]; costo_envio: number }> {
+    const defaultTarifa = { provincia_ids: [1, 11, 187], costo_envio: 20 }
+    try {
+      const res = await api.get<{ data?: { provincia_ids?: number[]; costo_envio?: number } }>(
+        '/api/provincia/tarifa-plana-envio'
+      )
+      const data = (res as { data?: { provincia_ids?: number[]; costo_envio?: number } }).data
+      if (data && Array.isArray(data.provincia_ids) && typeof data.costo_envio === 'number') {
+        return { provincia_ids: data.provincia_ids, costo_envio: data.costo_envio }
+      }
+      return defaultTarifa
+    } catch {
+      return defaultTarifa
+    }
+  },
 }
