@@ -68,9 +68,10 @@ export const BannersService = {
    * Consume GET /api/banners/public y filtra por posicion_slug.
    *
    * @param slugPosicion - Slug de la posición (ej: home-hero, home-middle). Acepta home-hero o home_hero.
+   * @param revalidateSeconds - Segundos de revalidación de caché (default 900 = 15 min). Layout: 3600 (1 h).
    * @returns Array de banners ordenados por campo orden
    */
-  getBannersActivos: async (slugPosicion: string): Promise<Banner[]> => {
+  getBannersActivos: async (slugPosicion: string, revalidateSeconds: number = 900): Promise<Banner[]> => {
     if (!slugPosicion || typeof slugPosicion !== 'string') {
       return []
     }
@@ -78,7 +79,7 @@ export const BannersService = {
     try {
       const response = await apiClient<BannerAPI[]>(BANNERS_PUBLIC_ENDPOINT, {
         method: 'GET',
-        next: { revalidate: CACHE_REVALIDATE },
+        next: { revalidate: revalidateSeconds },
       })
 
       if (!Array.isArray(response)) {

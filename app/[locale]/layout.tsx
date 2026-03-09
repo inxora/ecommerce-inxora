@@ -61,8 +61,8 @@ export default async function LocaleLayout({
   let bannersFooterStrip: Awaited<ReturnType<typeof getBannersActivos>> = []
   try {
     const [headerResult, footerResult] = await Promise.all([
-      getBannersActivos('layout-header-strip'),
-      getBannersActivos('layout-footer-strip'),
+      getBannersActivos('layout-header-strip', 3600),
+      getBannersActivos('layout-footer-strip', 3600),
     ])
     bannersHeaderStrip = headerResult
     bannersFooterStrip = footerResult

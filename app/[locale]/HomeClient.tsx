@@ -35,7 +35,7 @@ interface HomeClientProps {
 
 // Helper para construir la URL del producto
 function getProductUrl(product: Producto, locale: string): string {
-  // Si tenemos todos los datos necesarios, construir URL canÃ³nica
+  // Si tenemos todos los datos necesarios, construir URL canónica
   if (product.categoria && product.subcategoria_principal && product.marca && product.seo_slug) {
     return buildProductFullUrl(
       { nombre: typeof product.categoria === 'string' ? product.categoria : product.categoria.nombre },
@@ -51,7 +51,7 @@ function getProductUrl(product: Producto, locale: string): string {
     return `/${locale}/producto/${product.seo_slug}`
   }
   
-  // Ãšltimo fallback
+  // Último fallback
   return `/${locale}/catalogo`
 }
 

@@ -59,9 +59,8 @@ export const CategoriesService = {
   getArbolNavegacion: async (): Promise<ArbolNavegacionResponse> => {
     try {
       // ✅ FIX: Usar revalidate en todos los entornos para compatibilidad con build estático
-      // En desarrollo: revalidar cada 60 segundos
-      // En producción: revalidar cada 60 segundos (permite build estático + datos frescos)
-      const cacheOptions = { next: { revalidate: 60 } }
+      // Revalidar cada 30 minutos para reducir refetch con tráfico alto
+      const cacheOptions = { next: { revalidate: 1800 } }
       
       // Usar apiClient directamente para poder agregar timeout
       const response = await apiClient<ArbolNavegacionResponse>('/api/test/ecommerce/arbol-navegacion', {

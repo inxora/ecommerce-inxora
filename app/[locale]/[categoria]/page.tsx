@@ -109,10 +109,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   const marcaArray = normalizeToArray(resolvedSearchParams.marca)
 
-  // Fetch all categories first to find the one matching the slug
-  const categoriesData = await getCategorias()
+  // OPTIMIZACIÓN: getCategorias y getMarcas en paralelo (evita waterfall)
+  const [categoriesData, brandsData] = await Promise.all([
+    getCategorias(),
+    getMarcas(),
+  ])
   const { data: allCategories } = categoriesData
-  
+
   // Find category by matching normalized name with slug
   const category = allCategories?.find(c => {
     const normalizedName = normalizeName(c.nombre)
@@ -130,10 +133,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Multiple marcas are allowed
   const allCategoriaIds = [String(categoryId)]
 
-  // Fetch remaining data in parallel
-  // OPTIMIZACIÓN: Obtener subcategorías junto con el resto de datos
-  const [brandsData, productsData, relatedBrandsData, categoriasNavegacion] = await Promise.all([
-    getMarcas(),
+  // Fetch products, related brands and nav categories in parallel
+  const [productsData, relatedBrandsData, categoriasNavegacion] = await Promise.all([
     ProductsService.getProductos({
       page,
       limit: itemsPerPage,
@@ -144,13 +145,12 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       moneda_usuario: moneda,
     }),
     getMarcasByCategoria(categoryId),
-    CategoriesService.getCategorias() // ✅ Obtener subcategorías
+    CategoriesService.getCategorias(),
   ])
 
   const { products, total } = productsData
   const relatedBrands = relatedBrandsData || []
-  
-  // ✅ Obtener subcategorías de la categoría actual
+
   const categoriaNavegacion = categoriasNavegacion.find(c => c.id === categoryId)
   const subcategorias = categoriaNavegacion?.subcategorias.filter(s => s.activo) || []
 
