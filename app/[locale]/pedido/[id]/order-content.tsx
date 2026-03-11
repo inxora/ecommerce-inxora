@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatPrice } from '@/lib/utils'
+import { formatEmpresaEmisoraAddress, type EmpresaEmisora } from '@/lib/services/empresa-emisora.service'
 
 function getOrder(id: string) {
   if (typeof window === 'undefined') return null
@@ -80,6 +81,16 @@ export function OrderContent({
       default: return method
     }
   }
+
+  const deliveryType = (order as { tipo_entrega?: string }).tipo_entrega ?? 'DELIVERY'
+  const pickupCompany = (order as { empresa_emisora?: EmpresaEmisora | null }).empresa_emisora
+  const shippingAddress = deliveryType === 'RECOJO'
+    ? formatEmpresaEmisoraAddress(pickupCompany)
+    : [
+        order.shipping?.address,
+        order.shipping?.city && order.shipping?.state ? `${order.shipping.city}, ${order.shipping.state}` : order.shipping?.city ?? order.shipping?.state,
+        [order.shipping?.zipCode, order.shipping?.country].filter(Boolean).join(', '),
+      ].filter(Boolean).join('\n')
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -208,16 +219,16 @@ export function OrderContent({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Truck className="h-5 w-5" />
-                {t('order.shipping.title')}
+                {deliveryType === 'RECOJO' ? 'Punto de recojo' : t('order.shipping.title')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
                 <div>
-                  <p>{order.shipping.address}</p>
-                  <p>{order.shipping.city}, {order.shipping.state}</p>
-                  <p>{order.shipping.zipCode}, {order.shipping.country}</p>
+                  {shippingAddress.split('\n').map((line: string) => (
+                    <p key={line}>{line}</p>
+                  ))}
                 </div>
               </div>
             </CardContent>

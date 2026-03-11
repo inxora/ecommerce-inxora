@@ -95,6 +95,27 @@ export interface CartItem {
   cantidad: number
   imagen: string
   slug: string
+  sku_producto?: string
+  condicion_precio_venta?: string | null
+  proveedor_principal?: {
+    id: number
+    nombre: string
+    margen_aplicado: number
+    costo_sin_igv: number
+    costo_con_igv: number
+    costo_venta_sin_igv?: number
+    costo_venta_con_igv: number
+    id_moneda_costo: number
+    moneda_codigo?: string
+    tiempo_entrega_dias: number
+    es_proveedor_principal: boolean
+    producto_proveedor_id: number
+    tipo_cambio_usado: number | null
+    minimo_pedido?: number | null
+    minimo_monto_compra?: number | null
+    id_moneda_minimo_monto?: number | null
+    condicion_precio_venta?: string | null
+  }
 }
 
 export interface CartState {

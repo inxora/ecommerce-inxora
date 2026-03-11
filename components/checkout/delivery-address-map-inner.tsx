@@ -1,13 +1,10 @@
 'use client'
 
 /**
- * Mapa Leaflet en archivo separado para cargarlo solo en el cliente.
- * Evita "render is not a function" de react-leaflet + Next.js al aislar el módulo.
+ * Mapa de dirección de entrega con Google Maps JavaScript API.
+ * Marcador arrastrable; al soltar se llama onMarkerMove(lat, lng) para geocodificación inversa (backend).
  */
-import { useEffect, useMemo, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import { useEffect, useRef, useCallback } from 'react'
 
 const LIMA_CENTER = { lat: -12.046374, lng: -77.042793 }
 const DEFAULT_ZOOM = 14
@@ -18,6 +15,9 @@ export interface DeliveryAddressMapInnerProps {
   lng: number | null
   onMarkerMove?: (lat: number, lng: number) => void
   center?: { lat: number; lng: number }
+  interactive?: boolean
+  markerTitle?: string
+  ariaLabel?: string
   zoom?: number
   height?: number
 }
@@ -27,71 +27,105 @@ export default function DeliveryAddressMapInner({
   lng,
   onMarkerMove,
   center,
+  interactive = true,
+  markerTitle,
+  ariaLabel,
   zoom = DEFAULT_ZOOM,
   height = MIN_HEIGHT,
 }: DeliveryAddressMapInnerProps) {
-  const hasCoords = lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)
-  const centerCoords: [number, number] = hasCoords
-    ? [lat!, lng!]
-    : [center?.lat ?? LIMA_CENTER.lat, center?.lng ?? LIMA_CENTER.lng]
-  const position: [number, number] = hasCoords ? [lat!, lng!] : centerCoords
-
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<google.maps.Map | null>(null)
+  const markerRef = useRef<google.maps.Marker | null>(null)
   const onMoveRef = useRef(onMarkerMove)
   onMoveRef.current = onMarkerMove
 
-  const eventHandlers = useMemo(
-    () => ({
-      dragend(e: { target: { getLatLng: () => { lat: number; lng: number } } }) {
-        const ll = e.target.getLatLng()
-        onMoveRef.current?.(ll.lat, ll.lng)
-      },
-    }),
-    []
-  )
+  const hasCoords = lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)
+  const centerLat = hasCoords ? lat! : (center?.lat ?? LIMA_CENTER.lat)
+  const centerLng = hasCoords ? lng! : (center?.lng ?? LIMA_CENTER.lng)
+
+  const initMap = useCallback(() => {
+    const g = typeof window !== 'undefined' ? (window as Window & { google?: typeof google }).google : undefined
+    if (!g || !containerRef.current) return
+
+    const map = new g.maps.Map(containerRef.current, {
+      center: { lat: centerLat, lng: centerLng },
+      zoom,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      scaleControl: true,
+    })
+    mapRef.current = map
+
+    const marker = new g.maps.Marker({
+      position: { lat: centerLat, lng: centerLng },
+      map,
+      draggable: Boolean(interactive && onMoveRef.current),
+      title: markerTitle ?? (interactive ? 'Arrastra para ajustar la ubicación' : 'Ubicación de recojo'),
+    })
+    markerRef.current = marker
+
+    if (interactive && onMoveRef.current) {
+      marker.addListener('dragend', () => {
+        const pos = marker.getPosition()
+        if (pos) onMoveRef.current?.(pos.lat(), pos.lng())
+      })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- centerLat/centerLng only for initial view
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const Default = L.Icon.Default
-    if (Default?.prototype && '_getIconUrl' in Default.prototype) {
-      delete (Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
-    }
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-    })
-  }, [])
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    if (!apiKey?.trim()) return
+    if (!containerRef.current) return
 
-  function CenterUpdater() {
-    const map = useMap()
-    useEffect(() => {
-      map.setView(centerCoords, zoom)
-    }, [map, centerCoords[0], centerCoords[1], zoom])
-    return null
+    if (window.google?.maps) {
+      initMap()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`
+    script.async = true
+    script.defer = true
+    script.onload = () => initMap()
+    document.head.appendChild(script)
+
+    return () => {
+      if (markerRef.current) markerRef.current.setMap(null)
+      markerRef.current = null
+      mapRef.current = null
+    }
+  }, [initMap])
+
+  // Actualizar posición del marcador y centro cuando cambian lat/lng desde fuera
+  useEffect(() => {
+    const map = mapRef.current
+    const marker = markerRef.current
+    if (!map || !marker) return
+    const pos = { lat: centerLat, lng: centerLng }
+    marker.setPosition(pos)
+    map.panTo(pos)
+  }, [centerLat, centerLng])
+
+  const apiKey = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY : ''
+  if (!apiKey?.trim()) {
+    return (
+      <div
+        className="flex items-center justify-center rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 text-sm p-4"
+        style={{ minHeight: height }}
+      >
+        Configura NEXT_PUBLIC_GOOGLE_MAPS_API_KEY para mostrar el mapa.
+      </div>
+    )
   }
 
-  // react-leaflet v5 MapContainer espera un único hijo (context consumer); varios hijos provocan "render is not a function"
-  const MapContent = () => (
-    <>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={position} draggable={!!onMarkerMove} eventHandlers={eventHandlers} />
-      <CenterUpdater />
-    </>
-  )
-
   return (
-    <MapContainer
-      center={centerCoords}
-      zoom={zoom}
+    <div
+      ref={containerRef}
       className="w-full h-full rounded-xl"
       style={{ height, minHeight: MIN_HEIGHT }}
-      zoomControl
-      scrollWheelZoom
-    >
-      <MapContent />
-    </MapContainer>
+      aria-label={ariaLabel ?? (interactive ? 'Mapa de ubicación de entrega' : 'Mapa de ubicación de recojo')}
+    />
   )
 }

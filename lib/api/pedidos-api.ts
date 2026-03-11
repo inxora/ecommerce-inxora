@@ -12,10 +12,26 @@ export interface PedidoDetalleInput {
   observaciones?: string
 }
 
+export interface DireccionEntregaPedidoInput {
+  direccion: string
+  referencia?: string
+  id_distrito?: number
+  ubigeo?: string
+  id_tipo_lugar_entrega?: number
+  nombre_lugar?: string
+  horario_recepcion?: string
+  instrucciones_acceso?: string
+  requiere_cita?: boolean
+  latitud?: number
+  longitud?: number
+}
+
 export interface CreatePedidoBody {
   id_cliente: number
   detalles: PedidoDetalleInput[]
+  tipo_entrega?: 'DELIVERY' | 'RECOJO'
   direccion_entrega?: string
+  direccion_entrega_pedido?: DireccionEntregaPedidoInput
   instrucciones_entrega?: string
   contacto_recepcion?: string
   telefono_contacto_entrega?: string

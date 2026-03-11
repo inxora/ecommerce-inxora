@@ -7,6 +7,7 @@
 export type {
   Producto,
   Product,
+  ProveedorProducto,
   Categoria,
   Marca,
   Unidad,

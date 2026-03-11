@@ -9,15 +9,19 @@ export interface DeliveryAddressMapProps {
   lng: number | null
   onMarkerMove?: (lat: number, lng: number) => void
   center?: { lat: number; lng: number }
+  interactive?: boolean
+  markerTitle?: string
+  ariaLabel?: string
   zoom?: number
   loading?: boolean
   error?: string | null
+  errorHint?: string
   onErrorRetry?: () => void
   height?: number
   className?: string
 }
 
-/** Carga el mapa en un chunk separado solo en cliente para evitar "render is not a function" (react-leaflet + Next). */
+/** Mapa con Google Maps JS API; carga en chunk solo en cliente. */
 const DeliveryAddressMapClient = dynamic(
   () => import('./delivery-address-map-inner'),
   {
@@ -39,9 +43,13 @@ export function DeliveryAddressMap(props: DeliveryAddressMapProps) {
     lng,
     onMarkerMove,
     center,
+    interactive = true,
+    markerTitle,
+    ariaLabel,
     zoom = 14,
     loading = false,
     error = null,
+    errorHint,
     height = MIN_HEIGHT,
     className = '',
   } = props
@@ -70,7 +78,7 @@ export function DeliveryAddressMap(props: DeliveryAddressMapProps) {
       >
         <p className="text-amber-800 dark:text-amber-200 text-sm">{error}</p>
         <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
-          Puedes continuar indicando la dirección manualmente arriba.
+          {errorHint ?? 'Puedes continuar indicando la dirección manualmente arriba.'}
           {props.onErrorRetry && (
             <button
               type="button"
@@ -95,6 +103,9 @@ export function DeliveryAddressMap(props: DeliveryAddressMapProps) {
         lng={lng}
         onMarkerMove={onMarkerMove}
         center={center}
+        interactive={interactive}
+        markerTitle={markerTitle}
+        ariaLabel={ariaLabel}
         zoom={zoom}
         height={height}
       />

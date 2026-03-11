@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, AlertTriangle } from 'lucide-react'
+import { getCondicionPrecioVenta, getMinimoPedido, validateCartItem } from '@/lib/cart-restrictions'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useParams, useRouter } from 'next/navigation'
 import { ProductImage } from '@/components/ui/product-image'
 import { Separator } from '@/components/ui/separator'
 import { formatPriceWithThousands } from '@/lib/utils'
+import { Product } from '@/lib/supabase'
 
 interface CartDrawerProps {
   children?: React.ReactNode
@@ -25,6 +27,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
 
   const total = getTotalPrice()
   const itemsCount = getItemsCount()
+  const hasBlockingIssues = items.some((item) => validateCartItem(item.product as Product, item.quantity).length > 0)
 
   const formatPrice = (price: number) => {
     return `${currencySymbol} ${formatPriceWithThousands(price)}`
@@ -90,8 +93,15 @@ export function CartDrawer({ children }: CartDrawerProps) {
                 const p = item.product
                 const precio = p.precio_venta ?? 0
                 const skuDisplay = (p as { sku_producto?: string }).sku_producto || String(p.sku)
+                const minimoPedido = getMinimoPedido(p as Product)
+                const conditionText = getCondicionPrecioVenta(p as Product)
+                const issues = validateCartItem(p as Product, item.quantity)
+                const hasIssues = issues.length > 0
                 return (
-                  <div key={`${p.sku}-${item.selectedSize ?? ''}`} className="flex gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div
+                    key={`${p.sku}-${item.selectedSize ?? ''}`}
+                    className={`flex gap-4 p-3 rounded-lg ${hasIssues ? 'border border-red-200 bg-red-50/70 dark:border-red-900/50 dark:bg-red-950/20' : 'bg-muted/50'}`}
+                  >
                     <div className="relative w-20 h-20 flex-shrink-0 bg-white rounded-md overflow-hidden">
                       {p.imagen_principal_url ? (
                         <ProductImage
@@ -110,7 +120,20 @@ export function CartDrawer({ children }: CartDrawerProps) {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm line-clamp-2 mb-1">{p.nombre}</h4>
                       <p className="text-xs text-muted-foreground mb-2">SKU: {skuDisplay}</p>
+                      {conditionText && (
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-2">{conditionText}</p>
+                      )}
                       <p className="font-semibold text-inxora-blue">{formatPrice(precio)}</p>
+                      {hasIssues && (
+                        <div className="mt-2 space-y-1">
+                          {issues.map((issue) => (
+                            <p key={issue.code} className="flex items-start gap-1 text-xs text-red-700 dark:text-red-300">
+                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                              <span>{issue.message}</span>
+                            </p>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         <div className="flex items-center border rounded-md">
                           <Button
@@ -118,11 +141,11 @@ export function CartDrawer({ children }: CartDrawerProps) {
                             size="icon"
                             className="h-7 w-7"
                             onClick={() => {
-                              if (item.quantity > 1) {
+                              if (item.quantity > minimoPedido) {
                                 updateQuantity(p.sku, item.quantity - 1, item.selectedSize)
                               }
                             }}
-                            disabled={item.quantity <= 1}
+                            disabled={item.quantity <= minimoPedido}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -176,10 +199,16 @@ export function CartDrawer({ children }: CartDrawerProps) {
                 <Button
                   onClick={handleCheckout}
                   className="w-full bg-inxora-blue hover:bg-inxora-blue/90"
+                  disabled={hasBlockingIssues}
                 >
                   Finalizar Compra
                 </Button>
               </div>
+              {hasBlockingIssues && (
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  Corrige los productos con restricciones de compra antes de continuar al checkout.
+                </p>
+              )}
             </SheetFooter>
           </>
         )}

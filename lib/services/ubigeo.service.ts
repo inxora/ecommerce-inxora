@@ -3,7 +3,7 @@
  * Consume /api/ciudad, /api/provincia, /api/distrito
  */
 
-import { api } from '@/lib/api/client'
+import { api, apiClient } from '@/lib/api/client'
 
 export interface Ciudad {
   id: number
@@ -28,30 +28,43 @@ export interface Distrito {
 export const UbigeoService = {
   /** Obtener ciudades (departamentos) - default Perú id_pais=1 */
   async getCiudades(idPais = 1): Promise<Ciudad[]> {
-    const res = await api.get<{ success: boolean; data: Ciudad[] }>(
-      '/api/ciudad/',
-      { id_pais: idPais, activo: true, limit: 100 }
-    )
-    return Array.isArray((res as { data?: Ciudad[] }).data) ? (res as { data: Ciudad[] }).data : []
+    try {
+      const res = await apiClient<{ success: boolean; data: Ciudad[] }>(
+        '/api/ciudad/',
+        { method: 'GET', params: { id_pais: idPais, activo: true, limit: 100 }, timeout: 5000 }
+      )
+      return Array.isArray((res as { data?: Ciudad[] }).data) ? (res as { data: Ciudad[] }).data : []
+    } catch {
+      return []
+    }
   },
 
   /** Obtener provincias por ciudad/departamento */
   async getProvinciasByCiudad(ciudadId: number): Promise<Provincia[]> {
-    const res = await api.get<{ success: boolean; data: Provincia[] } | Provincia[]>(
-      `/api/provincia/ciudad/${ciudadId}`
-    )
-    if (Array.isArray(res)) return res
-    return Array.isArray((res as { data?: Provincia[] }).data) ? (res as { data: Provincia[] }).data : []
+    try {
+      const res = await apiClient<{ success: boolean; data: Provincia[] } | Provincia[]>(
+        `/api/provincia/ciudad/${ciudadId}`,
+        { method: 'GET', timeout: 5000 }
+      )
+      if (Array.isArray(res)) return res
+      return Array.isArray((res as { data?: Provincia[] }).data) ? (res as { data: Provincia[] }).data : []
+    } catch {
+      return []
+    }
   },
 
   /** Obtener distritos por provincia */
   async getDistritosByProvincia(provinciaId: number): Promise<Distrito[]> {
-    const res = await api.get<Distrito[] | { data: Distrito[] }>(
-      '/api/distrito/',
-      { id_provincia: provinciaId, activo: true, limit: 500 }
-    )
-    if (Array.isArray(res)) return res
-    return Array.isArray((res as { data?: Distrito[] }).data) ? (res as { data: Distrito[] }).data : []
+    try {
+      const res = await apiClient<Distrito[] | { data: Distrito[] }>(
+        '/api/distrito/',
+        { method: 'GET', params: { id_provincia: provinciaId, activo: true, limit: 500 }, timeout: 5000 }
+      )
+      if (Array.isArray(res)) return res
+      return Array.isArray((res as { data?: Distrito[] }).data) ? (res as { data: Distrito[] }).data : []
+    } catch {
+      return []
+    }
   },
 
   /** Tarifa plana de envío: provincias con S/ fijo (Lima 1, Callao 11, PROV. CONST. DEL CALLAO 187) */

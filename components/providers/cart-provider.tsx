@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Product } from '@/lib/supabase'
+import { getCondicionPrecioVenta, validateCartItem } from '@/lib/cart-restrictions'
 import { cartUtils } from '@/lib/utils'
 import { useToast } from '@/lib/hooks/use-toast'
 
@@ -9,6 +10,8 @@ import { useToast } from '@/lib/hooks/use-toast'
 export type CartProduct = Pick<Product, 'sku' | 'nombre' | 'imagen_principal_url' | 'seo_slug'> & {
   precio_venta?: number
   sku_producto?: string
+  condicion_precio_venta?: string | null
+  proveedor_principal?: Product['proveedor_principal']
 }
 
 type CartItemInternal = {
@@ -42,7 +45,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const loadCart = useCallback(() => {
     const savedCart = cartUtils.getCart()
-    const newCartItems: CartItemInternal[] = (savedCart.items || []).map((item: { sku: number; nombre: string; precio_venta: number; cantidad: number; imagen?: string; slug?: string; sku_producto?: string }) => ({
+    const newCartItems: CartItemInternal[] = (savedCart.items || []).map((item: { sku: number; nombre: string; precio_venta: number; cantidad: number; imagen?: string; slug?: string; sku_producto?: string; condicion_precio_venta?: string | null; proveedor_principal?: Product['proveedor_principal'] }) => ({
       product: {
         sku: item.sku,
         nombre: item.nombre,
@@ -50,6 +53,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         imagen_principal_url: item.imagen || '',
         seo_slug: item.slug || '',
         sku_producto: item.sku_producto,
+        condicion_precio_venta: item.condicion_precio_venta,
+        proveedor_principal: item.proveedor_principal,
       },
       quantity: item.cantidad,
       selectedSize: undefined,
@@ -72,7 +77,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const handleCartUpdated = () => {
       const saved = cartUtils.getCart()
       setCart({
-        items: (saved.items || []).map((item: { sku: number; nombre: string; precio_venta: number; cantidad: number; imagen?: string; slug?: string; sku_producto?: string }) => ({
+        items: (saved.items || []).map((item: { sku: number; nombre: string; precio_venta: number; cantidad: number; imagen?: string; slug?: string; sku_producto?: string; condicion_precio_venta?: string | null; proveedor_principal?: Product['proveedor_principal'] }) => ({
           product: {
             sku: item.sku,
             nombre: item.nombre,
@@ -80,6 +85,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             imagen_principal_url: item.imagen || '',
             seo_slug: item.slug || '',
             sku_producto: item.sku_producto,
+            condicion_precio_venta: item.condicion_precio_venta,
+            proveedor_principal: item.proveedor_principal,
           },
           quantity: item.cantidad,
           selectedSize: undefined,
@@ -110,6 +117,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         imagen: i.product.imagen_principal_url || '',
         slug: i.product.seo_slug || '',
         sku_producto: (i.product as { sku_producto?: string }).sku_producto,
+        condicion_precio_venta: i.product.condicion_precio_venta,
+        proveedor_principal: i.product.proveedor_principal,
       })),
       total: cart.items.reduce((s, i) => s + (i.product.precio_venta ?? 0) * i.quantity, 0),
       itemCount: cart.items.reduce((s, i) => s + i.quantity, 0),
@@ -125,20 +134,39 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       toast({ title: 'Error', description: 'No se pudo agregar (SKU faltante)', variant: 'destructive' })
       return
     }
+    const existingItem = cart.items.find((i) => i.product.sku === product.sku && i.selectedSize === selectedSize)
+    const cartProduct: CartProduct = {
+      ...product,
+      condicion_precio_venta: getCondicionPrecioVenta(product),
+      proveedor_principal: product.proveedor_principal ?? product.proveedores?.find((p) => p.es_proveedor_principal) ?? product.proveedores?.[0],
+    }
+    const nextQuantity = (existingItem?.quantity ?? 0) + quantity
+    const issues = validateCartItem(cartProduct as Product, nextQuantity)
+
+    if (issues.length > 0) {
+      toast({
+        title: 'Restricción de compra',
+        description: issues[0].message,
+        variant: 'destructive',
+      })
+      return
+    }
+
     setCart((prev) => {
       const idx = prev.items.findIndex((i) => i.product.sku === product.sku && i.selectedSize === selectedSize)
       let newItems
       if (idx >= 0) {
         newItems = [...prev.items]
         newItems[idx].quantity += quantity
+        newItems[idx].product = { ...newItems[idx].product, ...cartProduct }
       } else {
-        newItems = [...prev.items, { product, quantity, selectedSize }]
+        newItems = [...prev.items, { product: cartProduct, quantity, selectedSize }]
       }
       return { items: newItems }
     })
     setUpdateTrigger((t) => t + 1)
     toast({ title: 'Producto agregado', description: `${product.nombre} se agregó al carrito`, variant: 'success' })
-  }, [toast])
+  }, [cart.items, toast])
 
   const removeItem = useCallback((productSku: number, selectedSize?: string) => {
     setCart((prev) => ({
@@ -152,13 +180,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeItem(productSku, selectedSize)
       return
     }
+    const item = cart.items.find((i) => i.product.sku === productSku && i.selectedSize === selectedSize)
+    if (!item) return
+
+    const issues = validateCartItem(item.product as Product, quantity)
+    if (issues.length > 0) {
+      toast({
+        title: 'Restricción de compra',
+        description: issues[0].message,
+        variant: 'destructive',
+      })
+      return
+    }
+
     setCart((prev) => ({
       items: prev.items.map((i) =>
         i.product.sku === productSku && i.selectedSize === selectedSize ? { ...i, quantity } : i
       ),
     }))
     setUpdateTrigger((t) => t + 1)
-  }, [removeItem])
+  }, [cart.items, removeItem, toast])
 
   const clearCart = useCallback(() => {
     setCart({ items: [] })

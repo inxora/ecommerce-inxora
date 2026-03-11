@@ -40,6 +40,9 @@ export interface ProveedorProducto {
   es_proveedor_principal: boolean
   producto_proveedor_id: number
   tipo_cambio_usado: number | null
+  minimo_pedido?: number | null
+  minimo_monto_compra?: number | null
+  id_moneda_minimo_monto?: number | null
   /** Condición del precio de venta (ej. "sujeto a disponibilidad"). Desde tabla producto_proveedor. */
   condicion_precio_venta?: string | null
 }
@@ -134,8 +137,15 @@ export interface GetProductosParams {
  * Mapea un ProductoAPI del endpoint externo al formato Producto usado en la aplicación
  */
 function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
+  const proveedores = (productoAPI.proveedores || []).map((proveedor) => ({
+    ...proveedor,
+    minimo_pedido: proveedor.minimo_pedido != null ? Number(proveedor.minimo_pedido) : 1,
+    minimo_monto_compra: proveedor.minimo_monto_compra != null ? Number(proveedor.minimo_monto_compra) : null,
+    id_moneda_minimo_monto: proveedor.id_moneda_minimo_monto ?? null,
+  }))
+
   // Obtener el proveedor principal (el que tiene es_proveedor_principal: true)
-  const proveedorPrincipal = productoAPI.proveedores?.find(p => p.es_proveedor_principal) || productoAPI.proveedores?.[0]
+  const proveedorPrincipal = proveedores.find(p => p.es_proveedor_principal) || proveedores[0]
   
   // Determinar la moneda basada en id_moneda_costo (1 = PEN, 2 = USD)
   const moneda = proveedorPrincipal?.id_moneda_costo === 2 
@@ -327,6 +337,8 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     precio_mostrar: productoAPI.precio_mostrar,
     // Condición de precio (producto o proveedor principal)
     condicion_precio_venta: productoAPI.condicion_precio_venta ?? proveedorPrincipal?.condicion_precio_venta ?? undefined,
+    proveedores,
+    proveedor_principal: proveedorPrincipal,
   }
 }
 
@@ -397,7 +409,7 @@ export const ProductsService = {
       }
       // NOTA: El endpoint ahora filtra visible_web=true automáticamente para ecommerce
       
-      const response = await api.get<ProductosResponse>('/api/test/productos/ecommerce', queryParams)
+      const response = await api.get<ProductosResponse>('/api/productos/ecommerce', queryParams)
       
       // Validar estructura de respuesta
       if (!response || !response.success || !response.data || !Array.isArray(response.data.productos)) {
@@ -646,7 +658,7 @@ export const ProductsService = {
       if (moneda_usuario) params.moneda_usuario = moneda_usuario
       
       // ✅ Búsqueda directa O(1) por seo_slug exacto
-      const response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
+      const response = await apiClient<ProductosResponse>('/api/productos/ecommerce', {
         method: 'GET',
         params,
         ...cacheOptions,
@@ -698,7 +710,7 @@ export const ProductsService = {
       queryParams.id_marca = idMarca
       if (moneda_usuario) queryParams.moneda_usuario = moneda_usuario
 
-      const response = await api.get<ProductosResponse>('/api/test/productos/ecommerce', queryParams)
+      const response = await api.get<ProductosResponse>('/api/productos/ecommerce', queryParams)
 
       if (!response || !response.success || !response.data || !Array.isArray(response.data.productos)) {
         return []
@@ -761,7 +773,7 @@ export const ProductsService = {
       if (moneda_usuario) baseParams.moneda_usuario = moneda_usuario
       
       // Intentar buscar usando el parámetro 'buscar' con el SKU
-      let response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
+      let response = await apiClient<ProductosResponse>('/api/productos/ecommerce', {
         method: 'GET',
         params: baseParams,
         ...cacheOptions,
@@ -771,7 +783,7 @@ export const ProductsService = {
       if (!response || !response.success || !response.data || !Array.isArray(response.data.productos)) {
         const fallbackParams: Record<string, string | number> = { page: 1, limit: 100 }
         if (moneda_usuario) fallbackParams.moneda_usuario = moneda_usuario
-        response = await apiClient<ProductosResponse>('/api/test/productos/ecommerce', {
+        response = await apiClient<ProductosResponse>('/api/productos/ecommerce', {
           method: 'GET',
           params: fallbackParams,
           ...cacheOptions,

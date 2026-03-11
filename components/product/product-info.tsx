@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatPrice, formatPriceWithThousands, createWhatsAppUrl } from '@/lib/utils'
+import { getMinimumAmountRequirement, getMinimoPedido } from '@/lib/cart-restrictions'
 import { buildProductUrl } from '@/lib/product-seo'
 import { getDisplaySymbol } from '@/lib/constants/currencies'
 import { Product } from '@/lib/supabase'
@@ -23,7 +24,9 @@ interface ProductInfoProps {
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
-  const [quantity, setQuantity] = useState(1)
+  const minimoPedido = getMinimoPedido(product)
+  const minimoMonto = getMinimumAmountRequirement(product)
+  const [quantity, setQuantity] = useState(minimoPedido)
   const { addItem } = useCart()
   const { toast } = useToast()
   const { currency } = useCurrency()
@@ -35,6 +38,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const isAgotado = product.id_disponibilidad === ID_DISPONIBILIDAD_AGOTADO
   // Cuando está agotado (id 12) siempre mostramos "Agotado"; no usar product.disponibilidad.nombre porque puede venir incorrecto del API
   const labelAgotado = 'Agotado'
+
+  useEffect(() => {
+    setQuantity(minimoPedido)
+  }, [product.sku, minimoPedido])
 
   // Exponer nombre del producto para que el widget flotante de WhatsApp lo use
   useEffect(() => {
@@ -209,12 +216,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Cantidad
           </label>
+          <div className="mb-2 space-y-1">
+            {minimoPedido > 1 && (
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                Min. {minimoPedido} und.
+              </p>
+            )}
+            {minimoMonto && (
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                Compra mínima: {minimoMonto.formatted}
+              </p>
+            )}
+          </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
+              onClick={() => setQuantity(Math.max(minimoPedido, quantity - 1))}
+              disabled={quantity <= minimoPedido}
             >
               -
             </Button>

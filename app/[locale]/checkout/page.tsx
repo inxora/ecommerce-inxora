@@ -3,7 +3,7 @@ import { CheckoutForm } from '@/components/checkout/checkout-form'
 import { OrderSummary } from '@/components/checkout/order-summary'
 import { CheckoutShippingProvider } from '@/lib/contexts/checkout-shipping-context'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ShoppingBag, CreditCard, Shield } from 'lucide-react'
+import { Shield, Lock, BadgeCheck } from 'lucide-react'
 
 export const metadata = {
   title: 'Checkout | Finalizar compra',
@@ -12,51 +12,53 @@ export const metadata = {
 
 export default async function CheckoutPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="w-full px-4 sm:px-6 py-6 lg:py-8">
+
+        {/* ── Page header: compact, inline ────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              Finalizar compra
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Completa los datos para confirmar tu pedido
+            </p>
+          </div>
+
+          {/* Trust badges — inline strip */}
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {[
+              { icon: Lock, label: 'Pago seguro' },
+              { icon: Shield, label: 'Compra protegida' },
+              { icon: BadgeCheck, label: 'Datos encriptados' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <Icon className="w-3.5 h-3.5 text-orange-500" />
+                <span className="text-xs font-medium hidden sm:inline">{label}</span>
               </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-                  Checkout
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  Completa tu información para finalizar la compra
-                </p>
-              </div>
-            </div>
-            
-            {/* Trust Badges */}
-            <div className="flex items-center justify-center space-x-6 pt-4 border-t border-gray-100 dark:border-slate-700">
-              <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
-                <Shield className="h-4 w-4" />
-                <span className="text-sm font-medium">Pago Seguro</span>
-              </div>
-              <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
-                <ShoppingBag className="h-4 w-4" />
-                <span className="text-sm font-medium">Compra Protegida</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-        
+
+        {/* ── Main grid: 5/8 form + 3/8 summary ──────────────────────────── */}
         <CheckoutShippingProvider>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
+
+            {/* Form column — narrow */}
+            <div className="min-w-0">
               <Suspense fallback={<CheckoutFormSkeleton />}>
                 <CheckoutForm />
               </Suspense>
             </div>
-            <div>
+
+            {/* Summary column — wider, sticky */}
+            <div className="lg:sticky lg:top-6">
               <Suspense fallback={<CheckoutSummarySkeleton />}>
                 <OrderSummary />
               </Suspense>
             </div>
+
           </div>
         </CheckoutShippingProvider>
       </div>
@@ -64,20 +66,29 @@ export default async function CheckoutPage() {
   )
 }
 
+// ── Skeletons ──────────────────────────────────────────────────────────────
+
 function CheckoutFormSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {[1, 2, 3].map((i) => (
-        <div key={`checkout-skeleton-${i}`} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-48" />
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+        <div
+          key={`checkout-skeleton-${i}`}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-6"
+        >
+          <div className="flex items-center gap-3 mb-5">
+            <Skeleton className="w-10 h-10 rounded-xl" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-24" />
             </div>
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+          <Skeleton className="h-10 w-full rounded-xl mt-4" />
+          {i === 2 && <Skeleton className="h-10 w-full rounded-xl mt-4" />}
         </div>
       ))}
     </div>
@@ -86,21 +97,27 @@ function CheckoutFormSkeleton() {
 
 function CheckoutSummarySkeleton() {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl sticky top-8">
-      <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-t-2xl">
-        <Skeleton className="h-6 w-32 bg-white/20" />
-      </div>
-      <div className="p-6 space-y-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl overflow-hidden">
+      <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-t-2xl" />
+      <div className="p-5 space-y-4">
+        <Skeleton className="h-4 w-32" />
         <div className="space-y-3">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
+          {[1, 2].map((i) => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="w-12 h-12 rounded-lg flex-shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="h-4 w-14 flex-shrink-0" />
+            </div>
+          ))}
         </div>
-        <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-slate-700">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-6 w-full" />
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5">
+          <Skeleton className="h-3.5 w-full" />
+          <Skeleton className="h-3.5 w-full" />
+          <Skeleton className="h-5 w-full mt-1" />
         </div>
-        <Skeleton className="h-12 w-full" />
       </div>
     </div>
   )

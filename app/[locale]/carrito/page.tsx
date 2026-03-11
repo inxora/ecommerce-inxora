@@ -6,8 +6,10 @@ import Link from 'next/link'
 // Nota: metadata no funciona en Client Components, pero esta página no necesita SEO (noindex)
 import { ProductImage } from '@/components/ui/product-image'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Package, Heart } from 'lucide-react'
+import { getCondicionPrecioVenta, getMinimoPedido, validateCartItem } from '@/lib/cart-restrictions'
 import { useCart } from '@/lib/hooks/use-cart'
 import { formatPrice } from '@/lib/utils'
+import { Product } from '@/lib/supabase'
 
 export default function CartPage({ params }: { params: { locale: string } }) {
   const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, updateTrigger } = useCart()
@@ -19,6 +21,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
 
   const subtotal = getTotalPrice()
   const itemCount = getItemsCount()
+  const hasBlockingIssues = items.some((item) => validateCartItem(item.product as Product, item.quantity).length > 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -90,8 +93,13 @@ export default function CartPage({ params }: { params: { locale: string } }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {items.map((item) => (
-                <div key={item.product.sku} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+              {items.map((item) => {
+                const minimoPedido = getMinimoPedido(item.product as Product)
+                const conditionText = getCondicionPrecioVenta(item.product as Product)
+                const issues = validateCartItem(item.product as Product, item.quantity)
+                const hasIssues = issues.length > 0
+                return (
+                <div key={item.product.sku} className={`bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${hasIssues ? 'border border-red-200 dark:border-red-900/50' : ''}`}>
                   <div className="p-6">
                     <div className="flex items-start space-x-4">
                       {/* Product Image */}
@@ -121,6 +129,20 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                           SKU: {item.product.sku_producto || item.product.sku}
                         </p>
+                        {conditionText && (
+                          <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                            {conditionText}
+                          </p>
+                        )}
+                        {hasIssues && (
+                          <div className="mb-3 space-y-2 rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-900/50 dark:bg-red-950/20">
+                            {issues.map((issue) => (
+                              <p key={issue.code} className="text-sm text-red-700 dark:text-red-300">
+                                {issue.message}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                         
                         <div className="flex items-center justify-between">
                           <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
@@ -136,6 +158,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                           <div className="flex items-center space-x-3">
                             <button
                               onClick={() => updateQuantity(item.product.sku, item.quantity - 1)}
+                              disabled={item.quantity <= minimoPedido}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
                             >
                               <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -181,7 +204,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
             
             {/* Order Summary */}
@@ -217,11 +240,17 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                   
                   <div className="space-y-3 pt-4">
                     <Link
-                      href={`/${params.locale}/checkout`}
-                      className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                      href={hasBlockingIssues ? '#' : `/${params.locale}/checkout`}
+                      aria-disabled={hasBlockingIssues}
+                      className={`w-full inline-flex items-center justify-center px-6 py-4 text-white font-bold rounded-xl shadow-lg transition-all duration-200 ${hasBlockingIssues ? 'pointer-events-none cursor-not-allowed bg-gray-400 shadow-none' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl transform hover:scale-105'}`}
                     >
                       Proceder al Checkout
                     </Link>
+                    {hasBlockingIssues && (
+                      <p className="text-sm text-red-700 dark:text-red-300">
+                        Corrige los productos con pedido mínimo o compra mínima antes de continuar.
+                      </p>
+                    )}
                     
                     <Link
                       href={`/${params.locale}/catalogo`}
