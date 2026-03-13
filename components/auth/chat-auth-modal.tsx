@@ -88,8 +88,9 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
     setLoading(true)
     try {
       await login(correo, password)
+      router.push(`/${locale}/cuenta/chat-sara`)
     } catch {
-      // error en context
+      // error ya registrado en context
     } finally {
       setLoading(false)
     }
@@ -111,8 +112,9 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
         id_pais: 1,
         id_rubro: rubroId ?? rubros[0]?.id,
       })
+      router.push(`/${locale}/cuenta/chat-sara`)
     } catch {
-      // error en context
+      // error ya registrado en context
     } finally {
       setLoading(false)
     }
