@@ -36,7 +36,7 @@ type Message = {
   attachmentPreviews?: string[]
 }
 
-const BRAND = { logo: '/sara-pose', name: 'SARA XORA', typingText: 'Sara está escribiendo…' }
+const BRAND = { logo: '/sara-pose2.png', name: 'SARA XORA', typingText: 'Sara está escribiendo…' }
 const STYLE = { primary: '#13A0D8', secondary: '#0d7ba8' }
 const PHONE_REGEX = /(\+?51)?[\s.-]*([9]\d{2})[\s.-]*(\d{3})[\s.-]*(\d{3})\b/g
 

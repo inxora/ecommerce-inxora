@@ -82,13 +82,21 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
     }
   }
 
+  const onSuccess = () => {
+    if (onClose) {
+      onClose()
+    } else {
+      router.push(`/${locale}/cuenta/chat-sara`)
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
     setLoading(true)
     try {
       await login(correo, password)
-      router.push(`/${locale}/cuenta/chat-sara`)
+      onSuccess()
     } catch {
       // error ya registrado en context
     } finally {
@@ -112,7 +120,7 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
         id_pais: 1,
         id_rubro: rubroId ?? rubros[0]?.id,
       })
-      router.push(`/${locale}/cuenta/chat-sara`)
+      onSuccess()
     } catch {
       // error ya registrado en context
     } finally {
