@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Image from 'next/image'
-import { User, MapPin, CreditCard, Truck, Mail, Phone, ShoppingBag, FileText, CheckCircle, AlertCircle, QrCode, Store, ChevronRight, Lock, Building2, Copy } from 'lucide-react'
+import { User, MapPin, CreditCard, Truck, Mail, Phone, ShoppingBag, FileText, CheckCircle, AlertCircle, QrCode, Store, ChevronRight, Lock, Building2, Copy, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,6 +24,8 @@ import { UbicacionService } from '@/lib/services/ubicacion.service'
 import { GoogleMapsService, type ReverseGeocodeResponse } from '@/lib/services/google-maps.service'
 import { TipoLugarEntregaService, type TipoLugarEntrega } from '@/lib/services/tipo-lugar-entrega.service'
 import { DeliveryAddressMap } from '@/components/checkout/delivery-address-map'
+import { IzipayWidget } from '@/components/checkout/izipay-widget'
+import { pagosService } from '@/lib/services/pagos.service'
 import Link from 'next/link'
 import { validateCartItem } from '@/lib/cart-restrictions'
 import { Product } from '@/lib/supabase'
@@ -43,7 +45,7 @@ const checkoutSchema = z
     idTipoLugarEntrega: z.number().optional(),
     address: z.string().optional(),
     country: z.string().optional(),
-    paymentMethod: z.enum(['transfer', 'yape']),
+    paymentMethod: z.enum(['transfer', 'yape', 'izipay']),
     notes: z.string().optional(),
     acceptTerms: z.boolean().refine(val => val === true, 'Debe aceptar los términos'),
     newsletter: z.boolean().optional(),
@@ -238,8 +240,8 @@ export function CheckoutForm() {
   const router = useRouter()
   const { toast } = useToast()
   const { items, clearCart } = useCart()
-  const { isLoggedIn, cliente, token } = useClienteAuth()
-  const { setCheckoutShipping } = useCheckoutShipping()
+  const { isLoggedIn, cliente, token, logout } = useClienteAuth()
+  const { shipping, setCheckoutShipping } = useCheckoutShipping()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [ciudades, setCiudades] = useState<Ciudad[]>([])
   const [provincias, setProvincias] = useState<Provincia[]>([])
@@ -259,6 +261,10 @@ export function CheckoutForm() {
   const [loadingAutocomplete, setLoadingAutocomplete] = useState(false)
   const [ubigeoConfirmado, setUbigeoConfirmado] = useState<string | null>(null)
   const autocompleteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [izipayFormToken, setIzipayFormToken] = useState<string | null>(null)
+  const [izipayPublicKey, setIzipayPublicKey] = useState<string | null>(null)
+  const [izipayLoading, setIzipayLoading] = useState(false)
+  const [pedidoCreadoId, setPedidoCreadoId] = useState<number | null>(null)
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -284,6 +290,7 @@ export function CheckoutForm() {
   const idProvincia = form.watch('idProvincia')
   const idTipoLugarEntrega = form.watch('idTipoLugarEntrega')
   const tipoEntrega = form.watch('tipo_entrega')
+  const paymentMethod = form.watch('paymentMethod')
   const cartRestrictionErrors = useMemo(
     () => items.flatMap((item) => {
       const issues = validateCartItem(item.product as Product, item.quantity)
@@ -573,6 +580,97 @@ export function CheckoutForm() {
     return () => { if (autocompleteDebounceRef.current) clearTimeout(autocompleteDebounceRef.current) }
   }, [autocompleteQuery])
 
+  const pedidoIdIzipayRef = useRef<number | null>(null)
+
+  const handleAuthError = useCallback(() => {
+    logout()
+    toast({
+      title: 'Sesión expirada',
+      description: 'Tu sesión venció. Inicia sesión nuevamente.',
+      variant: 'destructive',
+    })
+    setTimeout(() => router.push(`/${locale}/login?redirect=checkout`), 1500)
+  }, [logout, toast, router, locale])
+
+  // Reset pedido al cambiar de método de pago (no limpiar formToken: el widget permanece montado
+  // con display:none para evitar que Krypton elimine callbacks y rompa el formulario al volver)
+  useEffect(() => {
+    if (paymentMethod !== 'izipay') {
+      setPedidoCreadoId(null)
+      pedidoIdIzipayRef.current = null
+    }
+  }, [paymentMethod])
+
+  // Obtener formToken al seleccionar Izipay (sin submit)
+  useEffect(() => {
+    if (paymentMethod !== 'izipay') return
+    if (izipayFormToken) return
+    if (!isLoggedIn) return
+    if (!token || (typeof token === 'string' && token.trim() === '')) return
+
+    const obtenerToken = async () => {
+      setIzipayLoading(true)
+      try {
+        const subtotal = items.reduce(
+          (acc, i) => acc + (i.product.precio_venta ?? 0) * i.quantity,
+          0
+        )
+        const shippingCost = shipping.costoEnvio ?? 0
+        const montoTotal = subtotal + shippingCost
+        const res = await pagosService.crearTokenSinPedido(montoTotal, token)
+        setIzipayFormToken(res.data.formToken)
+        setIzipayPublicKey(res.data.publicKey)
+      } catch (err: unknown) {
+        if (err instanceof ApiError && err.status === 401) {
+          handleAuthError()
+          return
+        }
+        toast({
+          title: 'Error al cargar formulario de tarjeta',
+          description: 'No se pudo conectar con Izipay. Intenta de nuevo.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIzipayLoading(false)
+      }
+    }
+
+    obtenerToken()
+  }, [paymentMethod, token, isLoggedIn, router, locale, handleAuthError])
+
+  const handleIzipaySuccess = useCallback(
+    (krAnswer: string, krHash: string) => {
+      if (!token) return
+      pagosService
+        .validarPagoIzipay(krAnswer, krHash, token)
+        .then((res) => {
+          if (res.data?.orderStatus === 'PAID') {
+            clearCart()
+            const numero = res.data?.orderId ?? String(pedidoIdIzipayRef.current ?? '')
+            toast({ title: t('checkout.success.title'), description: t('checkout.success.description', { orderId: numero }) })
+            router.push(`/${locale}/pedido/${pedidoIdIzipayRef.current ?? ''}?numero=${encodeURIComponent(numero)}`)
+          } else {
+            toast({ title: 'Pago no completado', description: 'El pago no pudo ser confirmado. Intente nuevamente.', variant: 'destructive' })
+          }
+        })
+        .catch((err: unknown) => {
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+            handleAuthError()
+          } else {
+            toast({ title: 'Error', description: 'No se pudo validar el pago.', variant: 'destructive' })
+          }
+        })
+    },
+    [token, clearCart, toast, t, router, locale, handleAuthError]
+  )
+
+  const handleIzipayError = useCallback(
+    (error: string) => {
+      toast({ title: 'Error de pago', description: error, variant: 'destructive' })
+    },
+    [toast]
+  )
+
   const handleSelectPlace = useCallback((placeId: string) => {
     setLoadingMap((m) => ({ ...m, geocode: true }))
     setAutocompleteSuggestions([])
@@ -638,14 +736,25 @@ export function CheckoutForm() {
         toast({ title: t('checkout.error.title'), description: t('checkout.error.description'), variant: 'destructive' })
         return
       }
+      const idPedido = res.data.id
+      const numero = res.data.numero ?? String(idPedido)
+
+      if (data.paymentMethod === 'izipay') {
+        pedidoIdIzipayRef.current = idPedido
+        setPedidoCreadoId(idPedido)
+        // El widget ya está activo, el usuario ya puede pagar
+        // NO hacer clearCart ni redirigir aquí
+        setIsSubmitting(false)
+        return
+      }
+
       clearCart()
-      const numero = res.data.numero ?? String(res.data.id)
       toast({ title: t('checkout.success.title'), description: t('checkout.success.description', { orderId: numero }) })
-      router.push(`/${locale}/pedido/${res.data.id}?numero=${encodeURIComponent(numero)}`)
+      router.push(`/${locale}/pedido/${idPedido}?numero=${encodeURIComponent(numero)}`)
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 400) { toast({ title: t('checkout.error.title'), description: error.detail?.message || 'Algunos productos ya no están disponibles.', variant: 'destructive' }); return }
-        if (error.status === 401 || error.status === 403) { toast({ title: 'Sesión requerida', description: 'Inicie sesión para continuar.', variant: 'destructive' }); router.push(`/${locale}/login?redirect=checkout`); return }
+        if (error.status === 401 || error.status === 403) { handleAuthError(); return }
         if (error.status >= 500) { toast({ title: t('checkout.error.title'), description: 'No pudimos crear el pedido. Intente más tarde.', variant: 'destructive' }); return }
       }
       toast({ title: t('checkout.error.title'), description: t('checkout.error.description'), variant: 'destructive' })
@@ -962,8 +1071,8 @@ export function CheckoutForm() {
             {/* Method selector */}
             <RadioGroup
               value={form.watch('paymentMethod')}
-              onValueChange={(v) => form.setValue('paymentMethod', v as 'transfer' | 'yape')}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5"
+              onValueChange={(v) => form.setValue('paymentMethod', v as 'transfer' | 'yape' | 'izipay')}
+              className="grid grid-cols-3 gap-3 mb-5"
             >
               {[
                 {
@@ -980,15 +1089,24 @@ export function CheckoutForm() {
                   desc: t('checkout.payment.yapeDescription'),
                   color: 'purple',
                 },
+                {
+                  value: 'izipay',
+                  icon: CreditCard,
+                  label: 'Tarjeta',
+                  desc: 'Visa · MC · Amex',
+                  color: 'blue',
+                },
               ].map(({ value, icon: Icon, label, desc, color }) => {
                 const active = form.watch('paymentMethod') === value
                 const activeBorder: Record<string, string> = {
                   emerald: 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-500',
                   purple: 'border-purple-400 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-500',
+                  blue: 'border-blue-400 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-500',
                 }
                 const activeIcon: Record<string, string> = {
                   emerald: 'bg-emerald-500',
                   purple: 'bg-purple-500',
+                  blue: 'bg-blue-500',
                 }
                 return (
                   <label
@@ -1015,7 +1133,7 @@ export function CheckoutForm() {
                     {active && (
                       <div className={[
                         'w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0',
-                        color === 'emerald' ? 'bg-emerald-500' : 'bg-purple-500',
+                        color === 'emerald' ? 'bg-emerald-500' : color === 'purple' ? 'bg-purple-500' : 'bg-blue-500',
                       ].join(' ')}>
                         <CheckCircle className="w-3.5 h-3.5 text-white" />
                       </div>
@@ -1174,6 +1292,44 @@ export function CheckoutForm() {
                 </div>
               </div>
             )}
+
+            {/* ── Izipay (Tarjeta) ─────────────────────────────────────────── */}
+            <div style={{ display: form.watch('paymentMethod') === 'izipay' ? 'block' : 'none' }}>
+              <div className="rounded-xl border border-blue-200 dark:border-blue-800/50 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3.5 bg-blue-600 dark:bg-blue-700">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                      <CreditCard className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Pago con tarjeta</p>
+                      <p className="text-xs text-blue-200">Procesado de forma segura por Izipay</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {['VISA', 'MC', 'AMEX'].map((b) => (
+                      <span key={b} className="text-[9px] font-bold text-white bg-white/20 px-1.5 py-0.5 rounded">{b}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-5 bg-blue-50 dark:bg-blue-950/10">
+                  <IzipayWidget
+                    formToken={izipayFormToken}
+                    publicKey={izipayPublicKey}
+                    onPaymentSuccess={handleIzipaySuccess}
+                    onPaymentError={handleIzipayError}
+                    loading={izipayLoading}
+                  />
+                </div>
+                <div className="px-5 py-3 bg-white dark:bg-slate-900 border-t border-blue-100 dark:border-blue-900/50 flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Tus datos de tarjeta son procesados directamente por Izipay con
+                    cifrado SSL 256 bits. INXORA no almacena datos de tarjeta.
+                  </p>
+                </div>
+              </div>
+            </div>
           </FormSection>
 
           {/* ── 4. Notes ─────────────────────────────────────────────────────── */}
@@ -1243,6 +1399,7 @@ export function CheckoutForm() {
       )}
 
       {/* ── Submit ───────────────────────────────────────────────────────────── */}
+      {!(paymentMethod === 'izipay' && pedidoCreadoId) && (
       <button
         type="submit"
         disabled={isSubmitting || !isLoggedIn || hasCartRestrictionErrors}
@@ -1255,11 +1412,14 @@ export function CheckoutForm() {
       >
         {isSubmitting ? (
           <>
-            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-            </svg>
-            Procesando pedido…
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Procesando…
+          </>
+        ) : paymentMethod === 'izipay' && !pedidoCreadoId ? (
+          <>
+            <Lock className="w-4 h-4" />
+            Confirmar pedido para pagar
+            <ChevronRight className="w-4 h-4" />
           </>
         ) : (
           <>
@@ -1269,6 +1429,7 @@ export function CheckoutForm() {
           </>
         )}
       </button>
+      )}
     </form>
   )
 }

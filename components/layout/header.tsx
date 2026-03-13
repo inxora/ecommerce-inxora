@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, ShoppingCart, Menu, Heart, Truck, User, MessageCircle } from 'lucide-react'
+import { Search, ShoppingCart, Menu, Heart, Truck, User, MessageCircle, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -12,7 +12,7 @@ import { useFavorites } from '@/lib/hooks/use-favorites'
 import { CURRENCIES, getCurrencyByCode } from '@/lib/constants/currencies'
 import { CurrencyFlag } from '@/components/ui/currency-flag'
 import { useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CategoriesSidebar } from '@/components/layout/categories-sidebar'
@@ -29,8 +29,9 @@ interface HeaderProps {
 }
 
 export function Header({ categories = [], bannersHeaderStrip = [], locale: localeProp }: HeaderProps) {
-  const { isLoggedIn } = useClienteAuth()
-  const { getItemsCount } = useCart()
+  const { isLoggedIn, cliente, logout } = useClienteAuth()
+  const { getItemsCount, clearCart } = useCart()
+  const router = useRouter()
   const { currency, setCurrency } = useCurrency()
   const currentCurrency = getCurrencyByCode(currency)
   const { getFavoritesCount } = useFavorites()
@@ -40,6 +41,12 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
   const itemsCount = getItemsCount()
   const favoritesCount = getFavoritesCount()
+
+  const handleLogout = () => {
+    logout()
+    clearCart()
+    router.push(`/${locale}/login`)
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -201,10 +208,20 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                     Inicio
                   </Link>
                   {isLoggedIn && (
-                    <Link href={`/${locale}/cuenta/chat-sara`} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-muted font-medium">
-                      <MessageCircle className="h-4 w-4" />
-                      Chat con Sara
-                    </Link>
+                    <>
+                      <Link href={`/${locale}/cuenta/chat-sara`} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-muted font-medium">
+                        <MessageCircle className="h-4 w-4" />
+                        Chat con Sara
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg hover:bg-muted font-medium text-red-600 dark:text-red-400"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Cerrar sesión
+                      </button>
+                    </>
                   )}
                   <Link href={`/${locale}/catalogo`} className="py-2 px-3 rounded-lg hover:bg-muted font-medium">
                     Catálogo
@@ -299,21 +316,47 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               <span>Chat con Sara</span>
             </Link>
           )}
-          {/* Usuario / Cuenta - más grande */}
-          <Link
-            href={`/${locale}/contacto`}
-            className="hidden sm:flex flex-col items-start text-white hover:underline underline-offset-2 py-2 px-3 rounded hover:bg-white/10"
-          >
-            <span className="text-xs leading-tight">Hola</span>
-            <span className="text-sm font-semibold leading-tight">Cuenta / Contacto</span>
-          </Link>
-          <Link
-            href={`/${locale}/contacto`}
-            className="sm:hidden flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 text-white hover:bg-white/20 rounded-lg"
-            aria-label="Cuenta"
-          >
-            <User className="h-5 w-5 sm:h-6 sm:w-6" />
-          </Link>
+          {/* Usuario / Logout - más grande */}
+          {isLoggedIn ? (
+            <div className="hidden sm:flex items-center gap-3">
+              <span className="text-sm text-white/90">Hola, {cliente?.nombre ?? 'Usuario'}</span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 text-sm text-white/80 hover:text-red-200 transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          ) : (
+            <Link
+              href={`/${locale}/login`}
+              className="hidden sm:flex flex-col items-start text-white hover:underline underline-offset-2 py-2 px-3 rounded hover:bg-white/10"
+            >
+              <span className="text-xs leading-tight">Hola</span>
+              <span className="text-sm font-semibold leading-tight">Iniciar sesión</span>
+            </Link>
+          )}
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="sm:hidden flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 text-white hover:bg-white/20 rounded-lg"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          ) : (
+            <Link
+              href={`/${locale}/login`}
+              className="sm:hidden flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 text-white hover:bg-white/20 rounded-lg"
+              aria-label="Iniciar sesión"
+            >
+              <User className="h-5 w-5 sm:h-6 sm:w-6" />
+            </Link>
+          )}
         </div>
       </div>
     </header>

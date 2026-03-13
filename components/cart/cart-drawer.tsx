@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { ShoppingCart, Plus, Minus, Trash2, AlertTriangle } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, AlertCircle } from 'lucide-react'
 import { getCondicionPrecioVenta, getMinimoPedido, validateCartItem } from '@/lib/cart-restrictions'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
@@ -128,7 +128,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
                         <div className="mt-2 space-y-1">
                           {issues.map((issue) => (
                             <p key={issue.code} className="flex items-start gap-1 text-xs text-red-700 dark:text-red-300">
-                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                              <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                               <span>{issue.message}</span>
                             </p>
                           ))}

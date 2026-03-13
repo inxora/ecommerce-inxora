@@ -7,10 +7,9 @@ import { ProductImage } from '@/components/ui/product-image';
 import { Producto, Categoria } from '@/lib/supabase';
 import type { Banner } from '@/lib/types';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
-import { CategoriesCarousel } from '@/components/home/categories-carousel';
 import { BannerSlot } from '@/components/banner/banner-slot';
 import { ChevronRight, ChevronLeft, ShoppingCart } from 'lucide-react';
-import { buildProductFullUrl } from '@/lib/product-url';
+import { buildProductFullUrl, buildCategoryUrlFromObject } from '@/lib/product-url';
 import { useCart } from '@/lib/hooks/use-cart';
 import { useCurrency } from '@/lib/hooks/use-currency';
 import { getDisplaySymbol } from '@/lib/constants/currencies';
@@ -142,7 +141,7 @@ function FeaturedProductsSlider({
 
   return (
     <section className={`py-14 sm:py-20 lg:py-24 ${bgColor} w-full`}>
-      <div className={`w-full px-6 lg:px-8 xl:px-12 ${rightBannerSlot ? 'min-[1600px]:flex min-[1600px]:items-stretch min-[1600px]:gap-10 min-[1600px]:pl-6 min-[1600px]:pr-6' : 'container mx-auto max-w-screen-2xl min-[1600px]:max-w-[1920px] min-[1600px]:px-16'}`}>
+      <div className={`w-full px-6 lg:px-8 xl:px-12 ${rightBannerSlot ? 'min-[1600px]:flex min-[1600px]:items-stretch min-[1600px]:gap-10 min-[1600px]:pl-6 min-[1600px]:pr-6' : ''}`}>
         {/* Columna productos: flex-1 cuando hay banner; gap y pr evitan que la última card quede cortada */}
         <div className={`${rightBannerSlot ? 'min-[1600px]:flex-1 min-[1600px]:min-w-0 min-[1600px]:pr-1' : ''} grid gap-8 min-[1600px]:gap-10 grid-cols-1`}>
           <div className="min-w-0 flex flex-col overflow-hidden">
@@ -435,79 +434,89 @@ export default function HomeClient({
         </section>
       )}
 
-      {/* Barra de Categorías Rápidas - Slider Infinito */}
-      <section className="bg-gray-100 dark:bg-slate-800 py-4 lg:py-5 border-y border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative">
-            {/* Slider con animación CSS */}
-            <div className="overflow-hidden">
-              <div 
-                className="flex items-center gap-2 sm:gap-4 animate-scroll-x"
-                style={{
-                  animationDuration: `${Math.max(categories.length * 4, 20)}s`,
-                }}
+      {/* BLOQUE 1 — Grid 8 categorías con logo_url (debajo del hero) */}
+      <section className="bg-white dark:bg-slate-900 py-8 sm:py-10 lg:py-12">
+        <div className="w-full px-6 lg:px-8 xl:px-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-inxora-dark-blue dark:text-white">
+              Ocho líneas industriales, un solo proveedor
+            </h2>
+            <Link
+              href={`/${locale}/catalogo`}
+              className="inline-flex items-center gap-1 text-inxora-blue dark:text-[#88D4E4] font-semibold hover:underline"
+            >
+              Ver catálogo completo
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 lg:gap-6">
+            {(categories.slice(0, 8)).map((category) => (
+              <Link
+                key={category.id}
+                href={buildCategoryUrlFromObject(category, locale)}
+                className="group flex flex-col items-center gap-3 cursor-pointer"
               >
-                {/* Duplicamos las categorías para crear el efecto infinito */}
-                {[...categories, ...categories].map((category, index) => (
-                  <React.Fragment key={`${category.id}-${index}`}>
-                    {/* Categoría con icono y texto */}
-                    <Link
-                      href={`/${locale}/${category.nombre.toLowerCase().replace(/\s+/g, '-').replace(/[Ã¡Ã Ã¤Ã¢]/g, 'a').replace(/[Ã©Ã¨Ã«Ãª]/g, 'e').replace(/[Ã­Ã¬Ã¯Ã®]/g, 'i').replace(/[Ã³Ã²Ã¶Ã´]/g, 'o').replace(/[ÃºÃ¹Ã¼Ã»]/g, 'u').replace(/Ã±/g, 'n').replace(/[^a-z0-9-]/g, '')}`}
-                      className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors group flex-shrink-0"
-                    >
-                      {/* Imagen de la categoría */}
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 flex-shrink-0">
-                        {category.logo_url ? (
-                          <Image
-                            src={category.logo_url}
-                            alt={category.nombre}
-                            title={category.nombre}
-                            width={56}
-                            height={56}
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-200 dark:bg-slate-600 rounded flex items-center justify-center">
-                            <span className="text-lg">ðŸ“¦</span>
-                          </div>
-                        )}
-                      </div>
-                      {/* Nombre */}
-                      <span className="text-xs sm:text-sm lg:text-base font-semibold text-inxora-dark-blue dark:text-white whitespace-nowrap group-hover:text-inxora-blue transition-colors">
-                        {category.nombre}
-                      </span>
-                    </Link>
-                    
-                    {/* Separador ">" */}
-                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-            
-            {/* Gradientes en los bordes para efecto de desvanecimiento */}
-            <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-gray-100 dark:from-slate-800 to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-gray-100 dark:from-slate-800 to-transparent z-10 pointer-events-none" />
+                <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-inxora-blue transition-all duration-200 shadow-sm group-hover:shadow-md p-3">
+                  {category.logo_url ? (
+                    <Image
+                      src={category.logo_url}
+                      alt={category.nombre}
+                      title={category.nombre}
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <span className="text-3xl">📦</span>
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-center text-gray-700 dark:text-gray-300 uppercase tracking-wide leading-tight group-hover:text-inxora-blue transition-colors line-clamp-2">
+                  {category.nombre}
+                </span>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href={`/${locale}/catalogo`}
+              className="inline-flex items-center gap-2 bg-inxora-dark-blue hover:bg-[#1A56DB] dark:bg-inxora-dark-blue dark:hover:bg-[#1A56DB] text-white font-semibold py-3 px-8 rounded-xl transition-colors shadow-lg"
+            >
+              Ver catálogo completo
+            </Link>
           </div>
         </div>
-        
-        {/* CSS para la animación del slider */}
-        <style jsx>{`
-          @keyframes scroll-x {
-            0% {
-              transform: translateX(0);
-            }
-            100% {
-              transform: translateX(-50%);
-            }
-          }
-          .animate-scroll-x {
-            animation: scroll-x linear infinite;
-          }
-          .animate-scroll-x:hover {
-            animation-play-state: paused;
-          }
-        `}</style>
+      </section>
+
+      {/* BLOQUE 2 — Barra 6 beneficios (fondo navy #171D4C) */}
+      <section className="bg-[#171D4C] py-8 sm:py-10">
+        <div className="w-full px-6 lg:px-8 xl:px-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 lg:gap-4">
+            <div className="text-center lg:text-left">
+              <h3 className="text-base sm:text-lg font-bold text-white">Cotización en minutos</h3>
+              <p className="text-sm text-white/80 mt-1">No en días. Lista completa al instante</p>
+            </div>
+            <div className="text-center lg:text-left">
+              <h3 className="text-base sm:text-lg font-bold text-white">Financiamiento OC</h3>
+              <p className="text-sm text-white/80 mt-1">Crowdlending sobre orden confirmada</p>
+            </div>
+            <div className="text-center lg:text-left">
+              <h3 className="text-base sm:text-lg font-bold text-white">Despacho nacional</h3>
+              <p className="text-sm text-white/80 mt-1">Lima, Callao y todo el Perú trazable</p>
+            </div>
+            <div className="text-center lg:text-left">
+              <h3 className="text-base sm:text-lg font-bold text-white">Proveedores verificados</h3>
+              <p className="text-sm text-white/80 mt-1">Importadores y distribuidores homologados</p>
+            </div>
+            <div className="text-center lg:text-left">
+              <h3 className="text-base sm:text-lg font-bold text-white">Precios transparentes</h3>
+              <p className="text-sm text-white/80 mt-1">Precio final en soles, IGV incluido</p>
+            </div>
+            <div className="text-center lg:text-left">
+              <h3 className="text-base sm:text-lg font-bold text-white">Soporte técnico</h3>
+              <p className="text-sm text-white/80 mt-1">Ingenieros especializados disponibles</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* home-below-categories — Entre Categorías y Productos Destacados */}
@@ -541,6 +550,35 @@ export default function HomeClient({
           ) : undefined
         }
       />
+
+      {/* BLOQUE 3 — 3 banners promo en fila (entre sliders) */}
+      <section className="py-8 sm:py-12 lg:py-16">
+        <div className="w-full px-6 lg:px-8 xl:px-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#171D4C] to-[#1A56DB] p-6 sm:p-8 text-white shadow-xl">
+              <span className="inline-block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">Sara Xora IA</span>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Cotización en minutos, no en días</h3>
+              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
+                Envía tu lista de requerimientos y recibe precios consolidados al instante. Disponible 24/7.
+              </p>
+            </div>
+            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-900 to-emerald-600 p-6 sm:p-8 text-white shadow-xl">
+              <span className="inline-block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">Crowdlending</span>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Financiamiento sobre orden de compra</h3>
+              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
+                Recibe tus materiales hoy. Paga cuando tu operación genere el flujo necesario.
+              </p>
+            </div>
+            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-900 to-amber-500 p-6 sm:p-8 text-white shadow-xl">
+              <span className="inline-block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">Logística</span>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Despacho a todo el Perú trazable</h3>
+              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
+                Lima, Callao y provincias. Guía de remisión, factura y certificados incluidos en cada envío.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Productos Nuevos Section - con slot de banner lateral derecho */}
       <FeaturedProductsSlider 
@@ -588,13 +626,71 @@ export default function HomeClient({
         </section>
       )}
 
-      {/* Main Categories Section — mismo criterio de ancho: 100%, pegado a la derecha */}
-      <section className="bg-background-light dark:bg-background-dark py-20 sm:py-28 lg:py-32 w-full">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 min-[1600px]:pl-6 min-[1600px]:pr-0 max-w-[1920px] mx-auto">
-          <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl mb-10 sm:mb-14 text-center">
-            Categorías Principales
+      {/* BLOQUE 4 — SEO al pie con stats + 2 columnas de texto */}
+      <section className="bg-white dark:bg-slate-900 py-16 sm:py-20 lg:py-24 w-full">
+        <div className="w-full px-6 lg:px-8 xl:px-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-inxora-dark-blue dark:text-white mb-6 sm:mb-8">
+            INXORA: Marketplace B2B de Suministros Industriales en Perú
           </h2>
-          <CategoriesCarousel categories={categories} locale={locale} />
+          <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+            INXORA es el primer marketplace B2B especializado en suministros industriales del Perú, diseñado para conectar a empresas del sector industrial con proveedores verificados a nivel nacional e internacional. Nuestra plataforma tecnológica permite a compradores industriales cotizar, comparar y adquirir productos técnicos especializados en un solo lugar, eliminando la fragmentación y los tiempos muertos que caracterizan al proceso tradicional de abastecimiento industrial.
+          </p>
+          <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-10 sm:mb-12">
+            A diferencia de los marketplaces generalistas, INXORA está construido exclusivamente para el comprador técnico: jefes de compras, jefes de logística, ingenieros de mantenimiento y responsables de abastecimiento en empresas de agroindustria, manufactura, minería, energía y construcción. Entendemos que un error en la especificación técnica de un componente puede significar horas de parada de planta.
+          </p>
+
+          {/* Stats — fondo navy */}
+          <div className="bg-[#171D4C] rounded-2xl p-8 sm:p-10 mb-12 sm:mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6">
+              <div className="text-center">
+                <p className="text-3xl sm:text-4xl font-bold text-[#88D4E4]">+80%</p>
+                <p className="text-sm sm:text-base text-white/90 mt-1">Tasa de recompra entre clientes industriales activos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl sm:text-4xl font-bold text-[#88D4E4]">26+</p>
+                <p className="text-sm sm:text-base text-white/90 mt-1">Empresas industriales en cartera activa en Perú</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl sm:text-4xl font-bold text-[#88D4E4]">24/7</p>
+                <p className="text-sm sm:text-base text-white/90 mt-1">Atención continua con inteligencia artificial Sara Xora</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 2 columnas de texto */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-inxora-dark-blue dark:text-white mb-4">
+                ¿Cómo funciona INXORA?
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                El proceso de compra está diseñado para ser simple, rápido y trazable. El comprador ingresa su lista de requerimientos y recibe una cotización consolidada con precios finales en soles, incluyendo IGV y costo de envío. No es necesario contactar a múltiples proveedores: INXORA centraliza todo el proceso.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+                Una vez confirmada la orden de compra, gestionamos la adquisición directamente con los proveedores, coordinamos el despacho y mantenemos al comprador informado en tiempo real.
+              </p>
+              <h4 className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white mb-3">
+                Sara Xora: IA al servicio del comprador industrial
+              </h4>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                Sara Xora es nuestro asistente comercial con inteligencia artificial, entrenado específicamente en suministros industriales. Responde consultas técnicas, verifica disponibilidad y gestiona cotizaciones las 24 horas. Las consultas complejas se escalan automáticamente a ingenieros especializados.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-inxora-dark-blue dark:text-white mb-4">
+                Cobertura nacional y financiamiento
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+                INXORA abastece a empresas en los principales sectores productivos del Perú: agroindustria, manufactura, minería y energía. Realizamos despachos a Lima Metropolitana, Callao y todas las regiones con operadores logísticos verificados. Cada despacho incluye factura electrónica, guía de remisión y certificados de calidad cuando aplica.
+              </p>
+              <h4 className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white mb-3">
+                Financiamiento para órdenes de compra
+              </h4>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                Ofrecemos soluciones de financiamiento sobre órdenes confirmadas para personas naturales con negocio y empresas con RUC activo. A través de nuestro modelo de crowdlending, compradores calificados reciben sus materiales de inmediato y completan el pago cuando su operación genera el flujo necesario. Esta capacidad diferencia a INXORA de los distribuidores tradicionales, posicionándonos como socio estratégico de abastecimiento industrial.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

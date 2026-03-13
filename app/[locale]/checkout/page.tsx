@@ -3,7 +3,7 @@ import { CheckoutForm } from '@/components/checkout/checkout-form'
 import { OrderSummary } from '@/components/checkout/order-summary'
 import { CheckoutShippingProvider } from '@/lib/contexts/checkout-shipping-context'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Shield, Lock, BadgeCheck } from 'lucide-react'
+import { Shield, Lock, BadgeCheck, Zap } from 'lucide-react'
 
 export const metadata = {
   title: 'Checkout | Finalizar compra',
@@ -13,49 +13,58 @@ export const metadata = {
 export default async function CheckoutPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="w-full px-4 sm:px-6 py-6 lg:py-8">
 
-        {/* ── Page header: compact, inline ────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              Finalizar compra
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Completa los datos para confirmar tu pedido
-            </p>
-          </div>
+      {/* ── Top security bar ──────────────────────────────────────────────── */}
+      <div className="w-full bg-slate-900 dark:bg-black border-b border-slate-800">
+        <div className="w-full px-4 h-9 flex items-center justify-center gap-6">
+          {[
+            { icon: Lock,       label: 'Pago seguro SSL' },
+            { icon: Shield,     label: 'Compra protegida' },
+            { icon: BadgeCheck, label: 'Datos encriptados' },
+            { icon: Zap,        label: 'Confirmación inmediata' },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-center gap-1.5 text-slate-400">
+              <Icon className="w-3 h-3 text-orange-400" />
+              <span className="text-[11px] font-medium hidden sm:inline tracking-wide">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Trust badges — inline strip */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            {[
-              { icon: Lock, label: 'Pago seguro' },
-              { icon: Shield, label: 'Compra protegida' },
-              { icon: BadgeCheck, label: 'Datos encriptados' },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                <Icon className="w-3.5 h-3.5 text-orange-500" />
-                <span className="text-xs font-medium hidden sm:inline">{label}</span>
-              </div>
-            ))}
-          </div>
+      <div className="w-full px-3 sm:px-4 py-4 lg:py-6">
+
+        {/* ── Page header ──────────────────────────────────────────────────── */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            Finalizar compra
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Revisa tu pedido y completa los datos para confirmar
+          </p>
         </div>
 
-        {/* ── Main grid: 5/8 form + 3/8 summary ──────────────────────────── */}
-        <CheckoutShippingProvider>
-          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
+        {/*
+          Layout invertido vs original:
+          - LEFT  (5fr): OrderSummary — el "hero" visual, sticky
+          - RIGHT (4fr): CheckoutForm — datos personales, entrega y pago
 
-            {/* Form column — narrow */}
-            <div className="min-w-0">
-              <Suspense fallback={<CheckoutFormSkeleton />}>
-                <CheckoutForm />
+          En mobile ambas van en columna, summary primero (order-1)
+          para que el usuario vea qué está comprando antes de rellenar datos.
+        */}
+        <CheckoutShippingProvider>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+
+            {/* LEFT — Order summary, sticky en desktop */}
+            <div className="order-1 lg:sticky lg:top-6">
+              <Suspense fallback={<SummarySkeleton />}>
+                <OrderSummary />
               </Suspense>
             </div>
 
-            {/* Summary column — wider, sticky */}
-            <div className="lg:sticky lg:top-6">
-              <Suspense fallback={<CheckoutSummarySkeleton />}>
-                <OrderSummary />
+            {/* RIGHT — Checkout form */}
+            <div className="order-2 min-w-0">
+              <Suspense fallback={<FormSkeleton />}>
+                <CheckoutForm />
               </Suspense>
             </div>
 
@@ -66,14 +75,46 @@ export default async function CheckoutPage() {
   )
 }
 
-// ── Skeletons ──────────────────────────────────────────────────────────────
+// ── Skeletons ─────────────────────────────────────────────────────────────────
 
-function CheckoutFormSkeleton() {
+function SummarySkeleton() {
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+      <div className="h-1 bg-slate-200 dark:bg-slate-700" />
+      <div className="p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="w-16 h-16 rounded-xl flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-5 w-16 flex-shrink-0" />
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-7 w-full mt-2" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FormSkeleton() {
   return (
     <div className="space-y-4">
       {[1, 2, 3].map((i) => (
         <div
-          key={`checkout-skeleton-${i}`}
+          key={i}
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-6"
         >
           <div className="flex items-center gap-3 mb-5">
@@ -88,37 +129,8 @@ function CheckoutFormSkeleton() {
             <Skeleton className="h-10 w-full rounded-xl" />
           </div>
           <Skeleton className="h-10 w-full rounded-xl mt-4" />
-          {i === 2 && <Skeleton className="h-10 w-full rounded-xl mt-4" />}
         </div>
       ))}
-    </div>
-  )
-}
-
-function CheckoutSummarySkeleton() {
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl overflow-hidden">
-      <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-t-2xl" />
-      <div className="p-5 space-y-4">
-        <Skeleton className="h-4 w-32" />
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="w-12 h-12 rounded-lg flex-shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3.5 w-full" />
-                <Skeleton className="h-3 w-2/3" />
-              </div>
-              <Skeleton className="h-4 w-14 flex-shrink-0" />
-            </div>
-          ))}
-        </div>
-        <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5">
-          <Skeleton className="h-3.5 w-full" />
-          <Skeleton className="h-3.5 w-full" />
-          <Skeleton className="h-5 w-full mt-1" />
-        </div>
-      </div>
     </div>
   )
 }

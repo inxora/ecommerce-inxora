@@ -8,6 +8,18 @@ import { ApiError } from '@/lib/api/client'
 const TOKEN_KEY = 'inxora_cliente_token'
 const DATA_KEY = 'inxora_cliente_data'
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return true
+    const decoded = JSON.parse(atob(payload)) as { exp?: number }
+    if (!decoded.exp) return false
+    return decoded.exp * 1000 < Date.now()
+  } catch {
+    return true
+  }
+}
+
 function getStored(): { token: string; cliente: ClienteInfo } | null {
   if (typeof window === 'undefined') return null
   const token = localStorage.getItem(TOKEN_KEY)
@@ -66,8 +78,14 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
   const loadStored = useCallback(() => {
     const stored = getStored()
     if (stored) {
-      setToken(stored.token)
-      setCliente(stored.cliente)
+      if (isTokenExpired(stored.token)) {
+        clearStored()
+        setToken(null)
+        setCliente(null)
+      } else {
+        setToken(stored.token)
+        setCliente(stored.cliente)
+      }
     } else {
       setToken(null)
       setCliente(null)
