@@ -2,10 +2,11 @@
 
 /**
  * Widget de Chat Sara Xora (INXORA).
- * Diseño del widget legacy chat.js + funcionalidad vía sara-chat.service (POST /api/chat).
+ * Redirige a la página de chat con Sara. Para usar el chat el usuario debe estar registrado.
  * Solo 2 widgets flotantes: WhatsApp y Sara (logo LOGO-03.png).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
 import { MessageSquarePlus, ImagePlus, X, FileText, Paperclip, Cloud, Image as ImageIcon } from 'lucide-react'
@@ -108,6 +109,9 @@ const markdownComponents = {
 }
 
 export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
+  const router = useRouter()
+  const pathname = usePathname() ?? ''
+  const locale = pathname.split('/')[1] ?? 'es'
   const { cliente } = useClienteAuth()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -1002,13 +1006,9 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
 
       <button
         type="button"
-        className={`sara-bubble ${open ? 'hidden' : ''}`}
-        aria-label="Abrir chat con Sara Xora"
-        onClick={() => {
-          setOpen(true)
-          setError(null)
-          setTimeout(() => inputRef.current?.focus(), 300)
-        }}
+        className="sara-bubble"
+        aria-label="Ir al chat con Sara Xora (requiere registrarse)"
+        onClick={() => router.push(`/${locale}/cuenta/chat-sara`)}
       >
         <Image src={BRAND.logo} alt="SARA XORA - Asistente virtual de INXORA" width={48} height={48} unoptimized />
       </button>

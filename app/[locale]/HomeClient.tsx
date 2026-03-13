@@ -8,7 +8,7 @@ import { Producto, Categoria } from '@/lib/supabase';
 import type { Banner } from '@/lib/types';
 import { ProductGridLoader, Loader } from '@/components/ui/loader';
 import { BannerSlot } from '@/components/banner/banner-slot';
-import { ChevronRight, ChevronLeft, ShoppingCart } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ShoppingCart, ChevronDown } from 'lucide-react';
 import { buildProductFullUrl, buildCategoryUrlFromObject } from '@/lib/product-url';
 import { useCart } from '@/lib/hooks/use-cart';
 import { useCurrency } from '@/lib/hooks/use-currency';
@@ -321,6 +321,19 @@ export default function HomeClient({
   bannersPreFooter = [],
 }: HomeClientProps) {
   const hasHeroBanners = bannersHero && bannersHero.length > 0
+  const [seoOpen, setSeoOpen] = useState<Set<number>>(new Set())
+  const [welcomeOpen, setWelcomeOpen] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setWelcomeOpen(true), 800)
+    return () => clearTimeout(t)
+  }, [])
+  const toggleSeo = (i: number) =>
+    setSeoOpen((prev) => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -349,71 +362,43 @@ export default function HomeClient({
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
             </div>
-            <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl h-full flex flex-col">
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-8 pt-4 sm:pt-6 lg:pt-8 text-white flex-shrink-0">
-                <div className="flex items-center gap-2 lg:gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white/50 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm sm:text-base lg:text-lg font-medium">Productos de Calidad</span>
-                </div>
-                <div className="flex items-center gap-2 lg:gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white/50 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 17h.01M16 17h.01M9 11h6M3 13h2l.4-2M7 13l1.6-8H20l1 5h-1M7 13h13m-5 0v4m-8-4v4m0 0a2 2 0 104 0m4 0a2 2 0 104 0" />
-                    </svg>
-                  </div>
-                  <span className="text-sm sm:text-base lg:text-lg font-medium">Envíos a Todo el Perú</span>
-                </div>
-                <div className="flex items-center gap-2 lg:gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white/50 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 18v-6a9 9 0 0118 0v6M3 18a3 3 0 003 3h1a1 1 0 001-1v-4a1 1 0 00-1-1H4a1 1 0 00-1 1v2zM21 18a3 3 0 01-3 3h-1a1 1 0 01-1-1v-4a1 1 0 011-1h3a1 1 0 011 1v2z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm sm:text-base lg:text-lg font-medium">Asesoría Profesional</span>
-                </div>
-              </div>
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-8 py-8 lg:py-12 flex-1 min-h-0 justify-center">
-                <div className="flex-1 text-white max-w-3xl w-full">
-                  <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-[2.25rem] md:text-[2.5rem] lg:text-[3rem] xl:text-[3.5rem] 2xl:text-5xl">
-                    El{' '}
-                    <span className="relative inline-block">
-                      <span className="relative z-10 px-1.5 py-0.5 sm:px-2 rounded-md bg-gradient-to-r from-[#88D4E4] to-white/90 text-[#171D4C] font-black shadow-lg text-[1em] leading-none align-baseline">
-                        PRIMER
-                      </span>
-                    </span>{' '}
-                    Marketplace Industrial del Perú potenciado con{' '}
-                    <span className="text-[#88D4E4] font-black drop-shadow-sm">
-                      Inteligencia Artificial
+            <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl h-full flex flex-col justify-center">
+              <div className="text-white max-w-3xl">
+                <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-[#88D4E4] mb-3 sm:mb-4">
+                  INXORA · Plataforma Industrial B2B · Perú
+                </p>
+                <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem]">
+                  La primera plataforma digital de{' '}
+                  <span className="text-[#88D4E4] font-black drop-shadow-sm">
+                    despachos industriales
+                  </span>{' '}
+                  en el Perú con{' '}
+                  <span className="relative inline-block">
+                    <span className="relative z-10 px-1.5 py-0.5 sm:px-2 rounded-md bg-gradient-to-r from-[#88D4E4] to-white/90 text-[#171D4C] font-black shadow-lg leading-none">
+                      IA
                     </span>
-                  </h1>
-                  <p className="mt-3 sm:mt-4 lg:mt-6 text-base sm:text-lg md:text-xl leading-relaxed sm:leading-8 text-white/90 max-w-lg">
-                    Encuentra suministros industriales, cotiza al instante y recibe asesoría 24/7 con el respaldo de IA.
-                  </p>
-                  <div className="mt-5 sm:mt-6 lg:mt-10 flex flex-wrap items-center gap-2 sm:gap-3">
-                    <Link
-                      href={`/${locale}/catalogo`}
-                      className="inline-flex items-center gap-2 rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 text-sm sm:text-base md:text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                    >
-                      Explorar Catálogo
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
-                    </Link>
-                    <a
-                      href="https://wa.me/51946885531"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] hover:bg-[#20BD5A] px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 text-sm sm:text-base md:text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                      aria-label="Solicitar cotización por WhatsApp"
-                    >
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" viewBox="0 0 32 32" fill="currentColor" aria-hidden>
-                        <path d="M16.002 3C8.833 3 3 8.833 3 16.002c0 2.292.6 4.533 1.737 6.504L3 29l6.695-1.756A12.94 12.94 0 0 0 16.002 29C23.169 29 29 23.169 29 16.002 29 8.833 23.169 3 16.002 3zm0 23.545a10.5 10.5 0 0 1-5.354-1.463l-.384-.228-3.977 1.043 1.062-3.882-.25-.398a10.46 10.46 0 0 1-1.606-5.615c0-5.8 4.72-10.52 10.52-10.52 5.799 0 10.52 4.72 10.52 10.52 0 5.8-4.72 10.52-10.52 10.52v.023zm5.77-7.882c-.316-.158-1.872-.924-2.162-1.03-.29-.105-.502-.158-.713.158-.21.316-.818 1.03-.999 1.24-.184.21-.368.237-.684.079-.316-.158-1.334-.492-2.54-1.569-.94-.838-1.573-1.872-1.757-2.188-.184-.316-.02-.486.138-.644.141-.141.316-.368.474-.553.158-.184.21-.316.316-.526.105-.21.052-.395-.026-.553-.079-.158-.713-1.716-.977-2.35-.257-.617-.52-.533-.713-.543-.184-.01-.394-.012-.605-.012-.21 0-.553.079-.842.395-.29.316-1.108 1.082-1.108 2.64 0 1.556 1.134 3.06 1.293 3.27.158.211 2.232 3.41 5.41 4.782.756.326 1.346.52 1.806.667.759.241 1.45.207 1.996.125.61-.09 1.872-.765 2.135-1.504.263-.738.263-1.372.184-1.504-.079-.131-.29-.21-.605-.368z" />
-                      </svg>
-                      Solicitar Cotización
-                    </a>
-                  </div>
+                  </span>
+                </h1>
+                <p className="mt-4 sm:mt-5 lg:mt-6 text-base sm:text-lg leading-relaxed text-white/85 max-w-xl">
+                  Cotiza, compara y adquiere suministros industriales en minutos. Asesoría técnica 24/7 con Sara Xora, nuestra IA especializada.
+                </p>
+                <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/${locale}/catalogo`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-white text-[#171D4C] hover:bg-white/90 px-6 py-3 md:px-8 md:py-3.5 text-sm sm:text-base font-bold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  >
+                    Explorar Productos
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  </Link>
+                  <Link
+                    href={`/${locale}/cuenta/chat-sara`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#13A0D8] hover:bg-[#0d7ba8] px-6 py-3 md:px-8 md:py-3.5 text-sm sm:text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl border border-white/20"
+                  >
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z" />
+                    </svg>
+                    Cotización Industrial
+                  </Link>
                 </div>
               </div>
             </div>
@@ -487,38 +472,6 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* BLOQUE 2 — Barra 6 beneficios (fondo navy #171D4C) */}
-      <section className="bg-[#171D4C] py-8 sm:py-10">
-        <div className="w-full px-6 lg:px-8 xl:px-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 lg:gap-4">
-            <div className="text-center lg:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">Cotización en minutos</h3>
-              <p className="text-sm text-white/80 mt-1">No en días. Lista completa al instante</p>
-            </div>
-            <div className="text-center lg:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">Financiamiento OC</h3>
-              <p className="text-sm text-white/80 mt-1">Crowdlending sobre orden confirmada</p>
-            </div>
-            <div className="text-center lg:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">Despacho nacional</h3>
-              <p className="text-sm text-white/80 mt-1">Lima, Callao y todo el Perú trazable</p>
-            </div>
-            <div className="text-center lg:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">Proveedores verificados</h3>
-              <p className="text-sm text-white/80 mt-1">Importadores y distribuidores homologados</p>
-            </div>
-            <div className="text-center lg:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">Precios transparentes</h3>
-              <p className="text-sm text-white/80 mt-1">Precio final en soles, IGV incluido</p>
-            </div>
-            <div className="text-center lg:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">Soporte técnico</h3>
-              <p className="text-sm text-white/80 mt-1">Ingenieros especializados disponibles</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* home-below-categories — Entre Categorías y Productos Destacados */}
       {bannersBelowCategories && bannersBelowCategories.length > 0 && (
         <section className="py-4">
@@ -550,35 +503,6 @@ export default function HomeClient({
           ) : undefined
         }
       />
-
-      {/* BLOQUE 3 — 3 banners promo en fila (entre sliders) */}
-      <section className="py-8 sm:py-12 lg:py-16">
-        <div className="w-full px-6 lg:px-8 xl:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#171D4C] to-[#1A56DB] p-6 sm:p-8 text-white shadow-xl">
-              <span className="inline-block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">Sara Xora IA</span>
-              <h3 className="text-xl sm:text-2xl font-bold mb-2">Cotización en minutos, no en días</h3>
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
-                Envía tu lista de requerimientos y recibe precios consolidados al instante. Disponible 24/7.
-              </p>
-            </div>
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-900 to-emerald-600 p-6 sm:p-8 text-white shadow-xl">
-              <span className="inline-block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">Crowdlending</span>
-              <h3 className="text-xl sm:text-2xl font-bold mb-2">Financiamiento sobre orden de compra</h3>
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
-                Recibe tus materiales hoy. Paga cuando tu operación genere el flujo necesario.
-              </p>
-            </div>
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-900 to-amber-500 p-6 sm:p-8 text-white shadow-xl">
-              <span className="inline-block text-xs font-bold uppercase tracking-wider text-white/90 mb-2">Logística</span>
-              <h3 className="text-xl sm:text-2xl font-bold mb-2">Despacho a todo el Perú trazable</h3>
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed">
-                Lima, Callao y provincias. Guía de remisión, factura y certificados incluidos en cada envío.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Productos Nuevos Section - con slot de banner lateral derecho */}
       <FeaturedProductsSlider 
@@ -657,39 +581,85 @@ export default function HomeClient({
             </div>
           </div>
 
-          {/* 2 columnas de texto */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
-            <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-inxora-dark-blue dark:text-white mb-4">
-                ¿Cómo funciona INXORA?
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                El proceso de compra está diseñado para ser simple, rápido y trazable. El comprador ingresa su lista de requerimientos y recibe una cotización consolidada con precios finales en soles, incluyendo IGV y costo de envío. No es necesario contactar a múltiples proveedores: INXORA centraliza todo el proceso.
-              </p>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
-                Una vez confirmada la orden de compra, gestionamos la adquisición directamente con los proveedores, coordinamos el despacho y mantenemos al comprador informado en tiempo real.
-              </p>
-              <h4 className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white mb-3">
-                Sara Xora: IA al servicio del comprador industrial
-              </h4>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Sara Xora es nuestro asistente comercial con inteligencia artificial, entrenado específicamente en suministros industriales. Responde consultas técnicas, verifica disponibilidad y gestiona cotizaciones las 24 horas. Las consultas complejas se escalan automáticamente a ingenieros especializados.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-inxora-dark-blue dark:text-white mb-4">
-                Cobertura nacional y financiamiento
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
-                INXORA abastece a empresas en los principales sectores productivos del Perú: agroindustria, manufactura, minería y energía. Realizamos despachos a Lima Metropolitana, Callao y todas las regiones con operadores logísticos verificados. Cada despacho incluye factura electrónica, guía de remisión y certificados de calidad cuando aplica.
-              </p>
-              <h4 className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white mb-3">
-                Financiamiento para órdenes de compra
-              </h4>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Ofrecemos soluciones de financiamiento sobre órdenes confirmadas para personas naturales con negocio y empresas con RUC activo. A través de nuestro modelo de crowdlending, compradores calificados reciben sus materiales de inmediato y completan el pago cuando su operación genera el flujo necesario. Esta capacidad diferencia a INXORA de los distribuidores tradicionales, posicionándonos como socio estratégico de abastecimiento industrial.
-              </p>
-            </div>
+          {/* Acordeón SEO */}
+          <div className="divide-y divide-gray-200 dark:divide-slate-700 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+            {[
+              {
+                title: '¿Cómo funciona INXORA?',
+                content: (
+                  <>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                      El proceso de compra está diseñado para ser simple, rápido y trazable. El comprador ingresa su lista de requerimientos y recibe una cotización consolidada con precios finales en soles, incluyendo IGV y costo de envío. No es necesario contactar a múltiples proveedores: INXORA centraliza todo el proceso.
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      Una vez confirmada la orden de compra, gestionamos la adquisición directamente con los proveedores, coordinamos el despacho y mantenemos al comprador informado en tiempo real.
+                    </p>
+                  </>
+                ),
+              },
+              {
+                title: 'Sara Xora: IA al servicio del comprador industrial',
+                content: (
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    Sara Xora es nuestro asistente comercial con inteligencia artificial, entrenado específicamente en suministros industriales. Responde consultas técnicas, verifica disponibilidad y gestiona cotizaciones las 24 horas. Las consultas complejas se escalan automáticamente a ingenieros especializados.
+                  </p>
+                ),
+              },
+              {
+                title: 'Cobertura nacional y financiamiento',
+                content: (
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    INXORA abastece a empresas en los principales sectores productivos del Perú: agroindustria, manufactura, minería y energía. Realizamos despachos a Lima Metropolitana, Callao y todas las regiones con operadores logísticos verificados. Cada despacho incluye factura electrónica, guía de remisión y certificados de calidad cuando aplica.
+                  </p>
+                ),
+              },
+              {
+                title: 'Financiamiento para órdenes de compra',
+                content: (
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    Ofrecemos soluciones de financiamiento sobre órdenes confirmadas para personas naturales con negocio y empresas con RUC activo. A través de nuestro modelo de crowdlending, compradores calificados reciben sus materiales de inmediato y completan el pago cuando su operación genera el flujo necesario. Esta capacidad diferencia a INXORA de los distribuidores tradicionales, posicionándonos como socio estratégico de abastecimiento industrial.
+                  </p>
+                ),
+              },
+            ].map(({ title, content }, i) => (
+              <div key={title} className="bg-white dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => toggleSeo(i)}
+                  className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inxora-blue"
+                  aria-expanded={seoOpen.has(i)}
+                >
+                  <span className="text-base sm:text-lg font-bold text-inxora-dark-blue dark:text-white">{title}</span>
+                  <ChevronDown className={`h-5 w-5 shrink-0 text-inxora-blue transition-transform duration-200 ${seoOpen.has(i) ? 'rotate-180' : ''}`} />
+                </button>
+                {seoOpen.has(i) && (
+                  <div className="px-6 pb-6 text-sm sm:text-base">
+                    {content}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BLOQUE 2 — Barra 6 beneficios (fondo navy #171D4C) — justo antes del footer */}
+      <section className="bg-[#171D4C] py-8 sm:py-10">
+        <div className="w-full px-6 lg:px-8 xl:px-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 lg:gap-4">
+            {[
+              { title: 'Cotización en minutos', desc: 'No en días. Lista completa al instante' },
+              { title: 'Financiamiento OC', desc: 'Crowdlending sobre orden confirmada' },
+              { title: 'Despacho nacional', desc: 'Lima, Callao y todo el Perú trazable' },
+              { title: 'Proveedores verificados', desc: 'Importadores y distribuidores homologados' },
+              { title: 'Precios transparentes', desc: 'Precio final en soles, IGV incluido' },
+              { title: 'Soporte técnico', desc: 'Ingenieros especializados disponibles' },
+            ].map(({ title, desc }) => (
+              <div key={title} className="text-center lg:text-left">
+                <h3 className="text-base sm:text-lg font-bold text-white">{title}</h3>
+                <p className="text-sm text-white/80 mt-1">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -721,6 +691,104 @@ export default function HomeClient({
             </div>
           </div>
         </section>
+      )}
+
+      {/* ── Modal de bienvenida Sara Xora ── */}
+      {welcomeOpen && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setWelcomeOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="welcome-modal-title"
+        >
+          <div
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header navy con foto de Sara */}
+            <div className="relative bg-[#171D4C] px-6 pt-8 pb-24 text-white overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#171D4C] via-[#1A3A6B] to-[#13A0D8]/40" />
+              <div className="relative z-10">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#88D4E4] mb-2">Asistente Industrial IA · INXORA</p>
+                <h2 id="welcome-modal-title" className="text-xl sm:text-2xl font-extrabold leading-snug">
+                  Bienvenido a INXORA
+                </h2>
+                <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-sm">
+                  Le presentamos a <strong className="text-[#88D4E4]">Sara Xora</strong>, nuestra inteligencia artificial especializada en suministros industriales, disponible para asistirle en todo momento.
+                </p>
+              </div>
+              {/* Imagen de Sara flotante */}
+              <div className="absolute right-0 bottom-0 h-40 w-32 overflow-hidden pointer-events-none">
+                <Image
+                  src="/sara-pose2.png"
+                  alt="Sara Xora"
+                  fill
+                  className="object-cover object-top"
+                  unoptimized
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#171D4C]/60 via-transparent to-transparent" />
+              </div>
+              {/* Botón cerrar */}
+              <button
+                type="button"
+                onClick={() => setWelcomeOpen(false)}
+                className="absolute top-4 right-4 z-20 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors focus:outline-none"
+                aria-label="Cerrar"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Cuerpo: 3 beneficios */}
+            <div className="px-6 pt-5 pb-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4">Por qué cotizar con Sara Xora</p>
+              <ul className="space-y-3 mb-6">
+                {[
+                  {
+                    icon: '⚡',
+                    title: 'Cotizaciones en minutos, no en días',
+                    desc: 'Envíe su lista de requerimientos y reciba precios consolidados con IGV incluido al instante.',
+                  },
+                  {
+                    icon: '🔒',
+                    title: 'Proveedores verificados y trazabilidad total',
+                    desc: 'Cada orden incluye factura electrónica, guía de remisión y certificados de calidad.',
+                  },
+                  {
+                    icon: '💳',
+                    title: 'Financiamiento sobre orden de compra',
+                    desc: 'Reciba sus materiales hoy y complete el pago cuando su operación genere el flujo necesario.',
+                  },
+                ].map(({ icon, title, desc }) => (
+                  <li key={title} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-base">{icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">{title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href={`/${locale}/cuenta/chat-sara`}
+                  onClick={() => setWelcomeOpen(false)}
+                  className="flex-1 text-center py-3 rounded-xl bg-[#13A0D8] hover:bg-[#0d7ba8] text-white font-bold text-sm transition-colors shadow-sm"
+                >
+                  Cotizar con Sara Xora →
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setWelcomeOpen(false)}
+                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Explorar primero
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

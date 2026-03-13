@@ -23,6 +23,7 @@ import type {
 } from '@/lib/services/sara-chat.service'
 import { formatPhoneForWhatsApp } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ChatAuthModal } from '@/components/auth/chat-auth-modal'
 import {
   getDriveAccessToken,
   openDrivePicker,
@@ -35,7 +36,7 @@ type Message = {
   attachmentPreviews?: string[]
 }
 
-const BRAND = { logo: '/Sara Xora - IA.png', name: 'SARA XORA', typingText: 'Sara está escribiendo…' }
+const BRAND = { logo: '/sara-pose', name: 'SARA XORA', typingText: 'Sara está escribiendo…' }
 const STYLE = { primary: '#13A0D8', secondary: '#0d7ba8' }
 const PHONE_REGEX = /(\+?51)?[\s.-]*([9]\d{2})[\s.-]*(\d{3})[\s.-]*(\d{3})\b/g
 
@@ -117,6 +118,7 @@ export function ChatSaraPageClient({
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [driveLoading, setDriveLoading] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const fileInputDocRef = useRef<HTMLInputElement>(null)
@@ -138,13 +140,6 @@ export function ChatSaraPageClient({
       listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
     })
   }, [])
-
-  useEffect(() => {
-    if (authLoading) return
-    if (!isLoggedIn) {
-      router.replace(`/${locale}/login?redirect=/${locale}/cuenta/chat-sara`)
-    }
-  }, [isLoggedIn, authLoading, router, locale])
 
   const loadConversaciones = useCallback(async () => {
     if (!cliente?.id) return
@@ -501,7 +496,7 @@ export function ChatSaraPageClient({
     }
   }
 
-  if (authLoading || !isLoggedIn) {
+  if (authLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-[#13A0D8]" aria-hidden />
@@ -521,23 +516,23 @@ export function ChatSaraPageClient({
   )
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] w-full min-h-0 bg-slate-50">
-      {/* Sidebar: estrecho, neutro, colapsable */}
+    <div className="flex h-[calc(100vh-5rem)] w-full min-h-0 bg-slate-50 dark:bg-slate-950">
+      {/* Sidebar */}
       <aside
-        className={`flex flex-col flex-shrink-0 bg-white border-r border-slate-100 transition-[width] duration-200 overflow-hidden ${
+        className={`flex flex-col flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 transition-[width] duration-200 overflow-hidden ${
           sidebarCollapsed ? 'w-14 lg:w-14' : 'w-full lg:w-72'
         }`}
       >
-        {/* Barra superior: estilo Gemini — hamburger primero (abrir/cerrar), luego Volver, título y Nuevo chat */}
+        {/* Barra superior */}
         <div
-          className={`flex border-b border-slate-100 ${
+          className={`flex border-b border-slate-100 dark:border-slate-800 ${
             sidebarCollapsed ? 'flex-col items-center gap-0.5 py-2' : 'items-center gap-1 p-2 min-h-[52px]'
           }`}
         >
           <button
             type="button"
             onClick={() => setSidebarCollapsed((c) => !c)}
-            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 shrink-0"
+            className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 shrink-0"
             aria-label={sidebarCollapsed ? 'Abrir menú' : 'Cerrar menú'}
             title={sidebarCollapsed ? 'Abrir menú' : 'Cerrar menú'}
           >
@@ -545,21 +540,21 @@ export function ChatSaraPageClient({
           </button>
           <Link
             href={`/${locale}`}
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
+            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
             aria-label="Volver"
             title="Volver"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           {!sidebarCollapsed && (
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider truncate flex-1 px-1">
+            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate flex-1 px-1">
               Conversaciones
             </span>
           )}
           <button
             type="button"
             onClick={startNewConversation}
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-[#13A0D8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
+            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#13A0D8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
             title="Nueva conversación"
             aria-label="Nueva conversación"
           >
@@ -567,18 +562,36 @@ export function ChatSaraPageClient({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto py-2">
-          {loadingList ? (
+          {!isLoggedIn ? (
+            !sidebarCollapsed && (
+              <div className="mx-3 mt-3 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-4">
+                <p className="text-sm font-semibold leading-snug mb-1 text-slate-800 dark:text-white">
+                  Inicia sesión para empezar a guardar tus conversaciones
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
+                  Una vez que hayas iniciado sesión, podrás acceder a tus conversaciones recientes aquí.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="text-[#13A0D8] text-sm font-semibold hover:underline focus:outline-none"
+                >
+                  Iniciar sesión
+                </button>
+              </div>
+            )
+          ) : loadingList ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-slate-300" aria-hidden />
             </div>
           ) : conversaciones.length === 0 ? (
             !sidebarCollapsed && (
               <div className="text-center py-8 px-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
                   <MessageSquarePlus className="h-5 w-5 text-slate-400" />
                 </div>
-                <p className="text-sm text-slate-500">Sin conversaciones</p>
-                <p className="text-xs text-slate-400 mt-0.5">La conversación se crea al enviar el primer mensaje.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Sin conversaciones</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">La conversación se crea al enviar el primer mensaje.</p>
               </div>
             )
           ) : (
@@ -589,7 +602,7 @@ export function ChatSaraPageClient({
                     className={`group relative flex items-center gap-2 rounded-xl transition-colors ${
                       selectedSessionId === c.session_id
                         ? 'bg-[#13A0D8]/10 text-[#13A0D8]'
-                        : 'hover:bg-slate-50 text-slate-700'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <button
@@ -604,7 +617,7 @@ export function ChatSaraPageClient({
                       }`}
                     >
                       {sidebarCollapsed ? (
-                        <span className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600 truncate">
+                        <span className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
                           {(c.lead_json?.razon_social || c.lead_json?.nombre_contacto || 'C').slice(0, 1)}
                         </span>
                       ) : (
@@ -623,7 +636,7 @@ export function ChatSaraPageClient({
                         <button
                           type="button"
                           onClick={(e) => borrarHistorialDeSesion(c.session_id, e)}
-                          className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-500 hover:text-slate-700 focus:outline-none"
+                          className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
                           title="Borrar historial"
                           aria-label="Borrar historial"
                         >
@@ -632,7 +645,7 @@ export function ChatSaraPageClient({
                         <button
                           type="button"
                           onClick={(e) => openShareModal(c.session_id, e)}
-                          className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-500 hover:text-slate-700 focus:outline-none"
+                          className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
                           title="Compartir"
                           aria-label="Compartir"
                         >
@@ -649,31 +662,127 @@ export function ChatSaraPageClient({
       </aside>
 
       {/* Área de chat */}
-      <main className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
-        {/* Header mínimo */}
-        <header className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-slate-100 bg-white">
-          <div className="relative shrink-0">
-            <Image src={BRAND.logo} alt="" width={36} height={36} unoptimized className="rounded-full object-cover" />
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" aria-hidden />
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900">
+        {/* Header */}
+        <header className="shrink-0 flex items-center gap-4 px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="relative shrink-0 w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
+            <Image
+              src="/sara-pose2.png"
+              alt="Sara Xora"
+              fill
+              className="object-cover object-top"
+              unoptimized
+            />
+            <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 z-10" aria-hidden />
           </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm truncate">{BRAND.name}</p>
-            <p className="text-xs text-slate-500">En línea</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-slate-800 dark:text-white text-base truncate">{BRAND.name}</p>
+            <p className="text-xs text-emerald-500 font-medium flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
+              En línea
+            </p>
           </div>
         </header>
 
-        {/* Mensajes: fondo limpio, cards con sombra sutil */}
+        {/* Mensajes */}
         <div
           ref={listRef}
-          className="flex-1 overflow-y-auto px-4 py-6 bg-slate-50/50"
+          className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900"
         >
-          {!selectedSessionId && messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[320px] text-center max-w-sm mx-auto">
-              <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-6 ring-1 ring-slate-100">
+          {!isLoggedIn ? (
+            /* ── Pantalla de bienvenida (no autenticado) ── */
+            <div className="flex flex-col items-center justify-center h-full py-8 px-6 gap-5 max-w-2xl mx-auto w-full">
+              {/* Header */}
+              <div className="text-center">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#13A0D8] mb-1">Asistente industrial IA</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Chatea con Sara Xora</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Inicia sesión para cotizar y gestionar tus pedidos industriales.</p>
+              </div>
+
+              {/* Grid central: cards + Sara + card */}
+              <div className="w-full hidden sm:grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                {/* Cards izquierda */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">⚡</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Cotizaciones en minutos</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Envía tu lista y recibe precios consolidados al instante.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">💬</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Historial guardado</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Retoma cualquier cotización desde donde la dejaste.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sara centrada */}
+                <div className="flex justify-center">
+                  <div className="w-52 h-64 rounded-2xl overflow-hidden ring-2 ring-[#13A0D8]/30 shadow-xl shrink-0">
+                    <Image
+                      src="/sara-pose2.png"
+                      alt="Sara Xora"
+                      width={208}
+                      height={256}
+                      className="w-full h-full object-cover object-center"
+                      unoptimized
+                      priority
+                    />
+                  </div>
+                </div>
+
+                {/* Card derecha */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">🕐</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Disponible 24/7</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sara responde consultas técnicas a cualquier hora del día.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Versión mobile: Sara + cards apiladas */}
+              <div className="sm:hidden flex flex-col items-center gap-4 w-full">
+                <div className="w-44 h-56 rounded-2xl overflow-hidden ring-2 ring-[#13A0D8]/30 shadow-xl">
+                  <Image src="/sara-pose2.png" alt="Sara Xora" width={176} height={224} className="w-full h-full object-cover object-center" unoptimized priority />
+                </div>
+                <div className="flex flex-col gap-3 w-full">
+                  {[
+                    { icon: '⚡', title: 'Cotizaciones en minutos', desc: 'Envía tu lista y recibe precios consolidados al instante.' },
+                    { icon: '💬', title: 'Historial guardado', desc: 'Retoma cualquier cotización desde donde la dejaste.' },
+                    { icon: '🕐', title: 'Disponible 24/7', desc: 'Sara responde consultas técnicas a cualquier hora del día.' },
+                  ].map(({ icon, title, desc }) => (
+                    <div key={title} className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">{icon}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white">{title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="w-full max-w-xs py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
+              >
+                Iniciar sesión / Registrarse
+              </button>
+            </div>
+          ) : !selectedSessionId && messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[320px] text-center max-w-sm mx-auto px-4 py-6">
+              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center mb-6 ring-1 ring-slate-100 dark:ring-slate-700">
                 <Image src={BRAND.logo} alt="" width={40} height={40} unoptimized className="rounded-xl" />
               </div>
-              <h2 className="text-lg font-semibold text-slate-800 mb-1">Hola, soy Sara</h2>
-              <p className="text-slate-500 text-sm leading-relaxed mb-6">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-1">Hola, soy Sara</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
                 Tu asistente de INXORA. Pregúntame por productos, cotizaciones o envíos.
               </p>
               <p className="text-[#13A0D8] font-medium text-sm">
@@ -777,7 +886,7 @@ export function ChatSaraPageClient({
         )}
 
         {/* Input fijo: pill, sombra sutil, adjuntos compactos */}
-        <div className="shrink-0 p-4 pt-2 bg-white border-t border-slate-100">
+        <div className={`shrink-0 p-4 pt-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 ${!isLoggedIn ? 'pointer-events-none select-none opacity-40' : ''}`}>
           <input
             ref={fileInputRef}
             type="file"
@@ -840,12 +949,12 @@ export function ChatSaraPageClient({
             <div className="relative shrink-0">
               <button
                 type="button"
-                className="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-[#13A0D8] hover:border-[#13A0D8]/30 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors flex items-center justify-center disabled:opacity-50"
+                className="h-10 w-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-[#13A0D8] hover:border-[#13A0D8]/30 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors flex items-center justify-center disabled:opacity-50"
                 aria-label="Adjuntar"
                 aria-expanded={attachMenuOpen}
                 aria-haspopup="true"
                 title="Adjuntar"
-                disabled={sending}
+                disabled={sending || !isLoggedIn}
                 onClick={(e) => {
                   e.stopPropagation()
                   setAttachMenuOpen((v) => !v)
@@ -905,18 +1014,18 @@ export function ChatSaraPageClient({
               )}
             </div>
             <textarea
-              placeholder="Escribe un mensaje…"
+              placeholder={isLoggedIn ? 'Escribe un mensaje…' : 'Inicia sesión para escribir…'}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={sending}
-              className="flex-1 min-h-[42px] max-h-28 px-4 py-2.5 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/20 focus:border-[#13A0D8] placeholder:text-slate-400 text-slate-800 text-sm bg-white shadow-sm"
+              disabled={sending || !isLoggedIn}
+              className="flex-1 min-h-[42px] max-h-28 px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/20 focus:border-[#13A0D8] placeholder:text-slate-400 dark:placeholder:text-slate-600 text-slate-800 dark:text-slate-200 text-sm bg-white dark:bg-slate-800 shadow-sm"
               rows={1}
             />
             <button
               type="button"
               onClick={sendMessage}
-              disabled={sending || (!input.trim() && attachments.length === 0 && documents.length === 0)}
+              disabled={sending || !isLoggedIn || (!input.trim() && attachments.length === 0 && documents.length === 0)}
               className="h-10 w-10 shrink-0 rounded-xl bg-[#13A0D8] text-white flex items-center justify-center hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="Enviar"
               title="Enviar"
@@ -926,6 +1035,11 @@ export function ChatSaraPageClient({
           </div>
         </div>
       </main>
+
+      {/* Modal auth */}
+      {authModalOpen && (
+        <ChatAuthModal open={authModalOpen} locale={locale} onClose={() => setAuthModalOpen(false)} />
+      )}
 
       {/* Modal compartir: estilo Gemini */}
       {shareModalSessionId && (
