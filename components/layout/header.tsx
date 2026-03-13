@@ -53,7 +53,9 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const handleLogout = () => {
     logout()
     clearCart()
-    router.push(`/${locale}/login`)
+    if (!pathname.includes('/cuenta/chat-sara')) {
+      router.push(`/${locale}/login`)
+    }
   }
 
   const handleSearch = (e: React.FormEvent) => {

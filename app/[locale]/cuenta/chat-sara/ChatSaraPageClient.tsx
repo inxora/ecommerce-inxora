@@ -691,90 +691,78 @@ export function ChatSaraPageClient({
         >
           {!isLoggedIn ? (
             /* ── Pantalla de bienvenida (no autenticado) ── */
-            <div className="flex flex-col items-center justify-center h-full py-8 px-6 gap-5 max-w-2xl mx-auto w-full">
-              {/* Header */}
+            <div className="flex flex-col items-center justify-center h-full px-6 py-8 gap-6">
+              {/* Título */}
               <div className="text-center">
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#13A0D8] mb-1">Asistente industrial IA</p>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Chatea con Sara Xora</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Inicia sesión para cotizar y gestionar tus pedidos industriales.</p>
               </div>
 
-              {/* Grid central: cards + Sara + card */}
-              <div className="w-full hidden sm:grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
-                {/* Cards izquierda */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">⚡</span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Cotizaciones en minutos</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Envía tu lista y recibe precios consolidados al instante.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">💬</span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Historial guardado</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Retoma cualquier cotización desde donde la dejaste.</p>
-                    </div>
-                  </div>
+              {/* Desktop: grid con Sara al centro, cards arriba/izquierda/derecha */}
+              <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] grid-rows-[auto_auto_auto] gap-4 place-items-center">
+
+                {/* Fila 1 */}
+                <div />
+                {/* Card arriba (centro) */}
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-52">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">💬</span>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Historial de cotizaciones</p>
+                </div>
+                <div />
+
+                {/* Fila 2: card izq · Sara · card der */}
+                {/* Card izquierda */}
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-48 justify-end">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">⚡</span>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Cotizaciones rápidas</p>
                 </div>
 
-                {/* Sara centrada */}
-                <div className="flex justify-center">
-                  <div className="w-52 h-64 rounded-2xl overflow-hidden ring-2 ring-[#13A0D8]/30 shadow-xl shrink-0">
-                    <Image
-                      src="/sara-pose2.png"
-                      alt="Sara Xora"
-                      width={208}
-                      height={256}
-                      className="w-full h-full object-cover object-center"
-                      unoptimized
-                      priority
-                    />
-                  </div>
+                {/* Sara */}
+                <div className="w-52 h-64 rounded-2xl overflow-hidden ring-2 ring-[#13A0D8]/30 shadow-xl shrink-0 mx-4">
+                  <Image src="/sara-pose2.png" alt="Sara Xora" width={208} height={256} className="w-full h-full object-cover object-center" unoptimized priority />
                 </div>
 
                 {/* Card derecha */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">🕐</span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Disponible 24/7</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sara responde consultas técnicas a cualquier hora del día.</p>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-48">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">🕐</span>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Disponible 24/7</p>
                 </div>
+
+                {/* Fila 3: botón centrado */}
+                <div />
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="mt-2 w-52 py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
+                >
+                  Iniciar sesión / Registrarse
+                </button>
+                <div />
               </div>
 
-              {/* Versión mobile: Sara + cards apiladas */}
-              <div className="sm:hidden flex flex-col items-center gap-4 w-full">
+              {/* Mobile: Sara arriba, cards y botón apilados */}
+              <div className="sm:hidden flex flex-col items-center gap-4 w-full max-w-xs">
                 <div className="w-44 h-56 rounded-2xl overflow-hidden ring-2 ring-[#13A0D8]/30 shadow-xl">
                   <Image src="/sara-pose2.png" alt="Sara Xora" width={176} height={224} className="w-full h-full object-cover object-center" unoptimized priority />
                 </div>
-                <div className="flex flex-col gap-3 w-full">
-                  {[
-                    { icon: '⚡', title: 'Cotizaciones en minutos', desc: 'Envía tu lista y recibe precios consolidados al instante.' },
-                    { icon: '💬', title: 'Historial guardado', desc: 'Retoma cualquier cotización desde donde la dejaste.' },
-                    { icon: '🕐', title: 'Disponible 24/7', desc: 'Sara responde consultas técnicas a cualquier hora del día.' },
-                  ].map(({ icon, title, desc }) => (
-                    <div key={title} className="flex items-start gap-3 bg-white dark:bg-slate-800 rounded-xl px-3 py-3 border border-slate-100 dark:border-slate-700 shadow-sm">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8] text-sm">{icon}</span>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-white">{title}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {[
+                  { icon: '⚡', title: 'Cotizaciones rápidas' },
+                  { icon: '💬', title: 'Historial de cotizaciones' },
+                  { icon: '🕐', title: 'Disponible 24/7' },
+                ].map(({ icon, title }) => (
+                  <div key={title} className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-full">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">{icon}</span>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">{title}</p>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="w-full py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
+                >
+                  Iniciar sesión / Registrarse
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setAuthModalOpen(true)}
-                className="w-full max-w-xs py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
-              >
-                Iniciar sesión / Registrarse
-              </button>
             </div>
           ) : !selectedSessionId && messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[320px] text-center max-w-sm mx-auto px-4 py-6">

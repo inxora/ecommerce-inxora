@@ -434,14 +434,14 @@ export default function HomeClient({
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 lg:gap-6">
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 sm:gap-4 lg:gap-6">
             {(categories.slice(0, 8)).map((category) => (
               <Link
                 key={category.id}
                 href={buildCategoryUrlFromObject(category, locale)}
-                className="group flex flex-col items-center gap-3 cursor-pointer"
+                className="group flex flex-col items-center gap-2 sm:gap-3 cursor-pointer"
               >
-                <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-inxora-blue transition-all duration-200 shadow-sm group-hover:shadow-md p-3">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-inxora-blue transition-all duration-200 shadow-sm group-hover:shadow-md p-2 sm:p-3">
                   {category.logo_url ? (
                     <Image
                       src={category.logo_url}
@@ -707,19 +707,19 @@ export default function HomeClient({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header navy con foto de Sara */}
-            <div className="relative bg-[#171D4C] px-6 pt-8 pb-24 text-white overflow-hidden">
+            <div className="relative bg-[#171D4C] px-6 pt-7 pb-16 sm:pb-24 text-white overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-[#171D4C] via-[#1A3A6B] to-[#13A0D8]/40" />
-              <div className="relative z-10">
+              <div className="relative z-10 pr-24 sm:pr-28">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#88D4E4] mb-2">Asistente Industrial IA · INXORA</p>
-                <h2 id="welcome-modal-title" className="text-xl sm:text-2xl font-extrabold leading-snug">
+                <h2 id="welcome-modal-title" className="text-lg sm:text-2xl font-extrabold leading-snug">
                   Bienvenido a INXORA
                 </h2>
-                <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-sm">
-                  Le presentamos a <strong className="text-[#88D4E4]">Sara Xora</strong>, nuestra inteligencia artificial especializada en suministros industriales, disponible para asistirle en todo momento.
+                <p className="mt-2 text-xs sm:text-sm text-white/80 leading-relaxed">
+                  Le presentamos a <strong className="text-[#88D4E4]">Sara Xora</strong>, nuestra IA especializada en suministros industriales.
                 </p>
               </div>
               {/* Imagen de Sara flotante */}
-              <div className="absolute right-0 bottom-0 h-40 w-32 overflow-hidden pointer-events-none">
+              <div className="absolute right-0 bottom-0 h-32 w-24 sm:h-40 sm:w-32 overflow-hidden pointer-events-none">
                 <Image
                   src="/sara-pose2.png"
                   alt="Sara Xora"
@@ -747,17 +747,17 @@ export default function HomeClient({
                 {[
                   {
                     icon: '⚡',
-                    title: 'Cotizaciones en minutos, no en días',
+                    title: 'Cotizaciones rápidas para compras industriales',
                     desc: 'Envíe su lista de requerimientos y reciba precios consolidados con IGV incluido al instante.',
                   },
                   {
                     icon: '🔒',
-                    title: 'Proveedores verificados y trazabilidad total',
+                    title: 'Red de proveedores industriales verificados',
                     desc: 'Cada orden incluye factura electrónica, guía de remisión y certificados de calidad.',
                   },
                   {
                     icon: '💳',
-                    title: 'Financiamiento sobre orden de compra',
+                    title: 'Financiamiento para órdenes de compra',
                     desc: 'Reciba sus materiales hoy y complete el pago cuando su operación genere el flujo necesario.',
                   },
                 ].map(({ icon, title, desc }) => (
@@ -778,13 +778,13 @@ export default function HomeClient({
                 >
                   Cotizar con Sara Xora →
                 </Link>
-                <button
-                  type="button"
+                <Link
+                  href={`/${locale}/catalogo`}
                   onClick={() => setWelcomeOpen(false)}
-                  className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="flex-1 text-center py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Explorar primero
-                </button>
+                </Link>
               </div>
             </div>
           </div>
