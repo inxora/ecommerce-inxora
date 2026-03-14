@@ -202,6 +202,26 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
           <p className="text-xs text-blue-200 text-center md:text-left">
             © 2025 INXORA. Todos los derechos reservados.
           </p>
+          <p className="text-xs text-blue-200/70 text-center md:text-right">
+            Elaborado por{' '}
+            <a
+              href="https://www.linkedin.com/in/ruth-pe%C3%B1a-valdez-65604a27b/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors underline underline-offset-2"
+            >
+              Ruth Peña
+            </a>
+            {' '}y{' '}
+            <a
+              href="https://www.linkedin.com/in/jefferson-gutierrez-urbizagastegui04/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors underline underline-offset-2"
+            >
+              Jefferson Gutierrez
+            </a>
+          </p>
         </div>
       </div>
     </footer>
