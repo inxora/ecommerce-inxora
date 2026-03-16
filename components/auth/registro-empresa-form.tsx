@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { clienteApi } from '@/lib/api/cliente-api'
-import { ApiError } from '@/lib/api/client'
+import { ApiError, apiClient } from '@/lib/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Building2,
   CheckCircle2,
@@ -31,6 +38,7 @@ interface RegistroEmpresaFormProps {
 }
 
 type RucStatus = 'idle' | 'consulting' | 'valid' | 'invalid'
+type Rubro = { id: number; nombre: string; activo?: boolean }
 
 interface ContactoForm {
   uid: string
@@ -74,6 +82,22 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
   const [razonSocial, setRazonSocial] = useState('')
   const latestRucRef = useRef('')
 
+  // — Rubros —
+  const [rubros, setRubros] = useState<Rubro[]>([])
+  const [idRubro, setIdRubro] = useState<number | ''>('')
+
+  useEffect(() => {
+    apiClient<{ success?: boolean; data?: Rubro[] }>('/api/rubros/?limit=200')
+      .then((res) => {
+        const list = Array.isArray((res as { data?: Rubro[] }).data)
+          ? (res as { data: Rubro[] }).data
+          : []
+        const active = list.filter((r) => r.activo !== false)
+        setRubros(active)
+      })
+      .catch(() => setRubros([]))
+  }, [])
+
   // — Password —
   const [password, setPassword] = useState('')
   const [confirmPw, setConfirmPw] = useState('')
@@ -87,6 +111,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successRazonSocial, setSuccessRazonSocial] = useState<string | null>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
 
   // Auto-consult RUC on 11 digits
   useEffect(() => {
@@ -143,8 +168,10 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
 
   // — Global validity —
   const isFormValid = () =>
-    rucStatus === 'valid' &&
-    !!razonSocial &&
+    ruc.length === 11 &&
+    rucStatus !== 'consulting' &&
+    !!razonSocial.trim() &&
+    idRubro !== '' &&
     password.length >= 8 &&
     password === confirmPw &&
     contactos.every(isContactoValid)
@@ -174,7 +201,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
         correo_contacto_principal: principal.correo.trim().toLowerCase(),
         telefono_contacto_principal: principal.telefono.trim(),
         contrasena: password,
-        id_rubro: 1,
+        id_rubro: idRubro as number,
         id_pais: 1,
         id_forma_pago: 1,
         activo: true,
@@ -199,9 +226,14 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
         setSubmitError(res.message || 'Error al registrar la empresa')
       }
     } catch (e) {
-      setSubmitError(
-        e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Error al registrar la empresa',
-      )
+      if (e instanceof ApiError) {
+        const detail = e.detail
+        const msg = typeof detail === 'string' ? detail : detail?.message ?? e.message
+        setSubmitError(msg)
+      } else {
+        setSubmitError(e instanceof Error ? e.message : 'Error al registrar la empresa')
+      }
+      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
     } finally {
       setSubmitting(false)
     }
@@ -230,17 +262,9 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
     )
   }
 
-  const formDisabled = rucStatus !== 'valid'
-
   // ─── Form ─────────────────────────────────────────────────────────────────
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {submitError && (
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
-          {submitError}
-        </div>
-      )}
-
       {/* ══ Sección 1: Datos de la empresa ══════════════════════════════════ */}
       <div className="space-y-4">
         <SectionHeader icon={<Building2 className="h-4 w-4" />} title="Datos de la empresa" />
@@ -275,21 +299,42 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
           {rucError && <p className="text-xs text-red-600 dark:text-red-400">{rucError}</p>}
         </div>
 
-        {/* Razón Social */}
-        {rucStatus === 'valid' && razonSocial && (
-          <div className="space-y-1.5">
-            <Label htmlFor="razon-social">Razón Social</Label>
-            <Input
-              id="razon-social"
-              value={razonSocial}
-              readOnly
-              className="bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-gray-700 dark:text-gray-300 cursor-default"
-            />
-          </div>
-        )}
+        {/* Razón Social — editable, se auto-rellena al validar RUC */}
+        <div className="space-y-1.5">
+          <Label htmlFor="razon-social">Razón Social</Label>
+          <Input
+            id="razon-social"
+            value={razonSocial}
+            onChange={(e) => setRazonSocial(e.target.value)}
+            placeholder="Nombre o razón social de la empresa"
+            className={cn(
+              rucStatus === 'valid' && razonSocial &&
+                'border-green-300 dark:border-green-700',
+            )}
+          />
+        </div>
 
-        {/* Contraseña — deshabilitada hasta RUC válido */}
-        <fieldset disabled={formDisabled} className="space-y-4">
+        {/* Rubro */}
+        <div className="space-y-1.5">
+          <Label htmlFor="rubro-empresa">Rubro</Label>
+          <Select
+            value={idRubro === '' ? '' : String(idRubro)}
+            onValueChange={(v) => setIdRubro(Number(v))}
+          >
+            <SelectTrigger id="rubro-empresa">
+              <SelectValue placeholder="Seleccione el rubro de la empresa" />
+            </SelectTrigger>
+            <SelectContent>
+              {rubros.map((r) => (
+                <SelectItem key={r.id} value={String(r.id)}>
+                  {r.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="pw-empresa">Contraseña</Label>
             <div className="relative">
@@ -322,11 +367,11 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
             </div>
             {cpError && <p className="text-xs text-red-600 dark:text-red-400">{cpError}</p>}
           </div>
-        </fieldset>
+        </div>
       </div>
 
       {/* ══ Sección 2: Contactos ═════════════════════════════════════════════ */}
-      <fieldset disabled={formDisabled} className="space-y-4">
+      <div className="space-y-4">
         <SectionHeader icon={<User className="h-4 w-4" />} title="Contactos" />
 
         {contactos.map((contacto, index) => {
@@ -445,7 +490,17 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
           <Plus className="h-4 w-4" />
           Agregar otro contacto
         </button>
-      </fieldset>
+      </div>
+
+      {/* Error de envío — visible junto al botón */}
+      {submitError && (
+        <div
+          ref={errorRef}
+          className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm"
+        >
+          {submitError}
+        </div>
+      )}
 
       {/* Submit */}
       <Button type="submit" className="w-full" disabled={submitting || !isFormValid()}>

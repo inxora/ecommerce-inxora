@@ -132,9 +132,27 @@ export async function apiClient<T>(
           const errorText = await response.text()
           if (errorText) {
             try {
-              const errorJson = JSON.parse(errorText) as { message?: string; error?: string; detail?: { message?: string; skus_invalidos?: number[] } }
-              errorMessage = errorJson.message || errorJson.error || errorText
-              if (errorJson.detail) errorDetail = errorJson.detail
+              const errorJson = JSON.parse(errorText) as {
+                message?: string
+                error?: string
+                detail?: string | { message?: string; skus_invalidos?: number[] } | Array<{ msg?: string; message?: string }>
+              }
+              if (errorJson.message) {
+                errorMessage = errorJson.message
+              } else if (errorJson.error) {
+                errorMessage = errorJson.error
+              } else if (typeof errorJson.detail === 'string') {
+                // FastAPI devuelve { detail: "mensaje de error" }
+                errorMessage = errorJson.detail
+              } else if (Array.isArray(errorJson.detail)) {
+                // Pydantic validation errors: [{ msg: "...", loc: [...] }]
+                errorMessage = errorJson.detail.map((d) => d.msg || d.message || '').filter(Boolean).join(', ') || errorText
+              } else if (errorJson.detail?.message) {
+                errorMessage = errorJson.detail.message
+                errorDetail = errorJson.detail as { message?: string; skus_invalidos?: number[] }
+              } else {
+                errorMessage = errorText
+              }
             } catch {
               errorMessage = errorText
             }
