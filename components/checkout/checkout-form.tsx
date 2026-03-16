@@ -810,7 +810,7 @@ export function CheckoutForm() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={openAuthModal}
+                  onClick={() => openAuthModal()}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-200 text-xs font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                 >
                   Iniciar sesión
