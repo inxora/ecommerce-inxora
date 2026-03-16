@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import { apiClient } from '@/lib/api/client'
 import {
   Dialog,
@@ -21,27 +23,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Mail, Lock, LogIn, User, FileText, Phone } from 'lucide-react'
+import { FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-react'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
+type Mode = 'login' | 'register'
 
-type ChatAuthModalProps = {
-  open: boolean
-  locale: string
-  onClose?: () => void
-}
-
-export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
-  const router = useRouter()
+export function AuthModal() {
+  const params = useParams()
+  const locale = (params?.locale as string) ?? 'es'
+  const { isOpen, options, closeAuthModal } = useAuthModal()
   const { login, register, error, clearError } = useClienteAuth()
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+
+  const [mode, setMode] = useState<Mode>('login')
   const [loading, setLoading] = useState(false)
 
-  // Login
+  // Login fields
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
 
-  // Register
+  // Register fields
   const [rubros, setRubros] = useState<Rubro[]>([])
   const [id_rubro, setIdRubro] = useState<number | ''>('')
   const [nombre, setNombre] = useState('')
@@ -52,10 +52,12 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
   const [regPassword, setRegPassword] = useState('')
 
   useEffect(() => {
-    if (!open) return
+    if (!isOpen) return
     clearError()
     setMode('login')
-  }, [open, clearError])
+    setCorreo('')
+    setPassword('')
+  }, [isOpen, clearError])
 
   useEffect(() => {
     apiClient<{ success?: boolean; data?: Rubro[] }>('/api/rubros/?limit=200')
@@ -65,29 +67,18 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
           : []
         const active = list.filter((r) => r.activo !== false)
         setRubros(active)
-        if (active.length > 0 && id_rubro === '') {
-          setIdRubro(active[0].id)
-        }
+        if (active.length > 0 && id_rubro === '') setIdRubro(active[0].id)
       })
       .catch(() => setRubros([]))
   }, [])
 
-  const handleClose = (openState: boolean) => {
-    if (!openState) {
-      if (onClose) {
-        onClose()
-      } else {
-        router.push(`/${locale}`)
-      }
-    }
+  const handleSuccess = () => {
+    closeAuthModal()
+    options.onSuccess?.()
   }
 
-  const onSuccess = () => {
-    if (onClose) {
-      onClose()
-    } else {
-      router.push(`/${locale}/cuenta/chat-sara`)
-    }
+  const handleOpenChange = (open: boolean) => {
+    if (!open) closeAuthModal()
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -95,10 +86,10 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
     clearError()
     setLoading(true)
     try {
-      await login(correo, password)
-      onSuccess()
+      await login(correo.trim().toLowerCase(), password)
+      handleSuccess()
     } catch {
-      // error ya registrado en context
+      // error en context
     } finally {
       setLoading(false)
     }
@@ -120,62 +111,73 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
         id_pais: 1,
         id_rubro: rubroId ?? rubros[0]?.id,
       })
-      onSuccess()
+      handleSuccess()
     } catch {
-      // error ya registrado en context
+      // error en context
     } finally {
       setLoading(false)
     }
   }
 
+  const switchMode = (next: Mode) => {
+    clearError()
+    setMode(next)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleClose} modal>
-      <DialogContent
-        className="max-w-md max-h-[90vh] overflow-y-auto"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => {
-          e.preventDefault()
-          handleClose(false)
-        }}
-      >
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         {mode === 'login' ? (
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
-                <LogIn className="h-6 w-6" />
+                <LogIn className="h-5 w-5" />
                 Iniciar sesión
               </DialogTitle>
               <DialogDescription>
-                Inicia sesión para chatear con Sara Xora
+                Ingresa con tu correo para continuar
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleLogin} className="space-y-4 mt-2">
+
+            <form onSubmit={handleLogin} className="space-y-4 mt-1">
               {error && (
                 <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
                   {error}
                 </div>
               )}
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-correo">Correo electrónico</Label>
+                <Label htmlFor="auth-correo">Correo electrónico</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="chat-modal-correo"
+                    id="auth-correo"
                     type="email"
                     placeholder="tu@correo.com"
                     value={correo}
                     onChange={(e) => setCorreo(e.target.value)}
                     className="pl-10"
                     required
+                    autoFocus
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-password">Contraseña</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="auth-password">Contraseña</Label>
+                  <Link
+                    href={`/${locale}/forgot-password`}
+                    onClick={() => closeAuthModal()}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="chat-modal-password"
+                    id="auth-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -184,18 +186,17 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
                   />
                 </div>
               </div>
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
+
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                 ¿No tienes cuenta?{' '}
                 <button
                   type="button"
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                  onClick={() => {
-                    setMode('register')
-                    clearError()
-                  }}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  onClick={() => switchMode('register')}
                 >
                   Regístrate
                 </button>
@@ -206,45 +207,48 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
-                <User className="h-6 w-6" />
+                <User className="h-5 w-5" />
                 Crear cuenta
               </DialogTitle>
               <DialogDescription>
-                Regístrate para chatear con Sara Xora
+                Regístrate para continuar (persona natural)
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleRegister} className="space-y-4 mt-2">
+
+            <form onSubmit={handleRegister} className="space-y-4 mt-1">
               {error && (
                 <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
                   {error}
                 </div>
               )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="chat-modal-nombre">Nombre</Label>
+                  <Label htmlFor="auth-nombre">Nombre</Label>
                   <Input
-                    id="chat-modal-nombre"
+                    id="auth-nombre"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="chat-modal-apellidos">Apellidos</Label>
+                  <Label htmlFor="auth-apellidos">Apellidos</Label>
                   <Input
-                    id="chat-modal-apellidos"
+                    id="auth-apellidos"
                     value={apellidos}
                     onChange={(e) => setApellidos(e.target.value)}
                     required
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-documento">DNI / Documento</Label>
+                <Label htmlFor="auth-documento">DNI / Documento</Label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="chat-modal-documento"
+                    id="auth-documento"
                     value={documento_personal}
                     onChange={(e) => setDocumentoPersonal(e.target.value)}
                     className="pl-10"
@@ -254,12 +258,13 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-reg-correo">Correo electrónico</Label>
+                <Label htmlFor="auth-reg-correo">Correo electrónico</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="chat-modal-reg-correo"
+                    id="auth-reg-correo"
                     type="email"
                     value={regCorreo}
                     onChange={(e) => setRegCorreo(e.target.value)}
@@ -268,12 +273,13 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-telefono">Teléfono (opcional)</Label>
+                <Label htmlFor="auth-telefono">Teléfono (opcional)</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="chat-modal-telefono"
+                    id="auth-telefono"
                     type="tel"
                     value={telefono}
                     onChange={(e) => setTelefono(e.target.value)}
@@ -281,14 +287,15 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-rubro">Rubro / Sector</Label>
+                <Label htmlFor="auth-rubro">Rubro / Sector</Label>
                 <Select
                   value={id_rubro === '' ? undefined : String(id_rubro)}
                   onValueChange={(v) => setIdRubro(v === '' ? '' : Number(v))}
                   required
                 >
-                  <SelectTrigger id="chat-modal-rubro" className="w-full">
+                  <SelectTrigger id="auth-rubro" className="w-full">
                     <SelectValue placeholder="Selecciona tu rubro" />
                   </SelectTrigger>
                   <SelectContent>
@@ -300,12 +307,13 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="chat-modal-reg-password">Contraseña</Label>
+                <Label htmlFor="auth-reg-password">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    id="chat-modal-reg-password"
+                    id="auth-reg-password"
                     type="password"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
@@ -315,18 +323,17 @@ export function ChatAuthModal({ open, locale, onClose }: ChatAuthModalProps) {
                   />
                 </div>
               </div>
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creando cuenta...' : 'Registrarme'}
               </Button>
+
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                 ¿Ya tienes cuenta?{' '}
                 <button
                   type="button"
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                  onClick={() => {
-                    setMode('login')
-                    clearError()
-                  }}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  onClick={() => switchMode('login')}
                 >
                   Iniciar sesión
                 </button>

@@ -26,6 +26,7 @@ import Link from 'next/link'
 import { CategoriesSidebar } from '@/components/layout/categories-sidebar'
 import { CategoriaNavegacion } from '@/lib/services/categories.service'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import { cn } from '@/lib/utils'
 import { BannerSlot } from '@/components/banner/banner-slot'
 import type { Banner } from '@/lib/types'
@@ -38,6 +39,7 @@ interface HeaderProps {
 
 export function Header({ categories = [], bannersHeaderStrip = [], locale: localeProp }: HeaderProps) {
   const { isLoggedIn, cliente, logout } = useClienteAuth()
+  const { openAuthModal } = useAuthModal()
   const { getItemsCount, clearCart } = useCart()
   const router = useRouter()
   const { currency, setCurrency } = useCurrency()
@@ -53,9 +55,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const handleLogout = () => {
     logout()
     clearCart()
-    if (!pathname.includes('/cuenta/chat-sara')) {
-      router.push(`/${locale}/login`)
-    }
+    router.push(`/${locale}`)
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -138,14 +138,12 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
         </>
       ) : (
         <>
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/${locale}/login`}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
-            >
-              <User className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              Iniciar sesión
-            </Link>
+          <DropdownMenuItem
+            onSelect={() => openAuthModal()}
+            className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
+          >
+            <User className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            Iniciar sesión
           </DropdownMenuItem>
 
           <DropdownMenuItem asChild>

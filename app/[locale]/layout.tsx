@@ -3,6 +3,8 @@ import { getMessages } from 'next-intl/server'
 import { CurrencyProviderWrapper } from '@/components/providers/currency-provider-wrapper'
 import { CartProvider } from '@/components/providers/cart-provider'
 import { ClienteAuthProvider } from '@/lib/contexts/cliente-auth-context'
+import { AuthModalProvider } from '@/lib/contexts/auth-modal-context'
+import { AuthModal } from '@/components/auth/auth-modal'
 import { Header } from '@/components/layout/header'
 import { ConditionalFooter } from '@/components/layout/conditional-footer'
 import { FloatWidgetsWrapper } from '@/components/layout/float-widgets-wrapper'
@@ -127,6 +129,7 @@ export default async function LocaleLayout({
       <CurrencyProviderWrapper>
         <CartProvider>
           <ClienteAuthProvider>
+          <AuthModalProvider>
           <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
 
           <main>
@@ -135,6 +138,8 @@ export default async function LocaleLayout({
 
           <ConditionalFooter bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
           <FloatWidgetsWrapper />
+          <AuthModal />
+          </AuthModalProvider>
           </ClienteAuthProvider>
         </CartProvider>
       </CurrencyProviderWrapper>
@@ -150,10 +155,13 @@ export default async function LocaleLayout({
           <CurrencyProviderWrapper>
             <CartProvider>
               <ClienteAuthProvider>
+                <AuthModalProvider>
                 <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
                 <main>{children}</main>
                 <ConditionalFooter bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
                 <FloatWidgetsWrapper />
+                <AuthModal />
+                </AuthModalProvider>
               </ClienteAuthProvider>
             </CartProvider>
           </CurrencyProviderWrapper>
@@ -166,10 +174,13 @@ export default async function LocaleLayout({
         <CurrencyProviderWrapper>
           <CartProvider>
             <ClienteAuthProvider>
+              <AuthModalProvider>
               <Header categories={categories} bannersHeaderStrip={bannersHeaderStrip} locale={validLocale} />
               <main>{children}</main>
               <ConditionalFooter bannersFooterStrip={bannersFooterStrip} locale={validLocale} />
               <FloatWidgetsWrapper />
+              <AuthModal />
+              </AuthModalProvider>
             </ClienteAuthProvider>
           </CartProvider>
         </CurrencyProviderWrapper>

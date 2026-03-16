@@ -23,7 +23,7 @@ import type {
 } from '@/lib/services/sara-chat.service'
 import { formatPhoneForWhatsApp } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { ChatAuthModal } from '@/components/auth/chat-auth-modal'
+import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import {
   getDriveAccessToken,
   openDrivePicker,
@@ -118,7 +118,7 @@ export function ChatSaraPageClient({
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [driveLoading, setDriveLoading] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const { openAuthModal } = useAuthModal()
   const listRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const fileInputDocRef = useRef<HTMLInputElement>(null)
@@ -573,7 +573,7 @@ export function ChatSaraPageClient({
                 </p>
                 <button
                   type="button"
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={() => openAuthModal()}
                   className="text-[#13A0D8] text-sm font-semibold hover:underline focus:outline-none"
                 >
                   Iniciar sesión
@@ -732,7 +732,7 @@ export function ChatSaraPageClient({
                 <div />
                 <button
                   type="button"
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={() => openAuthModal()}
                   className="mt-2 w-52 py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
                 >
                   Iniciar sesión / Registrarse
@@ -757,7 +757,7 @@ export function ChatSaraPageClient({
                 ))}
                 <button
                   type="button"
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={() => openAuthModal()}
                   className="w-full py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
                 >
                   Iniciar sesión / Registrarse
@@ -1023,11 +1023,6 @@ export function ChatSaraPageClient({
           </div>
         </div>
       </main>
-
-      {/* Modal auth */}
-      {authModalOpen && (
-        <ChatAuthModal open={authModalOpen} locale={locale} onClose={() => setAuthModalOpen(false)} />
-      )}
 
       {/* Modal compartir: estilo Gemini */}
       {shareModalSessionId && (

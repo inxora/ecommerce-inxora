@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import { useCheckoutShipping } from '@/lib/contexts/checkout-shipping-context'
 import { pedidosService, ApiError, type CreatePedidoBody } from '@/lib/services/pedidos.service'
 import { UbigeoService, type Ciudad, type Provincia, type Distrito } from '@/lib/services/ubigeo.service'
@@ -241,6 +242,7 @@ export function CheckoutForm() {
   const { toast } = useToast()
   const { items, clearCart } = useCart()
   const { isLoggedIn, cliente, token, logout } = useClienteAuth()
+  const { openAuthModal } = useAuthModal()
   const { shipping, setCheckoutShipping } = useCheckoutShipping()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [ciudades, setCiudades] = useState<Ciudad[]>([])
@@ -589,7 +591,7 @@ export function CheckoutForm() {
       description: 'Tu sesión venció. Inicia sesión nuevamente.',
       variant: 'destructive',
     })
-    setTimeout(() => router.push(`/${locale}/login?redirect=checkout`), 1500)
+    setTimeout(() => openAuthModal(), 1500)
   }, [logout, toast, router, locale])
 
   // Reset pedido al cambiar de método de pago (no limpiar formToken: el widget permanece montado
@@ -806,12 +808,13 @@ export function CheckoutForm() {
                 Necesitas una cuenta para finalizar tu pedido y tener seguimiento del mismo.
               </p>
               <div className="flex flex-wrap gap-2">
-                <Link
-                  href={`/${locale}/login?redirect=checkout`}
+                <button
+                  type="button"
+                  onClick={openAuthModal}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-200 text-xs font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                 >
                   Iniciar sesión
-                </Link>
+                </button>
                 <Link
                   href={`/${locale}/registro?redirect=checkout`}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition-colors shadow-sm"
