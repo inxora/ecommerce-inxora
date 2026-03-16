@@ -9,6 +9,46 @@ export interface ClienteInfo {
   correo: string | null
 }
 
+export interface ConsultarRucResponse {
+  success: boolean
+  data: {
+    ruc: string
+    razon_social: string
+    [key: string]: unknown
+  }
+}
+
+export interface RegistroEmpresaPayload {
+  ruc: string
+  razon_social: string
+  nombre_contacto: string
+  correo: string
+  telefono: string
+  password: string
+}
+
+export interface ContactoPayload {
+  nombre_completo: string
+  correo: string
+  telefono: string
+  es_contacto_principal: boolean
+  roles: number[]
+}
+
+export interface RegistroEmpresaV2Payload {
+  documento_empresa: string
+  razon_social: string
+  nombre_contacto_principal: string
+  correo_contacto_principal: string
+  telefono_contacto_principal: string
+  contrasena: string
+  id_rubro: number
+  id_pais: number
+  id_forma_pago: number
+  activo: boolean
+  contactos: ContactoPayload[]
+}
+
 export interface LoginResponse {
   success: boolean
   token: string
@@ -56,6 +96,53 @@ export const clienteApi = {
         id_rubro: payload.id_rubro ?? null,
       }),
       timeout: 30000, // 30s: SP crea cliente y puede tardar
+    })
+    return res
+  },
+
+  async consultarRuc(ruc: string): Promise<ConsultarRucResponse> {
+    const res = await apiClient<ConsultarRucResponse>(`${BASE}/consultar-ruc/${ruc}`, {
+      timeout: 15000,
+    })
+    return res
+  },
+
+  async registroEmpresa(payload: RegistroEmpresaPayload): Promise<{ success: boolean; message: string; token?: string; cliente?: ClienteInfo }> {
+    const res = await apiClient<{ success: boolean; message: string; token?: string; cliente?: ClienteInfo }>(`${BASE}/`, {
+      method: 'POST',
+      body: JSON.stringify({
+        id_tipo_cliente: 2,
+        documento_empresa: payload.ruc,
+        razon_social: payload.razon_social,
+        nombre: payload.nombre_contacto.trim(),
+        apellidos: 'N/A',
+        correo: payload.correo.trim().toLowerCase(),
+        telefono: payload.telefono.trim(),
+        id_rubro: 1,
+        id_pais: 1,
+        id_forma_pago: 1,
+        activo: true,
+        contrasena: payload.password,
+        contactos: [
+          {
+            nombre_completo: payload.nombre_contacto.trim(),
+            correo: payload.correo.trim().toLowerCase(),
+            telefono: payload.telefono.trim(),
+            es_contacto_principal: true,
+            roles: [1],
+          },
+        ],
+      }),
+      timeout: 30000,
+    })
+    return res
+  },
+
+  async registroEmpresaV2(payload: RegistroEmpresaV2Payload): Promise<{ success: boolean; message: string; token?: string; cliente?: ClienteInfo }> {
+    const res = await apiClient<{ success: boolean; message: string; token?: string; cliente?: ClienteInfo }>(`${BASE}/crear-empresa`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      timeout: 30000,
     })
     return res
   },

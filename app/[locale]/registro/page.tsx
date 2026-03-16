@@ -16,9 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { User, Mail, Lock, Phone, FileText } from 'lucide-react'
+import { Building2, User, Mail, Lock, Phone, FileText } from 'lucide-react'
+import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
+type TipoCliente = 'natural' | 'empresa'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -31,6 +33,9 @@ export default function RegistroPage() {
     : redirectParam === 'checkout'
       ? `/${locale}/checkout`
       : `/${locale}`
+
+  const [tipoCliente, setTipoCliente] = useState<TipoCliente>('natural')
+
   const { register, error, clearError } = useClienteAuth()
   const [rubros, setRubros] = useState<Rubro[]>([])
   const [id_rubro, setIdRubro] = useState<number | ''>('')
@@ -71,7 +76,7 @@ export default function RegistroPage() {
         telefono: telefono.trim() || undefined,
         password,
         id_pais: 1,
-        id_rubro: rubroId ?? (rubros[0]?.id),
+        id_rubro: rubroId ?? rubros[0]?.id,
       })
       router.push(redirectTo)
     } catch {
@@ -83,129 +88,175 @@ export default function RegistroPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl">
+      <Card className={`w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl transition-all duration-300 ${tipoCliente === 'empresa' ? 'max-w-lg' : 'max-w-md'}`}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <User className="h-6 w-6" />
+            {tipoCliente === 'empresa' ? (
+              <Building2 className="h-6 w-6" />
+            ) : (
+              <User className="h-6 w-6" />
+            )}
             Crear cuenta
           </CardTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Regístrate para continuar con tu compra (persona natural)
+            Regístrate para continuar con tu compra
           </p>
+
+          {/* Selector de tipo de cliente */}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setTipoCliente('natural')}
+              className={[
+                'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                tipoCliente === 'natural'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500',
+              ].join(' ')}
+            >
+              <User className="h-4 w-4 shrink-0" />
+              Persona Natural
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoCliente('empresa')}
+              className={[
+                'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                tipoCliente === 'empresa'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500',
+              ].join(' ')}
+            >
+              <Building2 className="h-4 w-4 shrink-0" />
+              Empresa
+            </button>
+          </div>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
-                {error}
+          {tipoCliente === 'empresa' ? (
+            <RegistroEmpresaForm
+              locale={locale}
+              redirectTo={redirectTo}
+              redirectParam={redirectParam}
+            />
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
+                  {error}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">Nombre</Label>
+                  <Input
+                    id="nombre"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="apellidos">Apellidos</Label>
+                  <Input
+                    id="apellidos"
+                    value={apellidos}
+                    onChange={(e) => setApellidos(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nombre">Nombre</Label>
-                <Input
-                  id="nombre"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  required
-                />
+                <Label htmlFor="documento_personal">DNI / Documento</Label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="documento_personal"
+                    value={documento_personal}
+                    onChange={(e) => setDocumentoPersonal(e.target.value)}
+                    className="pl-10"
+                    placeholder="8 dígitos"
+                    minLength={8}
+                    required
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="apellidos">Apellidos</Label>
-                <Input
-                  id="apellidos"
-                  value={apellidos}
-                  onChange={(e) => setApellidos(e.target.value)}
+                <Label htmlFor="correo">Correo electrónico</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="correo"
+                    type="email"
+                    value={correo}
+                    onChange={(e) => setCorreo(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefono">Teléfono (opcional)</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="telefono"
+                    type="tel"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="id_rubro">Rubro / Sector</Label>
+                <Select
+                  value={id_rubro === '' ? undefined : String(id_rubro)}
+                  onValueChange={(v) => setIdRubro(v === '' ? '' : Number(v))}
                   required
-                />
+                >
+                  <SelectTrigger id="id_rubro" className="w-full">
+                    <SelectValue placeholder="Selecciona tu rubro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rubros.map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="documento_personal">DNI / Documento</Label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="documento_personal"
-                  value={documento_personal}
-                  onChange={(e) => setDocumentoPersonal(e.target.value)}
-                  className="pl-10"
-                  placeholder="8 dígitos"
-                  minLength={8}
-                  required
-                />
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    minLength={6}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="correo">Correo electrónico</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="correo"
-                  type="email"
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono (opcional)</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="telefono"
-                  type="tel"
-                  value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="id_rubro">Rubro / Sector</Label>
-              <Select
-                value={id_rubro === '' ? undefined : String(id_rubro)}
-                onValueChange={(v) => setIdRubro(v === '' ? '' : Number(v))}
-                required
-              >
-                <SelectTrigger id="id_rubro" className="w-full">
-                  <SelectValue placeholder="Selecciona tu rubro" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rubros.map((r) => (
-                    <SelectItem key={r.id} value={String(r.id)}>
-                      {r.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  minLength={6}
-                  required
-                />
-              </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creando cuenta...' : 'Registrarme'}
-            </Button>
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              ¿Ya tienes cuenta?{' '}
-              <Link href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam)}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                Iniciar sesión
-              </Link>
-            </p>
-          </form>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Creando cuenta...' : 'Registrarme'}
+              </Button>
+              <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+                ¿Ya tienes cuenta?{' '}
+                <Link
+                  href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam)}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Iniciar sesión
+                </Link>
+              </p>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
