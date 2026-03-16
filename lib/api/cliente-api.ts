@@ -76,7 +76,7 @@ export const clienteApi = {
   async login(body: { correo: string; password: string }): Promise<LoginResponse> {
     const res = await apiClient<LoginResponse>(`${BASE}/login`, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify({ correo: body.correo, contrasena: body.password }),
       timeout: 30000, // 30s: backend puede tardar (SP, BD)
     })
     return res
@@ -91,7 +91,7 @@ export const clienteApi = {
         documento_personal: payload.documento_personal,
         correo: payload.correo,
         telefono: payload.telefono ?? null,
-        password: payload.password,
+        contrasena: payload.password,
         id_pais: payload.id_pais ?? 1,
         id_rubro: payload.id_rubro ?? null,
       }),
