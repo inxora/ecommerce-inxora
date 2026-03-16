@@ -26,7 +26,7 @@ export default function RegistroPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  const redirectParam = searchParams?.get('redirect') || 'checkout'
+  const redirectParam = searchParams?.get('redirect') || '/'
   const locale = (params?.locale as string) ?? 'es'
   const redirectTo = redirectParam.startsWith('/')
     ? redirectParam

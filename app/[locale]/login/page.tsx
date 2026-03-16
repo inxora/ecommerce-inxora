@@ -14,14 +14,14 @@ export default function LoginPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  const redirectParam = searchParams?.get('redirect') || 'checkout'
+  const redirectParam = searchParams?.get('redirect') || '/'
   const locale = (params?.locale as string) ?? 'es'
   const { login, error, clearError, isLoggedIn } = useClienteAuth()
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
-  /** URL de destino tras login: path absoluto (ej. /es/cuenta/chat-sara), 'checkout' → checkout, o inicio */
+  /** URL de destino tras login: path absoluto, 'checkout' → página de checkout, '/' → inicio */
   const redirectTo = redirectParam.startsWith('/')
     ? redirectParam
     : redirectParam === 'checkout'
