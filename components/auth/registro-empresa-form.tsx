@@ -33,8 +33,11 @@ import {
 
 interface RegistroEmpresaFormProps {
   locale: string
-  redirectTo: string
-  redirectParam: string
+  /** Usado en la página /registro. En modal, dejar vacío y usar onSuccess. */
+  redirectTo?: string
+  redirectParam?: string
+  /** Callback para cuando se usa dentro de un modal (reemplaza el router.push). */
+  onSuccess?: () => void
 }
 
 type RucStatus = 'idle' | 'consulting' | 'valid' | 'invalid'
@@ -71,7 +74,7 @@ function isContactoValid(c: ContactoForm): boolean {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: RegistroEmpresaFormProps) {
+export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSuccess }: RegistroEmpresaFormProps) {
   const router = useRouter()
   const { login } = useClienteAuth()
 
@@ -215,12 +218,16 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
       })
 
       if (res.success) {
-        setSuccessRazonSocial(razonSocial)
         try {
           await login(principal.correo.trim().toLowerCase(), password)
-          router.push(redirectTo)
         } catch {
-          // auto-login fallido → mostrar pantalla de éxito con enlace manual
+          // auto-login fallido — continuar igual
+        }
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          setSuccessRazonSocial(razonSocial)
+          router.push(redirectTo ?? '/')
         }
       } else {
         setSubmitError(res.message || 'Error al registrar la empresa')
@@ -252,12 +259,14 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
           <strong className="text-gray-800 dark:text-gray-200">{successRazonSocial}</strong>{' '}
           registrada exitosamente. Ya puede iniciar sesión con su RUC y contraseña.
         </p>
-        <Button
-          onClick={() => router.push(`/${locale}/login?redirect=${encodeURIComponent(redirectParam)}`)}
-          className="w-full"
-        >
-          Ir a iniciar sesión
-        </Button>
+        {!onSuccess && (
+          <Button
+            onClick={() => router.push(`/${locale}/login?redirect=${encodeURIComponent(redirectParam ?? '/')}`)}
+            className="w-full"
+          >
+            Ir a iniciar sesión
+          </Button>
+        )}
       </div>
     )
   }
@@ -514,15 +523,17 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam }: Regis
         )}
       </Button>
 
-      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-        ¿Ya tiene cuenta?{' '}
-        <Link
-          href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam)}`}
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          Iniciar sesión
-        </Link>
-      </p>
+      {!onSuccess && (
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          ¿Ya tiene cuenta?{' '}
+          <Link
+            href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam ?? '/')}`}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Iniciar sesión
+          </Link>
+        </p>
+      )}
     </form>
   )
 }

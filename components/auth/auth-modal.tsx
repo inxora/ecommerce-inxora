@@ -23,10 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-react'
+import { Building2, FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-react'
+import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
 type Mode = 'login' | 'register'
+type TipoRegistro = 'natural' | 'empresa'
 
 export function AuthModal() {
   const params = useParams()
@@ -35,6 +37,7 @@ export function AuthModal() {
   const { login, register, error, clearError } = useClienteAuth()
 
   const [mode, setMode] = useState<Mode>('login')
+  const [tipoRegistro, setTipoRegistro] = useState<TipoRegistro>('natural')
   const [loading, setLoading] = useState(false)
 
   // Login fields
@@ -122,11 +125,12 @@ export function AuthModal() {
   const switchMode = (next: Mode) => {
     clearError()
     setMode(next)
+    setTipoRegistro('natural')
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`max-h-[90vh] overflow-y-auto transition-all duration-300 ${mode === 'register' && tipoRegistro === 'empresa' ? 'max-w-lg' : 'max-w-md'}`}>
         {mode === 'login' ? (
           <>
             <DialogHeader>
@@ -207,14 +211,53 @@ export function AuthModal() {
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
-                <User className="h-5 w-5" />
+                {tipoRegistro === 'empresa' ? <Building2 className="h-5 w-5" /> : <User className="h-5 w-5" />}
                 Crear cuenta
               </DialogTitle>
-              <DialogDescription>
-                Regístrate para continuar (persona natural)
-              </DialogDescription>
+              <DialogDescription>Regístrate para continuar</DialogDescription>
+
+              {/* Selector Persona Natural / Empresa */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { clearError(); setTipoRegistro('natural') }}
+                  className={[
+                    'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                    tipoRegistro === 'natural'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300',
+                  ].join(' ')}
+                >
+                  <User className="h-4 w-4 shrink-0" />
+                  Persona Natural
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { clearError(); setTipoRegistro('empresa') }}
+                  className={[
+                    'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                    tipoRegistro === 'empresa'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300',
+                  ].join(' ')}
+                >
+                  <Building2 className="h-4 w-4 shrink-0" />
+                  Empresa
+                </button>
+              </div>
             </DialogHeader>
 
+            {/* ── Empresa ── */}
+            {tipoRegistro === 'empresa' ? (
+              <div className="mt-1">
+                <RegistroEmpresaForm
+                  locale={locale}
+                  onSuccess={handleSuccess}
+                />
+              </div>
+            ) : (
+
+            /* ── Persona Natural ── */
             <form onSubmit={handleRegister} className="space-y-4 mt-1">
               {error && (
                 <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
@@ -339,6 +382,7 @@ export function AuthModal() {
                 </button>
               </p>
             </form>
+            )}
           </>
         )}
       </DialogContent>
