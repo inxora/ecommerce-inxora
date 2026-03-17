@@ -7,6 +7,10 @@ export interface ClienteInfo {
   nombre: string | null
   apellidos: string | null
   correo: string | null
+  /** 1 = Persona Natural, 2 = Empresa */
+  tipo_cliente?: number | null
+  razon_social?: string | null
+  telefono?: string | null
 }
 
 export interface ConsultarRucResponse {

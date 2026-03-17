@@ -109,6 +109,10 @@ export interface SaraConversacionItem {
   lead_json: { razon_social?: string; nombre_contacto?: string } | null
   created_at: string | null
   updated_at: string | null
+  /** Título personalizado de la conversación (editable por el usuario) */
+  titulo?: string | null
+  /** Texto del primer mensaje del usuario (para usar como título de fallback) */
+  primer_mensaje?: string | null
 }
 
 /** Response de GET /api/chat/conversaciones?id_cliente=... */
@@ -179,6 +183,24 @@ export function isGatewayErrorBody(text: string): boolean {
     t.includes('gateway time-out') ||
     t.includes('bad gateway') ||
     t.includes('service unavailable')
+  )
+}
+
+/**
+ * Renombra una conversación de Sara.
+ * PATCH /api/chat/sesion/{session_id}/titulo
+ */
+export async function renameSaraConversacion(
+  sessionId: string,
+  titulo: string
+): Promise<{ success: boolean; message?: string }> {
+  return apiClient<{ success: boolean; message?: string }>(
+    `${CHAT_BASE}/sesion/${encodeURIComponent(sessionId)}/titulo`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ titulo }),
+      timeout: 10000,
+    }
   )
 }
 
