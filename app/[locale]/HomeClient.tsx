@@ -16,6 +16,7 @@ import { getDisplaySymbol } from '@/lib/constants/currencies';
 import { formatPriceWithThousands } from '@/lib/utils';
 
 const HERO_FALLBACK_IMAGE = '/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg'
+const ID_DISPONIBILIDAD_AGOTADO = 12
 
 interface HomeClientProps {
   locale: string;
@@ -195,11 +196,18 @@ function FeaturedProductsSlider({
                           alt={product.nombre}
                           title={product.nombre}
                           fill
-                          className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+                          className={`object-contain p-4 transition-transform duration-500 ${product.id_disponibilidad !== ID_DISPONIBILIDAD_AGOTADO ? 'group-hover:scale-110' : ''}`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <span className="text-6xl">ðŸ“¦</span>
+                        </div>
+                      )}
+                      {product.id_disponibilidad === ID_DISPONIBILIDAD_AGOTADO && (
+                        <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                          <span className="text-white font-semibold text-base drop-shadow-md px-3 py-1.5 rounded-lg bg-black/30">
+                            Agotado
+                          </span>
                         </div>
                       )}
                       <div className={`absolute top-3 left-3 ${badgeColor} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}>
@@ -224,35 +232,48 @@ function FeaturedProductsSlider({
                       </p>
                     </div>
                   </Link>
-                  {/* Precio y botones - precio mÃ¡s pequeÃ±o, botones siempre visibles */}
+                  {/* Precio y botones */}
                   <div className="p-4 pt-1">
-                    <div className="flex items-end justify-between gap-2 min-h-[52px]">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white truncate" title={getPrecioDisplay(product)}>
-                          {getPrecioDisplay(product)}
-                        </p>
-                        <p className="text-[10px] text-gray-400">Inc. IGV</p>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            addItem({ ...product, precio_venta: getPrecioNumerico(product) }, 1)
-                          }}
-                          className="flex items-center gap-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white text-xs sm:text-sm font-semibold py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl transition-colors shadow-md hover:shadow-lg"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                          Agregar
-                        </button>
-                        <Link
-                          href={getProductUrl(product, locale)}
-                          className="flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-colors shrink-0"
-                          aria-label="Ver producto"
-                        >
-                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </Link>
-                      </div>
-                    </div>
+                    {(() => {
+                      const isAgotado = product.id_disponibilidad === ID_DISPONIBILIDAD_AGOTADO
+                      return (
+                        <div className="flex items-end justify-between gap-2 min-h-[52px]">
+                          <div className="min-w-0 flex-1">
+                            {isAgotado ? (
+                              <p className="text-lg sm:text-xl font-bold text-red-600 dark:text-red-400">Agotado</p>
+                            ) : (
+                              <>
+                                <p className="text-lg sm:text-xl font-bold text-inxora-dark-blue dark:text-white truncate" title={getPrecioDisplay(product)}>
+                                  {getPrecioDisplay(product)}
+                                </p>
+                                <p className="text-[10px] text-gray-400">Inc. IGV</p>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {!isAgotado && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  addItem({ ...product, precio_venta: getPrecioNumerico(product) }, 1)
+                                }}
+                                className="flex items-center gap-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white text-xs sm:text-sm font-semibold py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl transition-colors shadow-md hover:shadow-lg"
+                              >
+                                <ShoppingCart className="w-4 h-4" />
+                                Agregar
+                              </button>
+                            )}
+                            <Link
+                              href={getProductUrl(product, locale)}
+                              className="flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-colors shrink-0"
+                              aria-label="Ver producto"
+                            >
+                              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </Link>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               ))
