@@ -179,7 +179,9 @@ export function ProductInfo({ product }: ProductInfoProps) {
       {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}
       <div className="pt-2 flex items-center gap-2 flex-wrap">
         <div>
-          {product.precio_simbolo != null && product.precio_mostrar != null ? (
+          {isAgotado ? (
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-red-600 dark:text-red-400">Agotado</p>
+          ) : product.precio_simbolo != null && product.precio_mostrar != null ? (
             <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
               {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
             </p>

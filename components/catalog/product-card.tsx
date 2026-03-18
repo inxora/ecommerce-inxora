@@ -190,9 +190,13 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
 
             <div className="flex items-baseline gap-2">
-              <p className="text-lg font-bold text-inxora-blue dark:text-inxora-light-blue">
-                {precioDisplay}
-              </p>
+              {isAgotado ? (
+                <p className="text-lg font-bold text-red-600 dark:text-red-400">Agotado</p>
+              ) : (
+                <p className="text-lg font-bold text-inxora-blue dark:text-inxora-light-blue">
+                  {precioDisplay}
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
