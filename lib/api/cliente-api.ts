@@ -51,6 +51,7 @@ export interface RegistroEmpresaV2Payload {
   id_forma_pago: number
   activo: boolean
   contactos: ContactoPayload[]
+  acepta_terminos: boolean
 }
 
 export interface LoginResponse {
@@ -69,6 +70,7 @@ export interface RegistroPayload {
   password: string
   id_pais?: number
   id_rubro?: number
+  acepta_terminos?: boolean
 }
 
 export interface ResetPasswordPayload {

@@ -61,6 +61,7 @@ type ClienteAuthContextValue = {
     password: string
     id_pais?: number
     id_rubro?: number
+    acepta_terminos?: boolean
   }) => Promise<void>
   resetPassword: (correo: string, nueva_contrasena: string) => Promise<void>
   error: string | null
@@ -128,6 +129,7 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
     password: string
     id_pais?: number
     id_rubro?: number
+    acepta_terminos?: boolean
   }) => {
     setError(null)
     try {
@@ -140,6 +142,7 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
         password: payload.password,
         id_pais: payload.id_pais ?? 1,
         id_rubro: payload.id_rubro,
+        acepta_terminos: payload.acepta_terminos,
       })
       // Auto-login tras registro
       await login(payload.correo, payload.password)

@@ -114,6 +114,7 @@ export function AuthModal() {
         password: regPassword,
         id_pais: 1,
         id_rubro: rubroId ?? rubros[0]?.id,
+        acepta_terminos: true,
       })
       handleSuccess()
     } catch {

@@ -78,6 +78,7 @@ export default function RegistroPage() {
         password,
         id_pais: 1,
         id_rubro: rubroId ?? rubros[0]?.id,
+        acepta_terminos: true,
       })
       router.push(redirectTo)
     } catch {

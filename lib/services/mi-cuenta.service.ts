@@ -190,7 +190,7 @@ export const miCuentaService = {
   },
 
   async getCotizacionDetalle(cotizacionId: number, token: string): Promise<CotizacionDetalleResponse> {
-    return apiClient<CotizacionDetalleResponse>(`/api/test/cotizaciones/${cotizacionId}`, {
+    return apiClient<CotizacionDetalleResponse>(`/api/cotizaciones/show/${cotizacionId}`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 15000,
     })

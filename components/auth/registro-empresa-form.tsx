@@ -219,6 +219,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
           es_contacto_principal: i === 0,
           roles: [5],
         })),
+        acepta_terminos: true,
       })
 
       if (res.success) {
