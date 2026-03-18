@@ -36,8 +36,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
   
   const isFavorited = isFavorite(product.sku)
   const isAgotado = product.id_disponibilidad === ID_DISPONIBILIDAD_AGOTADO
-  // Cuando está agotado (id 12) siempre mostramos "Agotado"; no usar product.disponibilidad.nombre porque puede venir incorrecto del API
-  const labelAgotado = 'Agotado'
+  const precioEfectivo = product.precio_mostrar != null
+    ? parseFloat(String(product.precio_mostrar))
+    : (product.precios_por_moneda?.soles?.precio_venta ?? product.precio_venta ?? 0)
+  const sinPrecio = isAgotado && precioEfectivo <= 0
 
   useEffect(() => {
     setQuantity(minimoPedido)
@@ -179,8 +181,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
       {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}
       <div className="pt-2 flex items-center gap-2 flex-wrap">
         <div>
-          {isAgotado ? (
-            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-red-600 dark:text-red-400">Agotado</p>
+          {sinPrecio ? (
+            <div className="space-y-1">
+              <p className="text-lg font-medium text-gray-400 dark:text-gray-500">Precio no disponible</p>
+              <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-red-600 dark:text-red-400">Agotado</p>
+            </div>
           ) : product.precio_simbolo != null && product.precio_mostrar != null ? (
             <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">
               {getDisplaySymbol(product.precio_simbolo)}{formatPriceWithThousands(product.precio_mostrar)}
@@ -267,7 +272,15 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       <div className="space-y-3">
         <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3 min-w-0">
-          {!isAgotado && (
+          {isAgotado ? (
+            <Button
+              className="col-span-2 sm:col-span-1 min-w-0 bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed py-3 sm:py-4 text-xs sm:text-sm md:text-base"
+              size="lg"
+              disabled
+            >
+              Agotado
+            </Button>
+          ) : (
             <Button
               onClick={handleAddToCart}
               className="col-span-2 sm:col-span-1 min-w-0 bg-inxora-blue hover:bg-inxora-blue/90 text-white py-3 sm:py-4 text-xs sm:text-sm md:text-base"

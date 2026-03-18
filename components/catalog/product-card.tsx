@@ -75,6 +75,12 @@ export function ProductCard({ product, badgeText, badgeColor }: ProductCardProps
 
   const precioDisplay = precioFormateado ?? formatCurrencyPrice(precio)
 
+  // Precio efectivo para determinar si el producto tiene precio real
+  const precioEfectivo = product.precio_mostrar != null
+    ? parseFloat(String(product.precio_mostrar))
+    : precio
+  const sinPrecio = isAgotado && precioEfectivo <= 0
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -200,9 +206,12 @@ export function ProductCard({ product, badgeText, badgeColor }: ProductCardProps
               </p>
             )}
 
-            <div className="flex items-baseline gap-2">
-              {isAgotado ? (
-                <p className="text-lg font-bold text-red-600 dark:text-red-400">Agotado</p>
+            <div className="space-y-0.5">
+              {sinPrecio ? (
+                <>
+                  <p className="text-sm font-medium text-gray-400 dark:text-gray-500">Precio no disponible</p>
+                  <p className="text-lg font-bold text-red-600 dark:text-red-400">Agotado</p>
+                </>
               ) : (
                 <p className="text-lg font-bold text-inxora-blue dark:text-inxora-light-blue">
                   {precioDisplay}
@@ -213,7 +222,15 @@ export function ProductCard({ product, badgeText, badgeColor }: ProductCardProps
         </CardContent>
 
         <CardFooter className="p-4 pt-0 flex gap-2">
-          {!isAgotado && (
+          {isAgotado ? (
+            <Button
+              className="flex-1 bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+              disabled
+              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+            >
+              Agotado
+            </Button>
+          ) : (
             <Button
               className="flex-1 bg-inxora-blue hover:bg-inxora-blue/90 text-white"
               onClick={handleAddToCart}
