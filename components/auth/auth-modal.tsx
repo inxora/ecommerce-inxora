@@ -126,12 +126,12 @@ export function AuthModal() {
   const switchMode = (next: Mode) => {
     clearError()
     setMode(next)
-    setTipoRegistro('natural')
+    setTipoRegistro('empresa')
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[90vh] overflow-y-auto transition-all duration-300 ${mode === 'register' && tipoRegistro === 'empresa' ? 'max-w-lg' : 'max-w-md'}`}>
+      <DialogContent className={`max-h-[90vh] overflow-y-auto transition-all duration-300 ${mode === 'register' && tipoRegistro !== 'natural' ? 'max-w-lg' : 'max-w-md'}`}>
         {mode === 'login' ? (
           <>
             <DialogHeader>
@@ -212,49 +212,31 @@ export function AuthModal() {
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
-                {tipoRegistro === 'empresa' ? <Building2 className="h-5 w-5" /> : <User className="h-5 w-5" />}
+                {tipoRegistro === 'natural' ? <User className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
                 Crear cuenta
               </DialogTitle>
-              <DialogDescription>Regístrate para continuar</DialogDescription>
-
-              {/* Selector Persona Natural / Empresa */}
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => { clearError(); setTipoRegistro('natural') }}
-                  className={[
-                    'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all',
-                    tipoRegistro === 'natural'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300',
-                  ].join(' ')}
-                >
-                  <User className="h-4 w-4 shrink-0" />
-                  Persona Natural
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { clearError(); setTipoRegistro('empresa') }}
-                  className={[
-                    'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all',
-                    tipoRegistro === 'empresa'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300',
-                  ].join(' ')}
-                >
-                  <Building2 className="h-4 w-4 shrink-0" />
-                  Empresa
-                </button>
-              </div>
+              <DialogDescription>
+                {tipoRegistro === 'natural' ? 'Registro como persona natural' : 'Regístrate para continuar'}
+              </DialogDescription>
             </DialogHeader>
 
-            {/* ── Empresa ── */}
+            {/* ── Empresa (default) ── */}
             {tipoRegistro === 'empresa' ? (
               <div className="mt-1">
                 <RegistroEmpresaForm
                   locale={locale}
                   onSuccess={handleSuccess}
                 />
+                <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+                  ¿Eres persona natural?{' '}
+                  <button
+                    type="button"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    onClick={() => { clearError(); setTipoRegistro('natural') }}
+                  >
+                    Regístrate aquí
+                  </button>
+                </p>
               </div>
             ) : (
 
@@ -427,6 +409,15 @@ export function AuthModal() {
                   onClick={() => switchMode('login')}
                 >
                   Iniciar sesión
+                </button>
+              </p>
+              <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+                <button
+                  type="button"
+                  className="hover:underline"
+                  onClick={() => { clearError(); setTipoRegistro('empresa') }}
+                >
+                  ← Registrarme como empresa
                 </button>
               </p>
             </form>
