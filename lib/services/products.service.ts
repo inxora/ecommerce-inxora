@@ -439,10 +439,10 @@ export const ProductsService = {
         }
       }
       
-      // Filtrar productos para asegurar que solo se muestren los visibles en web
-      // Esto es una capa adicional de seguridad en caso de que el endpoint no respete el filtro
+      // Filtrar productos: solo visibles en web y con precio de venta disponible
+      // id_disponibilidad = 12 indica que el producto no tiene precio de venta
       const productosFiltrados = response.data.productos.filter(
-        producto => producto.visible_web === true
+        producto => producto.visible_web === true && producto.id_disponibilidad !== 12
       )
       
       if (shouldLog) {
@@ -671,7 +671,7 @@ export const ProductsService = {
       // El endpoint ya filtra por seo_slug exacto, tomar el primero
       const producto = response.data.productos[0]
       
-      if (!producto || producto.visible_web !== true) {
+      if (!producto || producto.visible_web !== true || producto.id_disponibilidad === 12) {
         return null
       }
 
@@ -721,11 +721,14 @@ export const ProductsService = {
         ? (Array.isArray(idSubcategoria) ? idSubcategoria : [idSubcategoria])
         : []
 
-      // Filtrar productos: visible_web, misma marca, misma subcategoría, excluir el producto actual
+      // Filtrar productos: visible_web, con precio de venta, misma marca, misma subcategoría, excluir actual
       const productosFiltrados = response.data.productos
         .filter(producto => {
           // Debe estar visible en web
           if (producto.visible_web !== true) return false
+
+          // Debe tener precio de venta (id_disponibilidad = 12 = sin precio)
+          if (producto.id_disponibilidad === 12) return false
           
           // Debe ser diferente al producto actual
           if (producto.sku === currentSku) return false
