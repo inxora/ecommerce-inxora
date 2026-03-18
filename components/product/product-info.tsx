@@ -260,11 +260,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <div
             className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3 py-2.5"
             role="status"
-            aria-label={`Estado del producto: ${labelAgotado}`}
+            aria-label="Estado del producto: Agotado"
           >
             <PackageX className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" aria-hidden />
             <p className="text-sm font-medium text-red-800 dark:text-red-200">
-              Estado del producto: <span className="font-semibold">{labelAgotado}</span>
+              Estado del producto: <span className="font-semibold">Agotado</span>
             </p>
           </div>
         )}
