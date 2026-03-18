@@ -110,6 +110,9 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
   // — Contacts —
   const [contactos, setContactos] = useState<ContactoForm[]>([makeContacto()])
 
+  // — Términos —
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
+
   // — Submit —
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -177,7 +180,8 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     idRubro !== '' &&
     password.length >= 8 &&
     password === confirmPw &&
-    contactos.every(isContactoValid)
+    contactos.every(isContactoValid) &&
+    aceptaTerminos
 
   // — Submit —
   const handleSubmit = async (e: React.FormEvent) => {
@@ -499,6 +503,49 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
           <Plus className="h-4 w-4" />
           Agregar otro contacto
         </button>
+      </div>
+
+      {/* Términos y condiciones */}
+      <div className="space-y-2">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={aceptaTerminos}
+            onChange={(e) => setAceptaTerminos(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-blue-600"
+          />
+          <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
+            Acepto los{' '}
+            <Link
+              href={`/${locale}/terminos`}
+              target="_blank"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              términos y condiciones
+            </Link>
+            {' '}y la{' '}
+            <Link
+              href={`/${locale}/privacidad`}
+              target="_blank"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              política de privacidad
+            </Link>
+          </span>
+        </label>
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-7">
+          Conforme a la Ley N.° 29733, autorizas a INXORA al tratamiento de tus datos personales
+          para fines comerciales, envío de cotizaciones y seguimiento de tus solicitudes.
+          Puedes revisar nuestra{' '}
+          <Link
+            href="https://tienda.inxora.com/privacidad"
+            target="_blank"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            política de privacidad
+          </Link>
+          {' '}en tienda.inxora.com.
+        </p>
       </div>
 
       {/* Error de envío — visible junto al botón */}

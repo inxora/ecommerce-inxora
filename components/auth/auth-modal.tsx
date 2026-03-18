@@ -53,6 +53,7 @@ export function AuthModal() {
   const [regCorreo, setRegCorreo] = useState('')
   const [telefono, setTelefono] = useState('')
   const [regPassword, setRegPassword] = useState('')
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -367,7 +368,54 @@ export function AuthModal() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              {/* Términos y condiciones */}
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={aceptaTerminos}
+                    onChange={(e) => setAceptaTerminos(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-blue-600"
+                    required
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
+                    Acepto los{' '}
+                    <Link
+                      href={`/${locale}/terminos`}
+                      target="_blank"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      términos y condiciones
+                    </Link>
+                    {' '}y la{' '}
+                    <Link
+                      href={`/${locale}/privacidad`}
+                      target="_blank"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      política de privacidad
+                    </Link>
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-7">
+                  Conforme a la Ley N.° 29733, autorizas a INXORA al tratamiento de tus datos personales
+                  para fines comerciales, envío de cotizaciones y seguimiento de tus solicitudes.
+                  Puedes revisar nuestra{' '}
+                  <Link
+                    href="https://tienda.inxora.com/privacidad"
+                    target="_blank"
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    política de privacidad
+                  </Link>
+                  {' '}en tienda.inxora.com.
+                </p>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading || !aceptaTerminos}>
                 {loading ? 'Creando cuenta...' : 'Registrarme'}
               </Button>
 
