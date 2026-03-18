@@ -146,13 +146,11 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             Iniciar sesión
           </DropdownMenuItem>
 
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/${locale}/registro`}
-              className="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold cursor-pointer text-[#171D4C] dark:text-amber-300 focus:bg-amber-50 dark:focus:bg-amber-950/20"
-            >
-              Crear cuenta
-            </Link>
+          <DropdownMenuItem
+            onSelect={() => openAuthModal({ initialMode: 'register' })}
+            className="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold cursor-pointer text-[#171D4C] dark:text-amber-300 focus:bg-amber-50 dark:focus:bg-amber-950/20"
+          >
+            Crear cuenta
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

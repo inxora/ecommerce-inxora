@@ -58,10 +58,10 @@ export function AuthModal() {
   useEffect(() => {
     if (!isOpen) return
     clearError()
-    setMode('login')
+    setMode(options.initialMode ?? 'login')
     setCorreo('')
     setPassword('')
-  }, [isOpen, clearError])
+  }, [isOpen, clearError, options.initialMode])
 
   useEffect(() => {
     apiClient<{ success?: boolean; data?: Rubro[] }>('/api/rubros/?limit=200')

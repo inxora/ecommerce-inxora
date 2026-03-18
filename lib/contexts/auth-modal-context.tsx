@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useState } from 'react'
 
 interface AuthModalOptions {
   onSuccess?: () => void
+  /** Si se especifica, el modal abre directamente en ese modo en vez de 'login' */
+  initialMode?: 'login' | 'register'
 }
 
 interface AuthModalContextValue {
