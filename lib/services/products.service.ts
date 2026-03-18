@@ -4,9 +4,6 @@ import { buildProductImageUrl } from '@/lib/supabase'
 import { generateProductSlug, normalizeName } from '@/lib/product-url'
 import type { CurrencyCode } from '@/lib/constants/currencies'
 
-// Productos con este id_disponibilidad no tienen precio de venta con IGV → se excluyen del ecommerce
-const SIN_PRECIO_VENTA_ID = 12
-
 // Tipos para la respuesta del endpoint de productos
 export interface UnidadProducto {
   id: number
@@ -442,9 +439,10 @@ export const ProductsService = {
         }
       }
       
-      // Filtrar productos: visibles en web y con precio de venta con IGV disponible
+      // Filtrar productos para asegurar que solo se muestren los visibles en web
+      // Esto es una capa adicional de seguridad en caso de que el endpoint no respete el filtro
       const productosFiltrados = response.data.productos.filter(
-        producto => producto.visible_web === true && producto.id_disponibilidad !== SIN_PRECIO_VENTA_ID
+        producto => producto.visible_web === true
       )
       
       if (shouldLog) {
@@ -673,7 +671,7 @@ export const ProductsService = {
       // El endpoint ya filtra por seo_slug exacto, tomar el primero
       const producto = response.data.productos[0]
       
-      if (!producto || producto.visible_web !== true || producto.id_disponibilidad === SIN_PRECIO_VENTA_ID) {
+      if (!producto || producto.visible_web !== true) {
         return null
       }
 
@@ -726,9 +724,8 @@ export const ProductsService = {
       // Filtrar productos: visible_web, misma marca, misma subcategoría, excluir el producto actual
       const productosFiltrados = response.data.productos
         .filter(producto => {
-          // Debe estar visible en web y tener precio de venta con IGV
+          // Debe estar visible en web
           if (producto.visible_web !== true) return false
-          if (producto.id_disponibilidad === SIN_PRECIO_VENTA_ID) return false
           
           // Debe ser diferente al producto actual
           if (producto.sku === currentSku) return false
@@ -797,12 +794,9 @@ export const ProductsService = {
         return null
       }
 
-      // Filtrar productos por visible_web, precio de venta disponible y SKU exacto
+      // Filtrar productos por visible_web y buscar el que coincida exactamente con el SKU
       const productoEncontrado = response.data.productos.find(
-        producto =>
-          producto.visible_web === true &&
-          producto.id_disponibilidad !== SIN_PRECIO_VENTA_ID &&
-          producto.sku === sku
+        producto => producto.visible_web === true && producto.sku === sku
       )
 
       if (!productoEncontrado) {
