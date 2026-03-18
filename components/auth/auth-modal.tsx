@@ -37,7 +37,7 @@ export function AuthModal() {
   const { login, register, error, clearError } = useClienteAuth()
 
   const [mode, setMode] = useState<Mode>('login')
-  const [tipoRegistro, setTipoRegistro] = useState<TipoRegistro>('natural')
+  const [tipoRegistro, setTipoRegistro] = useState<TipoRegistro>('empresa')
   const [loading, setLoading] = useState(false)
 
   // Login fields
