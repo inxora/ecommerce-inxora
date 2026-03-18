@@ -21,9 +21,12 @@ const ID_DISPONIBILIDAD_AGOTADO = 12
 
 interface ProductCardProps {
   product: Producto
+  /** Badge externo (ej. "Nuevo", "Destacado"). Si no se pasa, se auto-detecta desde product.es_novedad / product.es_destacado. */
+  badgeText?: string
+  badgeColor?: string
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, badgeText, badgeColor }: ProductCardProps) {
   const params = useParams()
   const locale = (params?.locale as string) || 'es'
   const { addItem } = useCart()
@@ -110,15 +113,23 @@ export function ProductCard({ product }: ProductCardProps) {
     <Link href={productUrl}>
       <Card className="h-full overflow-hidden hover:shadow-xl transition-shadow duration-300 group relative">
         <div className="absolute top-2 right-2 z-10 flex gap-2">
-          {product.es_destacado && (
-            <Badge variant="default" className="bg-yellow-500 text-white">
-              Destacado
+          {badgeText ? (
+            <Badge variant="default" className={`${badgeColor ?? 'bg-green-500'} text-white`}>
+              {badgeText}
             </Badge>
-          )}
-          {product.es_novedad && (
-            <Badge variant="default" className="bg-green-500 text-white">
-              Nuevo
-            </Badge>
+          ) : (
+            <>
+              {product.es_destacado && (
+                <Badge variant="default" className="bg-yellow-500 text-white">
+                  Destacado
+                </Badge>
+              )}
+              {product.es_novedad && (
+                <Badge variant="default" className="bg-green-500 text-white">
+                  Nuevo
+                </Badge>
+              )}
+            </>
           )}
         </div>
 
