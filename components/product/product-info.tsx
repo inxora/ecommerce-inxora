@@ -8,6 +8,11 @@ import { formatPrice, formatPriceWithThousands, createWhatsAppUrl } from '@/lib/
 import { getMinimumAmountRequirement, getMinimoPedido } from '@/lib/cart-restrictions'
 import { buildProductUrl } from '@/lib/product-seo'
 import { getDisplaySymbol } from '@/lib/constants/currencies'
+import {
+  shouldShowCtaAlternativa,
+  getSafeCtaHref,
+  isCtaExternalHref,
+} from '@/lib/utils/cta-alternativa'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -18,6 +23,56 @@ import { useParams } from 'next/navigation'
 import { useFavorites } from '@/lib/hooks/use-favorites'
 
 const ID_DISPONIBILIDAD_AGOTADO = 12
+
+function CtaAlternativaBlock({
+  product,
+  href,
+  openNewTab,
+}: {
+  product: Product
+  href: string
+  openNewTab: boolean
+}) {
+  const label = product.cta_alternativa_boton?.trim()
+  if (!label) return null
+  return (
+    <div
+      className="rounded-xl border-2 border-inxora-blue/30 bg-gradient-to-br from-inxora-light-blue/20 to-white dark:from-slate-800/90 dark:to-slate-900/60 dark:border-inxora-blue/40 p-4 sm:p-5 shadow-sm"
+      role="region"
+      aria-label="Alternativa o recurso relacionado"
+    >
+      {product.cta_alternativa_texto?.trim() && (
+        <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 mb-3 leading-relaxed font-medium">
+          {product.cta_alternativa_texto.trim()}
+        </p>
+      )}
+      {href.startsWith('/') ? (
+        <Button
+          asChild
+          variant="secondary"
+          size="lg"
+          className="w-full sm:w-auto border border-emerald-300/80 bg-emerald-100 text-emerald-950 shadow-sm hover:bg-gray-200 hover:border-gray-300 hover:text-gray-900 dark:border-emerald-700/80 dark:bg-emerald-900/35 dark:text-emerald-50 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:hover:text-white transition-colors duration-200"
+        >
+          <Link href={href}>{label}</Link>
+        </Button>
+      ) : (
+        <Button
+          asChild
+          variant="secondary"
+          size="lg"
+          className="w-full sm:w-auto border border-emerald-300/80 bg-emerald-100 text-emerald-950 shadow-sm hover:bg-gray-200 hover:border-gray-300 hover:text-gray-900 dark:border-emerald-700/80 dark:bg-emerald-900/35 dark:text-emerald-50 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:hover:text-white transition-colors duration-200"
+        >
+          <a
+            href={href}
+            {...(openNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            {label}
+          </a>
+        </Button>
+      )}
+    </div>
+  )
+}
 
 interface ProductInfoProps {
   product: Product
@@ -59,6 +114,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const skuDisplay = product.sku_producto || product.sku || ''
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tienda.inxora.com'
   const productUrl = `${baseUrl}${buildProductUrl(product, locale)}`
+
+  const ctaSafeHref = getSafeCtaHref(product.cta_alternativa_url)
+  const showCtaAlternativa =
+    shouldShowCtaAlternativa(product.cta_alternativa_url, product.cta_alternativa_boton) &&
+    ctaSafeHref != null
+  const ctaOpenNewTab = ctaSafeHref ? isCtaExternalHref(ctaSafeHref, baseUrl) : false
   const whatsappMessage = `Hola Sara Xora, me interesa consultar sobre:\n• Producto: ${product.nombre}\n• SKU: ${skuDisplay}\n• Link: ${productUrl}`
   const whatsappUrl = createWhatsAppUrl(WHATSAPP_NUMBER, whatsappMessage)
 
@@ -176,6 +237,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
             dangerouslySetInnerHTML={{ __html: product.descripcion_corta }}
           />
         </div>
+      )}
+
+      {/* CTA CRM: bloque dedicado (no confundir con enlaces dentro de descripcion_corta) */}
+      {showCtaAlternativa && ctaSafeHref && (
+        <CtaAlternativaBlock product={product} href={ctaSafeHref} openNewTab={ctaOpenNewTab} />
       )}
 
       {/* Precio debajo de la descripción - priorizar precio_simbolo + precio_mostrar; si API envía código, usar símbolo */}

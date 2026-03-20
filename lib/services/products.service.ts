@@ -90,6 +90,14 @@ export interface ProductoAPI {
   canonical_url: string | null
   structured_data: any | null
   condicion_precio_venta?: string | null
+  /** CTA opcional CRM (ficha producto / listado ecommerce) — snake_case */
+  cta_alternativa_texto?: string | null
+  cta_alternativa_boton?: string | null
+  cta_alternativa_url?: string | null
+  /** Misma data si el API serializa en camelCase */
+  ctaAlternativaTexto?: string | null
+  ctaAlternativaBoton?: string | null
+  ctaAlternativaUrl?: string | null
   unidad: UnidadProducto
   categoria: CategoriaProducto | null
   subcategoria_principal: SubcategoriaPrincipal | null
@@ -131,6 +139,36 @@ export interface GetProductosParams {
   ordenar?: string
   /** Moneda del usuario para conversión en el API (precio_simbolo, precio_mostrar) */
   moneda_usuario?: CurrencyCode
+}
+
+/** Normaliza string CTA; ignora vacíos y el literal "null" */
+function pickCtaString(v: unknown): string | null {
+  if (v == null) return null
+  if (typeof v !== 'string') return null
+  const t = v.trim()
+  if (!t || t.toLowerCase() === 'null') return null
+  return t
+}
+
+/**
+ * Campos CTA del CRM: el API puede enviar snake_case o camelCase.
+ */
+function extractCtaAlternativa(productoAPI: ProductoAPI): {
+  texto: string | null
+  boton: string | null
+  url: string | null
+} {
+  const r = productoAPI as ProductoAPI & Record<string, unknown>
+  const texto =
+    pickCtaString(r.cta_alternativa_texto) ??
+    pickCtaString(r.ctaAlternativaTexto)
+  const boton =
+    pickCtaString(r.cta_alternativa_boton) ??
+    pickCtaString(r.ctaAlternativaBoton)
+  const url =
+    pickCtaString(r.cta_alternativa_url) ??
+    pickCtaString(r.ctaAlternativaUrl)
+  return { texto, boton, url }
 }
 
 /**
@@ -269,6 +307,8 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     }
   })
   
+  const cta = extractCtaAlternativa(productoAPI)
+
   // Producto mapeado
   return {
     sku: productoAPI.sku,
@@ -337,6 +377,9 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     precio_mostrar: productoAPI.precio_mostrar,
     // Condición de precio (producto o proveedor principal)
     condicion_precio_venta: productoAPI.condicion_precio_venta ?? proveedorPrincipal?.condicion_precio_venta ?? undefined,
+    cta_alternativa_texto: cta.texto,
+    cta_alternativa_boton: cta.boton,
+    cta_alternativa_url: cta.url,
     proveedores,
     proveedor_principal: proveedorPrincipal,
   }

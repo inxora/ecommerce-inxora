@@ -19,6 +19,8 @@ import { cache } from 'react'
 import { ProductsService } from '@/lib/services/products.service'
 import { getServerCurrency } from '@/lib/utils/server-currency'
 import type { CurrencyCode } from '@/lib/constants/currencies'
+import { parseMarcaPathFromStoreUrl } from '@/lib/utils/tienda-marca-url'
+import { getMarcaBySlug } from '@/lib/supabase'
 import { 
   generateCanonicalUrl, 
   generateSeoTitle, 
@@ -257,14 +259,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const idSubcategoria = product.subcategoria_principal && typeof product.subcategoria_principal === 'object'
     ? product.subcategoria_principal.id
     : undefined
+
+  /** Si el CTA apunta a /[locale]/marca/[slug], relacionados = otros productos de esa marca (sin filtrar subcategoría). */
+  const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'https://tienda.inxora.com'
+  const marcaPathCta = parseMarcaPathFromStoreUrl(product.cta_alternativa_url, siteBase)
+  let relatedMarcaId: number | undefined = idMarca ?? undefined
+  let relatedSubcategoriaId: number | undefined = idSubcategoria
+
+  if (marcaPathCta) {
+    try {
+      const marcaCta = await getMarcaBySlug(marcaPathCta.marcaSlug)
+      if (marcaCta?.id) {
+        relatedMarcaId = marcaCta.id
+        relatedSubcategoriaId = undefined
+      }
+    } catch {
+      // Mantener fallback: marca y subcategoría del producto actual
+    }
+  }
     
   let relatedProducts = []
-  if (idMarca) {
+  if (relatedMarcaId) {
     try {
       relatedProducts = await getRelatedProducts(
         product.sku,
-        idMarca,
-        idSubcategoria,
+        relatedMarcaId,
+        relatedSubcategoriaId,
         moneda
       )
     } catch (error) {

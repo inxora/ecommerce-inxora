@@ -153,6 +153,12 @@ export interface Producto {
   precio_mostrar?: string
   /** Condición del precio de venta (ej. sujeto a disponibilidad). Desde producto_proveedor/API. */
   condicion_precio_venta?: string | null
+  /** CTA opcional desde CRM: texto sobre el botón */
+  cta_alternativa_texto?: string | null
+  /** CTA opcional: etiqueta del botón */
+  cta_alternativa_boton?: string | null
+  /** CTA opcional: destino del enlace */
+  cta_alternativa_url?: string | null
   proveedores?: ProveedorProducto[]
   proveedor_principal?: ProveedorProducto
   subcategoria_principal?: {
