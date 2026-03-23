@@ -100,6 +100,7 @@ export const clienteApi = {
         contrasena: payload.password,
         id_pais: payload.id_pais ?? 1,
         id_rubro: payload.id_rubro ?? null,
+        acepta_terminos: payload.acepta_terminos ?? false,
       }),
       timeout: 30000, // 30s: SP crea cliente y puede tardar
     })

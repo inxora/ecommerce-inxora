@@ -638,7 +638,8 @@ export function CheckoutForm() {
     }
 
     obtenerToken()
-  }, [paymentMethod, token, isLoggedIn, router, locale, handleAuthError])
+  // items y shipping.costoEnvio incluidos para regenerar el token si el monto cambia
+  }, [paymentMethod, token, isLoggedIn, router, locale, handleAuthError, items, shipping.costoEnvio])
 
   const handleIzipaySuccess = useCallback(
     (krAnswer: string, krHash: string) => {
