@@ -612,14 +612,14 @@ export default function HomeClient({
       {/* ── Modal de bienvenida Sara Xora ── */}
       {welcomeOpen && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto overscroll-contain"
           onClick={() => setWelcomeOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="welcome-modal-title"
         >
           <div
-            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg max-h-[min(92dvh,calc(100dvh-1.5rem))] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 shadow-2xl overflow-x-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header navy con foto de Sara */}

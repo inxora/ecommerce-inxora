@@ -267,6 +267,7 @@ export function CheckoutForm() {
   const [izipayPublicKey, setIzipayPublicKey] = useState<string | null>(null)
   const [izipayLoading, setIzipayLoading] = useState(false)
   const [pedidoCreadoId, setPedidoCreadoId] = useState<number | null>(null)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -603,43 +604,9 @@ export function CheckoutForm() {
     }
   }, [paymentMethod])
 
-  // Obtener formToken al seleccionar Izipay (sin submit)
-  useEffect(() => {
-    if (paymentMethod !== 'izipay') return
-    if (izipayFormToken) return
-    if (!isLoggedIn) return
-    if (!token || (typeof token === 'string' && token.trim() === '')) return
-
-    const obtenerToken = async () => {
-      setIzipayLoading(true)
-      try {
-        const subtotal = items.reduce(
-          (acc, i) => acc + (i.product.precio_venta ?? 0) * i.quantity,
-          0
-        )
-        const shippingCost = shipping.costoEnvio ?? 0
-        const montoTotal = subtotal + shippingCost
-        const res = await pagosService.crearTokenSinPedido(montoTotal, token)
-        setIzipayFormToken(res.data.formToken)
-        setIzipayPublicKey(res.data.publicKey)
-      } catch (err: unknown) {
-        if (err instanceof ApiError && err.status === 401) {
-          handleAuthError()
-          return
-        }
-        toast({
-          title: 'Error al cargar formulario de tarjeta',
-          description: 'No se pudo conectar con Izipay. Intenta de nuevo.',
-          variant: 'destructive',
-        })
-      } finally {
-        setIzipayLoading(false)
-      }
-    }
-
-    obtenerToken()
-  // items y shipping.costoEnvio incluidos para regenerar el token si el monto cambia
-  }, [paymentMethod, token, isLoggedIn, router, locale, handleAuthError, items, shipping.costoEnvio])
+  // El formToken de Izipay se genera DESPUÉS de crear el pedido (en onSubmit),
+  // usando /pagos/crear-token con el id_pedido real, para que el orderId enviado
+  // a Izipay sea el 'numero' del pedido y se pueda actualizar el estado en BD.
 
   const handleIzipaySuccess = useCallback(
     (krAnswer: string, krHash: string) => {
@@ -745,13 +712,33 @@ export function CheckoutForm() {
       if (data.paymentMethod === 'izipay') {
         pedidoIdIzipayRef.current = idPedido
         setPedidoCreadoId(idPedido)
-        // El widget ya está activo, el usuario ya puede pagar
-        // NO hacer clearCart ni redirigir aquí
+        // Pedido creado — ahora generamos el formToken real con el 'numero' del pedido
+        // como orderId para que Izipay lo incluya en el callback y podamos actualizar la BD.
+        setIzipayLoading(true)
+        try {
+          const tokenRes = await pagosService.crearTokenIzipay(idPedido, token)
+          setIzipayFormToken(tokenRes.data.formToken)
+          setIzipayPublicKey(tokenRes.data.publicKey)
+        } catch (err: unknown) {
+          if (err instanceof ApiError && err.status === 401) {
+            handleAuthError()
+            return
+          }
+          toast({
+            title: 'Error al cargar formulario de tarjeta',
+            description: 'No se pudo conectar con Izipay. Intenta de nuevo.',
+            variant: 'destructive',
+          })
+        } finally {
+          setIzipayLoading(false)
+        }
+        setCurrentStep(3)
         setIsSubmitting(false)
         return
       }
 
       clearCart()
+      setCurrentStep(3)
       toast({ title: t('checkout.success.title'), description: t('checkout.success.description', { orderId: numero }) })
       router.push(`/${locale}/pedido/${idPedido}?numero=${encodeURIComponent(numero)}`)
     } catch (error) {
@@ -786,6 +773,42 @@ export function CheckoutForm() {
             Explorar productos <ChevronRight className="w-4 h-4" />
           </a>
         </div>
+      </div>
+    )
+  }
+
+  // ── Stepper component ─────────────────────────────────────────────────────
+  const StepperBar = () => {
+    const steps = [
+      { n: 1, label: 'Datos y entrega' },
+      { n: 2, label: 'Pago' },
+      { n: 3, label: 'Confirmar' },
+    ]
+    return (
+      <div className="flex items-center gap-0 mb-6">
+        {steps.map((s, i) => (
+          <div key={s.n} className="flex items-center" style={{ flex: i < steps.length - 1 ? '1' : 'initial' }}>
+            <div className="flex items-center gap-2">
+              <div className={[
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 transition-all',
+                currentStep > s.n
+                  ? 'bg-emerald-500 text-white'
+                  : currentStep === s.n
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500',
+              ].join(' ')}>
+                {currentStep > s.n ? <CheckCircle className="w-4 h-4" /> : s.n}
+              </div>
+              <span className={[
+                'text-xs font-medium hidden sm:inline',
+                currentStep === s.n ? 'text-slate-900 dark:text-slate-100' : currentStep > s.n ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500',
+              ].join(' ')}>{s.label}</span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={['flex-1 h-px mx-3 transition-all', currentStep > s.n ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'].join(' ')} />
+            )}
+          </div>
+        ))}
       </div>
     )
   }
@@ -828,8 +851,11 @@ export function CheckoutForm() {
         </div>
       )}
 
-      {/* ── 1. Personal info ─────────────────────────────────────────────── */}
-      {isLoggedIn && (
+      {/* ── Stepper bar ──────────────────────────────────────────────────── */}
+      {isLoggedIn && <StepperBar />}
+
+      {/* ── PASO 1: Info personal + Entrega ──────────────────────────────── */}
+      {isLoggedIn && currentStep === 1 && (
         <>
           <FormSection>
             <SectionHeader step={1} icon={User} title="Información personal" subtitle="Datos del contacto para el pedido" />
@@ -1068,6 +1094,23 @@ export function CheckoutForm() {
             )}
           </FormSection>
 
+          {/* Botón continuar paso 1 → 2 */}
+          <button
+            type="button"
+            onClick={async () => {
+              const valid = await form.trigger(['firstName','lastName','email','phone','tipo_entrega','idCiudad','idProvincia','idTipoLugarEntrega','address','country'])
+              if (valid) setCurrentStep(2)
+            }}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 bg-orange-500 hover:bg-orange-600 text-white transition-all"
+          >
+            Continuar con el pago <ChevronRight className="w-4 h-4" />
+          </button>
+        </>
+      )}
+
+      {/* ── PASO 2: Método de pago + Notas + Términos ────────────────────── */}
+      {isLoggedIn && currentStep === 2 && (
+        <>
           {/* ── 3. Payment ───────────────────────────────────────────────────── */}
           <FormSection>
             <SectionHeader step={3} icon={CreditCard} title="Método de pago" subtitle="Selecciona cómo quieres pagar" />
@@ -1297,43 +1340,7 @@ export function CheckoutForm() {
               </div>
             )}
 
-            {/* ── Izipay (Tarjeta) ─────────────────────────────────────────── */}
-            <div style={{ display: form.watch('paymentMethod') === 'izipay' ? 'block' : 'none' }}>
-              <div className="rounded-xl border border-blue-200 dark:border-blue-800/50 overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3.5 bg-blue-600 dark:bg-blue-700">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                      <CreditCard className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Pago con tarjeta</p>
-                      <p className="text-xs text-blue-200">Procesado de forma segura por Izipay</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {['VISA', 'MC', 'AMEX'].map((b) => (
-                      <span key={b} className="text-[9px] font-bold text-white bg-white/20 px-1.5 py-0.5 rounded">{b}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-5 bg-blue-50 dark:bg-blue-950/10">
-                  <IzipayWidget
-                    formToken={izipayFormToken}
-                    publicKey={izipayPublicKey}
-                    onPaymentSuccess={handleIzipaySuccess}
-                    onPaymentError={handleIzipayError}
-                    loading={izipayLoading}
-                  />
-                </div>
-                <div className="px-5 py-3 bg-white dark:bg-slate-900 border-t border-blue-100 dark:border-blue-900/50 flex items-center gap-2">
-                  <Lock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Tus datos de tarjeta son procesados directamente por Izipay con
-                    cifrado SSL 256 bits. INXORA no almacena datos de tarjeta.
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Widget Izipay ahora vive en el paso 3 */}
           </FormSection>
 
           {/* ── 4. Notes ─────────────────────────────────────────────────────── */}
@@ -1402,8 +1409,8 @@ export function CheckoutForm() {
         </>
       )}
 
-      {/* ── Submit ───────────────────────────────────────────────────────────── */}
-      {!(paymentMethod === 'izipay' && pedidoCreadoId) && (
+      {/* ── Submit (solo en paso 2) ───────────────────────────────────────── */}
+      {isLoggedIn && currentStep === 2 && !(paymentMethod === 'izipay' && pedidoCreadoId) && (
       <button
         type="submit"
         disabled={isSubmitting || !isLoggedIn || hasCartRestrictionErrors}
@@ -1433,6 +1440,63 @@ export function CheckoutForm() {
           </>
         )}
       </button>
+      )}
+
+      {/* Botón atrás paso 2 */}
+      {isLoggedIn && currentStep === 2 && (
+        <button
+          type="button"
+          onClick={() => setCurrentStep(1)}
+          className="w-full py-3 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+        >
+          ← Volver a datos y entrega
+        </button>
+      )}
+
+      {/* ── PASO 3: Widget Izipay (tarjeta) ──────────────────────────────── */}
+      {isLoggedIn && currentStep === 3 && paymentMethod === 'izipay' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-blue-200 dark:border-blue-800/50 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-blue-600 dark:bg-blue-700">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Pago con tarjeta</p>
+                  <p className="text-xs text-blue-200">Procesado de forma segura por Izipay</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {['VISA', 'MC', 'AMEX'].map((b) => (
+                  <span key={b} className="text-[9px] font-bold text-white bg-white/20 px-1.5 py-0.5 rounded">{b}</span>
+                ))}
+              </div>
+            </div>
+            <div className="p-5 bg-blue-50 dark:bg-blue-950/10">
+              <IzipayWidget
+                formToken={izipayFormToken}
+                publicKey={izipayPublicKey}
+                onPaymentSuccess={handleIzipaySuccess}
+                onPaymentError={handleIzipayError}
+                loading={izipayLoading}
+              />
+            </div>
+            <div className="px-5 py-3 bg-white dark:bg-slate-900 border-t border-blue-100 dark:border-blue-900/50 flex items-center gap-2">
+              <Lock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Tus datos de tarjeta son procesados directamente por Izipay con cifrado SSL 256 bits. INXORA no almacena datos de tarjeta.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setCurrentStep(2); setPedidoCreadoId(null); pedidoIdIzipayRef.current = null }}
+            className="w-full py-3 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+          >
+            ← Cambiar método de pago
+          </button>
+        </div>
       )}
     </form>
   )

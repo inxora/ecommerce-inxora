@@ -14,7 +14,7 @@ export default async function CheckoutPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
 
-      {/* ── Top security bar ──────────────────────────────────────────────── */}
+      {/* ── Top security bar ─────────────────────────────────────────────── */}
       <div className="w-full bg-slate-900 dark:bg-black border-b border-slate-800">
         <div className="w-full px-4 h-9 flex items-center justify-center gap-6">
           {[
@@ -31,10 +31,10 @@ export default async function CheckoutPage() {
         </div>
       </div>
 
-      <div className="w-full px-3 sm:px-4 py-4 lg:py-6">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8">
 
         {/* ── Page header ──────────────────────────────────────────────────── */}
-        <div className="mb-4">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Finalizar compra
           </h1>
@@ -43,28 +43,24 @@ export default async function CheckoutPage() {
           </p>
         </div>
 
-        {/*
-          Layout invertido vs original:
-          - LEFT  (5fr): OrderSummary — el "hero" visual, sticky
-          - RIGHT (4fr): CheckoutForm — datos personales, entrega y pago
-
-          En mobile ambas van en columna, summary primero (order-1)
-          para que el usuario vea qué está comprando antes de rellenar datos.
-        */}
         <CheckoutShippingProvider>
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+          {/*
+            Layout: formulario (izquierda, 3/5) + resumen sticky (derecha, 2/5)
+            En mobile: resumen primero (order-1) para que el usuario vea qué compra
+          */}
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6 items-start">
 
-            {/* LEFT — Order summary, sticky en desktop */}
-            <div className="order-1 lg:sticky lg:top-6">
-              <Suspense fallback={<SummarySkeleton />}>
-                <OrderSummary />
+            {/* LEFT — Checkout form con stepper */}
+            <div className="order-2 lg:order-1 min-w-0">
+              <Suspense fallback={<FormSkeleton />}>
+                <CheckoutForm />
               </Suspense>
             </div>
 
-            {/* RIGHT — Checkout form */}
-            <div className="order-2 min-w-0">
-              <Suspense fallback={<FormSkeleton />}>
-                <CheckoutForm />
+            {/* RIGHT — Order summary sticky */}
+            <div className="order-1 lg:order-2 lg:sticky lg:top-6">
+              <Suspense fallback={<SummarySkeleton />}>
+                <OrderSummary />
               </Suspense>
             </div>
 
@@ -87,7 +83,7 @@ function SummarySkeleton() {
           <Skeleton className="h-5 w-16 rounded-full" />
         </div>
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2].map((i) => (
             <div key={i} className="flex gap-3">
               <Skeleton className="w-16 h-16 rounded-xl flex-shrink-0" />
               <div className="flex-1 space-y-2">
@@ -95,11 +91,11 @@ function SummarySkeleton() {
                 <Skeleton className="h-3 w-2/3" />
                 <Skeleton className="h-4 w-20" />
               </div>
-              <Skeleton className="h-5 w-16 flex-shrink-0" />
             </div>
           ))}
         </div>
-        <div className="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-3">
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5">
+          <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-7 w-full mt-2" />
@@ -112,11 +108,9 @@ function SummarySkeleton() {
 function FormSkeleton() {
   return (
     <div className="space-y-4">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-6"
-        >
+      <Skeleton className="h-8 w-full rounded-xl mb-2" />
+      {[1, 2].map((i) => (
+        <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-5">
             <Skeleton className="w-10 h-10 rounded-xl" />
             <div className="space-y-1.5">

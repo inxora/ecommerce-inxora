@@ -43,6 +43,7 @@ import {
 type Message = {
   role: 'user' | 'assistant' | 'asesor'
   content: string
+  asesor_nombre?: string
   attachmentPreviews?: string[]
 }
 
@@ -800,6 +801,7 @@ export function ChatSaraPageClient({
   const [attachments, setAttachments] = useState<PendingAttachment[]>([])
   const [documents, setDocuments] = useState<PendingDocument[]>([])
   const [sending, setSending] = useState(false)
+  const [isAsesorRespondiendo, setIsAsesorRespondiendo] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [shareModalSessionId, setShareModalSessionId] = useState<string | null>(null)
   const [urlCopied, setUrlCopied] = useState(false)
@@ -842,6 +844,34 @@ export function ChatSaraPageClient({
 
   const skipLoadMessagesRef = useRef(false)
   const [loadKey, setLoadKey] = useState(0)
+
+  const normalizeMessages = useCallback((raw: unknown): Message[] => {
+    let parsed = raw
+    if (typeof parsed === 'string') {
+      try {
+        parsed = JSON.parse(parsed) as unknown
+      } catch {
+        parsed = []
+      }
+    }
+    const msgs = Array.isArray(parsed) ? parsed : []
+    return msgs
+      .filter(
+        (m): m is { role: 'user' | 'assistant' | 'asesor'; content: string; asesor_nombre?: string } =>
+          typeof m === 'object' &&
+          m !== null &&
+          (m as { role?: unknown }).role !== undefined &&
+          ((m as { role: string }).role === 'user' ||
+            (m as { role: string }).role === 'assistant' ||
+            (m as { role: string }).role === 'asesor') &&
+          typeof (m as { content?: unknown }).content === 'string'
+      )
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+        asesor_nombre: typeof m.asesor_nombre === 'string' ? m.asesor_nombre : undefined,
+      }))
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -936,6 +966,7 @@ export function ChatSaraPageClient({
   useEffect(() => {
     if (!selectedSessionId) {
       setMessages([])
+      setIsAsesorRespondiendo(false)
       return
     }
     if (skipLoadMessagesRef.current) {
@@ -947,26 +978,41 @@ export function ChatSaraPageClient({
     setError(null)
     getSaraConversation(selectedSessionId)
       .then((res) => {
-        let raw = res?.data?.mensajes
-        if (typeof raw === 'string') {
-          try {
-            raw = JSON.parse(raw) as Message[]
-          } catch {
-            raw = []
-          }
-        }
-        const msgs = Array.isArray(raw) ? raw : []
-        setMessages(
-          msgs.filter(
-            (m): m is Message =>
-              m?.role === 'user' || m?.role === 'assistant' || m?.role === 'asesor'
-          ) as Message[]
-        )
+        setMessages(normalizeMessages(res?.data?.mensajes))
+        setIsAsesorRespondiendo(res?.data?.estado === 'asesor_respondiendo')
         setTimeout(() => scrollToBottom(), 80)
       })
-      .catch(() => setMessages([]))
+      .catch(() => {
+        setMessages([])
+        setIsAsesorRespondiendo(false)
+      })
       .finally(() => setLoadingChat(false))
-  }, [selectedSessionId, loadKey, scrollToBottom])
+  }, [selectedSessionId, loadKey, scrollToBottom, normalizeMessages])
+
+  useEffect(() => {
+    if (!selectedSessionId || !isAsesorRespondiendo) return
+
+    let cancelled = false
+    const intervalId = window.setInterval(async () => {
+      try {
+        const res = await getSaraConversation(selectedSessionId)
+        if (cancelled) return
+        setMessages((prev) => {
+          const next = normalizeMessages(res?.data?.mensajes)
+          return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+        })
+        const sigueRespondiendo = res?.data?.estado === 'asesor_respondiendo'
+        setIsAsesorRespondiendo(sigueRespondiendo)
+      } catch {
+        // Evitar romper UI por un fallo transitorio de red
+      }
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [selectedSessionId, isAsesorRespondiendo, normalizeMessages])
 
   const isNearBottom = useCallback((threshold = 120) => {
     const el = listRef.current
@@ -1955,7 +2001,9 @@ export function ChatSaraPageClient({
                     ) : msg.role === 'asesor' ? (
                       <>
                         <span className="block text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-1.5">
-                          Equipo Inxora
+                          {msg.asesor_nombre?.trim()
+                            ? `${msg.asesor_nombre.trim()} (Asesor Inxora)`
+                            : 'Equipo Inxora'}
                         </span>
                         <div className="text-sm prose prose-p:my-1 prose-p:leading-relaxed max-w-none">
                           <ReactMarkdown components={{ a: markdownLink, img: markdownImg }}>
@@ -2150,24 +2198,24 @@ export function ChatSaraPageClient({
       {/* Modal compartir: estilo Gemini */}
       {shareModalSessionId && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-3 sm:p-4 bg-black/40 overflow-y-auto overscroll-contain"
           onClick={() => setShareModalSessionId(null)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="share-modal-title"
         >
           <div
-            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-100"
+            className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full max-h-[min(90dvh,calc(100dvh-2rem))] overflow-y-auto p-4 sm:p-6 border border-slate-100 mb-[env(safe-area-inset-bottom,0px)] sm:mb-0"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 id="share-modal-title" className="text-lg font-semibold text-slate-800">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 id="share-modal-title" className="text-base sm:text-lg font-semibold text-slate-800 pr-2">
                 Compartir conversación
               </h2>
               <button
                 type="button"
                 onClick={() => setShareModalSessionId(null)}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="shrink-0 p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 aria-label="Cerrar"
               >
                 <X className="h-5 w-5" />
@@ -2176,16 +2224,16 @@ export function ChatSaraPageClient({
             <p className="text-sm text-slate-500 mb-3">
               Cualquiera con el enlace podrá ver esta conversación (debe tener cuenta).
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
               <input
                 type="text"
                 readOnly
                 value={shareUrl}
-                className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700 truncate focus:outline-none"
+                className="w-full min-w-0 px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700 truncate focus:outline-none"
               />
               <Button
                 onClick={copyShareUrl}
-                className="bg-[#13A0D8] hover:bg-[#0d7ba8] shrink-0 rounded-xl font-medium shadow-sm"
+                className="bg-[#13A0D8] hover:bg-[#0d7ba8] w-full sm:w-auto shrink-0 rounded-xl font-medium shadow-sm"
               >
                 {urlCopied ? 'Copiado' : 'Copiar enlace'}
               </Button>

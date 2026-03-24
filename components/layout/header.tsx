@@ -375,11 +375,11 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                   <Menu className="h-4 w-4" />
                 </button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0">
-                <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0 flex flex-col min-h-0 h-full">
+                <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
                   <SheetTitle className="text-left text-base font-semibold">Menú</SheetTitle>
                 </SheetHeader>
-                <div className="px-5 py-4 space-y-5 overflow-y-auto">
+                <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
 
                   {/* Moneda */}
                   <div className="space-y-2">

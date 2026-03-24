@@ -182,9 +182,9 @@ export const miCuentaService = {
     })
   },
 
-  async getCotizacionesByCliente(clienteId: number, token: string): Promise<CotizacionesListResponse> {
-    return apiClient<CotizacionesListResponse>('/api/cotizaciones/', {
-      params: { cliente_id: clienteId },
+  /** Lista cotizaciones del cliente autenticado (el id no se envía al API; el token define el cliente). */
+  async getCotizacionesByCliente(_clienteId: number, token: string): Promise<CotizacionesListResponse> {
+    return apiClient<CotizacionesListResponse>('/api/cotizaciones/mi-cuenta', {
       headers: { Authorization: `Bearer ${token}` },
     })
   },

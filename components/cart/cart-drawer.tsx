@@ -53,7 +53,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
         )}
       </SheetTrigger>
 
-      <SheetContent className="w-full sm:max-w-lg flex flex-col z-[1000000]" overlayClassName="z-[1000000]">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col min-h-0 h-full z-[1000000]" overlayClassName="z-[1000000]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />

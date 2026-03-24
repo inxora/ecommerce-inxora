@@ -18,9 +18,11 @@ export function OrderSummary() {
   const { currencySymbol } = useCurrency()
   const { shipping } = useCheckoutShipping()
 
-  const subtotal = getTotalPrice()
-  const shippingCost = shipping.costoEnvio ?? 0
-  const total = subtotal + shippingCost
+  const subtotalConIgv = getTotalPrice()          // precio del catálogo ya incluye IGV
+  const subtotalBase   = subtotalConIgv / 1.18   // base sin IGV
+  const igv            = subtotalBase * 0.18      // IGV = 18%
+  const shippingCost   = shipping.costoEnvio ?? 0
+  const total          = subtotalBase + igv + shippingCost  // = subtotalConIgv + envío
   const itemCount = items.reduce((acc, i) => acc + i.quantity, 0)
 
   const formatPrice = (price: number) => `${currencySymbol} ${formatPriceWithThousands(price)}`
@@ -70,8 +72,8 @@ export function OrderSummary() {
         </p>
         <div className="flex items-center gap-4 mt-3">
           <div className="flex flex-col text-orange-100 text-xs">
-            <span className="opacity-75">Subtotal</span>
-            <span className="font-semibold text-white">{formatPrice(subtotal)}</span>
+            <span className="opacity-75">Productos</span>
+            <span className="font-semibold text-white">{formatPrice(subtotalConIgv)}</span>
           </div>
           <div className="w-px h-8 bg-white/20" />
           <div className="flex flex-col text-orange-100 text-xs">
@@ -169,10 +171,24 @@ export function OrderSummary() {
 
       {/* ── Desglose de totales ──────────────────────────────────────────────── */}
       <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+
+        {/* Subtotal base (sin IGV) */}
         <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-500 dark:text-slate-400">Subtotal</span>
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{formatPrice(subtotal)}</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">Subtotal (sin IGV)</span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            {formatPrice(parseFloat(subtotalBase.toFixed(2)))}
+          </span>
         </div>
+
+        {/* IGV 18% */}
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-slate-500 dark:text-slate-400">IGV (18%)</span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            {formatPrice(parseFloat(igv.toFixed(2)))}
+          </span>
+        </div>
+
+        {/* Envío */}
         <div className="flex justify-between items-center">
           <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5" />
@@ -189,6 +205,8 @@ export function OrderSummary() {
               : formatPrice(shippingCost)}
           </span>
         </div>
+
+        {/* Total */}
         <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between items-center">
           <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Total</span>
           <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{formatPrice(total)}</span>

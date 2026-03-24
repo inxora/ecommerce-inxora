@@ -24,7 +24,6 @@ import {
   Lock,
   Mail,
   Phone,
-  Plus,
   User,
   X,
 } from 'lucide-react'
@@ -169,7 +168,6 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     )
   }, [])
 
-  const addContacto    = () => setContactos((prev) => [...prev, makeContacto()])
   const removeContacto = (uid: string) => setContactos((prev) => prev.filter((c) => c.uid !== uid))
 
   // — Global validity —
@@ -494,16 +492,6 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
             </div>
           )
         })}
-
-        {/* Botón agregar contacto */}
-        <button
-          type="button"
-          onClick={addContacto}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium disabled:pointer-events-none disabled:opacity-50"
-        >
-          <Plus className="h-4 w-4" />
-          Agregar otro contacto
-        </button>
       </div>
 
       {/* Términos y condiciones */}

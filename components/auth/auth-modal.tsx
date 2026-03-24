@@ -132,7 +132,13 @@ export function AuthModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[90vh] overflow-y-auto transition-all duration-300 ${mode === 'register' && tipoRegistro !== 'natural' ? 'max-w-lg' : 'max-w-md'}`}>
+      <DialogContent
+        className={`transition-all duration-300 ${
+          mode === 'register' && tipoRegistro !== 'natural'
+            ? 'max-w-[min(32rem,calc(100vw-2rem))]'
+            : 'max-w-[min(28rem,calc(100vw-2rem))]'
+        }`}
+      >
         {mode === 'login' ? (
           <>
             <DialogHeader>
@@ -249,7 +255,7 @@ export function AuthModal() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="auth-nombre">Nombre</Label>
                   <Input

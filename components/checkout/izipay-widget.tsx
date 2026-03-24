@@ -10,11 +10,11 @@ declare global {
 }
 
 const IZIPAY_SCRIPT_ID = 'izipay-kr-payment-form-js'
-const IZIPAY_THEME_SCRIPT_ID = 'izipay-classic-theme-js'
-const IZIPAY_CSS_ID = 'izipay-classic-theme-css'
+const IZIPAY_THEME_SCRIPT_ID = 'izipay-neon-theme-js'
+const IZIPAY_CSS_ID = 'izipay-neon-theme-css'
 const IZIPAY_SCRIPT_URL = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js'
-const IZIPAY_THEME_CSS_URL = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css'
-const IZIPAY_THEME_SCRIPT_URL = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js'
+const IZIPAY_THEME_CSS_URL = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/neon.css'
+const IZIPAY_THEME_SCRIPT_URL = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/neon.js'
 
 interface KRWindow {
   KR?: {
@@ -55,16 +55,54 @@ export function IzipayWidget({
     onErrorRef.current(msg)
   }, [])
 
-  // ── 1. Cargar CSS del tema ─────────────────────────────────────────────────
+  // ── 1. Cargar CSS del tema neon + estilos personalizados INXORA ───────────
   useEffect(() => {
     if (!publicKey || typeof document === 'undefined') return
-    if (document.getElementById(IZIPAY_CSS_ID)) return
 
-    const link = document.createElement('link')
-    link.id = IZIPAY_CSS_ID
-    link.rel = 'stylesheet'
-    link.href = IZIPAY_THEME_CSS_URL
-    document.head.appendChild(link)
+    if (!document.getElementById(IZIPAY_CSS_ID)) {
+      const link = document.createElement('link')
+      link.id = IZIPAY_CSS_ID
+      link.rel = 'stylesheet'
+      link.href = IZIPAY_THEME_CSS_URL
+      document.head.appendChild(link)
+    }
+
+    const CUSTOM_ID = 'izipay-inxora-custom-theme'
+    if (!document.getElementById(CUSTOM_ID)) {
+      const s = document.createElement('style')
+      s.id = CUSTOM_ID
+      s.textContent = [
+        /* Variables CSS globales de Krypton — sobrescriben todo desde la raíz */
+        ':root{--kr-global-color-primary:#F97316!important;--kr-button-color-background:#F97316!important;--kr-button-color-foreground:#ffffff!important;--kr-field-color-background:#ffffff!important;--kr-field-color-border:#E2E8F0!important;--kr-field-border-radius:10px!important;--kr-global-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}',
+        /* Contenedor principal */
+        '.kr-smart-form,.kr-payment-form{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;background:#F8F9FA!important;border-radius:12px!important;padding:0!important;border:none!important;box-shadow:none!important}',
+        '.kr-form-content{padding:16px!important}',
+        /* Wrappers reales de campos (selector correcto según inspector) */
+        '.kr-input-relative-wrapper{background:#fff!important;border:1.5px solid #E2E8F0!important;border-radius:10px!important;margin-bottom:10px!important;overflow:hidden!important;padding:0!important}',
+        '.kr-input-relative-wrapper:focus-within{border-color:#F97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.12)!important}',
+        /* También los wrappers por tipo que pueden existir */
+        '[class*="kr-"][class*="-wrapper"]{background:#fff!important;border:1.5px solid #E2E8F0!important;border-radius:10px!important;margin-bottom:10px!important;overflow:hidden!important}',
+        '[class*="kr-"][class*="-wrapper"]:focus-within{border-color:#F97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.12)!important}',
+        /* Input real */
+        '.kr-input-field{color:#1E293B!important;font-size:14px!important;padding:11px 14px!important;background:transparent!important;border:none!important;width:100%!important}',
+        /* Label de tarjetas */
+        '.kr-card-list-label,.kr-card-list-header{color:#64748B!important;font-size:11px!important;font-weight:600!important;text-transform:uppercase!important;letter-spacing:.08em!important}',
+        /* Errores */
+        '.kr-field-error-label,.kr-error-field,.kr-form-error{color:#EF4444!important;font-size:12px!important;margin-top:4px!important;background:transparent!important}',
+        '.kr-on-error{border-color:#EF4444!important}',
+        '.kr-input-relative-wrapper:has(.kr-on-error){border-color:#EF4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.1)!important}',
+        /* Botón — sobrescribir variable + color texto */
+        '.kr-payment-button{background:#F97316!important;background-color:#F97316!important;border-color:#F97316!important;border-radius:10px!important;color:#fff!important;font-size:14px!important;font-weight:600!important;padding:13px 20px!important;width:100%!important;cursor:pointer!important;margin-top:6px!important;text-transform:none!important;box-shadow:0 4px 12px rgba(249,115,22,.30)!important}',
+        '.kr-payment-button span{color:#fff!important}',
+        '.kr-payment-button:hover{background:#EA6C0A!important;background-color:#EA6C0A!important}',
+        '.kr-payment-button:active{background:#DC5F00!important;background-color:#DC5F00!important;transform:scale(.99)!important}',
+        '.kr-payment-button:disabled{background:#FED7AA!important;background-color:#FED7AA!important;box-shadow:none!important;cursor:not-allowed!important}',
+        /* Loading y modal 3DS */
+        '.kr-loading-overlay{background:rgba(248,249,250,.85)!important;border-radius:12px!important}',
+        '.kr-popin-modal-header{background:#F97316!important;color:#fff!important;border-radius:12px 12px 0 0!important}',
+      ].join('')
+      document.head.appendChild(s)
+    }
   }, [publicKey])
 
   // ── 2. Registrar eventos KR (cuando SDK ya está cargado o se carga) ────────
@@ -73,7 +111,8 @@ export function IzipayWidget({
     if (!KR?.onSubmit || !KR?.onError) return false
 
     KR.onSubmit((data) => {
-      const krAnswer = data?.clientAnswer?.kr_answer ?? ''
+      // rawClientAnswer es el string JSON que necesita el backend para verificar firma
+      const krAnswer = data?.rawClientAnswer ?? ''
       const krHash = data?.hash ?? ''
       if (krAnswer && krHash) {
         invokeSuccess(krAnswer, krHash)
@@ -97,7 +136,10 @@ export function IzipayWidget({
     const krYaInicializado = typeof window !== 'undefined' && window.KR && window.KR !== false
 
     if (scriptYaExiste && krYaInicializado) {
-      console.log('[IzipayWidget] SDK ya inicializado, aplicando formToken directamente')
+      console.log('[IzipayWidget] SDK ya inicializado, registrando callbacks y aplicando formToken')
+      // Siempre re-registrar callbacks — cada instancia del widget puede tener
+      // handlers distintos (checkout vs página de pago por link de Sara)
+      registerKREvents()
       const wrapper = containerRef.current ?? document.querySelector('.kr-smart-form')
       if (wrapper && formToken) {
         wrapper.setAttribute('kr-form-token', formToken)
