@@ -28,6 +28,10 @@ export interface DireccionEntregaPedidoInput {
 
 export interface CreatePedidoBody {
   id_cliente: number
+  /** Email de contacto del checkout (puede diferir del correo de la cuenta). */
+  correo_contacto?: string
+  /** Nombre completo de contacto para el pedido. */
+  nombre_contacto?: string
   detalles: PedidoDetalleInput[]
   tipo_entrega?: 'DELIVERY' | 'RECOJO'
   direccion_entrega?: string
