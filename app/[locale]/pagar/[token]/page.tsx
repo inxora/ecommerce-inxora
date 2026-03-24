@@ -368,7 +368,7 @@ export default function PagarPage() {
                     ))}
                   </div>
                 </div>
-                <div className="p-5 bg-blue-50 dark:bg-blue-950/10">
+                <div className="p-5 sm:p-6 bg-white dark:bg-slate-900">
                   <IzipayWidget
                     formToken={formToken}
                     publicKey={publicKey}

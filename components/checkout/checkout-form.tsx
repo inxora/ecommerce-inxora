@@ -138,7 +138,7 @@ function SectionHeader({ step, icon: Icon, title, subtitle }: {
 /** Clean card wrapper */
 function FormSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-6 shadow-sm ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-6 sm:p-6 lg:p-7 xl:p-8 shadow-sm ${className}`}>
       {children}
     </div>
   )
@@ -268,6 +268,25 @@ export function CheckoutForm() {
   const [izipayLoading, setIzipayLoading] = useState(false)
   const [pedidoCreadoId, setPedidoCreadoId] = useState<number | null>(null)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
+
+  // Limpiar estado de Izipay y el script del DOM al montar el componente.
+  // Esto garantiza que cada visita al checkout inicie con un token fresco,
+  // evitando que el SDK de Krypton quede "pegado" de una sesión anterior.
+  useEffect(() => {
+    setIzipayFormToken(null)
+    setIzipayPublicKey(null)
+    setPedidoCreadoId(null)
+    setCurrentStep(1)
+    // Eliminar el script de Krypton del DOM para forzar reinicio completo
+    const oldScript = document.getElementById('izipay-kr-payment-form-js')
+    if (oldScript) oldScript.remove()
+    const oldTheme = document.getElementById('izipay-neon-theme-js')
+    if (oldTheme) oldTheme.remove()
+    const oldCss = document.getElementById('izipay-neon-theme-css')
+    if (oldCss) oldCss.remove()
+    const oldCustom = document.getElementById('izipay-inxora-custom-theme')
+    if (oldCustom) oldCustom.remove()
+  }, [])
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -673,6 +692,8 @@ export function CheckoutForm() {
     const isRecojo = data.tipo_entrega === 'RECOJO'
     const body: CreatePedidoBody = {
       id_cliente: cliente.id,
+      correo_contacto: data.email || undefined,
+      nombre_contacto: [data.firstName, data.lastName].filter(Boolean).join(' ') || undefined,
       detalles: items.map((i) => ({ sku: i.product.sku, cantidad: i.quantity, precio_unitario: i.product.precio_venta ?? 0 })),
       tipo_entrega: data.tipo_entrega,
       costo_envio: isRecojo ? 0 : (tarifaPlana?.provincia_ids?.includes(data.idProvincia ?? 0) ? (tarifaPlana?.costo_envio ?? 20) : 0),
@@ -858,240 +879,166 @@ export function CheckoutForm() {
       {isLoggedIn && currentStep === 1 && (
         <>
           <FormSection>
-            <SectionHeader step={1} icon={User} title="Información personal" subtitle="Datos del contacto para el pedido" />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Nombre" required error={form.formState.errors.firstName?.message}>
-                <Input
-                  className={inputCls}
-                  placeholder="Tu nombre"
-                  {...form.register('firstName')}
-                />
-              </Field>
-              <Field label="Apellido" required error={form.formState.errors.lastName?.message}>
-                <Input
-                  className={inputCls}
-                  placeholder="Tu apellido"
-                  {...form.register('lastName')}
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <Field label="Correo electrónico" required error={form.formState.errors.email?.message}>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <Input className={inputCls + ' pl-9'} type="email" placeholder="correo@empresa.com" {...form.register('email')} />
-                </div>
-              </Field>
-              <Field label="Teléfono" required error={form.formState.errors.phone?.message}>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <Input className={inputCls + ' pl-9'} type="tel" placeholder="+51 999 999 999" {...form.register('phone')} />
-                </div>
-              </Field>
-            </div>
-          </FormSection>
-
-          {/* ── 2. Delivery ────────────────────────────────────────────────── */}
-          <FormSection>
-            <SectionHeader step={2} icon={Truck} title="Entrega" subtitle="¿Cómo quieres recibir tu pedido?" />
-
-            {/* Tipo entrega toggle */}
-            <RadioGroup
-              value={tipoEntrega}
-              onValueChange={(v) => {
-                form.setValue('tipo_entrega', v as 'DELIVERY' | 'RECOJO')
-                if (v === 'RECOJO') setCheckoutShipping({ costoEnvio: 0, envioLabel: 'Recojo en tienda' })
-              }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5"
-            >
-              {[
-                { value: 'DELIVERY', icon: Truck, label: 'Envío a domicilio', desc: 'Entrega en tu dirección' },
-                { value: 'RECOJO', icon: Store, label: 'Recojo en tienda', desc: 'Sin costo de envío' },
-              ].map(({ value, icon: Icon, label, desc }) => {
-                const active = tipoEntrega === value
-                return (
-                  <label
-                    key={value}
-                    htmlFor={`tipo-${value}`}
-                    className={[
-                      'flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150',
-                      active
-                        ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-500'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
-                    ].join(' ')}
-                  >
-                    <RadioGroupItem value={value} id={`tipo-${value}`} className="sr-only" />
-                    <div className={['w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors', active ? 'bg-orange-500' : 'bg-slate-100 dark:bg-slate-800'].join(' ')}>
-                      <Icon className={['w-4 h-4', active ? 'text-white' : 'text-slate-500 dark:text-slate-400'].join(' ')} />
+            {/* Dos filas: arriba datos personales; abajo entrega. En entrega + envío: columnas campo | mapa en desktop */}
+            <div className="flex flex-col gap-8 lg:gap-10">
+              {/* ── Fila 1: Información personal (ancho completo) ─────────── */}
+              <div className="min-w-0">
+                <SectionHeader step={1} icon={User} title="Información personal" subtitle="Datos del contacto para el pedido" />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <Field label="Nombre" required error={form.formState.errors.firstName?.message}>
+                    <Input className={inputCls} placeholder="Tu nombre" {...form.register('firstName')} />
+                  </Field>
+                  <Field label="Apellido" required error={form.formState.errors.lastName?.message}>
+                    <Input className={inputCls} placeholder="Tu apellido" {...form.register('lastName')} />
+                  </Field>
+                  <Field label="Correo" required error={form.formState.errors.email?.message}>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <Input className={inputCls + ' pl-9'} type="email" placeholder="correo@empresa.com" {...form.register('email')} />
                     </div>
-                    <div>
-                      <p className={['text-sm font-semibold', active ? 'text-orange-700 dark:text-orange-300' : 'text-slate-800 dark:text-slate-200'].join(' ')}>{label}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{desc}</p>
+                  </Field>
+                  <Field label="Teléfono" required error={form.formState.errors.phone?.message}>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <Input className={inputCls + ' pl-9'} type="tel" placeholder="+51 999 999 999" {...form.register('phone')} />
                     </div>
-                    {active && (
-                      <div className="ml-auto w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-3.5 h-3.5 text-white" />
+                  </Field>
+                </div>
+              </div>
+
+              {/* ── Fila 2: Entrega ─────────────────────────────────────────── */}
+              <div className="min-w-0 pt-6 lg:pt-8 border-t border-slate-100 dark:border-slate-800">
+                <SectionHeader step={2} icon={Truck} title="Entrega" subtitle="¿Cómo quieres recibir tu pedido?" />
+
+                <RadioGroup
+                  value={tipoEntrega}
+                  onValueChange={(v) => {
+                    form.setValue('tipo_entrega', v as 'DELIVERY' | 'RECOJO')
+                    if (v === 'RECOJO') setCheckoutShipping({ costoEnvio: 0, envioLabel: 'Recojo en tienda' })
+                  }}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 mb-0"
+                >
+                  {[
+                    { value: 'DELIVERY', icon: Truck, label: 'Envío a domicilio', desc: 'Entrega en tu dirección' },
+                    { value: 'RECOJO', icon: Store, label: 'Recojo en tienda', desc: 'Sin costo de envío' },
+                  ].map(({ value, icon: Icon, label, desc }) => {
+                    const active = tipoEntrega === value
+                    return (
+                      <label
+                        key={value}
+                        htmlFor={`tipo-${value}`}
+                        className={[
+                          'flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150',
+                          active
+                            ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-500'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
+                        ].join(' ')}
+                      >
+                        <RadioGroupItem value={value} id={`tipo-${value}`} className="sr-only" />
+                        <div className={['w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors', active ? 'bg-orange-500' : 'bg-slate-100 dark:bg-slate-800'].join(' ')}>
+                          <Icon className={['w-4 h-4', active ? 'text-white' : 'text-slate-500 dark:text-slate-400'].join(' ')} />
+                        </div>
+                        <div>
+                          <p className={['text-sm font-semibold', active ? 'text-orange-700 dark:text-orange-300' : 'text-slate-800 dark:text-slate-200'].join(' ')}>{label}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{desc}</p>
+                        </div>
+                        {active && (
+                          <div className="ml-auto w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                      </label>
+                    )
+                  })}
+                </RadioGroup>
+
+                {tipoEntrega === 'DELIVERY' && (
+                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 xl:gap-10 lg:items-start">
+                    {/* Columna: dirección y ubigeo */}
+                    <div className="space-y-3 min-w-0 order-2 lg:order-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Field label="Departamento" required error={form.formState.errors.idCiudad?.message}>
+                          <select className={selectCls} value={form.watch('idCiudad') || ''} onChange={(e) => form.setValue('idCiudad', e.target.value ? Number(e.target.value) : 0)} disabled={loadingUbigeo.ciudades}>
+                            <option value="">{loadingUbigeo.ciudades ? 'Cargando...' : 'Seleccionar'}</option>
+                            {ciudades.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                          </select>
+                        </Field>
+                        <Field label="Provincia" required error={form.formState.errors.idProvincia?.message}>
+                          <select className={selectCls} value={form.watch('idProvincia') || ''} onChange={(e) => form.setValue('idProvincia', e.target.value ? Number(e.target.value) : 0)} disabled={!idCiudad || idCiudad < 1 || loadingUbigeo.provincias}>
+                            <option value="">{loadingUbigeo.provincias ? 'Cargando...' : 'Seleccionar'}</option>
+                            {provincias.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                          </select>
+                        </Field>
                       </div>
-                    )}
-                  </label>
-                )
-              })}
-            </RadioGroup>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Field label="Distrito (opcional)">
+                          <select className={selectCls} value={form.watch('idDistrito') ?? ''} onChange={(e) => form.setValue('idDistrito', e.target.value ? Number(e.target.value) : undefined)} disabled={!idProvincia || idProvincia < 1 || loadingUbigeo.distritos}>
+                            <option value="">{loadingUbigeo.distritos ? 'Cargando...' : 'Seleccionar'}</option>
+                            {distritos.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                          </select>
+                        </Field>
+                        <Field label="Tipo de lugar" required error={form.formState.errors.idTipoLugarEntrega?.message}>
+                          <select className={selectCls} value={idTipoLugarEntrega ?? ''} onChange={(e) => form.setValue('idTipoLugarEntrega', e.target.value ? Number(e.target.value) : undefined, { shouldValidate: true })} disabled={loadingUbigeo.tiposLugarEntrega}>
+                            <option value="">{loadingUbigeo.tiposLugarEntrega ? 'Cargando...' : 'Seleccionar'}</option>
+                            {tiposLugarEntrega.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                          </select>
+                        </Field>
+                      </div>
+                      <Field label="Dirección" required error={form.formState.errors.address?.message}>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <textarea className={textareaCls + ' pl-9 min-h-[72px]'} placeholder="Av. Principal 123, Mz A Lt 5..." {...form.register('address')} />
+                        </div>
+                      </Field>
+                      <Field label="País" required error={form.formState.errors.country?.message}>
+                        <Input className={inputCls} {...form.register('country')} />
+                      </Field>
+                      {idProvincia >= 1 && (
+                        <div className={['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium', tarifaPlana?.provincia_ids?.includes(idProvincia) ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 border border-emerald-200' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 border border-slate-200'].join(' ')}>
+                          <Truck className="w-4 h-4 flex-shrink-0" />
+                          {tarifaPlana?.provincia_ids?.includes(idProvincia) ? <>Envío: <strong className="ml-1">S/ {tarifaPlana?.costo_envio ?? 20}</strong> <span className="text-xs font-normal opacity-70">(Lima/Callao)</span></> : 'Envío a consultar según destino'}
+                        </div>
+                      )}
+                    </div>
 
-            {tipoEntrega === 'DELIVERY' && (
-              <div className="space-y-4">
-                {/* Ubigeo row 1 */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Departamento / Región" required error={form.formState.errors.idCiudad?.message}>
-                    <select
-                      className={selectCls}
-                      value={form.watch('idCiudad') || ''}
-                      onChange={(e) => form.setValue('idCiudad', e.target.value ? Number(e.target.value) : 0)}
-                      disabled={loadingUbigeo.ciudades}
-                    >
-                      <option value="">{loadingUbigeo.ciudades ? 'Cargando...' : 'Seleccionar'}</option>
-                      {ciudades.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="Provincia" required error={form.formState.errors.idProvincia?.message}>
-                    <select
-                      className={selectCls}
-                      value={form.watch('idProvincia') || ''}
-                      onChange={(e) => form.setValue('idProvincia', e.target.value ? Number(e.target.value) : 0)}
-                      disabled={!idCiudad || idCiudad < 1 || loadingUbigeo.provincias}
-                    >
-                      <option value="">{loadingUbigeo.provincias ? 'Cargando...' : 'Seleccionar'}</option>
-                      {provincias.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                    </select>
-                  </Field>
-                </div>
-
-                {/* Ubigeo row 2 */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Distrito (opcional)">
-                    <select
-                      className={selectCls}
-                      value={form.watch('idDistrito') ?? ''}
-                      onChange={(e) => form.setValue('idDistrito', e.target.value ? Number(e.target.value) : undefined)}
-                      disabled={!idProvincia || idProvincia < 1 || loadingUbigeo.distritos}
-                    >
-                      <option value="">{loadingUbigeo.distritos ? 'Cargando...' : 'Seleccionar'}</option>
-                      {distritos.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="Tipo de lugar" required error={form.formState.errors.idTipoLugarEntrega?.message}>
-                    <select
-                      className={selectCls}
-                      value={idTipoLugarEntrega ?? ''}
-                      onChange={(e) => form.setValue('idTipoLugarEntrega', e.target.value ? Number(e.target.value) : undefined, { shouldValidate: true })}
-                      disabled={loadingUbigeo.tiposLugarEntrega}
-                    >
-                      <option value="">{loadingUbigeo.tiposLugarEntrega ? 'Cargando...' : 'Seleccionar'}</option>
-                      {tiposLugarEntrega.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-                    </select>
-                  </Field>
-                </div>
-
-                {/* Address */}
-                <Field label="Dirección" required error={form.formState.errors.address?.message}>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <textarea
-                      className={textareaCls + ' pl-9 min-h-[72px]'}
-                      placeholder="Av. Principal 123, Mz A Lt 5, frente al parque..."
-                      {...form.register('address')}
-                    />
+                    {/* Columna: mapa (arriba en móvil para ver ubicación sin tanto scroll) */}
+                    <div className="flex flex-col gap-3 min-w-0 order-1 lg:order-2 lg:sticky lg:top-4">
+                      <Field label="Buscar dirección en mapa (opcional)">
+                        <div className="relative">
+                          <Input className={inputCls + ' pr-20'} type="text" placeholder="Escribe para buscar..." value={autocompleteQuery} onChange={(e) => setAutocompleteQuery(e.target.value)} onBlur={() => setTimeout(() => setAutocompleteSuggestions([]), 200)} aria-autocomplete="list" aria-expanded={autocompleteSuggestions.length > 0} />
+                          {loadingAutocomplete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Buscando…</span>}
+                          {autocompleteSuggestions.length > 0 && (
+                            <ul className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl max-h-48 overflow-auto divide-y divide-slate-100 dark:divide-slate-800">
+                              {autocompleteSuggestions.map((s) => (
+                                <li key={s.place_id} role="option" aria-selected={false} className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-slate-700 dark:text-slate-300 transition-colors" onMouseDown={(e) => { e.preventDefault(); handleSelectPlace(s.place_id) }}>
+                                  {s.description}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </Field>
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ubicación en mapa</p>
+                        {(() => { const addrDisplay = toAddressString(addressFromMap); return addrDisplay ? <p className="text-xs text-slate-500 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />{addrDisplay}</p> : null })()}
+                        <div className="rounded-xl overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700">
+                          <DeliveryAddressMap lat={mapLat} lng={mapLng} onMarkerMove={handleMarkerMove} center={mapLat != null && mapLng != null ? undefined : { lat: -12.046374, lng: -77.042793 }} zoom={14} loading={loadingMap.geocode} error={errorMap} onErrorRetry={() => setErrorMap(null)} height={280} />
+                        </div>
+                        <p className="text-xs text-slate-400">Arrastra el marcador para ajustar la ubicación exacta.</p>
+                      </div>
+                    </div>
                   </div>
-                </Field>
+                )}
 
-                {/* Country */}
-                <Field label="País" required error={form.formState.errors.country?.message}>
-                  <Input className={inputCls} {...form.register('country')} />
-                </Field>
-
-                {/* Address search */}
-                <Field label="Buscar dirección en mapa (opcional)">
-                  <div className="relative">
-                    <Input
-                      className={inputCls + ' pr-20'}
-                      type="text"
-                      placeholder="Escribe para buscar..."
-                      value={autocompleteQuery}
-                      onChange={(e) => setAutocompleteQuery(e.target.value)}
-                      onBlur={() => setTimeout(() => setAutocompleteSuggestions([]), 200)}
-                      aria-autocomplete="list"
-                      aria-expanded={autocompleteSuggestions.length > 0}
-                    />
-                    {loadingAutocomplete && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Buscando…</span>
-                    )}
-                    {autocompleteSuggestions.length > 0 && (
-                      <ul className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl max-h-48 overflow-auto divide-y divide-slate-100 dark:divide-slate-800">
-                        {autocompleteSuggestions.map((s) => (
-                          <li
-                            key={s.place_id}
-                            role="option"
-                            aria-selected={false}
-                            className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-slate-700 dark:text-slate-300 transition-colors"
-                            onMouseDown={(e) => { e.preventDefault(); handleSelectPlace(s.place_id) }}
-                          >
-                            {s.description}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </Field>
-
-                {/* Map */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    Ubicación en mapa
-                  </p>
-                  {(() => {
-                    const addrDisplay = toAddressString(addressFromMap)
-                    return addrDisplay ? (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5" aria-live="polite">
-                        <MapPin className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-                        {addrDisplay}
-                      </p>
-                    ) : null
-                  })()}
-                  <div className="rounded-xl overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700">
-                    <DeliveryAddressMap
-                      lat={mapLat} lng={mapLng}
-                      onMarkerMove={handleMarkerMove}
-                      center={mapLat != null && mapLng != null ? undefined : { lat: -12.046374, lng: -77.042793 }}
-                      zoom={14}
-                      loading={loadingMap.geocode}
-                      error={errorMap}
-                      onErrorRetry={() => setErrorMap(null)}
-                      height={260}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">
-                    Arrastra el marcador para ajustar la ubicación exacta.
-                  </p>
-                </div>
-
-                {/* Shipping cost pill */}
-                {idProvincia >= 1 && (
-                  <div className={[
-                    'flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium',
-                    tarifaPlana?.provincia_ids?.includes(idProvincia)
-                      ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50'
-                      : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
-                  ].join(' ')}>
-                    <Truck className="w-4 h-4 flex-shrink-0" />
-                    {tarifaPlana?.provincia_ids?.includes(idProvincia)
-                      ? <>Costo de envío: <strong className="ml-1">S/ {tarifaPlana?.costo_envio ?? 20}</strong> <span className="text-xs font-normal opacity-70 ml-1">(Lima/Callao)</span></>
-                      : 'Envío a consultar según destino'}
+                {tipoEntrega === 'RECOJO' && (
+                  <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/30 py-12 px-4">
+                    <Store className="w-12 h-12 mb-3 text-orange-400" />
+                    <p className="font-medium text-slate-700 dark:text-slate-200 text-sm">Recojo en tienda</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sin costo de envío</p>
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </FormSection>
 
           {/* Botón continuar paso 1 → 2 */}
@@ -1115,80 +1062,28 @@ export function CheckoutForm() {
           <FormSection>
             <SectionHeader step={3} icon={CreditCard} title="Método de pago" subtitle="Selecciona cómo quieres pagar" />
 
-            {/* Method selector */}
-            <RadioGroup
-              value={form.watch('paymentMethod')}
-              onValueChange={(v) => form.setValue('paymentMethod', v as 'transfer' | 'yape' | 'izipay')}
-              className="grid grid-cols-3 gap-3 mb-5"
-            >
-              {[
-                {
-                  value: 'transfer',
-                  icon: Building2,
-                  label: 'Transferencia bancaria',
-                  desc: 'BCP · Soles o dólares',
-                  color: 'emerald',
-                },
-                {
-                  value: 'yape',
-                  icon: QrCode,
-                  label: t('checkout.payment.yape'),
-                  desc: t('checkout.payment.yapeDescription'),
-                  color: 'purple',
-                },
-                {
-                  value: 'izipay',
-                  icon: CreditCard,
-                  label: 'Tarjeta',
-                  desc: 'Visa · MC · Amex',
-                  color: 'blue',
-                },
-              ].map(({ value, icon: Icon, label, desc, color }) => {
+            {/* Tabs de métodos de pago — compactos para evitar scroll */}
+            <div className="flex gap-2 mb-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              {([
+                { value: 'transfer', icon: Building2, label: 'Transferencia', color: 'emerald' },
+                { value: 'yape', icon: QrCode, label: 'Yape', color: 'purple' },
+                { value: 'izipay', icon: CreditCard, label: 'Tarjeta', color: 'blue' },
+              ] as const).map(({ value, icon: Icon, label, color }) => {
                 const active = form.watch('paymentMethod') === value
-                const activeBorder: Record<string, string> = {
-                  emerald: 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-500',
-                  purple: 'border-purple-400 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-500',
-                  blue: 'border-blue-400 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-500',
-                }
-                const activeIcon: Record<string, string> = {
-                  emerald: 'bg-emerald-500',
-                  purple: 'bg-purple-500',
-                  blue: 'bg-blue-500',
-                }
+                const activeClr: Record<string, string> = { emerald: 'text-emerald-700 dark:text-emerald-300', purple: 'text-purple-700 dark:text-purple-300', blue: 'text-blue-700 dark:text-blue-300' }
                 return (
-                  <label
+                  <button
                     key={value}
-                    htmlFor={`pay-${value}`}
-                    className={[
-                      'flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150',
-                      active
-                        ? activeBorder[color]
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
-                    ].join(' ')}
+                    type="button"
+                    onClick={() => form.setValue('paymentMethod', value as 'transfer' | 'yape' | 'izipay')}
+                    className={['flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all', active ? 'bg-white dark:bg-slate-900 shadow-sm ' + activeClr[color] : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'].join(' ')}
                   >
-                    <RadioGroupItem value={value} id={`pay-${value}`} className="sr-only" />
-                    <div className={[
-                      'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
-                      active ? activeIcon[color] : 'bg-slate-100 dark:bg-slate-800',
-                    ].join(' ')}>
-                      <Icon className={['w-5 h-5', active ? 'text-white' : 'text-slate-500 dark:text-slate-400'].join(' ')} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{desc}</p>
-                    </div>
-                    {active && (
-                      <div className={[
-                        'w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0',
-                        color === 'emerald' ? 'bg-emerald-500' : color === 'purple' ? 'bg-purple-500' : 'bg-blue-500',
-                      ].join(' ')}>
-                        <CheckCircle className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    )}
-                  </label>
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
                 )
               })}
-            </RadioGroup>
+            </div>
 
             {/* ── Transferencia BCP ─────────────────────────────────────── */}
             {form.watch('paymentMethod') === 'transfer' && (
@@ -1343,52 +1238,32 @@ export function CheckoutForm() {
             {/* Widget Izipay ahora vive en el paso 3 */}
           </FormSection>
 
-          {/* ── 4. Notes ─────────────────────────────────────────────────────── */}
+          {/* ── Notas + Términos en una sola card compacta ──────────────── */}
           <FormSection>
-            <SectionHeader step={4} icon={FileText} title="Notas adicionales" subtitle="Instrucciones especiales (opcional)" />
-            <textarea
-              className={textareaCls}
-              placeholder="Ej: Dejar con el portero, llamar antes de llegar..."
-              {...form.register('notes')}
-            />
-          </FormSection>
-
-          {/* ── Terms & newsletter ───────────────────────────────────────────── */}
-          <FormSection>
-            <div className="space-y-3.5">
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <Checkbox
-                  id="acceptTerms"
-                  checked={form.watch('acceptTerms')}
-                  onCheckedChange={(c) => form.setValue('acceptTerms', c as boolean)}
-                  className="mt-0.5 flex-shrink-0"
-                />
-                <span className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  Acepto los{' '}
-                  <Link href={`/${locale}/terminos`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
-                    términos y condiciones
-                  </Link>{' '}
-                  y la{' '}
-                  <Link href={`/${locale}/privacidad`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
-                    política de privacidad
-                  </Link>
-                </span>
-              </label>
-              {form.formState.errors.acceptTerms && (
-                <p className="text-xs text-red-500 pl-7">{form.formState.errors.acceptTerms.message}</p>
-              )}
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <Checkbox
-                  id="newsletter"
-                  checked={form.watch('newsletter')}
-                  onCheckedChange={(c) => form.setValue('newsletter', c as boolean)}
-                  className="mt-0.5 flex-shrink-0"
-                />
-                <span className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Quiero recibir ofertas y novedades por correo electrónico
-                </span>
-              </label>
+            <div className="space-y-3">
+              <textarea
+                className={textareaCls + ' min-h-[52px]'}
+                placeholder="Notas opcionales: Dejar con el portero, llamar antes de llegar..."
+                {...form.register('notes')}
+              />
+              <div className="flex flex-col gap-2 pt-1">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox id="acceptTerms" checked={form.watch('acceptTerms')} onCheckedChange={(c) => form.setValue('acceptTerms', c as boolean)} className="flex-shrink-0" />
+                  <span className="text-xs text-slate-700 dark:text-slate-300">
+                    Acepto los{' '}
+                    <Link href={`/${locale}/terminos`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">términos y condiciones</Link>
+                    {' '}y la{' '}
+                    <Link href={`/${locale}/privacidad`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">política de privacidad</Link>
+                  </span>
+                </label>
+                {form.formState.errors.acceptTerms && (
+                  <p className="text-xs text-red-500 pl-7">{form.formState.errors.acceptTerms.message}</p>
+                )}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox id="newsletter" checked={form.watch('newsletter')} onCheckedChange={(c) => form.setValue('newsletter', c as boolean)} className="flex-shrink-0" />
+                  <span className="text-xs text-slate-600 dark:text-slate-400">Quiero recibir ofertas y novedades por correo electrónico</span>
+                </label>
+              </div>
             </div>
           </FormSection>
 
@@ -1473,7 +1348,7 @@ export function CheckoutForm() {
                 ))}
               </div>
             </div>
-            <div className="p-5 bg-blue-50 dark:bg-blue-950/10">
+            <div className="p-5 sm:p-6 bg-white dark:bg-slate-900">
               <IzipayWidget
                 formToken={izipayFormToken}
                 publicKey={izipayPublicKey}

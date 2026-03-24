@@ -86,8 +86,19 @@ const IMAGE_PLACEHOLDER_REGEX = /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)
 function hasImagePlaceholder(content: string): boolean {
   return /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)\]/.test(content)
 }
+/** Texto que sale del textarea/input: CRLF → LF, sin tocar saltos de línea reales. */
+function normalizeOutgoingChatInput(raw: string): string {
+  return raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
+}
 function stripImagePlaceholder(content: string): string {
-  return content.replace(IMAGE_PLACEHOLDER_REGEX, '').replace(/\s{2,}/g, ' ').trim()
+  return content
+    .replace(IMAGE_PLACEHOLDER_REGEX, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    // Antes: /\s{2,}/g colapsaba \r\n (Windows) a un espacio y destruía las listas
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function formatRelativeDate(s: string | null): string {
@@ -1250,7 +1261,7 @@ export function ChatSaraPageClient({
   }, [])
 
   const sendMessage = useCallback(async () => {
-    const text = input.trim()
+    const text = normalizeOutgoingChatInput(input)
     const hasAttachments = attachments.length > 0
     const hasDocuments = documents.length > 0
     if ((!text && !hasAttachments && !hasDocuments) || sending) return
@@ -1263,7 +1274,7 @@ export function ChatSaraPageClient({
     if (text) parts.push(text)
     if (hasAttachments) parts.push(`[${attachments.length} imagen(es)]`)
     if (hasDocuments) parts.push(`[${documents.length} documento(s)]`)
-    const userContent = parts.length ? parts.join(' ') : ''
+    const userContent = parts.length ? parts.join('\n') : ''
     const previews = attachments.map((a) => a.preview)
 
     setInput('')
@@ -1993,7 +2004,11 @@ export function ChatSaraPageClient({
                           </span>
                         )}
                         {(stripImagePlaceholder(msg.content) || (!msg.attachmentPreviews?.length && !hasImagePlaceholder(msg.content))) && (
-                          <span className={msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? 'block mt-1' : ''}>
+                          <span
+                            className={`whitespace-pre-wrap break-words ${
+                              msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? 'block mt-1' : ''
+                            }`}
+                          >
                             {msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? stripImagePlaceholder(msg.content) : msg.content}
                           </span>
                         )}

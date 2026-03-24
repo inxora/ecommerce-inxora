@@ -20,13 +20,15 @@ interface KRWindow {
   KR?: {
     onSubmit: (
       cb: (data: {
-        // El SDK puede exponer rawClientAnswer (string) o clientAnswer.kr_answer
         rawClientAnswer?: string
         clientAnswer?: { kr_answer: string }
         hash?: string
       }) => boolean | void
     ) => void
     onError: (cb: (err: { errorMessage?: string }) => void) => void
+    setFormToken: (token: string) => Promise<void>
+    renderElements: (el: HTMLElement) => Promise<void>
+    removeForms: () => Promise<void>
   }
 }
 
@@ -74,39 +76,47 @@ export function IzipayWidget({
       document.head.appendChild(link)
     }
 
-    const CUSTOM_ID = 'izipay-inxora-custom-theme'
+    const CUSTOM_ID = 'izipay-inxora-custom-theme-v2'
+    document.getElementById('izipay-inxora-custom-theme')?.remove()
     if (!document.getElementById(CUSTOM_ID)) {
       const s = document.createElement('style')
       s.id = CUSTOM_ID
       s.textContent = [
-        /* Variables CSS globales de Krypton — sobrescriben todo desde la raíz */
-        ':root{--kr-global-color-primary:#F97316!important;--kr-button-color-background:#F97316!important;--kr-button-color-foreground:#ffffff!important;--kr-field-color-background:#ffffff!important;--kr-field-color-border:#E2E8F0!important;--kr-field-border-radius:10px!important;--kr-global-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}',
-        /* Contenedor principal */
-        '.kr-smart-form,.kr-payment-form{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;background:#F8F9FA!important;border-radius:12px!important;padding:0!important;border:none!important;box-shadow:none!important}',
-        '.kr-form-content{padding:16px!important}',
-        /* Wrappers reales de campos (selector correcto según inspector) */
-        '.kr-input-relative-wrapper{background:#fff!important;border:1.5px solid #E2E8F0!important;border-radius:10px!important;margin-bottom:10px!important;overflow:hidden!important;padding:0!important}',
-        '.kr-input-relative-wrapper:focus-within{border-color:#F97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.12)!important}',
-        /* También los wrappers por tipo que pueden existir */
-        '[class*="kr-"][class*="-wrapper"]{background:#fff!important;border:1.5px solid #E2E8F0!important;border-radius:10px!important;margin-bottom:10px!important;overflow:hidden!important}',
-        '[class*="kr-"][class*="-wrapper"]:focus-within{border-color:#F97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.12)!important}',
-        /* Input real */
-        '.kr-input-field{color:#1E293B!important;font-size:14px!important;padding:11px 14px!important;background:transparent!important;border:none!important;width:100%!important}',
-        /* Label de tarjetas */
-        '.kr-card-list-label,.kr-card-list-header{color:#64748B!important;font-size:11px!important;font-weight:600!important;text-transform:uppercase!important;letter-spacing:.08em!important}',
+        /* Tema “checkout limpio” (referencia tipo marketplaces): tipografía neutra, bordes finos, mucho aire */
+        ':root{--kr-global-color-primary:#F97316!important;--kr-button-color-background:#F97316!important;--kr-button-color-foreground:#ffffff!important;--kr-field-color-background:#ffffff!important;--kr-field-color-border:#dadce0!important;--kr-field-border-radius:6px!important;--kr-global-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif!important}',
+        /* Ancho completo (SDK neon fija ~300px por defecto) */
+        '.kr-smart-form{--kr-form-smartform-width:100%!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;-webkit-font-smoothing:antialiased!important;-moz-osx-font-smoothing:grayscale!important;color:#333!important}',
+        '.kr-smart-form[kr-single-payment-button],.kr-smart-form[kr-grid],.kr-smart-form.kr-smart-form--compact{width:100%!important;max-width:100%!important}',
+        '.kr-smart-form .kr-embedded,.kr-payment-form .kr-embedded{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}',
+        '.kr-brand-buttons,.kr-embedded .kr-brand-buttons{width:100%!important;max-width:100%!important;display:flex!important;flex-wrap:wrap!important;gap:10px!important;align-items:center!important;margin:0 0 18px!important;min-height:0!important}',
+        '.kr-smart-form .kr-smart-form-wrapper.kr-type-embedded{width:100%!important;max-width:100%!important}',
+        /* Contenedor: fondo blanco, sin “caja gris” extra */
+        '.kr-smart-form,.kr-payment-form{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif!important;background:#fff!important;border-radius:8px!important;padding:0!important;border:none!important;box-shadow:none!important;width:100%!important;max-width:100%!important}',
+        '.kr-form-content{padding:4px 2px 8px!important;width:100%!important;box-sizing:border-box!important}',
+        /* Campos: borde 1px, foco simple (sin halo grande) */
+        '.kr-input-relative-wrapper{background:#fff!important;border:1px solid #dadce0!important;border-radius:6px!important;margin-bottom:16px!important;overflow:hidden!important;padding:0!important;transition:border-color .15s ease,box-shadow .15s ease!important}',
+        '.kr-input-relative-wrapper:focus-within{border-color:#F97316!important;box-shadow:none!important;outline:none!important}',
+        '.kr-input-field{color:#333!important;font-size:15px!important;line-height:1.4!important;padding:13px 14px!important;background:transparent!important;border:none!important;width:100%!important}',
+        /* Iconos decorativos más discretos; no afectar icono de marca en número de tarjeta (.kr-pan) */
+        '.kr-embedded .kr-field-element:not(.kr-pan) .kr-icon .kr-icon-wrapper .kr-icon-wrapper-content svg,.kr-embedded .kr-field-element:not(.kr-pan) .kr-icon .kr-icon-wrapper .kr-icon-wrapper-content svg path{opacity:.55!important}',
+        /* Logos de marca en fila — más livianos */
+        '.kr-brand-buttons .kr-brand-button .kr-brand-button-icon svg,.kr-embedded .kr-brand-buttons .kr-brand-button .kr-brand-button-icon svg{border-color:#e8eaed!important;border-width:1px!important;border-radius:6px!important;box-shadow:none!important}',
+        /* Etiquetas: sin todo en mayúsculas; más legibles */
+        '.kr-card-list-label,.kr-card-list-header{color:#737373!important;font-size:13px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;margin-bottom:8px!important;display:block!important}',
         /* Errores */
-        '.kr-field-error-label,.kr-error-field,.kr-form-error{color:#EF4444!important;font-size:12px!important;margin-top:4px!important;background:transparent!important}',
-        '.kr-on-error{border-color:#EF4444!important}',
-        '.kr-input-relative-wrapper:has(.kr-on-error){border-color:#EF4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.1)!important}',
-        /* Botón — sobrescribir variable + color texto */
-        '.kr-payment-button{background:#F97316!important;background-color:#F97316!important;border-color:#F97316!important;border-radius:10px!important;color:#fff!important;font-size:14px!important;font-weight:600!important;padding:13px 20px!important;width:100%!important;cursor:pointer!important;margin-top:6px!important;text-transform:none!important;box-shadow:0 4px 12px rgba(249,115,22,.30)!important}',
+        '.kr-field-error-label,.kr-error-field,.kr-form-error{color:#c62828!important;font-size:13px!important;margin-top:6px!important;background:transparent!important}',
+        '.kr-on-error{border-color:#c62828!important}',
+        '.kr-input-relative-wrapper:has(.kr-on-error){border-color:#c62828!important;box-shadow:none!important}',
+        /* Botón principal: plano, sombra muy suave (estilo marketplace) */
+        '.kr-payment-button{background:#F97316!important;background-color:#F97316!important;border:1px solid #ea580c!important;border-radius:8px!important;color:#fff!important;font-size:15px!important;font-weight:600!important;padding:15px 20px!important;width:100%!important;cursor:pointer!important;margin-top:8px!important;text-transform:none!important;letter-spacing:.01em!important;box-shadow:0 1px 2px rgba(0,0,0,.08)!important;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease!important}',
         '.kr-payment-button span{color:#fff!important}',
-        '.kr-payment-button:hover{background:#EA6C0A!important;background-color:#EA6C0A!important}',
-        '.kr-payment-button:active{background:#DC5F00!important;background-color:#DC5F00!important;transform:scale(.99)!important}',
-        '.kr-payment-button:disabled{background:#FED7AA!important;background-color:#FED7AA!important;box-shadow:none!important;cursor:not-allowed!important}',
+        '.kr-payment-button:hover{background:#ea580c!important;background-color:#ea580c!important;border-color:#c2410c!important;box-shadow:0 2px 4px rgba(0,0,0,.1)!important}',
+        '.kr-payment-button:active{background:#dc5f00!important;background-color:#dc5f00!important;transform:none!important;box-shadow:0 1px 2px rgba(0,0,0,.08)!important}',
+        '.kr-payment-button:disabled{background:#FED7AA!important;background-color:#FED7AA!important;border-color:#fdba74!important;box-shadow:none!important;cursor:not-allowed!important;color:#9a3412!important}',
+        '.kr-payment-button:disabled span{color:#9a3412!important}',
         /* Loading y modal 3DS */
-        '.kr-loading-overlay{background:rgba(248,249,250,.85)!important;border-radius:12px!important}',
-        '.kr-popin-modal-header{background:#F97316!important;color:#fff!important;border-radius:12px 12px 0 0!important}',
+        '.kr-loading-overlay{background:rgba(255,255,255,.9)!important;border-radius:8px!important}',
+        '.kr-popin-modal-header{background:#F97316!important;color:#fff!important;border-radius:8px 8px 0 0!important}',
       ].join('')
       document.head.appendChild(s)
     }
@@ -143,16 +153,39 @@ export function IzipayWidget({
     const krYaInicializado = typeof window !== 'undefined' && window.KR && window.KR !== false
 
     if (scriptYaExiste && krYaInicializado) {
-      console.log('[IzipayWidget] SDK ya inicializado, registrando callbacks y aplicando formToken')
-      // Siempre re-registrar callbacks — cada instancia del widget puede tener
-      // handlers distintos (checkout vs página de pago por link de Sara)
+      console.log('[IzipayWidget] SDK ya en memoria — reiniciando con setFormToken + renderElements')
       registerKREvents()
-      const wrapper = containerRef.current ?? document.querySelector('.kr-smart-form')
-      if (wrapper && formToken) {
-        wrapper.setAttribute('kr-form-token', formToken)
-        console.log('[IzipayWidget] formToken aplicado sobre instancia existente')
+      const KR = (window as unknown as KRWindow).KR
+      const timeoutIds2: ReturnType<typeof setTimeout>[] = []
+      const reiniciarKR = async () => {
+        // Asegurarse de que el wrapper esté en el DOM antes de llamar al SDK
+        const wrapper = containerRef.current ?? document.querySelector<HTMLElement>('.kr-smart-form')
+        if (!wrapper) return
+        if (formToken) wrapper.setAttribute('kr-form-token', formToken)
+        try {
+          if (KR?.setFormToken && formToken) {
+            await KR.setFormToken(formToken)
+          }
+          // removeForms primero para evitar CLIENT_725 si ya había un formulario renderizado
+          if (KR?.removeForms) {
+            await KR.removeForms()
+          }
+          // Limpiar el wrapper completamente para evitar CLIENT_722
+          // (.kr-smart-form solo puede tener un .kr-embedded como hijo directo)
+          if (wrapper) wrapper.innerHTML = ''
+          if (formToken) wrapper.setAttribute('kr-form-token', formToken)
+          // renderElements le dice a Krypton que escanee y monte el formulario en el wrapper
+          if (KR?.renderElements && wrapper) {
+            await KR.renderElements(wrapper)
+            console.log('[IzipayWidget] renderElements OK')
+          }
+        } catch (e) {
+          console.warn('[IzipayWidget] reinicio KR falló:', e)
+        }
       }
-      return
+      const tid = setTimeout(() => { reiniciarKR() }, 150)
+      timeoutIds2.push(tid)
+      return () => { timeoutIds2.forEach((id) => clearTimeout(id)) }
     }
 
     const timeoutIds: ReturnType<typeof setTimeout>[] = []
@@ -274,10 +307,10 @@ export function IzipayWidget({
 
   // ── Smart Form: el SDK inyecta el formulario automáticamente ───────────────
   return (
-    <div className="rounded-xl overflow-hidden">
+    <div className="w-full min-w-0 rounded-xl overflow-hidden">
       <div
         ref={containerRef}
-        className="kr-smart-form"
+        className="kr-smart-form w-full min-w-0"
         data-testid="izipay-smart-form"
       />
     </div>

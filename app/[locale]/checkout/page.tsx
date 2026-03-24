@@ -31,7 +31,8 @@ export default async function CheckoutPage() {
         </div>
       </div>
 
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8">
+      {/* Ancho amplio: usa casi todo el viewport (márgenes solo por padding lateral) */}
+      <div className="w-full max-w-[min(100%,1920px)] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 lg:py-8">
 
         {/* ── Page header ──────────────────────────────────────────────────── */}
         <div className="mb-6">
@@ -48,7 +49,7 @@ export default async function CheckoutPage() {
             Layout: formulario (izquierda, 3/5) + resumen sticky (derecha, 2/5)
             En mobile: resumen primero (order-1) para que el usuario vea qué compra
           */}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-6 lg:gap-8 xl:gap-10 items-start">
 
             {/* LEFT — Checkout form con stepper */}
             <div className="order-2 lg:order-1 min-w-0">

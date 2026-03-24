@@ -84,8 +84,17 @@ const IMAGE_PLACEHOLDER_REGEX = /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)
 function hasImagePlaceholder(content: string): boolean {
   return /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)\]/.test(content)
 }
+function normalizeOutgoingChatInput(raw: string): string {
+  return raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
+}
 function stripImagePlaceholder(content: string): string {
-  return content.replace(IMAGE_PLACEHOLDER_REGEX, '').replace(/\s{2,}/g, ' ').trim()
+  return content
+    .replace(IMAGE_PLACEHOLDER_REGEX, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 const markdownComponents = {
@@ -402,7 +411,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
   }, [])
 
   const sendMessage = useCallback(async () => {
-    const text = input.trim()
+    const text = normalizeOutgoingChatInput(input)
     const hasAttachments = attachments.length > 0
     const hasDocuments = documents.length > 0
     if ((!text && !hasAttachments && !hasDocuments) || loading) return
@@ -419,7 +428,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     if (text) parts.push(text)
     if (hasAttachments) parts.push(`[${attachments.length} imagen(es)]`)
     if (hasDocuments) parts.push(`[${documents.length} documento(s)]`)
-    const userContent = parts.length ? parts.join(' ') : ''
+    const userContent = parts.length ? parts.join('\n') : ''
     const previews = attachments.map((a) => a.preview)
 
     setInput('')
@@ -764,6 +773,12 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           display: block;
           margin-top: 4px;
         }
+        .sara-msg.user .sara-user-text,
+        .sara-msg.user .sara-user-text-block {
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
         .sara-msg-img-wrap {
           display: inline-block;
           max-width: 200px;
@@ -1063,7 +1078,9 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
                       </span>
                     )}
                     {(stripImagePlaceholder(msg.content) || (!msg.attachmentPreviews?.length && !hasImagePlaceholder(msg.content))) && (
-                      <span className={msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? 'sara-user-text-block' : ''}>
+                      <span
+                        className={`sara-user-text ${msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? 'sara-user-text-block' : ''}`}
+                      >
                         {msg.attachmentPreviews?.length || hasImagePlaceholder(msg.content) ? stripImagePlaceholder(msg.content) : msg.content}
                       </span>
                     )}
