@@ -311,6 +311,10 @@ export function IzipayWidget({
       <div
         ref={containerRef}
         className="kr-smart-form w-full min-w-0"
+        // Krypton necesita kr-public-key en el elemento para saber qué clave usar
+        // tanto en la carga inicial como en reinicio via renderElements
+        {...(publicKey ? { 'kr-public-key': publicKey } : {})}
+        {...(formToken ? { 'kr-form-token': formToken } : {})}
         data-testid="izipay-smart-form"
       />
     </div>
