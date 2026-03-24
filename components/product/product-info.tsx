@@ -267,6 +267,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
           ) : (
             <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-inxora-blue">Consultar precio</p>
           )}
+          {minimoMonto && (
+            <p className="mt-1 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400">
+              Compra mínima: {minimoMonto.formatted}
+            </p>
+          )}
         </div>
         {product.condicion_precio_venta != null && product.condicion_precio_venta.trim() !== '' && (
           <span
@@ -293,11 +298,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
             {minimoPedido > 1 && (
               <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
                 Min. {minimoPedido} und.
-              </p>
-            )}
-            {minimoMonto && (
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                Compra mínima: {minimoMonto.formatted}
               </p>
             )}
           </div>

@@ -4,6 +4,8 @@ import { buildProductImageUrl } from '@/lib/supabase'
 import { generateProductSlug, normalizeName } from '@/lib/product-url'
 import type { CurrencyCode } from '@/lib/constants/currencies'
 
+const ID_DISPONIBILIDAD_AGOTADO = 12
+
 // Tipos para la respuesta del endpoint de productos
 export interface UnidadProducto {
   id: number
@@ -43,6 +45,7 @@ export interface ProveedorProducto {
   minimo_pedido?: number | null
   minimo_monto_compra?: number | null
   id_moneda_minimo_monto?: number | null
+  simbolo_moneda_minimo_monto?: string | null
   /** Condición del precio de venta (ej. "sujeto a disponibilidad"). Desde tabla producto_proveedor. */
   condicion_precio_venta?: string | null
 }
@@ -180,6 +183,7 @@ function mapProductoAPIToProducto(productoAPI: ProductoAPI): Producto {
     minimo_pedido: proveedor.minimo_pedido != null ? Number(proveedor.minimo_pedido) : 1,
     minimo_monto_compra: proveedor.minimo_monto_compra != null ? Number(proveedor.minimo_monto_compra) : null,
     id_moneda_minimo_monto: proveedor.id_moneda_minimo_monto ?? null,
+    simbolo_moneda_minimo_monto: proveedor.simbolo_moneda_minimo_monto ?? null,
   }))
 
   // Obtener el proveedor principal (el que tiene es_proveedor_principal: true)
@@ -526,10 +530,11 @@ export const ProductsService = {
   getProductosDestacados: async (
     limit: number,
     moneda_usuario?: CurrencyCode,
-    opciones?: { diversificarPor?: 'marca' | 'categoria'; maxPorGrupo?: number }
+    opciones?: { diversificarPor?: 'marca' | 'categoria'; maxPorGrupo?: number; aleatorio?: boolean }
   ): Promise<{ products: Producto[]; total: number }> => {
     const diversificarPor = opciones?.diversificarPor
     const maxPorGrupo = opciones?.maxPorGrupo ?? 3
+    const aleatorio = opciones?.aleatorio === true
 
     if (!diversificarPor) {
       return ProductsService.getProductosRecientes(limit, moneda_usuario)
@@ -537,7 +542,8 @@ export const ProductsService = {
 
     // El backend puede rechazar límites altos (ej. 422 con limit=120); usar máximo 50
     const poolSize = Math.min(limit * 4, 50)
-    // Priorizar productos con más visualizaciones; si el backend no soporta 'mas_vistos', usar 'nuevo'
+    // Si se pide aleatorio, traer un pool amplio y mezclar en frontend.
+    // Si no, priorizar mas_vistos; fallback a nuevo.
     let response: { products: Producto[]; total: number; totalPages: number }
     try {
       response = await ProductsService.getProductos({
@@ -545,13 +551,12 @@ export const ProductsService = {
         limit: poolSize,
         activo: true,
         visible_web: true,
-        ordenar: 'mas_vistos',
+        ordenar: aleatorio ? 'nuevo' : 'mas_vistos',
         moneda_usuario,
       })
     } catch (e) {
       if (e instanceof ApiError && (e.status === 422 || e.status === 400)) {
-        // En producción verás este log si el API no soporta ordenar=mas_vistos (se usa fallback a nuevo)
-        console.warn('[ProductsService] getProductosDestacados: ordenar=mas_vistos rechazado (', e.status, '), usando ordenar=nuevo')
+        console.warn('[ProductsService] getProductosDestacados: orden rechazado (', e.status, '), usando ordenar=nuevo')
         response = await ProductsService.getProductos({
           page: 1,
           limit: poolSize,
@@ -569,8 +574,22 @@ export const ProductsService = {
       return { products: [], total: 0 }
     }
 
-    // El backend ya devuelve ordenado (mas_vistos o nuevo); mantener ese orden al diversificar
-    const productosOrdenados = [...response.products]
+    const productosDisponibles = response.products.filter(
+      (p) => p.id_disponibilidad !== ID_DISPONIBILIDAD_AGOTADO
+    )
+
+    if (!productosDisponibles.length) {
+      return { products: [], total: 0 }
+    }
+
+    const productosOrdenados = [...productosDisponibles]
+    if (aleatorio) {
+      // Fisher-Yates para mezcla uniforme
+      for (let i = productosOrdenados.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[productosOrdenados[i], productosOrdenados[j]] = [productosOrdenados[j], productosOrdenados[i]]
+      }
+    }
 
     const getGrupoKey = (p: Producto): number | string => {
       if (diversificarPor === 'marca') return p.id_marca

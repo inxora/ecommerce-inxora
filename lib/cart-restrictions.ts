@@ -47,13 +47,16 @@ export function getMinimumAmountRequirement(product: RestrictionProduct): { amou
   const proveedorPrincipal = getProveedorPrincipal(product)
   const amount = proveedorPrincipal?.minimo_monto_compra
   const currencyCode = resolveCurrencyCodeById(proveedorPrincipal?.id_moneda_minimo_monto ?? proveedorPrincipal?.id_moneda_costo)
+  const symbolFromApi = proveedorPrincipal?.simbolo_moneda_minimo_monto?.trim()
 
   if (amount == null || amount <= 0 || !currencyCode) return null
 
   return {
     amount,
     currencyCode,
-    formatted: formatCurrencyAmount(amount, currencyCode),
+    formatted: symbolFromApi
+      ? `${symbolFromApi} ${formatPriceWithThousands(amount)}`
+      : formatCurrencyAmount(amount, currencyCode),
   }
 }
 

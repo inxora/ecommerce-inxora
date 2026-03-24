@@ -114,6 +114,7 @@ export interface CartItem {
     minimo_pedido?: number | null
     minimo_monto_compra?: number | null
     id_moneda_minimo_monto?: number | null
+    simbolo_moneda_minimo_monto?: string | null
     condicion_precio_venta?: string | null
   }
 }

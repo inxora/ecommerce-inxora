@@ -78,6 +78,7 @@ export default async function HomePage({ params }: PageProps) {
     ProductsService.getProductosDestacados(20, moneda, {
       diversificarPor: 'marca',
       maxPorGrupo: 3,
+      aleatorio: true,
     }),
     new Promise<{ products: any[], total: number }>((resolve) =>
       setTimeout(() => resolve({ products: [], total: 0 }), 5000)
