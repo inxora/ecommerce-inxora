@@ -18,7 +18,14 @@ const IZIPAY_THEME_SCRIPT_URL = 'https://static.micuentaweb.pe/static/js/krypton
 
 interface KRWindow {
   KR?: {
-    onSubmit: (cb: (data: { clientAnswer?: { kr_answer: string }; hash?: string }) => boolean | void) => void
+    onSubmit: (
+      cb: (data: {
+        // El SDK puede exponer rawClientAnswer (string) o clientAnswer.kr_answer
+        rawClientAnswer?: string
+        clientAnswer?: { kr_answer: string }
+        hash?: string
+      }) => boolean | void
+    ) => void
     onError: (cb: (err: { errorMessage?: string }) => void) => void
   }
 }
@@ -112,7 +119,7 @@ export function IzipayWidget({
 
     KR.onSubmit((data) => {
       // rawClientAnswer es el string JSON que necesita el backend para verificar firma
-      const krAnswer = data?.rawClientAnswer ?? ''
+      const krAnswer = data?.rawClientAnswer ?? data?.clientAnswer?.kr_answer ?? ''
       const krHash = data?.hash ?? ''
       if (krAnswer && krHash) {
         invokeSuccess(krAnswer, krHash)
