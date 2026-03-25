@@ -9,7 +9,14 @@ export interface ClienteInfo {
   correo: string | null
   /** 1 = Persona Natural, 2 = Empresa */
   tipo_cliente?: number | null
+  /** Algunos endpoints retornan este campo en vez de tipo_cliente */
+  id_tipo_cliente?: number | null
   razon_social?: string | null
+  documento_empresa?: string | null
+  documento_personal?: string | null
+  display_name?: string | null
+  contacto_principal_nombre?: string | null
+  id_pais?: number | null
   telefono?: string | null
 }
 
@@ -32,6 +39,8 @@ export interface RegistroEmpresaPayload {
 }
 
 export interface ContactoPayload {
+  nombres?: string
+  apellidos?: string
   nombre_completo: string
   correo: string
   telefono: string

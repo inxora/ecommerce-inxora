@@ -65,6 +65,23 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
     }
   }
 
+  const cleanName = (value?: string | null): string =>
+    value && value.trim().toUpperCase() !== 'N/A' ? value.trim() : ''
+
+  const rawTipoCliente = cliente?.tipo_cliente ?? cliente?.id_tipo_cliente ?? null
+  const tipoCliente = typeof rawTipoCliente === 'string' ? Number(rawTipoCliente) : rawTipoCliente
+  const esEmpresa =
+    tipoCliente === 2 ||
+    !!cliente?.razon_social?.trim() ||
+    !!cliente?.documento_empresa?.trim() ||
+    (cliente?.apellidos?.trim().toUpperCase() === 'N/A')
+  const nombreCompleto = [cleanName(cliente?.nombre), cleanName(cliente?.apellidos)].filter(Boolean).join(' ').trim()
+  const nombreMenu = isLoggedIn
+    ? (esEmpresa
+        ? cleanName(cliente?.display_name) || cleanName(cliente?.razon_social) || cleanName(cliente?.contacto_principal_nombre) || nombreCompleto || 'Empresa'
+        : cleanName(cliente?.display_name) || nombreCompleto || cleanName(cliente?.nombre) || 'Usuario')
+    : 'Visitante'
+
   // ── Profile dropdown — reutilizado en desktop y móvil ─────────────────────
   const ProfileMenuItems = () => (
     <>
@@ -73,7 +90,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
           <div className="space-y-0.5">
             <p className="text-[11px] text-slate-400 font-normal">Bienvenido</p>
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-              {[cliente?.nombre, cliente?.apellidos].filter(Boolean).join(' ')}
+              {nombreMenu}
             </p>
             {cliente?.correo && (
               <p className="text-[11px] text-slate-400 font-normal truncate">{cliente.correo}</p>
@@ -469,7 +486,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                         <div className="min-w-0">
                           <p className="text-xs text-slate-400">Bienvenido</p>
                           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-                            {cliente?.nombre ?? 'Usuario'}
+                            {nombreMenu}
                           </p>
                         </div>
                       </div>

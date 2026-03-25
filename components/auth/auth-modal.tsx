@@ -27,8 +27,63 @@ import { Building2, FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-reac
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
+type Pais = {
+  id: number
+  nombre: string
+  activo?: boolean
+  codigo?: string | null
+  iso_code_2?: string | null
+  nombre_doc_personal?: string | null
+  patron_doc_personal?: string | null
+  prefijo_telefonico?: string | null
+  patron_telefono?: string | null
+}
 type Mode = 'login' | 'register'
 type TipoRegistro = 'natural' | 'empresa'
+
+function extractPaises(payload: unknown): Pais[] {
+  if (Array.isArray(payload)) return payload as Pais[]
+  if (!payload || typeof payload !== 'object') return []
+
+  const obj = payload as {
+    data?: unknown
+    items?: unknown
+    results?: unknown
+  }
+
+  if (Array.isArray(obj.data)) return obj.data as Pais[]
+  if (Array.isArray(obj.items)) return obj.items as Pais[]
+  if (Array.isArray(obj.results)) return obj.results as Pais[]
+
+  if (obj.data && typeof obj.data === 'object') {
+    const nested = obj.data as { items?: unknown; results?: unknown; data?: unknown }
+    if (Array.isArray(nested.items)) return nested.items as Pais[]
+    if (Array.isArray(nested.results)) return nested.results as Pais[]
+    if (Array.isArray(nested.data)) return nested.data as Pais[]
+  }
+
+  return []
+}
+
+function toRegex(pattern?: string | null): RegExp | null {
+  if (!pattern) return null
+  try {
+    return new RegExp(pattern)
+  } catch {
+    return null
+  }
+}
+
+function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): string {
+  const trimmed = rawValue.trim()
+  if (!trimmed) return ''
+  const cleaned = trimmed.replace(/[^\d+]/g, '')
+  if (cleaned.startsWith('+')) return cleaned
+  const safePrefix = (prefix ?? '').trim()
+  if (!safePrefix) return cleaned
+  const normalizedPrefix = safePrefix.startsWith('+') ? safePrefix : `+${safePrefix}`
+  return `${normalizedPrefix}${cleaned.replace(/^\+/, '')}`
+}
 
 export function AuthModal() {
   const params = useParams()
@@ -39,6 +94,7 @@ export function AuthModal() {
   const [mode, setMode] = useState<Mode>('login')
   const [tipoRegistro, setTipoRegistro] = useState<TipoRegistro>('empresa')
   const [loading, setLoading] = useState(false)
+  const [formEpoch, setFormEpoch] = useState(0)
 
   // Login fields
   const [correo, setCorreo] = useState('')
@@ -46,6 +102,8 @@ export function AuthModal() {
 
   // Register fields
   const [rubros, setRubros] = useState<Rubro[]>([])
+  const [paises, setPaises] = useState<Pais[]>([])
+  const [id_pais, setIdPais] = useState<number | ''>(1)
   const [id_rubro, setIdRubro] = useState<number | ''>('')
   const [nombre, setNombre] = useState('')
   const [apellidos, setApellidos] = useState('')
@@ -61,9 +119,24 @@ export function AuthModal() {
     setMode(options.initialMode ?? 'login')
     setCorreo('')
     setPassword('')
+    setNombre('')
+    setApellidos('')
+    setDocumentoPersonal('')
+    setRegCorreo('')
+    setTelefono('')
+    setRegPassword('')
+    setAceptaTerminos(false)
+    setIdRubro('')
+    setIdPais(1)
+    setTipoRegistro('empresa')
+    setFormEpoch((v) => v + 1)
   }, [isOpen, clearError, options.initialMode])
 
   useEffect(() => {
+    // Reintentar carga cada vez que se abre el modal de registro.
+    // Evita quedar "pegado" en fallback (solo Perú) si la primera petición falló.
+    if (!isOpen || mode !== 'register') return
+
     apiClient<{ success?: boolean; data?: Rubro[] }>('/api/rubros/?limit=200')
       .then((res) => {
         const list = Array.isArray((res as { data?: Rubro[] }).data)
@@ -71,10 +144,41 @@ export function AuthModal() {
           : []
         const active = list.filter((r) => r.activo !== false)
         setRubros(active)
-        if (active.length > 0 && id_rubro === '') setIdRubro(active[0].id)
+        if (active.length > 0) {
+          setIdRubro((prev) => (prev !== '' && active.some((r) => r.id === prev) ? prev : active[0].id))
+        }
       })
       .catch(() => setRubros([]))
-  }, [])
+
+    apiClient<Pais[] | { success?: boolean; data?: Pais[] }>('/api/paises?limit=250')
+      .then((res) => {
+        const list = extractPaises(res)
+        const active = list.filter((p) => p.activo !== false)
+        if (active.length === 0) {
+          setPaises([{ id: 1, nombre: 'Perú', activo: true }])
+          setIdPais(1)
+          return
+        }
+        setPaises(active)
+        setIdPais((prev) => {
+          if (prev !== '' && active.some((p) => p.id === prev)) return prev
+          const peru = active.find((p) =>
+            p.id === 1 || p.codigo === 'PE' || p.iso_code_2 === 'PE' || p.nombre.toLowerCase().includes('peru'),
+          )
+          return (peru ?? active[0]).id
+        })
+      })
+      .catch(() => {
+        setPaises([{ id: 1, nombre: 'Perú', activo: true }])
+        setIdPais(1)
+      })
+  }, [isOpen, mode])
+
+  const selectedPais = id_pais === '' ? null : paises.find((p) => p.id === id_pais) ?? null
+  const docPersonalLabel = selectedPais?.nombre_doc_personal?.trim() || 'DNI / Documento'
+  const docPersonalRegex = toRegex(selectedPais?.patron_doc_personal)
+  const phonePrefix = selectedPais?.prefijo_telefonico?.trim() || ''
+  const phoneRegex = toRegex(selectedPais?.patron_telefono)
 
   const handleSuccess = () => {
     closeAuthModal()
@@ -102,6 +206,9 @@ export function AuthModal() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
+    if (docPersonalRegex && !docPersonalRegex.test(documento_personal.trim())) return
+    const telefonoNormalizado = normalizePhoneForSubmit(telefono, phonePrefix)
+    if (telefonoNormalizado && phoneRegex && !phoneRegex.test(telefonoNormalizado)) return
     const rubroId = id_rubro === '' ? undefined : id_rubro
     setLoading(true)
     try {
@@ -110,9 +217,9 @@ export function AuthModal() {
         apellidos: apellidos.trim(),
         documento_personal: documento_personal.trim(),
         correo: regCorreo.trim().toLowerCase(),
-        telefono: telefono.trim() || undefined,
+        telefono: telefonoNormalizado || undefined,
         password: regPassword,
-        id_pais: 1,
+        id_pais: id_pais === '' ? undefined : id_pais,
         id_rubro: rubroId ?? rubros[0]?.id,
         acepta_terminos: true,
       })
@@ -223,27 +330,47 @@ export function AuthModal() {
                 Crear cuenta
               </DialogTitle>
               <DialogDescription>
-                {tipoRegistro === 'natural' ? 'Registro como persona natural' : 'Regístrate para continuar'}
+                Regístrate para continuar con tu compra
               </DialogDescription>
             </DialogHeader>
+
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => { clearError(); setTipoRegistro('natural') }}
+                className={[
+                  'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                  tipoRegistro === 'natural'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500',
+                ].join(' ')}
+              >
+                <User className="h-4 w-4 shrink-0" />
+                Persona Natural
+              </button>
+              <button
+                type="button"
+                onClick={() => { clearError(); setTipoRegistro('empresa') }}
+                className={[
+                  'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                  tipoRegistro === 'empresa'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500',
+                ].join(' ')}
+              >
+                <Building2 className="h-4 w-4 shrink-0" />
+                Empresa
+              </button>
+            </div>
 
             {/* ── Empresa (default) ── */}
             {tipoRegistro === 'empresa' ? (
               <div className="mt-1">
                 <RegistroEmpresaForm
+                  key={`empresa-form-${formEpoch}`}
                   locale={locale}
                   onSuccess={handleSuccess}
                 />
-                <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
-                  ¿Eres persona natural?{' '}
-                  <button
-                    type="button"
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                    onClick={() => { clearError(); setTipoRegistro('natural') }}
-                  >
-                    Regístrate aquí
-                  </button>
-                </p>
               </div>
             ) : (
 
@@ -277,7 +404,30 @@ export function AuthModal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auth-documento">DNI / Documento</Label>
+                <Label htmlFor="auth-pais">País</Label>
+                <Select
+                  value={id_pais === '' ? undefined : String(id_pais)}
+                  onValueChange={(v) => {
+                    setIdPais(v === '' ? '' : Number(v))
+                    setTelefono('')
+                  }}
+                  required
+                >
+                  <SelectTrigger id="auth-pais" className="w-full">
+                    <SelectValue placeholder="Selecciona tu país" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paises.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="auth-documento">{docPersonalLabel}</Label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -285,11 +435,16 @@ export function AuthModal() {
                     value={documento_personal}
                     onChange={(e) => setDocumentoPersonal(e.target.value)}
                     className="pl-10"
-                    placeholder="8 dígitos"
-                    minLength={8}
+                    placeholder={`Ingrese ${docPersonalLabel}`}
+                    minLength={selectedPais?.id === 1 ? 8 : undefined}
                     required
                   />
                 </div>
+                {docPersonalRegex && documento_personal.trim() && !docPersonalRegex.test(documento_personal.trim()) && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Formato de {docPersonalLabel} inválido
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -309,16 +464,29 @@ export function AuthModal() {
 
               <div className="space-y-2">
                 <Label htmlFor="auth-telefono">Teléfono (opcional)</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="auth-telefono"
-                    type="tel"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex">
+                  {phonePrefix && (
+                    <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-600 dark:border-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                      {phonePrefix}
+                    </span>
+                  )}
+                  <div className="relative flex-1">
+                    {!phonePrefix && <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />}
+                    <Input
+                      id="auth-telefono"
+                      type="tel"
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value.replace(/[^\d]/g, ''))}
+                      className={phonePrefix ? 'rounded-l-none pl-3' : 'pl-10'}
+                      placeholder={phonePrefix ? 'Número' : undefined}
+                    />
+                  </div>
                 </div>
+                {phoneRegex && telefono.trim() && !phoneRegex.test(normalizePhoneForSubmit(telefono, phonePrefix)) && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Formato de teléfono inválido para {selectedPais?.nombre ?? 'el país seleccionado'}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -416,15 +584,6 @@ export function AuthModal() {
                   onClick={() => switchMode('login')}
                 >
                   Iniciar sesión
-                </button>
-              </p>
-              <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-                <button
-                  type="button"
-                  className="hover:underline"
-                  onClick={() => { clearError(); setTipoRegistro('empresa') }}
-                >
-                  ← Registrarme como empresa
                 </button>
               </p>
             </form>

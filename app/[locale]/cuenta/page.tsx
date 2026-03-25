@@ -46,11 +46,25 @@ export default function MiCuentaPerfilPage() {
   if (isLoading) return <PageSkeleton />
   if (!isLoggedIn || !cliente) return null
 
-  const esEmpresa = cliente.tipo_cliente === 2
-  const inicial = (cliente.nombre ?? 'U').slice(0, 1).toUpperCase()
-  const nombreCompleto = [cliente.nombre, cliente.apellidos].filter(Boolean).join(' ')
-  const nombreMostrado = esEmpresa ? (cliente.nombre ?? '') : nombreCompleto
-  const subtitulo = esEmpresa ? (cliente.razon_social ?? '') : ''
+  const cleanName = (value?: string | null): string =>
+    value && value.trim().toUpperCase() !== 'N/A' ? value.trim() : ''
+
+  const rawTipoCliente = cliente.tipo_cliente ?? cliente.id_tipo_cliente ?? null
+  const tipoCliente = typeof rawTipoCliente === 'string' ? Number(rawTipoCliente) : rawTipoCliente
+  const documentoEmpresa = cliente.documento_empresa
+  const esEmpresa =
+    tipoCliente === 2 ||
+    !!cliente.razon_social?.trim() ||
+    !!documentoEmpresa?.trim() ||
+    (cliente.apellidos?.trim().toUpperCase() === 'N/A')
+  const nombreCompleto = [cleanName(cliente.nombre), cleanName(cliente.apellidos)].filter(Boolean).join(' ').trim()
+  const contactoPrincipal = cleanName(cliente.contacto_principal_nombre) || nombreCompleto
+  const displayName = cleanName(cliente.display_name)
+  const nombreMostrado = esEmpresa
+    ? (displayName || cleanName(cliente.razon_social) || contactoPrincipal || 'Empresa')
+    : (displayName || nombreCompleto || cleanName(cliente.nombre) || 'Usuario')
+  const subtitulo = esEmpresa ? contactoPrincipal : ''
+  const inicial = (nombreMostrado || 'U').slice(0, 1).toUpperCase()
   const tipoBadge = esEmpresa ? 'Empresa' : 'Persona Natural'
 
   return (

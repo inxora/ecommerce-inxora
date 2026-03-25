@@ -9,7 +9,6 @@ import { ApiError, apiClient } from '@/lib/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -20,12 +19,12 @@ import {
 import {
   Building2,
   CheckCircle2,
+  FileText,
   Loader2,
   Lock,
   Mail,
   Phone,
   User,
-  X,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -41,10 +40,22 @@ interface RegistroEmpresaFormProps {
 
 type RucStatus = 'idle' | 'consulting' | 'valid' | 'invalid'
 type Rubro = { id: number; nombre: string; activo?: boolean }
+type Pais = {
+  id: number
+  nombre: string
+  activo?: boolean
+  codigo?: string | null
+  iso_code_2?: string | null
+  nombre_doc_empresa?: string | null
+  patron_doc_empresa?: string | null
+  prefijo_telefonico?: string | null
+  patron_telefono?: string | null
+}
 
 interface ContactoForm {
   uid: string
-  nombre_completo: string
+  nombres: string
+  apellidos: string
   correo: string
   telefono: string
   touched: Record<string, boolean>
@@ -56,19 +67,71 @@ let _uidCounter = 0
 const newUid = () => `ctc-${++_uidCounter}`
 
 function makeContacto(): ContactoForm {
-  return { uid: newUid(), nombre_completo: '', correo: '', telefono: '', touched: {} }
+  return { uid: newUid(), nombres: '', apellidos: '', correo: '', telefono: '', touched: {} }
 }
 
-function getContactoErrors(c: ContactoForm): Record<string, string> {
+function getContactoErrors(c: ContactoForm, phoneRegex?: RegExp | null, phonePrefix?: string): Record<string, string> {
+  const telefono = c.telefono.trim()
+  const telefonoNormalized = normalizePhoneForSubmit(telefono, phonePrefix)
   return {
-    nombre_completo: c.nombre_completo.trim() ? '' : 'El nombre es requerido',
+    nombres: c.nombres.trim() ? '' : 'Los nombres son requeridos',
+    apellidos: c.apellidos.trim() ? '' : 'Los apellidos son requeridos',
     correo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.correo) ? '' : 'Correo inválido',
-    telefono: c.telefono.trim() ? '' : 'El teléfono es requerido',
+    telefono:
+      !telefono
+        ? 'El teléfono es requerido'
+        : phoneRegex && !phoneRegex.test(telefonoNormalized)
+          ? 'Formato de teléfono inválido'
+          : '',
   }
 }
 
-function isContactoValid(c: ContactoForm): boolean {
-  return Object.values(getContactoErrors(c)).every((v) => !v)
+function isContactoValid(c: ContactoForm, phoneRegex?: RegExp | null, phonePrefix?: string): boolean {
+  return Object.values(getContactoErrors(c, phoneRegex, phonePrefix)).every((v) => !v)
+}
+
+function extractPaises(payload: unknown): Pais[] {
+  if (Array.isArray(payload)) return payload as Pais[]
+  if (!payload || typeof payload !== 'object') return []
+
+  const obj = payload as {
+    data?: unknown
+    items?: unknown
+    results?: unknown
+  }
+
+  if (Array.isArray(obj.data)) return obj.data as Pais[]
+  if (Array.isArray(obj.items)) return obj.items as Pais[]
+  if (Array.isArray(obj.results)) return obj.results as Pais[]
+
+  if (obj.data && typeof obj.data === 'object') {
+    const nested = obj.data as { items?: unknown; results?: unknown; data?: unknown }
+    if (Array.isArray(nested.items)) return nested.items as Pais[]
+    if (Array.isArray(nested.results)) return nested.results as Pais[]
+    if (Array.isArray(nested.data)) return nested.data as Pais[]
+  }
+
+  return []
+}
+
+function toRegex(pattern?: string | null): RegExp | null {
+  if (!pattern) return null
+  try {
+    return new RegExp(pattern)
+  } catch {
+    return null
+  }
+}
+
+function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): string {
+  const trimmed = rawValue.trim()
+  if (!trimmed) return ''
+  const cleaned = trimmed.replace(/[^\d+]/g, '')
+  if (cleaned.startsWith('+')) return cleaned
+  const safePrefix = (prefix ?? '').trim()
+  if (!safePrefix) return cleaned
+  const normalizedPrefix = safePrefix.startsWith('+') ? safePrefix : `+${safePrefix}`
+  return `${normalizedPrefix}${cleaned.replace(/^\+/, '')}`
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -82,7 +145,12 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
   const [rucStatus, setRucStatus] = useState<RucStatus>('idle')
   const [rucError, setRucError] = useState<string | null>(null)
   const [razonSocial, setRazonSocial] = useState('')
+  const [documentoEmpresa, setDocumentoEmpresa] = useState('')
   const latestRucRef = useRef('')
+
+  // — País —
+  const [paises, setPaises] = useState<Pais[]>([])
+  const [idPais, setIdPais] = useState<number | ''>(1)
 
   // — Rubros —
   const [rubros, setRubros] = useState<Rubro[]>([])
@@ -99,6 +167,43 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
       })
       .catch(() => setRubros([]))
   }, [])
+
+  useEffect(() => {
+    apiClient<Pais[] | { success?: boolean; data?: Pais[] }>('/api/paises?limit=250')
+      .then((res) => {
+        const list = extractPaises(res)
+        const active = list.filter((p) => p.activo !== false)
+        if (active.length === 0) {
+          setPaises([{ id: 1, nombre: 'Perú', activo: true }])
+          setIdPais(1)
+          return
+        }
+        setPaises(active)
+        setIdPais((prev) => {
+          if (prev !== '' && active.some((p) => p.id === prev)) return prev
+          const peru = active.find((p) =>
+            p.id === 1 || p.codigo === 'PE' || p.iso_code_2 === 'PE' || p.nombre.toLowerCase().includes('peru'),
+          )
+          return (peru ?? active[0]).id
+        })
+      })
+      .catch(() => {
+        setPaises([{ id: 1, nombre: 'Perú', activo: true }])
+        setIdPais(1)
+      })
+  }, [])
+
+  const selectedPais = idPais === '' ? null : paises.find((p) => p.id === idPais) ?? null
+  const isPeruSelected =
+    !!selectedPais &&
+    (selectedPais.id === 1 ||
+      selectedPais.codigo === 'PE' ||
+      selectedPais.iso_code_2 === 'PE' ||
+      selectedPais.nombre.toLowerCase().includes('peru'))
+  const docEmpresaLabel = selectedPais?.nombre_doc_empresa?.trim() || (isPeruSelected ? 'RUC' : 'Documento fiscal / tributario')
+  const docEmpresaRegex = toRegex(selectedPais?.patron_doc_empresa)
+  const phonePrefix = selectedPais?.prefijo_telefonico?.trim() || ''
+  const phoneRegex = toRegex(selectedPais?.patron_telefono)
 
   // — Password —
   const [password, setPassword] = useState('')
@@ -120,10 +225,14 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
 
   // Auto-consult RUC on 11 digits
   useEffect(() => {
+    if (!isPeruSelected) {
+      setRucStatus('idle')
+      setRucError(null)
+      return
+    }
     if (ruc.length < 11) {
       setRucStatus('idle')
       setRucError(null)
-      setRazonSocial('')
       return
     }
     latestRucRef.current = ruc
@@ -148,7 +257,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         setRucStatus('invalid')
         setRucError(e instanceof ApiError ? e.message : 'RUC inválido o no encontrado en SUNAT')
       })
-  }, [ruc])
+  }, [ruc, isPeruSelected])
 
   // — Password errors —
   const pwError  = pwTouched && password.length > 0 && password.length < 8 ? 'Mínimo 8 caracteres' : ''
@@ -156,7 +265,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
 
   // — Contacts helpers —
   const updateContacto = useCallback(
-    (uid: string, field: 'nombre_completo' | 'correo' | 'telefono', value: string) => {
+    (uid: string, field: 'nombres' | 'apellidos' | 'correo' | 'telefono', value: string) => {
       setContactos((prev) => prev.map((c) => (c.uid === uid ? { ...c, [field]: value } : c)))
     },
     [],
@@ -168,18 +277,20 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     )
   }, [])
 
-  const removeContacto = (uid: string) => setContactos((prev) => prev.filter((c) => c.uid !== uid))
-
   // — Global validity —
   const isFormValid = () =>
-    ruc.length === 11 &&
-    rucStatus !== 'consulting' &&
+    (isPeruSelected
+      ? ruc.length === 11 && rucStatus !== 'consulting' && rucStatus === 'valid'
+      : documentoEmpresa.trim().length >= 3 && (!docEmpresaRegex || docEmpresaRegex.test(documentoEmpresa.trim()))) &&
     !!razonSocial.trim() &&
+    idPais !== '' &&
     idRubro !== '' &&
     password.length >= 8 &&
     password === confirmPw &&
-    contactos.every(isContactoValid) &&
+    contactos.every((c) => isContactoValid(c, phoneRegex, phonePrefix)) &&
     aceptaTerminos
+
+  const buildNombreCompleto = (c: ContactoForm) => `${c.nombres.trim()} ${c.apellidos.trim()}`.trim()
 
   // — Submit —
   const handleSubmit = async (e: React.FormEvent) => {
@@ -189,7 +300,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     setContactos((prev) =>
       prev.map((c) => ({
         ...c,
-        touched: { nombre_completo: true, correo: true, telefono: true },
+        touched: { nombres: true, apellidos: true, correo: true, telefono: true },
       })),
     )
     if (!isFormValid()) return
@@ -197,23 +308,26 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     setSubmitting(true)
     setSubmitError(null)
     const principal = contactos[0]
+    const principalNombreCompleto = buildNombreCompleto(principal)
 
     try {
       const res = await clienteApi.registroEmpresaV2({
-        documento_empresa: ruc,
-        razon_social: razonSocial,
-        nombre_contacto_principal: principal.nombre_completo.trim(),
+        documento_empresa: isPeruSelected ? ruc : documentoEmpresa.trim(),
+        razon_social: razonSocial.trim(),
+        nombre_contacto_principal: principalNombreCompleto,
         correo_contacto_principal: principal.correo.trim().toLowerCase(),
-        telefono_contacto_principal: principal.telefono.trim(),
+        telefono_contacto_principal: normalizePhoneForSubmit(principal.telefono, phonePrefix),
         contrasena: password,
         id_rubro: idRubro as number,
-        id_pais: 1,
+        id_pais: idPais as number,
         id_forma_pago: 1,
         activo: true,
         contactos: contactos.map((c, i) => ({
-          nombre_completo: c.nombre_completo.trim(),
+          nombres: c.nombres.trim(),
+          apellidos: c.apellidos.trim(),
+          nombre_completo: buildNombreCompleto(c),
           correo: c.correo.trim().toLowerCase(),
-          telefono: c.telefono.trim(),
+          telefono: normalizePhoneForSubmit(c.telefono, phonePrefix),
           es_contacto_principal: i === 0,
           roles: [5],
         })),
@@ -281,37 +395,86 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
       <div className="space-y-4">
         <SectionHeader icon={<Building2 className="h-4 w-4" />} title="Datos de la empresa" />
 
-        {/* RUC */}
+        {/* País */}
         <div className="space-y-1.5">
-          <Label htmlFor="ruc-empresa">RUC</Label>
-          <div className="relative">
-            <Input
-              id="ruc-empresa"
-              value={ruc}
-              onChange={(e) => setRuc(e.target.value.replace(/\D/g, '').slice(0, 11))}
-              className={cn(
-                'pr-10',
-                rucStatus === 'valid'   && 'border-green-500 focus-visible:ring-green-500',
-                rucStatus === 'invalid' && 'border-red-500   focus-visible:ring-red-500',
-              )}
-              placeholder="11 dígitos"
-              maxLength={11}
-              inputMode="numeric"
-            />
-            {rucStatus === 'consulting' && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
-            )}
-            {rucStatus === 'valid' && (
-              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-            )}
-          </div>
-          {rucStatus === 'consulting' && (
-            <p className="text-xs text-blue-600 dark:text-blue-400">Consultando en SUNAT…</p>
-          )}
-          {rucError && <p className="text-xs text-red-600 dark:text-red-400">{rucError}</p>}
+          <Label htmlFor="pais-empresa">País</Label>
+          <Select
+            value={idPais === '' ? '' : String(idPais)}
+            onValueChange={(v) => {
+              const next = Number(v)
+              setIdPais(Number.isFinite(next) ? next : '')
+              setRuc('')
+              setDocumentoEmpresa('')
+              setRucStatus('idle')
+              setRucError(null)
+              setRazonSocial('')
+              setContactos((prev) => prev.map((c) => ({ ...c, telefono: '' })))
+            }}
+          >
+            <SelectTrigger id="pais-empresa">
+              <SelectValue placeholder="Seleccione el país" />
+            </SelectTrigger>
+            <SelectContent>
+              {paises.map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>
+                  {p.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Razón Social — editable, se auto-rellena al validar RUC */}
+        {/* Documento empresa (Perú: RUC con SUNAT | otros países: manual) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="ruc-empresa">
+            {docEmpresaLabel}
+          </Label>
+          <div className="relative">
+            {isPeruSelected ? (
+              <>
+                <Input
+                  id="ruc-empresa"
+                  value={ruc}
+                  onChange={(e) => setRuc(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  className={cn(
+                    'pr-10',
+                    rucStatus === 'valid'   && 'border-green-500 focus-visible:ring-green-500',
+                    rucStatus === 'invalid' && 'border-red-500   focus-visible:ring-red-500',
+                  )}
+                  placeholder="11 dígitos"
+                  maxLength={11}
+                  inputMode="numeric"
+                />
+                {rucStatus === 'consulting' && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
+                )}
+                {rucStatus === 'valid' && (
+                  <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                )}
+              </>
+            ) : (
+              <>
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="ruc-empresa"
+                  value={documentoEmpresa}
+                  onChange={(e) => setDocumentoEmpresa(e.target.value)}
+                  className="pl-10"
+                  placeholder={`Ingrese ${docEmpresaLabel}`}
+                />
+              </>
+            )}
+          </div>
+          {isPeruSelected && rucStatus === 'consulting' && (
+            <p className="text-xs text-blue-600 dark:text-blue-400">Consultando en SUNAT…</p>
+          )}
+          {isPeruSelected && rucError && <p className="text-xs text-red-600 dark:text-red-400">{rucError}</p>}
+          {!isPeruSelected && documentoEmpresa.trim().length > 0 && docEmpresaRegex && !docEmpresaRegex.test(documentoEmpresa.trim()) && (
+            <p className="text-xs text-red-600 dark:text-red-400">Formato de {docEmpresaLabel} inválido</p>
+          )}
+        </div>
+
+        {/* Razón Social — en Perú se auto-rellena por SUNAT, fuera de Perú es manual */}
         <div className="space-y-1.5">
           <Label htmlFor="razon-social">Razón Social</Label>
           <Input
@@ -382,13 +545,12 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         </div>
       </div>
 
-      {/* ══ Sección 2: Contactos ═════════════════════════════════════════════ */}
+      {/* ══ Sección 2: Contacto ═════════════════════════════════════════════ */}
       <div className="space-y-4">
-        <SectionHeader icon={<User className="h-4 w-4" />} title="Contactos" />
+        <SectionHeader icon={<User className="h-4 w-4" />} title="Contacto" />
 
-        {contactos.map((contacto, index) => {
-          const isPrincipal = index === 0
-          const errs = getContactoErrors(contacto)
+        {contactos.map((contacto) => {
+          const errs = getContactoErrors(contacto, phoneRegex, phonePrefix)
           const t = contacto.touched
 
           return (
@@ -396,52 +558,47 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
               key={contacto.uid}
               className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800/60 overflow-hidden"
             >
-              {/* Cabecera de la tarjeta */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-gray-100 dark:bg-slate-700/50 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    Contacto {index + 1}
-                  </span>
-                  {isPrincipal && (
-                    <Badge className="text-[10px] bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700 font-medium">
-                      Principal
-                    </Badge>
-                  )}
-                </div>
-                {!isPrincipal && (
-                  <button
-                    type="button"
-                    onClick={() => removeContacto(contacto.uid)}
-                    className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded p-0.5"
-                    aria-label="Eliminar contacto"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
               <div className="p-4 space-y-3">
-                {/* Nombre */}
-                <FieldWrapper
-                  id={`nombre-${contacto.uid}`}
-                  label="Nombre completo"
-                  error={t.nombre_completo ? errs.nombre_completo : ''}
-                >
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                {/* Nombres y apellidos separados */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FieldWrapper
+                    id={`nombres-${contacto.uid}`}
+                    label="Nombres"
+                    error={t.nombres ? errs.nombres : ''}
+                  >
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                      <Input
+                        id={`nombres-${contacto.uid}`}
+                        value={contacto.nombres}
+                        onChange={(e) => updateContacto(contacto.uid, 'nombres', e.target.value)}
+                        onBlur={() => touchContactoField(contacto.uid, 'nombres')}
+                        className={cn(
+                          'pl-9 h-9 text-sm',
+                          t.nombres && errs.nombres && 'border-red-500 focus-visible:ring-red-500',
+                        )}
+                        placeholder="Nombres"
+                      />
+                    </div>
+                  </FieldWrapper>
+                  <FieldWrapper
+                    id={`apellidos-${contacto.uid}`}
+                    label="Apellidos"
+                    error={t.apellidos ? errs.apellidos : ''}
+                  >
                     <Input
-                      id={`nombre-${contacto.uid}`}
-                      value={contacto.nombre_completo}
-                      onChange={(e) => updateContacto(contacto.uid, 'nombre_completo', e.target.value)}
-                      onBlur={() => touchContactoField(contacto.uid, 'nombre_completo')}
+                      id={`apellidos-${contacto.uid}`}
+                      value={contacto.apellidos}
+                      onChange={(e) => updateContacto(contacto.uid, 'apellidos', e.target.value)}
+                      onBlur={() => touchContactoField(contacto.uid, 'apellidos')}
                       className={cn(
-                        'pl-9 h-9 text-sm',
-                        t.nombre_completo && errs.nombre_completo && 'border-red-500 focus-visible:ring-red-500',
+                        'h-9 text-sm',
+                        t.apellidos && errs.apellidos && 'border-red-500 focus-visible:ring-red-500',
                       )}
-                      placeholder="Nombre completo"
+                      placeholder="Apellidos"
                     />
-                  </div>
-                </FieldWrapper>
+                  </FieldWrapper>
+                </div>
 
                 {/* Correo */}
                 <FieldWrapper
@@ -471,19 +628,29 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                   label="Teléfono"
                   error={t.telefono ? errs.telefono : ''}
                 >
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                    <Input
-                      id={`telefono-${contacto.uid}`}
-                      type="tel"
-                      value={contacto.telefono}
-                      onChange={(e) => updateContacto(contacto.uid, 'telefono', e.target.value)}
-                      onBlur={() => touchContactoField(contacto.uid, 'telefono')}
-                      className={cn(
-                        'pl-9 h-9 text-sm',
-                        t.telefono && errs.telefono && 'border-red-500 focus-visible:ring-red-500',
+                  <div className="flex">
+                    {phonePrefix && (
+                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-xs text-gray-600 dark:border-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                        {phonePrefix}
+                      </span>
+                    )}
+                    <div className="relative flex-1">
+                      {!phonePrefix && (
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                       )}
-                    />
+                      <Input
+                        id={`telefono-${contacto.uid}`}
+                        type="tel"
+                        value={contacto.telefono}
+                        onChange={(e) => updateContacto(contacto.uid, 'telefono', e.target.value.replace(/[^\d]/g, ''))}
+                        onBlur={() => touchContactoField(contacto.uid, 'telefono')}
+                        className={cn(
+                          `${phonePrefix ? 'rounded-l-none pl-3' : 'pl-9'} h-9 text-sm`,
+                          t.telefono && errs.telefono && 'border-red-500 focus-visible:ring-red-500',
+                        )}
+                        placeholder={phonePrefix ? 'Número' : undefined}
+                      />
+                    </div>
                   </div>
                 </FieldWrapper>
 

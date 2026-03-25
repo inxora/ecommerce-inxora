@@ -20,7 +20,62 @@ import { Building2, User, Mail, Lock, Phone, FileText } from 'lucide-react'
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
+type Pais = {
+  id: number
+  nombre: string
+  activo?: boolean
+  codigo?: string | null
+  iso_code_2?: string | null
+  nombre_doc_personal?: string | null
+  patron_doc_personal?: string | null
+  prefijo_telefonico?: string | null
+  patron_telefono?: string | null
+}
 type TipoCliente = 'natural' | 'empresa'
+
+function extractPaises(payload: unknown): Pais[] {
+  if (Array.isArray(payload)) return payload as Pais[]
+  if (!payload || typeof payload !== 'object') return []
+
+  const obj = payload as {
+    data?: unknown
+    items?: unknown
+    results?: unknown
+  }
+
+  if (Array.isArray(obj.data)) return obj.data as Pais[]
+  if (Array.isArray(obj.items)) return obj.items as Pais[]
+  if (Array.isArray(obj.results)) return obj.results as Pais[]
+
+  if (obj.data && typeof obj.data === 'object') {
+    const nested = obj.data as { items?: unknown; results?: unknown; data?: unknown }
+    if (Array.isArray(nested.items)) return nested.items as Pais[]
+    if (Array.isArray(nested.results)) return nested.results as Pais[]
+    if (Array.isArray(nested.data)) return nested.data as Pais[]
+  }
+
+  return []
+}
+
+function toRegex(pattern?: string | null): RegExp | null {
+  if (!pattern) return null
+  try {
+    return new RegExp(pattern)
+  } catch {
+    return null
+  }
+}
+
+function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): string {
+  const trimmed = rawValue.trim()
+  if (!trimmed) return ''
+  const cleaned = trimmed.replace(/[^\d+]/g, '')
+  if (cleaned.startsWith('+')) return cleaned
+  const safePrefix = (prefix ?? '').trim()
+  if (!safePrefix) return cleaned
+  const normalizedPrefix = safePrefix.startsWith('+') ? safePrefix : `+${safePrefix}`
+  return `${normalizedPrefix}${cleaned.replace(/^\+/, '')}`
+}
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -38,6 +93,8 @@ export default function RegistroPage() {
 
   const { register, error, clearError } = useClienteAuth()
   const [rubros, setRubros] = useState<Rubro[]>([])
+  const [paises, setPaises] = useState<Pais[]>([])
+  const [id_pais, setIdPais] = useState<number | ''>(1)
   const [id_rubro, setIdRubro] = useState<number | ''>('')
   const [nombre, setNombre] = useState('')
   const [apellidos, setApellidos] = useState('')
@@ -63,9 +120,47 @@ export default function RegistroPage() {
       .catch(() => setRubros([]))
   }, [])
 
+  useEffect(() => {
+    apiClient<Pais[] | { success?: boolean; data?: Pais[] }>('/api/paises?limit=250')
+      .then((res) => {
+        const list = extractPaises(res)
+        const active = list.filter((p) => p.activo !== false)
+        if (active.length === 0) {
+          setPaises([{ id: 1, nombre: 'Perú', activo: true }])
+          setIdPais(1)
+          return
+        }
+        setPaises(active)
+        setIdPais((prev) => {
+          if (prev !== '' && active.some((p) => p.id === prev)) return prev
+          const peru = active.find((p) =>
+            p.id === 1 || p.codigo === 'PE' || p.iso_code_2 === 'PE' || p.nombre.toLowerCase().includes('peru'),
+          )
+          return (peru ?? active[0]).id
+        })
+      })
+      .catch(() => {
+        setPaises([{ id: 1, nombre: 'Perú', activo: true }])
+        setIdPais(1)
+      })
+  }, [])
+
+  const selectedPais = id_pais === '' ? null : paises.find((p) => p.id === id_pais) ?? null
+  const docPersonalLabel = selectedPais?.nombre_doc_personal?.trim() || 'DNI / Documento'
+  const docPersonalRegex = toRegex(selectedPais?.patron_doc_personal)
+  const phonePrefix = selectedPais?.prefijo_telefonico?.trim() || ''
+  const phoneRegex = toRegex(selectedPais?.patron_telefono)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
+    if (docPersonalRegex && !docPersonalRegex.test(documento_personal.trim())) {
+      return
+    }
+    const telefonoNormalizado = normalizePhoneForSubmit(telefono, phonePrefix)
+    if (telefonoNormalizado && phoneRegex && !phoneRegex.test(telefonoNormalizado)) {
+      return
+    }
     const rubroId = id_rubro === '' ? undefined : id_rubro
     setLoading(true)
     try {
@@ -74,9 +169,9 @@ export default function RegistroPage() {
         apellidos: apellidos.trim(),
         documento_personal: documento_personal.trim(),
         correo: correo.trim().toLowerCase(),
-        telefono: telefono.trim() || undefined,
+        telefono: telefonoNormalizado || undefined,
         password,
-        id_pais: 1,
+        id_pais: id_pais === '' ? undefined : id_pais,
         id_rubro: rubroId ?? rubros[0]?.id,
         acepta_terminos: true,
       })
@@ -170,7 +265,29 @@ export default function RegistroPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="documento_personal">DNI / Documento</Label>
+                <Label htmlFor="id_pais">País</Label>
+                <Select
+                  value={id_pais === '' ? undefined : String(id_pais)}
+                  onValueChange={(v) => {
+                    setIdPais(v === '' ? '' : Number(v))
+                    setTelefono('')
+                  }}
+                  required
+                >
+                  <SelectTrigger id="id_pais" className="w-full">
+                    <SelectValue placeholder="Selecciona tu país" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paises.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="documento_personal">{docPersonalLabel}</Label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -178,11 +295,16 @@ export default function RegistroPage() {
                     value={documento_personal}
                     onChange={(e) => setDocumentoPersonal(e.target.value)}
                     className="pl-10"
-                    placeholder="8 dígitos"
-                    minLength={8}
+                    placeholder={`Ingrese ${docPersonalLabel}`}
+                    minLength={selectedPais?.id === 1 ? 8 : undefined}
                     required
                   />
                 </div>
+                {docPersonalRegex && documento_personal.trim() && !docPersonalRegex.test(documento_personal.trim()) && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Formato de {docPersonalLabel} inválido
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="correo">Correo electrónico</Label>
@@ -200,16 +322,29 @@ export default function RegistroPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="telefono">Teléfono (opcional)</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="telefono"
-                    type="tel"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex">
+                  {phonePrefix && (
+                    <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-600 dark:border-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                      {phonePrefix}
+                    </span>
+                  )}
+                  <div className="relative flex-1">
+                    {!phonePrefix && <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />}
+                    <Input
+                      id="telefono"
+                      type="tel"
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value.replace(/[^\d]/g, ''))}
+                      className={phonePrefix ? 'rounded-l-none pl-3' : 'pl-10'}
+                      placeholder={phonePrefix ? 'Número' : undefined}
+                    />
+                  </div>
                 </div>
+                {phoneRegex && telefono.trim() && !phoneRegex.test(normalizePhoneForSubmit(telefono, phonePrefix)) && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Formato de teléfono inválido para {selectedPais?.nombre ?? 'el país seleccionado'}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="id_rubro">Rubro / Sector</Label>
