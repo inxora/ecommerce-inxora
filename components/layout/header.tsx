@@ -205,320 +205,296 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
       {/* ── Main bar ────────────────────────────────────────────────────────── */}
       <div className="bg-[#171D4C] border-b border-white/10 shadow-lg">
-        <div className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 flex h-[68px] items-center gap-3 lg:gap-4">
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+          <div className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 flex h-[68px] items-center gap-2 sm:gap-3 lg:gap-4">
 
-          {/* Logo */}
-          <Link href={`/${locale}`} className="flex-shrink-0" aria-label="Ir a inicio">
-            <Image
-              src="/LOGO-30.png"
-              alt="INXORA"
-              title="INXORA"
-              width={160}
-              height={54}
-              className="h-10 sm:h-11 w-auto object-contain"
-              priority
-              unoptimized
-            />
-          </Link>
-
-          {/* Categorías — solo xl+ */}
-          <div className="hidden xl:flex flex-shrink-0">
-            <CategoriesSidebar
-              locale={locale}
-              categories={categories}
-              trigger={
-                <button
-                  type="button"
-                  className="flex items-center gap-2 h-9 px-3.5 rounded-lg bg-white/10 hover:bg-white/20 border-0 text-white text-sm font-medium transition-colors"
-                  aria-label="Ver categorías"
-                >
-                  <Menu className="h-4 w-4 flex-shrink-0" />
-                  <span>Categorías</span>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />
-                </button>
-              }
-            />
-          </div>
-
-          {/* Search bar — oculto en mobile (< sm), visible en sm+ */}
-          <form
-            action={`/${locale}/buscar`}
-            method="get"
-            onSubmit={handleSearch}
-            className="hidden sm:flex flex-1 min-w-0"
-          >
-            <div className="flex rounded-lg overflow-hidden ring-1 ring-white/20 hover:ring-white/40 focus-within:ring-2 focus-within:ring-[#1A56DB] transition-all">
-              <Input
-                type="search"
-                name="q"
-                placeholder="¿Qué estás buscando?"
-                className={cn(
-                  'flex-1 min-w-0 h-10 pl-4 pr-3 rounded-l-lg rounded-r-none border-0',
-                  'bg-white/10 text-white placeholder:text-white/50 text-sm',
-                  'focus-visible:ring-0 focus-visible:ring-offset-0'
-                )}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Buscar productos"
-              />
+            {/* Hamburguesa — PRIMERO, visible hasta xl */}
+            <SheetTrigger asChild>
               <button
-                type="submit"
-                className="h-10 px-4 bg-amber-400 hover:bg-amber-300 text-[#171D4C] rounded-r-lg flex-shrink-0 font-semibold transition-colors"
+                type="button"
+                className="xl:hidden flex-shrink-0 flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors"
+                aria-label="Abrir menú"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+            </SheetTrigger>
+
+            {/* Logo */}
+            <Link href={`/${locale}`} className="flex-shrink-0" aria-label="Ir a inicio">
+              <Image
+                src="/LOGO-30.png"
+                alt="INXORA"
+                title="INXORA"
+                width={160}
+                height={54}
+                className="h-9 sm:h-10 xl:h-11 w-auto object-contain"
+                priority
+                unoptimized
+              />
+            </Link>
+
+            {/* Categorías — solo xl+ */}
+            <div className="hidden xl:flex flex-shrink-0">
+              <CategoriesSidebar
+                locale={locale}
+                categories={categories}
+                trigger={
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 h-9 px-3.5 rounded-lg bg-white/10 hover:bg-white/20 border-0 text-white text-sm font-medium transition-colors"
+                    aria-label="Ver categorías"
+                  >
+                    <Menu className="h-4 w-4 flex-shrink-0" />
+                    <span>Categorías</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />
+                  </button>
+                }
+              />
+            </div>
+
+            {/* Search bar — oculto en mobile (< sm), visible en sm+ */}
+            <form
+              action={`/${locale}/buscar`}
+              method="get"
+              onSubmit={handleSearch}
+              className="hidden sm:flex flex-1 min-w-0"
+            >
+              <div className="flex w-full rounded-lg overflow-hidden ring-1 ring-white/20 hover:ring-white/40 focus-within:ring-2 focus-within:ring-[#1A56DB] transition-all">
+                <Input
+                  type="search"
+                  name="q"
+                  placeholder="¿Qué estás buscando?"
+                  className={cn(
+                    'flex-1 min-w-0 h-10 pl-4 pr-3 rounded-l-lg rounded-r-none border-0',
+                    'bg-white/10 text-white placeholder:text-white/50 text-sm',
+                    'focus-visible:ring-0 focus-visible:ring-offset-0'
+                  )}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Buscar productos"
+                />
+                <button
+                  type="submit"
+                  className="h-10 px-4 bg-amber-400 hover:bg-amber-300 text-[#171D4C] rounded-r-lg flex-shrink-0 font-semibold transition-colors"
+                  aria-label="Buscar"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+
+            {/* ── Right actions (pegados a la derecha) ──────────────────────────── */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+
+              {/* Lupa — solo mobile (< sm) */}
+              <button
+                type="button"
+                className="sm:hidden flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 hover:bg-white/20 transition-colors"
                 aria-label="Buscar"
+                onClick={() => setMobileSearchOpen((v) => !v)}
               >
                 <Search className="h-4 w-4" />
               </button>
-            </div>
-          </form>
 
-          {/* ── Right actions ─────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Chat con Sara */}
+              <Link
+                href={`/${locale}/cuenta/chat-sara`}
+                className={cn(
+                  'flex items-center gap-1.5 h-9 px-2.5 rounded-lg',
+                  'bg-white/10 hover:bg-white/20 border-0',
+                  'text-white text-xs font-medium transition-colors whitespace-nowrap'
+                )}
+                title="Chat con Sara"
+              >
+                <MessageCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                <span className="hidden lg:inline">Sara</span>
+              </Link>
 
-            {/* Hamburguesa — PRIMERO, visible hasta xl */}
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
+              {/* Moneda compacta — solo sm+ */}
+              <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+                <SelectTrigger className={cn(
+                  'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg',
+                  'bg-white/10 hover:bg-white/20 border-0',
+                  'text-white transition-colors [&>svg]:hidden'
+                )}>
+                  <SelectValue>
+                    <span className="flex items-center gap-1.5">
+                      <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />
+                      <span className="text-xs font-medium">{currentCurrency.symbol}</span>
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5" align="end">
+                  {CURRENCIES.map((c) => (
+                    <SelectItemIndicatorRight
+                      key={c.code}
+                      value={c.code}
+                      className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
+                    >
+                      <CurrencyFlag countryCode={c.countryCode} size="sm" className="shrink-0" />
+                      <span className="flex-1 text-left">
+                        {c.symbol} <span className="text-muted-foreground text-xs ml-1">{c.code}</span>
+                      </span>
+                    </SelectItemIndicatorRight>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Carrito */}
+              <CartDrawer>
                 <button
                   type="button"
-                  className="xl:hidden flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors"
-                  aria-label="Abrir menú"
+                  className="relative flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors"
+                  aria-label="Ver carrito"
                 >
-                  <Menu className="h-4 w-4" />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0 flex flex-col min-h-0 h-full">
-                <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
-                  <SheetTitle className="text-left text-base font-semibold">Menú</SheetTitle>
-                </SheetHeader>
-                <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
-
-                  {/* Moneda */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Moneda</p>
-                    <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
-                      <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
-                        <SelectValue>
-                          <span className="flex items-center gap-2.5">
-                            <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" />
-                            <span className="truncate text-left text-sm">
-                              {currentCurrency.symbol} — {currentCurrency.name} ({currentCurrency.code})
-                            </span>
-                          </span>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[60vh] min-w-[260px] p-1.5">
-                        {CURRENCIES.map((c) => (
-                          <SelectItemIndicatorRight key={c.code} value={c.code} className="flex items-center gap-3 py-2.5 rounded-md">
-                            <CurrencyFlag countryCode={c.countryCode} size="md" />
-                            <span className="min-w-0 flex-1 text-left text-sm">
-                              {c.name} ({c.symbol}) — {c.code}
-                            </span>
-                          </SelectItemIndicatorRight>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Búsqueda */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Buscar</p>
-                    <form action={`/${locale}/buscar`} method="get" onSubmit={handleSearch} className="flex gap-2">
-                      <Input
-                        type="search"
-                        name="q"
-                        placeholder="¿Qué estás buscando?"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 h-10 text-sm"
-                      />
-                      <Button type="submit" className="bg-amber-400 hover:bg-amber-500 text-[#171D4C] h-10 px-3">
-                        <Search className="h-4 w-4" />
-                      </Button>
-                    </form>
-                  </div>
-
-                  {/* Navegación */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Navegación</p>
-                    <nav className="flex flex-col gap-0.5">
-                      <CategoriesSidebar
-                        locale={locale}
-                        categories={categories}
-                        trigger={
-                          <button type="button" className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                            <Menu className="h-4 w-4 text-slate-400" />
-                            Categorías
-                          </button>
-                        }
-                      />
-                      <Link href={`/${locale}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                        Inicio
-                      </Link>
-                      <Link href={`/${locale}/catalogo`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                        Catálogo
-                      </Link>
-                      <Link href={`/${locale}/cuenta/chat-sara`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                        <MessageCircle className="h-4 w-4 text-amber-500" />
-                        Chat con Sara
-                      </Link>
-                      <Link href={`/${locale}/nosotros`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                        Nosotros
-                      </Link>
-                      <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                        Contacto
-                      </Link>
-                    </nav>
-                  </div>
-
-                  {/* Info usuario si está logueado */}
-                  {isLoggedIn && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
-                      <div className="flex items-center gap-3 px-3 py-2">
-                        <div className="w-8 h-8 rounded-full bg-[#171D4C] flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs text-slate-400">Bienvenido</p>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-                            {nombreMenu}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { setMenuOpen(false); handleLogout() }}
-                        className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-medium text-red-600 dark:text-red-400 transition-colors"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Cerrar sesión
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            {/* Chat con Sara — visible siempre (icono en mobile, icono+texto en lg+) */}
-            <Link
-              href={`/${locale}/cuenta/chat-sara`}
-              className={cn(
-                'flex items-center gap-1.5 h-9 px-2.5 rounded-lg',
-                'bg-white/10 hover:bg-white/20 border-0',
-                'text-white text-xs font-medium transition-colors whitespace-nowrap'
-              )}
-              title="Chat con Sara"
-            >
-              <MessageCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
-              <span className="hidden lg:inline">Sara</span>
-            </Link>
-
-            {/* Ícono de búsqueda — solo mobile (< sm) */}
-            <button
-              type="button"
-              className="sm:hidden flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 hover:bg-white/20 transition-colors"
-              aria-label="Buscar"
-              onClick={() => setMobileSearchOpen((v) => !v)}
-            >
-              <Search className="h-4 w-4" />
-            </button>
-
-            {/* Moneda compacta: bandera + símbolo — solo sm+ */}
-            <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
-              <SelectTrigger className={cn(
-                'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg',
-                'bg-white/10 hover:bg-white/20 border-0',
-                'text-white transition-colors [&>svg]:hidden'
-              )}>
-                <SelectValue>
-                  <span className="flex items-center gap-1.5">
-                    <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />
-                    <span className="text-xs font-medium">{currentCurrency.symbol}</span>
-                  </span>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5" align="end">
-                {CURRENCIES.map((c) => (
-                  <SelectItemIndicatorRight
-                    key={c.code}
-                    value={c.code}
-                    className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
-                  >
-                    <CurrencyFlag countryCode={c.countryCode} size="sm" className="shrink-0" />
-                    <span className="flex-1 text-left">
-                      {c.symbol} <span className="text-muted-foreground text-xs ml-1">{c.code}</span>
+                  <ShoppingCart className="h-4 w-4" />
+                  {itemsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-amber-400 text-[#171D4C] text-[9px] font-bold flex items-center justify-center leading-none">
+                      {itemsCount > 99 ? '99+' : itemsCount}
                     </span>
-                  </SelectItemIndicatorRight>
-                ))}
-              </SelectContent>
-            </Select>
+                  )}
+                </button>
+              </CartDrawer>
 
-            {/* Carrito */}
-            <CartDrawer>
-              <button
-                type="button"
-                className="relative flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors"
-                aria-label="Ver carrito"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {itemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-amber-400 text-[#171D4C] text-[9px] font-bold flex items-center justify-center leading-none">
-                    {itemsCount > 99 ? '99+' : itemsCount}
-                  </span>
-                )}
-              </button>
-            </CartDrawer>
-
-            {/* Perfil dropdown — desktop (sm+) */}
-            <div className="hidden sm:block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      'flex items-center gap-1.5 h-9 px-2.5 rounded-lg outline-none',
-                      'bg-white/10 hover:bg-white/20 border-0',
-                      'text-white text-xs font-medium transition-colors'
-                    )}
-                    aria-label="Perfil"
+              {/* Perfil dropdown — desktop (sm+) */}
+              <div className="hidden sm:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        'flex items-center gap-1.5 h-9 px-2.5 rounded-lg outline-none',
+                        'bg-white/10 hover:bg-white/20 border-0',
+                        'text-white text-xs font-medium transition-colors'
+                      )}
+                      aria-label="Perfil"
+                    >
+                      <User className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="hidden lg:inline">Perfil</span>
+                      <ChevronDown className="h-3 w-3 opacity-60 flex-shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={8}
+                    className="w-56 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
                   >
-                    <User className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="hidden lg:inline">Perfil</span>
-                    <ChevronDown className="h-3 w-3 opacity-60 flex-shrink-0" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={8}
-                  className="w-56 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
-                >
-                  <ProfileMenuItems />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                    <ProfileMenuItems />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-            {/* Perfil dropdown — mobile */}
-            <div className="sm:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors outline-none"
-                    aria-label="Perfil"
+              {/* Perfil dropdown — mobile */}
+              <div className="sm:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors outline-none"
+                      aria-label="Perfil"
+                    >
+                      <User className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={8}
+                    className="w-52 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
                   >
-                    <User className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={8}
-                  className="w-52 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
-                >
-                  <ProfileMenuItems />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                    <ProfileMenuItems />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
+            </div>
           </div>
-        </div>
+
+          {/* Sheet content del menú hamburguesa */}
+          <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0 flex flex-col min-h-0 h-full">
+            <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <SheetTitle className="text-left text-base font-semibold">Menú</SheetTitle>
+            </SheetHeader>
+            <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+
+              {/* Moneda */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Moneda</p>
+                <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+                  <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
+                    <SelectValue>
+                      <span className="flex items-center gap-2.5">
+                        <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" />
+                        <span className="truncate text-left text-sm">
+                          {currentCurrency.symbol} — {currentCurrency.name} ({currentCurrency.code})
+                        </span>
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[60vh] min-w-[260px] p-1.5">
+                    {CURRENCIES.map((c) => (
+                      <SelectItemIndicatorRight key={c.code} value={c.code} className="flex items-center gap-3 py-2.5 rounded-md">
+                        <CurrencyFlag countryCode={c.countryCode} size="md" />
+                        <span className="min-w-0 flex-1 text-left text-sm">
+                          {c.name} ({c.symbol}) — {c.code}
+                        </span>
+                      </SelectItemIndicatorRight>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Navegación */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Navegación</p>
+                <nav className="flex flex-col gap-0.5">
+                  <Link href={`/${locale}`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                    Inicio
+                  </Link>
+                  <CategoriesSidebar
+                    locale={locale}
+                    categories={categories}
+                    trigger={
+                      <button type="button" className="flex items-center w-full text-left py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                        Categorías
+                      </button>
+                    }
+                  />
+                  <Link href={`/${locale}/nosotros`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                    Nosotros
+                  </Link>
+                  <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                    Contacto
+                  </Link>
+                </nav>
+              </div>
+
+              {/* Info usuario si está logueado */}
+              {isLoggedIn && (
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <div className="w-8 h-8 rounded-full bg-[#171D4C] flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-400">Bienvenido</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                        {nombreMenu}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); handleLogout() }}
+                    className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-medium text-red-600 dark:text-red-400 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* ── Barra de búsqueda expandida (solo mobile, < sm) ── */}

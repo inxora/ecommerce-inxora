@@ -278,7 +278,7 @@ export default function HomeClient({
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
             </div>
-            <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl h-full flex flex-col justify-center">
+            <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl py-16 sm:py-20 lg:py-28 flex flex-col justify-center">
               <div className="text-white max-w-3xl">
                 <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-[#88D4E4] mb-3 sm:mb-4">
                   INXORA · Plataforma Industrial B2B · Perú

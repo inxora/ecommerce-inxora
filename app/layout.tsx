@@ -52,7 +52,7 @@ export default function RootLayout({
 }) {
   return (
     <html>
-      <body className={`${inter.className} overflow-x-hidden`}>
+      <body className={`${inter.className} overflow-x-clip`}>
         {/* Google Tag Manager (noscript) - Inmediatamente después de la apertura del body */}
         <noscript>
           <iframe
