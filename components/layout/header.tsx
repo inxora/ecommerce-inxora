@@ -46,6 +46,8 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const currentCurrency = getCurrencyByCode(currency)
   const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname() || '/es'
   const locale = localeProp ?? (pathname.split('/')[1] || 'es') ?? 'es'
 
@@ -61,6 +63,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
+      setMobileSearchOpen(false)
       window.location.href = `/${locale}/buscar?q=${encodeURIComponent(searchQuery.trim())}`
     }
   }
@@ -237,12 +240,12 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             />
           </div>
 
-          {/* Search bar */}
+          {/* Search bar — oculto en mobile (< sm), visible en sm+ */}
           <form
             action={`/${locale}/buscar`}
             method="get"
             onSubmit={handleSearch}
-            className="flex-1 min-w-0"
+            className="hidden sm:flex flex-1 min-w-0"
           >
             <div className="flex rounded-lg overflow-hidden ring-1 ring-white/20 hover:ring-white/40 focus-within:ring-2 focus-within:ring-[#1A56DB] transition-all">
               <Input
@@ -271,118 +274,8 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
           {/* ── Right actions ─────────────────────────────────────────────────── */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
 
-            {/* Moneda compacta: bandera + símbolo */}
-            <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
-              <SelectTrigger className={cn(
-                'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg',
-                'bg-white/10 hover:bg-white/20 border-0',
-                'text-white transition-colors [&>svg]:hidden'
-              )}>
-                <SelectValue>
-                  <span className="flex items-center gap-1.5">
-                    <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />
-                    <span className="text-xs font-medium">{currentCurrency.symbol}</span>
-                  </span>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5" align="end">
-                {CURRENCIES.map((c) => (
-                  <SelectItemIndicatorRight
-                    key={c.code}
-                    value={c.code}
-                    className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
-                  >
-                    <CurrencyFlag countryCode={c.countryCode} size="sm" className="shrink-0" />
-                    <span className="flex-1 text-left">
-                      {c.symbol} <span className="text-muted-foreground text-xs ml-1">{c.code}</span>
-                    </span>
-                  </SelectItemIndicatorRight>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Chat con Sara — todos los usuarios */}
-            <Link
-              href={`/${locale}/cuenta/chat-sara`}
-              className={cn(
-                'hidden sm:flex items-center gap-1.5 h-9 px-2.5 rounded-lg',
-                'bg-white/10 hover:bg-white/20 border-0',
-                'text-white text-xs font-medium transition-colors whitespace-nowrap'
-              )}
-              title="Chat con Sara"
-            >
-              <MessageCircle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
-              <span className="hidden lg:inline">Sara</span>
-            </Link>
-
-            {/* Carrito */}
-            <CartDrawer>
-              <button
-                type="button"
-                className="relative flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors"
-                aria-label="Ver carrito"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {itemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-amber-400 text-[#171D4C] text-[9px] font-bold flex items-center justify-center leading-none">
-                    {itemsCount > 99 ? '99+' : itemsCount}
-                  </span>
-                )}
-              </button>
-            </CartDrawer>
-
-            {/* Perfil dropdown — desktop (sm+) */}
-            <div className="hidden sm:block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      'flex items-center gap-1.5 h-9 px-2.5 rounded-lg outline-none',
-                      'bg-white/10 hover:bg-white/20 border-0',
-                      'text-white text-xs font-medium transition-colors'
-                    )}
-                    aria-label="Perfil"
-                  >
-                    <User className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="hidden lg:inline">Perfil</span>
-                    <ChevronDown className="h-3 w-3 opacity-60 flex-shrink-0" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={8}
-                  className="w-56 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
-                >
-                  <ProfileMenuItems />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Perfil dropdown — mobile */}
-            <div className="sm:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors outline-none"
-                    aria-label="Perfil"
-                  >
-                    <User className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={8}
-                  className="w-52 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
-                >
-                  <ProfileMenuItems />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Hamburguesa — visible hasta xl */}
-            <Sheet>
+            {/* Hamburguesa — PRIMERO, visible hasta xl */}
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <button
                   type="button"
@@ -457,20 +350,20 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                           </button>
                         }
                       />
-                      <Link href={`/${locale}`} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={`/${locale}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
                         Inicio
                       </Link>
-                      <Link href={`/${locale}/catalogo`} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={`/${locale}/catalogo`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
                         Catálogo
                       </Link>
-                      <Link href={`/${locale}/cuenta/chat-sara`} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={`/${locale}/cuenta/chat-sara`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
                         <MessageCircle className="h-4 w-4 text-amber-500" />
                         Chat con Sara
                       </Link>
-                      <Link href={`/${locale}/nosotros`} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={`/${locale}/nosotros`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
                         Nosotros
                       </Link>
-                      <Link href={`/${locale}/contacto`} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
                         Contacto
                       </Link>
                     </nav>
@@ -492,7 +385,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                       </div>
                       <button
                         type="button"
-                        onClick={handleLogout}
+                        onClick={() => { setMenuOpen(false); handleLogout() }}
                         className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-medium text-red-600 dark:text-red-400 transition-colors"
                       >
                         <LogOut className="h-4 w-4" />
@@ -504,9 +397,171 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               </SheetContent>
             </Sheet>
 
+            {/* Chat con Sara — visible siempre (icono en mobile, icono+texto en lg+) */}
+            <Link
+              href={`/${locale}/cuenta/chat-sara`}
+              className={cn(
+                'flex items-center gap-1.5 h-9 px-2.5 rounded-lg',
+                'bg-white/10 hover:bg-white/20 border-0',
+                'text-white text-xs font-medium transition-colors whitespace-nowrap'
+              )}
+              title="Chat con Sara"
+            >
+              <MessageCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
+              <span className="hidden lg:inline">Sara</span>
+            </Link>
+
+            {/* Ícono de búsqueda — solo mobile (< sm) */}
+            <button
+              type="button"
+              className="sm:hidden flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 hover:bg-white/20 transition-colors"
+              aria-label="Buscar"
+              onClick={() => setMobileSearchOpen((v) => !v)}
+            >
+              <Search className="h-4 w-4" />
+            </button>
+
+            {/* Moneda compacta: bandera + símbolo — solo sm+ */}
+            <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+              <SelectTrigger className={cn(
+                'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg',
+                'bg-white/10 hover:bg-white/20 border-0',
+                'text-white transition-colors [&>svg]:hidden'
+              )}>
+                <SelectValue>
+                  <span className="flex items-center gap-1.5">
+                    <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />
+                    <span className="text-xs font-medium">{currentCurrency.symbol}</span>
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5" align="end">
+                {CURRENCIES.map((c) => (
+                  <SelectItemIndicatorRight
+                    key={c.code}
+                    value={c.code}
+                    className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
+                  >
+                    <CurrencyFlag countryCode={c.countryCode} size="sm" className="shrink-0" />
+                    <span className="flex-1 text-left">
+                      {c.symbol} <span className="text-muted-foreground text-xs ml-1">{c.code}</span>
+                    </span>
+                  </SelectItemIndicatorRight>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Carrito */}
+            <CartDrawer>
+              <button
+                type="button"
+                className="relative flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors"
+                aria-label="Ver carrito"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {itemsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-amber-400 text-[#171D4C] text-[9px] font-bold flex items-center justify-center leading-none">
+                    {itemsCount > 99 ? '99+' : itemsCount}
+                  </span>
+                )}
+              </button>
+            </CartDrawer>
+
+            {/* Perfil dropdown — desktop (sm+) */}
+            <div className="hidden sm:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-1.5 h-9 px-2.5 rounded-lg outline-none',
+                      'bg-white/10 hover:bg-white/20 border-0',
+                      'text-white text-xs font-medium transition-colors'
+                    )}
+                    aria-label="Perfil"
+                  >
+                    <User className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="hidden lg:inline">Perfil</span>
+                    <ChevronDown className="h-3 w-3 opacity-60 flex-shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="w-56 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
+                >
+                  <ProfileMenuItems />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Perfil dropdown — mobile */}
+            <div className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center justify-center h-9 w-9 rounded-lg text-white bg-white/10 border-0 hover:bg-white/20 transition-colors outline-none"
+                    aria-label="Perfil"
+                  >
+                    <User className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="w-52 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
+                >
+                  <ProfileMenuItems />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
           </div>
         </div>
       </div>
+
+      {/* ── Barra de búsqueda expandida (solo mobile, < sm) ── */}
+      {mobileSearchOpen && (
+        <div className="sm:hidden bg-[#171D4C] border-t border-white/10 px-3 py-2.5">
+          <form
+            action={`/${locale}/buscar`}
+            method="get"
+            onSubmit={handleSearch}
+            className="flex gap-2"
+          >
+            <Input
+              type="search"
+              name="q"
+              placeholder="¿Qué estás buscando?"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn(
+                'flex-1 h-10 rounded-lg border-0',
+                'bg-white/15 text-white placeholder:text-white/50 text-sm',
+                'focus-visible:ring-1 focus-visible:ring-[#1A56DB] focus-visible:ring-offset-0'
+              )}
+              aria-label="Buscar productos"
+            />
+            <button
+              type="submit"
+              className="h-10 px-4 bg-amber-400 hover:bg-amber-300 text-[#171D4C] rounded-lg flex-shrink-0 font-semibold transition-colors"
+              aria-label="Buscar"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen(false)}
+              className="h-10 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors text-sm"
+              aria-label="Cerrar búsqueda"
+            >
+              ✕
+            </button>
+          </form>
+        </div>
+      )}
     </header>
   )
 }

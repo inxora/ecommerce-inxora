@@ -827,6 +827,8 @@ export function ChatSaraPageClient({
   const [activeChipId, setActiveChipId] = useState<number | null>(null)
   const [driveLoading, setDriveLoading] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // En mobile: muestra el panel de conversaciones (true) o el chat (false)
+  const [mobileShowConversations, setMobileShowConversations] = useState(!selectedSessionId)
 
   // ── Nav de cuenta: sección activa y expansión ──
   const [navExpanded, setNavExpanded] = useState(false)
@@ -1037,6 +1039,7 @@ export function ChatSaraPageClient({
     setInput('')
     setError(null)
     updateUrlForSession(null)
+    setMobileShowConversations(false)
   }, [updateUrlForSession])
 
   const borrarHistorialDeSesion = useCallback(
@@ -1417,12 +1420,12 @@ export function ChatSaraPageClient({
   const userInitial = (cliente?.nombre ?? 'U').slice(0, 1).toUpperCase()
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] w-full min-h-0 bg-white dark:bg-slate-950">
+    <div className="flex h-[calc(100dvh-5rem-3.5rem)] md:h-[calc(100vh-5rem)] w-full min-h-0 bg-white dark:bg-slate-950">
 
       {/* ── Nav de secciones de cuenta (izquierda, expandible) ── */}
       {isLoggedIn && (
         <nav
-          className={`flex flex-col shrink-0 bg-[#171D4C] border-r border-white/5 py-3 z-10 transition-[width] duration-200 overflow-hidden ${
+          className={`hidden md:flex md:flex-col shrink-0 bg-[#171D4C] border-r border-white/5 py-3 z-10 transition-[width] duration-200 overflow-hidden ${
             navExpanded ? 'w-52' : 'w-14 items-center'
           }`}
           aria-label="Secciones de mi cuenta"
@@ -1526,9 +1529,13 @@ export function ChatSaraPageClient({
 
       {/* ── Historial de conversaciones (solo visible en sección chat) ── */}
       <aside
-        className={`flex flex-col flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 transition-[width] duration-200 overflow-hidden ${
-          activeSection !== 'chat' ? 'hidden' : sidebarCollapsed ? 'w-14' : 'w-72'
-        }`}
+        className={`flex-col flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 overflow-hidden ${
+          activeSection !== 'chat'
+            ? 'hidden'
+            : mobileShowConversations
+              ? 'flex w-full md:w-auto md:transition-[width] md:duration-200'
+              : 'hidden md:flex md:transition-[width] md:duration-200'
+        } ${activeSection === 'chat' ? (sidebarCollapsed ? 'md:w-14' : 'md:w-72') : ''}`}
       >
         {/* Barra superior */}
         <div
@@ -1670,6 +1677,7 @@ export function ChatSaraPageClient({
                           setLoadKey((k) => k + 1)
                           setSelectedSessionId(c.session_id)
                           updateUrlForSession(c.session_id)
+                          setMobileShowConversations(false)
                         }}
                         onDoubleClick={(e) => {
                           if (!sidebarCollapsed) handleStartRename(c, e)
@@ -1734,7 +1742,9 @@ export function ChatSaraPageClient({
       </aside>
 
       {/* ── Área principal (chat / pedidos / cotizaciones) ── */}
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900">
+      <main className={`flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900 ${
+        activeSection === 'chat' && mobileShowConversations ? 'hidden md:flex md:flex-1' : 'flex flex-1'
+      }`}>
 
         {/* Vista: Mis Pedidos */}
         {activeSection === 'pedidos' && (
@@ -1763,8 +1773,16 @@ export function ChatSaraPageClient({
         <div className={activeSection !== 'chat' ? 'hidden' : 'flex-1 flex flex-col min-h-0'}>
 
         {/* Header */}
-        <header className="shrink-0 flex items-center gap-4 px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <div className="relative shrink-0 w-12 h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
+        <header className="shrink-0 flex items-center gap-3 px-4 py-3 md:gap-4 md:px-5 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          {/* Botón volver a conversaciones (solo mobile) */}
+          <button
+            className="md:hidden -ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 transition-colors focus:outline-none"
+            onClick={() => setMobileShowConversations(true)}
+            aria-label="Ver conversaciones"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="relative shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
             <Image
               src="/sara-pose2.png"
               alt="Sara Xora"
@@ -2255,6 +2273,34 @@ export function ChatSaraPageClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Navegación inferior móvil (reemplaza el nav lateral en pantallas pequeñas) ── */}
+      {isLoggedIn && (
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#171D4C] flex items-stretch border-t border-white/10">
+          {(
+            [
+              { section: 'chat' as const, Icon: MessageSquare, label: 'Chat' },
+              { section: 'pedidos' as const, Icon: Package, label: 'Pedidos' },
+              { section: 'cotizaciones' as const, Icon: FileText, label: 'Cotizaciones' },
+            ] as const
+          ).map(({ section, Icon, label }) => (
+            <button
+              key={section}
+              type="button"
+              onClick={() => {
+                setActiveSection(section)
+                if (section === 'chat') setMobileShowConversations(true)
+              }}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors focus:outline-none ${
+                activeSection === section ? 'text-[#13A0D8]' : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
       )}
     </div>
   )
