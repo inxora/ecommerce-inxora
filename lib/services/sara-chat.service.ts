@@ -32,6 +32,8 @@ export interface SaraChatRequest {
   user_message: string
   session_id?: string
   id_cliente?: number
+  /** Moneda seleccionada por el usuario (ej: "PEN", "USD"). */
+  moneda_usuario?: string
   /** Opcional: imágenes para que Sara analice (visión). Máx. 5, 5 MB c/u. */
   attachments?: SaraChatAttachment[]
   /** Opcional: documentos (PDF, Word, Excel). Máx. 3, 10 MB c/u. */
@@ -150,12 +152,14 @@ export async function sendSaraChatMessage(
   sessionId?: string,
   idCliente?: number,
   attachments?: SaraChatAttachment[],
-  documents?: SaraChatDocument[]
+  documents?: SaraChatDocument[],
+  monedaUsuario?: string
 ): Promise<SaraChatResponse> {
   const body: SaraChatRequest = {
     user_message: userMessage,
     ...(sessionId && { session_id: sessionId }),
     ...(idCliente != null && { id_cliente: idCliente }),
+    ...(monedaUsuario && { moneda_usuario: monedaUsuario }),
     ...(attachments && attachments.length > 0 && { attachments }),
     ...(documents && documents.length > 0 && { documents }),
   }

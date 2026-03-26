@@ -7,6 +7,7 @@ import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import { MessageSquarePlus, ArrowLeft, Loader2, Trash2, ImagePlus, X, Share2, FileText, Paperclip, Cloud, Image as ImageIcon, Send, Menu, Package, UserCircle2, MessageSquare, RefreshCw, Download, ShoppingBag, ChevronRight, ChevronLeft, LogOut, Pencil, Check } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { useCurrency } from '@/lib/hooks/use-currency'
 import {
   getSaraConversaciones,
   getSaraConversation,
@@ -803,6 +804,7 @@ export function ChatSaraPageClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const { cliente, token, isLoggedIn, isLoading: authLoading, logout } = useClienteAuth()
+  const { currency } = useCurrency()
   const [conversaciones, setConversaciones] = useState<SaraConversacionItem[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(initialSessionId ?? null)
@@ -1293,7 +1295,8 @@ export function ChatSaraPageClient({
         selectedSessionId ?? undefined,
         cliente?.id,
         apiAttachments,
-        apiDocuments
+        apiDocuments,
+        currency
       )
       setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
       if (res.session_id) {
@@ -1348,7 +1351,7 @@ export function ChatSaraPageClient({
     setActiveChipId(cat.id)
     scrollToBottom()
     try {
-      const res = await sendSaraChatMessage(apiText, selectedSessionId ?? undefined, cliente?.id)
+      const res = await sendSaraChatMessage(apiText, selectedSessionId ?? undefined, cliente?.id, undefined, undefined, currency)
       setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
       if (res.session_id) {
         skipLoadMessagesRef.current = true

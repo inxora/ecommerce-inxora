@@ -2,12 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrencyByCode, isValidCurrency, type CurrencyCode } from '@/lib/constants/currencies'
+import { getCurrencyByCode } from '@/lib/constants/currencies'
+import { getMonedas, type MonedaAPI } from '@/lib/services/monedas.service'
 
 interface CurrencyContextType {
-  currency: CurrencyCode
-  setCurrency: (currency: CurrencyCode) => void
+  currency: string
+  setCurrency: (currency: string) => void
   currencySymbol: string
+  availableCurrencies: MonedaAPI[]
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
@@ -15,34 +17,57 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 const CURRENCY_STORAGE_KEY = 'inxora-selected-currency'
 const CURRENCY_COOKIE_KEY = 'inxora-selected-currency'
 
-/** Sincroniza la moneda en cookie para que el servidor la lea (SSR, moneda_usuario en API) */
 function setCurrencyCookie(value: string) {
   if (typeof document === 'undefined') return
   document.cookie = `${CURRENCY_COOKIE_KEY}=${value};path=/;max-age=31536000`
 }
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<CurrencyCode>('PEN')
+  const [currency, setCurrencyState] = useState<string>('PEN')
+  const [availableCurrencies, setAvailableCurrencies] = useState<MonedaAPI[]>([])
   const router = useRouter()
-  const currencyInfo = getCurrencyByCode(currency)
 
+  // Carga inmediata desde localStorage para evitar flash
   useEffect(() => {
-    const savedCurrency = localStorage.getItem(CURRENCY_STORAGE_KEY)
-    if (savedCurrency && isValidCurrency(savedCurrency)) {
-      setCurrencyState(savedCurrency)
-      setCurrencyCookie(savedCurrency)
+    const saved = localStorage.getItem(CURRENCY_STORAGE_KEY)
+    if (saved) {
+      setCurrencyState(saved)
+      setCurrencyCookie(saved)
     }
   }, [])
 
-  const setCurrency = useCallback((newCurrency: CurrencyCode) => {
-    setCurrencyState(newCurrency)
-    localStorage.setItem(CURRENCY_STORAGE_KEY, newCurrency)
-    setCurrencyCookie(newCurrency)
-    router.refresh()
-  }, [router])
+  // Fetch de monedas disponibles desde la API; valida la moneda guardada
+  useEffect(() => {
+    getMonedas()
+      .then((monedas) => {
+        setAvailableCurrencies(monedas)
+        const saved = localStorage.getItem(CURRENCY_STORAGE_KEY)
+        if (saved && !monedas.some((m) => m.codigo === saved)) {
+          const principal = monedas.find((m) => m.es_principal)?.codigo ?? 'PEN'
+          setCurrencyState(principal)
+          localStorage.setItem(CURRENCY_STORAGE_KEY, principal)
+          setCurrencyCookie(principal)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const setCurrency = useCallback(
+    (newCurrency: string) => {
+      setCurrencyState(newCurrency)
+      localStorage.setItem(CURRENCY_STORAGE_KEY, newCurrency)
+      setCurrencyCookie(newCurrency)
+      router.refresh()
+    },
+    [router]
+  )
+
+  const currencySymbol =
+    availableCurrencies.find((m) => m.codigo === currency)?.simbolo ??
+    getCurrencyByCode(currency).symbol
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, currencySymbol: currencyInfo.symbol }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, currencySymbol, availableCurrencies }}>
       {children}
     </CurrencyContext.Provider>
   )
@@ -55,4 +80,3 @@ export function useCurrency() {
   }
   return context
 }
-

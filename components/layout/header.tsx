@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItemIndicatorRight, SelectTrigger, SelectV
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useFavorites } from '@/lib/hooks/use-favorites'
-import { CURRENCIES, getCurrencyByCode } from '@/lib/constants/currencies'
+import { getCountryCode } from '@/lib/constants/currencies'
 import { CurrencyFlag } from '@/components/ui/currency-flag'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -42,8 +42,8 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const { openAuthModal } = useAuthModal()
   const { getItemsCount, clearCart } = useCart()
   const router = useRouter()
-  const { currency, setCurrency } = useCurrency()
-  const currentCurrency = getCurrencyByCode(currency)
+  const { currency, setCurrency, availableCurrencies } = useCurrency()
+  const currentCurrency = availableCurrencies.find((m) => m.codigo === currency)
   const { getFavoritesCount } = useFavorites()
   const [searchQuery, setSearchQuery] = useState('')
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
@@ -319,21 +319,21 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                 )}>
                   <SelectValue>
                     <span className="flex items-center gap-1.5">
-                      <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" className="shrink-0" />
-                      <span className="text-xs font-medium">{currentCurrency.symbol}</span>
+                      <CurrencyFlag countryCode={getCountryCode(currency)} size="sm" className="shrink-0" />
+                      <span className="text-xs font-medium">{currentCurrency?.simbolo ?? currency}</span>
                     </span>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5" align="end">
-                  {CURRENCIES.map((c) => (
+                  {availableCurrencies.map((m) => (
                     <SelectItemIndicatorRight
-                      key={c.code}
-                      value={c.code}
+                      key={m.codigo}
+                      value={m.codigo}
                       className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
                     >
-                      <CurrencyFlag countryCode={c.countryCode} size="sm" className="shrink-0" />
+                      <CurrencyFlag countryCode={getCountryCode(m.codigo)} size="sm" className="shrink-0" />
                       <span className="flex-1 text-left">
-                        {c.symbol} <span className="text-muted-foreground text-xs ml-1">{c.code}</span>
+                        {m.simbolo} <span className="text-muted-foreground text-xs ml-1">{m.codigo}</span>
                       </span>
                     </SelectItemIndicatorRight>
                   ))}
@@ -423,19 +423,19 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                   <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
                     <SelectValue>
                       <span className="flex items-center gap-2.5">
-                        <CurrencyFlag countryCode={currentCurrency.countryCode} size="sm" />
+                        <CurrencyFlag countryCode={getCountryCode(currency)} size="sm" />
                         <span className="truncate text-left text-sm">
-                          {currentCurrency.symbol} — {currentCurrency.name} ({currentCurrency.code})
+                          {currentCurrency?.simbolo ?? currency} — {currentCurrency?.nombre ?? currency} ({currency})
                         </span>
                       </span>
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-[60vh] min-w-[260px] p-1.5">
-                    {CURRENCIES.map((c) => (
-                      <SelectItemIndicatorRight key={c.code} value={c.code} className="flex items-center gap-3 py-2.5 rounded-md">
-                        <CurrencyFlag countryCode={c.countryCode} size="md" />
+                    {availableCurrencies.map((m) => (
+                      <SelectItemIndicatorRight key={m.codigo} value={m.codigo} className="flex items-center gap-3 py-2.5 rounded-md">
+                        <CurrencyFlag countryCode={getCountryCode(m.codigo)} size="md" />
                         <span className="min-w-0 flex-1 text-left text-sm">
-                          {c.name} ({c.symbol}) — {c.code}
+                          {m.nombre} ({m.simbolo}) — {m.codigo}
                         </span>
                       </SelectItemIndicatorRight>
                     ))}

@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
 import { MessageSquarePlus, ImagePlus, X, FileText, Paperclip, Cloud, Image as ImageIcon } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
+import { useCurrency } from '@/lib/hooks/use-currency'
 import {
   sendSaraChatMessage,
   getSaraConversation,
@@ -122,6 +123,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
   const pathname = usePathname() ?? ''
   const locale = pathname.split('/')[1] ?? 'es'
   const { cliente } = useClienteAuth()
+  const { currency } = useCurrency()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -446,7 +448,8 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
         sid ?? undefined,
         cliente?.id,
         apiAttachments,
-        apiDocuments
+        apiDocuments,
+        currency
       )
       if (res.session_id && typeof window !== 'undefined') {
         sessionStorage.setItem(CHAT_SESSION_STORAGE_KEY, res.session_id)
