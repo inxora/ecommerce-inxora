@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, ShoppingCart, Menu, Heart, User, MessageCircle, LogOut, ChevronDown, Settings, Package } from 'lucide-react'
+import { Search, ShoppingCart, Menu, Heart, User, MessageCircle, LogOut, ChevronDown, Settings, Package, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -190,7 +190,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   )
 
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="sticky top-0 z-[51] w-full">
 
       {/* ── Promo strip ─────────────────────────────────────────────────────── */}
       {bannersHeaderStrip && bannersHeaderStrip.length > 0 && (
@@ -205,10 +205,10 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
       {/* ── Main bar ────────────────────────────────────────────────────────── */}
       <div className="bg-[#171D4C] border-b border-white/10 shadow-lg">
-        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-          <div className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 flex h-[68px] items-center gap-2 sm:gap-3 lg:gap-4">
+        <div className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 flex h-[68px] items-center gap-2 sm:gap-3 lg:gap-4">
 
-            {/* Hamburguesa — PRIMERO, visible hasta xl */}
+          {/* Hamburguesa + menú móvil — Sheet solo envuelve trigger y contenido */}
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
@@ -218,8 +218,94 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                 <Menu className="h-4 w-4" />
               </button>
             </SheetTrigger>
+            {/* Sheet content del menú hamburguesa */}
+            <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0 flex flex-col min-h-0 h-full">
+              <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                <SheetTitle className="text-left text-base font-semibold">Menú</SheetTitle>
+              </SheetHeader>
+              <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
 
-            {/* Logo */}
+                {/* Moneda */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Moneda</p>
+                  <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+                    <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
+                      <SelectValue>
+                        <span className="flex items-center gap-2.5">
+                          <CurrencyFlag countryCode={getCountryCode(currency)} size="sm" />
+                          <span className="truncate text-left text-sm">
+                            {currentCurrency?.simbolo ?? currency} — {currentCurrency?.nombre ?? currency} ({currency})
+                          </span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[60vh] min-w-[260px] p-1.5">
+                      {availableCurrencies.map((m) => (
+                        <SelectItemIndicatorRight key={m.codigo} value={m.codigo} className="flex items-center gap-3 py-2.5 rounded-md">
+                          <CurrencyFlag countryCode={getCountryCode(m.codigo)} size="md" />
+                          <span className="min-w-0 flex-1 text-left text-sm">
+                            {m.nombre} ({m.simbolo}) — {m.codigo}
+                          </span>
+                        </SelectItemIndicatorRight>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Navegación */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Navegación</p>
+                  <nav className="flex flex-col gap-0.5">
+                    <Link href={`/${locale}`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      Inicio
+                    </Link>
+                    <CategoriesSidebar
+                      locale={locale}
+                      categories={categories}
+                      trigger={
+                        <button type="button" className="flex items-center w-full text-left py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                          Categorías
+                        </button>
+                      }
+                    />
+                    <Link href={`/${locale}/nosotros`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      Nosotros
+                    </Link>
+                    <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
+                      Contacto
+                    </Link>
+                  </nav>
+                </div>
+
+                {/* Info usuario si está logueado */}
+                {isLoggedIn && (
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
+                    <div className="flex items-center gap-3 px-3 py-2">
+                      <div className="w-8 h-8 rounded-full bg-[#171D4C] flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-400">Bienvenido</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                          {nombreMenu}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); handleLogout() }}
+                      className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-medium text-red-600 dark:text-red-400 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Logo */}
             <Link href={`/${locale}`} className="flex-shrink-0" aria-label="Ir a inicio">
               <Image
                 src="/LOGO-30.png"
@@ -311,34 +397,37 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               </Link>
 
               {/* Moneda compacta — solo sm+ */}
-              <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
-                <SelectTrigger className={cn(
-                  'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg',
-                  'bg-white/10 hover:bg-white/20 border-0',
-                  'text-white transition-colors [&>svg]:hidden'
-                )}>
-                  <SelectValue>
-                    <span className="flex items-center gap-1.5">
-                      <CurrencyFlag countryCode={getCountryCode(currency)} size="sm" className="shrink-0" />
-                      <span className="text-xs font-medium">{currentCurrency?.simbolo ?? currency}</span>
-                    </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5" align="end">
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg outline-none',
+                      'bg-white/10 hover:bg-white/20 border-0',
+                      'text-white transition-colors'
+                    )}
+                    aria-label="Seleccionar moneda"
+                  >
+                    <CurrencyFlag countryCode={getCountryCode(currency)} size="sm" className="shrink-0" />
+                    <span className="text-xs font-medium">{currentCurrency?.simbolo ?? currency}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={8} className="max-h-[min(70vh,380px)] min-w-[200px] p-1.5 overflow-y-auto">
                   {availableCurrencies.map((m) => (
-                    <SelectItemIndicatorRight
+                    <DropdownMenuItem
                       key={m.codigo}
-                      value={m.codigo}
+                      onSelect={() => setCurrency(m.codigo)}
                       className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
                     >
                       <CurrencyFlag countryCode={getCountryCode(m.codigo)} size="sm" className="shrink-0" />
                       <span className="flex-1 text-left">
                         {m.simbolo} <span className="text-muted-foreground text-xs ml-1">{m.codigo}</span>
                       </span>
-                    </SelectItemIndicatorRight>
+                      {m.codigo === currency && <Check className="h-3.5 w-3.5 ml-auto shrink-0 text-[#171D4C]" />}
+                    </DropdownMenuItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Carrito */}
               <CartDrawer>
@@ -358,7 +447,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
               {/* Perfil dropdown — desktop (sm+) */}
               <div className="hidden sm:block">
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
@@ -386,7 +475,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
               {/* Perfil dropdown — mobile */}
               <div className="sm:hidden">
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
@@ -408,94 +497,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
             </div>
           </div>
-
-          {/* Sheet content del menú hamburguesa */}
-          <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0 flex flex-col min-h-0 h-full">
-            <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
-              <SheetTitle className="text-left text-base font-semibold">Menú</SheetTitle>
-            </SheetHeader>
-            <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
-
-              {/* Moneda */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Moneda</p>
-                <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
-                  <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
-                    <SelectValue>
-                      <span className="flex items-center gap-2.5">
-                        <CurrencyFlag countryCode={getCountryCode(currency)} size="sm" />
-                        <span className="truncate text-left text-sm">
-                          {currentCurrency?.simbolo ?? currency} — {currentCurrency?.nombre ?? currency} ({currency})
-                        </span>
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[60vh] min-w-[260px] p-1.5">
-                    {availableCurrencies.map((m) => (
-                      <SelectItemIndicatorRight key={m.codigo} value={m.codigo} className="flex items-center gap-3 py-2.5 rounded-md">
-                        <CurrencyFlag countryCode={getCountryCode(m.codigo)} size="md" />
-                        <span className="min-w-0 flex-1 text-left text-sm">
-                          {m.nombre} ({m.simbolo}) — {m.codigo}
-                        </span>
-                      </SelectItemIndicatorRight>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Navegación */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Navegación</p>
-                <nav className="flex flex-col gap-0.5">
-                  <Link href={`/${locale}`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                    Inicio
-                  </Link>
-                  <CategoriesSidebar
-                    locale={locale}
-                    categories={categories}
-                    trigger={
-                      <button type="button" className="flex items-center w-full text-left py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                        Categorías
-                      </button>
-                    }
-                  />
-                  <Link href={`/${locale}/nosotros`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                    Nosotros
-                  </Link>
-                  <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                    Contacto
-                  </Link>
-                </nav>
-              </div>
-
-              {/* Info usuario si está logueado */}
-              {isLoggedIn && (
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="w-8 h-8 rounded-full bg-[#171D4C] flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-slate-400">Bienvenido</p>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-                        {nombreMenu}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setMenuOpen(false); handleLogout() }}
-                    className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-medium text-red-600 dark:text-red-400 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Cerrar sesión
-                  </button>
-                </div>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+        </div>
 
       {/* ── Barra de búsqueda expandida (solo mobile, < sm) ── */}
       {mobileSearchOpen && (
