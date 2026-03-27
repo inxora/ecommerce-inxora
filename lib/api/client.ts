@@ -134,13 +134,16 @@ export async function apiClient<T>(
             try {
               const errorJson = JSON.parse(errorText) as {
                 message?: string
-                error?: string
+                error?: string | { message?: string }
                 detail?: string | { message?: string; skus_invalidos?: number[] } | Array<{ msg?: string; message?: string }>
               }
               if (errorJson.message) {
                 errorMessage = errorJson.message
               } else if (errorJson.error) {
-                errorMessage = typeof errorJson.error === 'string' ? errorJson.error : errorJson.error?.message || errorText
+                errorMessage =
+                  typeof errorJson.error === 'string'
+                    ? errorJson.error
+                    : (errorJson.error.message ?? errorText)
               } else if (typeof errorJson.detail === 'string') {
                 // FastAPI devuelve { detail: "mensaje de error" }
                 errorMessage = errorJson.detail
