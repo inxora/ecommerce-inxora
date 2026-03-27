@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { createWhatsAppUrl } from '@/lib/utils'
+import { isLegalInfoWhatsAppSegment } from '@/lib/i18n/legal-routes'
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51946885531'
 
@@ -55,8 +56,6 @@ function getPageContext(pathname: string): PageContext {
       }
     case 'nosotros':
     case 'envios':
-    case 'terminos':
-    case 'privacidad':
     case 'cookies':
     case 'libro-reclamaciones':
     case 'favoritos':
@@ -65,6 +64,12 @@ function getPageContext(pathname: string): PageContext {
         message: `Hola Sara Xora, tengo una consulta desde la página de ${mainSegment}.`,
       }
     default:
+      if (isLegalInfoWhatsAppSegment(mainSegment)) {
+        return {
+          pageType: mainSegment,
+          message: `Hola Sara Xora, tengo una consulta desde la página de ${mainSegment}.`,
+        }
+      }
       // Categoría, subcategoría o producto (ej: /es/herrajes/... o /es/cat/sub/marca/slug)
       const isProduct = segments.length >= 5
       return {

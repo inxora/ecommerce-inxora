@@ -28,6 +28,7 @@ import { DeliveryAddressMap } from '@/components/checkout/delivery-address-map'
 import { IzipayWidget } from '@/components/checkout/izipay-widget'
 import { pagosService } from '@/lib/services/pagos.service'
 import Link from 'next/link'
+import { legalPageHref } from '@/lib/i18n/legal-routes'
 import { validateCartItem } from '@/lib/cart-restrictions'
 import { Product } from '@/lib/supabase'
 
@@ -1253,9 +1254,9 @@ export function CheckoutForm() {
                   <Checkbox id="acceptTerms" checked={form.watch('acceptTerms')} onCheckedChange={(c) => form.setValue('acceptTerms', c as boolean)} className="flex-shrink-0" />
                   <span className="text-xs text-slate-700 dark:text-slate-300">
                     {t('terms.accept')}{' '}
-                    <Link href={`/${locale}/terminos`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">{t('terms.link')}</Link>
+                    <Link href={legalPageHref(locale, 'terms')} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">{t('terms.link')}</Link>
                     {' '}{t('terms.and')}{' '}
-                    <Link href={`/${locale}/privacidad`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">{t('terms.privacy')}</Link>
+                    <Link href={legalPageHref(locale, 'privacy')} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">{t('terms.privacy')}</Link>
                   </span>
                 </label>
                 {form.formState.errors.acceptTerms && (

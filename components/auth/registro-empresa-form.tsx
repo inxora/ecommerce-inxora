@@ -27,6 +27,7 @@ import {
   User,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { legalPageHref, legalPageAbsoluteTienda } from '@/lib/i18n/legal-routes'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -677,7 +678,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
           <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
             {t('legal.termsLead')}{' '}
             <Link
-              href={`/${locale}/terminos`}
+              href={legalPageHref(locale, 'terms')}
               target="_blank"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
@@ -685,7 +686,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
             </Link>
             {' '}{t('legal.andThe')}{' '}
             <Link
-              href={`/${locale}/privacidad`}
+              href={legalPageHref(locale, 'privacy')}
               target="_blank"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
@@ -696,7 +697,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-7">
           {t('legal.paragraph')}{' '}
           <Link
-            href="https://tienda.inxora.com/privacidad"
+            href={legalPageAbsoluteTienda(locale, 'privacy')}
             target="_blank"
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >

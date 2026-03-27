@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from "lucide-react"
 import { BannerSlot } from "@/components/banner/banner-slot"
 import type { Banner } from "@/lib/types"
+import { legalPageHref } from "@/lib/i18n/legal-routes"
 
 interface FooterProps {
   bannersFooterStrip?: Banner[]
@@ -26,10 +27,10 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
       { name: t('links.quotes'), href: `/${locale}/cotizaciones` },
     ],
     enlacesUtiles: [
-      { name: t('avisoLegal'), href: `/${locale}/terminos` },
-      { name: t('legal.privacy'), href: `/${locale}/privacidad` },
+      { name: t('avisoLegal'), href: legalPageHref(locale, 'terms') },
+      { name: t('legal.privacy'), href: legalPageHref(locale, 'privacy') },
       { name: t('legal.cookies'), href: `/${locale}/cookies` },
-      { name: t('legal.terms'), href: `/${locale}/terminos` },
+      { name: t('legal.terms'), href: legalPageHref(locale, 'terms') },
       { name: t('legal.shipping'), href: `/${locale}/envios` },
       { name: t('legal.returns'), href: `/${locale}/devoluciones` },
     ],

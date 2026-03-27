@@ -21,6 +21,7 @@ import { Shield, Truck, Star, Heart, MessageCircle, Info, PackageX } from 'lucid
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useFavorites } from '@/lib/hooks/use-favorites'
+import { legalPageHref } from '@/lib/i18n/legal-routes'
 
 const ID_DISPONIBILIDAD_AGOTADO = 12
 
@@ -405,7 +406,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <Shield className="h-8 w-8 text-inxora-blue mx-auto mb-2" />
           <p className="text-sm font-semibold text-inxora-dark-blue dark:text-white mb-1">Garantía</p>
           <Link 
-            href={`/${locale}/terminos`}
+            href={legalPageHref(locale, 'terms')}
             className="text-xs text-inxora-blue hover:text-inxora-dark-blue hover:underline"
           >
             Ver condiciones
@@ -429,7 +430,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             Descuentos especiales
           </p>
           <Link 
-            href={`/${locale}/terminos`}
+            href={legalPageHref(locale, 'terms')}
             className="text-xs text-inxora-blue hover:text-inxora-dark-blue hover:underline"
           >
             Ver condiciones

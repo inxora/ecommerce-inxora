@@ -26,6 +26,7 @@ import {
 import { Building2, FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-react'
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 import { useTranslations } from 'next-intl'
+import { legalPageHref, legalPageAbsoluteTienda } from '@/lib/i18n/legal-routes'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
 type Pais = {
@@ -540,7 +541,7 @@ export function AuthModal() {
                   <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
                     {t('legal.termsLead')}{' '}
                     <Link
-                      href={`/${locale}/terminos`}
+                      href={legalPageHref(locale, 'terms')}
                       target="_blank"
                       className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       onClick={(e) => e.stopPropagation()}
@@ -549,7 +550,7 @@ export function AuthModal() {
                     </Link>
                     {' '}{t('legal.andThe')}{' '}
                     <Link
-                      href={`/${locale}/privacidad`}
+                      href={legalPageHref(locale, 'privacy')}
                       target="_blank"
                       className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       onClick={(e) => e.stopPropagation()}
@@ -561,7 +562,7 @@ export function AuthModal() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-7">
                   {t('legal.paragraph')}{' '}
                   <Link
-                    href="https://tienda.inxora.com/privacidad"
+                    href={legalPageAbsoluteTienda(locale, 'privacy')}
                     target="_blank"
                     className="text-blue-600 dark:text-blue-400 hover:underline"
                     onClick={(e) => e.stopPropagation()}

@@ -1,5 +1,6 @@
 import createMiddleware from 'next-intl/middleware'
 import { NextRequest, NextResponse } from 'next/server'
+import { getPublicLegalSlug, resolveLegalRouteMiddleware } from '@/lib/i18n/legal-routes'
 
 const VALID_LOCALES = ['es', 'en', 'pt'] as const
 const DEFAULT_LOCALE = 'es'
@@ -117,6 +118,24 @@ export default function middleware(request: NextRequest) {
 
   const firstSegment = pathParts[0]
   const hasLocalePrefix = !!firstSegment && VALID_LOCALES.includes(firstSegment as (typeof VALID_LOCALES)[number])
+
+  // ── Legal: slugs localizados (rewrite interno) + canonical por idioma (308)
+  if (hasLocalePrefix && pathParts.length === 2 && firstSegment) {
+    const legalResponse = resolveLegalRouteMiddleware(request, firstSegment, pathParts[1])
+    if (legalResponse) return legalResponse
+  }
+
+  // ── URLs antiguas muy cortas → slug público del locale (ej. /en/terminos → /en/terms-and-conditions)
+  if (hasLocalePrefix && pathParts.length === 2 && pathParts[1] === 'terminos') {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${firstSegment}/${getPublicLegalSlug(firstSegment!, 'terms')}`
+    return NextResponse.redirect(url, 308)
+  }
+  if (hasLocalePrefix && pathParts.length === 2 && pathParts[1] === 'privacidad') {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${firstSegment}/${getPublicLegalSlug(firstSegment!, 'privacy')}`
+    return NextResponse.redirect(url, 308)
+  }
 
   // ── Raíz: georedirección BR→/pt (307), bots→/es; cookie > país > Accept-Language
   if (pathname === '/') {

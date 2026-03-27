@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Building2, User, Mail, Lock, Phone, FileText } from 'lucide-react'
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
+import { legalPageHref, legalPageAbsoluteTienda } from '@/lib/i18n/legal-routes'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
 type Pais = {
@@ -393,7 +394,7 @@ export default function RegistroPage() {
                   <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
                     Acepto los{' '}
                     <Link
-                      href={`/${locale}/terminos`}
+                      href={legalPageHref(locale, 'terms')}
                       target="_blank"
                       className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                     >
@@ -401,7 +402,7 @@ export default function RegistroPage() {
                     </Link>
                     {' '}y la{' '}
                     <Link
-                      href={`/${locale}/privacidad`}
+                      href={legalPageHref(locale, 'privacy')}
                       target="_blank"
                       className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                     >
@@ -414,7 +415,7 @@ export default function RegistroPage() {
                   personales para fines comerciales, envío de cotizaciones y seguimiento de tus
                   solicitudes. Puedes revisar nuestra{' '}
                   <Link
-                    href="https://tienda.inxora.com/privacidad"
+                    href={legalPageAbsoluteTienda(locale, 'privacy')}
                     target="_blank"
                     className="text-blue-600 dark:text-blue-400 hover:underline"
                   >
