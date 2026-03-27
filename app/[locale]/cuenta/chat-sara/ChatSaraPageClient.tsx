@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -55,7 +56,13 @@ interface Categoria {
   activo?: boolean
 }
 
-const BRAND = { logo: '/sara-pose2.png', name: 'SARA XORA', typingText: 'Sara está escribiendo…' }
+const BRAND_LOGO = '/sara-pose2.png'
+
+function localeToBcp47(locale: string): string {
+  if (locale === 'en') return 'en-US'
+  if (locale === 'pt') return 'pt-BR'
+  return 'es-PE'
+}
 const STYLE = { primary: '#13A0D8', secondary: '#0d7ba8' }
 const PHONE_REGEX = /(\+?51)?[\s.-]*([9]\d{2})[\s.-]*(\d{3})[\s.-]*(\d{3})\b/g
 
@@ -83,9 +90,11 @@ function linkifyPhones(text: string): string {
   })
 }
 
-const IMAGE_PLACEHOLDER_REGEX = /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)\]|\[\d+ documento\(s\)\]/g
+/** Placeholders de adjuntos en distintos idiomas + legado en español */
+const IMAGE_PLACEHOLDER_REGEX =
+  /\[Imagen(es)?[^\]]*\]|\[\d+\s+imagen\(es\)\]|\[\d+\s+image\(s\)\]|\[\d+\s+imagem\(ns\)\]|\[\d+\s+documento\(s\)\]|\[\d+\s+document\(s\)\]/g
 function hasImagePlaceholder(content: string): boolean {
-  return /\[Imagen(es)? enviada\(s\)\]|\[\d+ imagen\(es\)\]/.test(content)
+  return /\[Imagen(es)?[^\]]*\]|\[\d+\s+imagen\(es\)\]|\[\d+\s+image\(s\)\]|\[\d+\s+imagem\(ns\)\]/.test(content)
 }
 /** Texto que sale del textarea/input: CRLF → LF, sin tocar saltos de línea reales. */
 function normalizeOutgoingChatInput(raw: string): string {
@@ -102,7 +111,9 @@ function stripImagePlaceholder(content: string): string {
     .trim()
 }
 
-function formatRelativeDate(s: string | null): string {
+type ChatSaraT = (key: string, values?: Record<string, string | number | Date>) => string
+
+function formatRelativeDate(s: string | null, locale: string, t: ChatSaraT): string {
   if (!s) return ''
   try {
     const d = new Date(s)
@@ -111,43 +122,43 @@ function formatRelativeDate(s: string | null): string {
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
-    if (diffMins < 1) return 'Ahora'
-    if (diffMins < 60) return `Hace ${diffMins} min`
-    if (diffHours < 24) return `Hace ${diffHours} h`
-    if (diffDays === 1) return 'Ayer'
-    if (diffDays < 7) return `Hace ${diffDays} días`
-    return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
+    if (diffMins < 1) return t('relative.now')
+    if (diffMins < 60) return t('relative.minutesAgo', { count: diffMins })
+    if (diffHours < 24) return t('relative.hoursAgo', { count: diffHours })
+    if (diffDays === 1) return t('relative.yesterday')
+    if (diffDays < 7) return t('relative.daysAgo', { count: diffDays })
+    return d.toLocaleDateString(localeToBcp47(locale), { day: '2-digit', month: 'short' })
   } catch {
     return ''
   }
 }
 
 /** Devuelve el texto a mostrar como título de una conversación. */
-function getConversacionTitle(c: SaraConversacionItem): string {
+function getConversacionTitle(c: SaraConversacionItem, locale: string, t: ChatSaraT): string {
   if (c.titulo?.trim()) return c.titulo.trim()
   if (c.primer_mensaje?.trim()) {
-    const t = c.primer_mensaje.trim()
-    return t.length > 40 ? `${t.slice(0, 40)}…` : t
+    const head = c.primer_mensaje.trim()
+    return head.length > 40 ? `${head.slice(0, 40)}…` : head
   }
   if (c.lead_json?.razon_social) return c.lead_json.razon_social
   if (c.lead_json?.nombre_contacto) return c.lead_json.nombre_contacto
-  if (c.created_at) return formatRelativeDate(c.created_at)
-  return 'Conversación'
+  if (c.created_at) return formatRelativeDate(c.created_at, locale, t)
+  return t('conversationFallback')
 }
 
 // ─── helpers para vistas inline ─────────────────────────────────────────────
 
-function mcFormatDate(iso: string) {
+function mcFormatDate(iso: string, locale: string) {
   try {
-    return new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso))
+    return new Intl.DateTimeFormat(localeToBcp47(locale), { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso))
   } catch { return iso }
 }
 
-function mcFormatCurrency(amount: string | number | null | undefined, moneda?: string | null) {
+function mcFormatCurrency(amount: string | number | null | undefined, moneda: string | null | undefined, locale: string) {
   const num = typeof amount === 'string' ? parseFloat(amount) : (amount ?? 0)
   const currency = moneda ?? 'PEN'
   try {
-    return new Intl.NumberFormat('es-PE', { style: 'currency', currency, minimumFractionDigits: 2 }).format(num)
+    return new Intl.NumberFormat(localeToBcp47(locale), { style: 'currency', currency, minimumFractionDigits: 2 }).format(num)
   } catch { return `${currency} ${num.toFixed(2)}` }
 }
 
@@ -189,6 +200,7 @@ function PedidosInlineView({
   error,
   onRetry,
   token,
+  locale,
 }: {
   pedidos: PedidoListItem[]
   loading: boolean
@@ -197,6 +209,7 @@ function PedidosInlineView({
   token: string | null
   locale: string
 }) {
+  const t = useTranslations('chatSara')
   const [selected, setSelected] = useState<PedidoListItem | null>(null)
   const [detalle, setDetalle] = useState<PedidoDetalle | null>(null)
   const [detalleLoading, setDetalleLoading] = useState(false)
@@ -212,7 +225,7 @@ function PedidosInlineView({
       const res = await miCuentaService.getPedidoDetalle(p.id, token)
       if (res?.data) setDetalle(res.data)
     } catch {
-      setDetalleError('No se pudo cargar el detalle del pedido.')
+      setDetalleError(t('pedidos.detailError'))
     } finally {
       setDetalleLoading(false)
     }
@@ -260,13 +273,13 @@ function PedidosInlineView({
           <button
             onClick={closeDetalle}
             className="p-1.5 rounded-lg text-slate-400 hover:text-[#13A0D8] hover:bg-slate-100 transition-colors"
-            aria-label="Volver"
+            aria-label={t('pedidos.back')}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <Package className="h-5 w-5 text-[#13A0D8]" aria-hidden />
           <span className="font-bold text-slate-800 dark:text-white flex-1 truncate">
-            Pedido #{src.numero}
+            {t('pedidos.orderNumber', { num: String(src.numero) })}
           </span>
           <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${estadoClass(codigo, ESTADO_PEDIDO)}`}>
             {nombre}
@@ -286,14 +299,14 @@ function PedidosInlineView({
           {/* Resumen financiero */}
           <div className="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 border-b border-slate-100 dark:border-slate-700">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Resumen</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('pedidos.summary')}</p>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {[
-                { label: 'Fecha', value: mcFormatDate(src.fecha_creacion) },
-                ...(src.fecha_entrega_estimada ? [{ label: 'Entrega estimada', value: mcFormatDate(src.fecha_entrega_estimada) }] : []),
-                ...(src.subtotal != null ? [{ label: 'Subtotal', value: mcFormatCurrency(src.subtotal, monedaCodigo(src)) }] : []),
-                ...(src.igv != null ? [{ label: 'IGV', value: mcFormatCurrency(src.igv, monedaCodigo(src)) }] : []),
+                { label: t('pedidos.date'), value: mcFormatDate(src.fecha_creacion, locale) },
+                ...(src.fecha_entrega_estimada ? [{ label: t('pedidos.estimatedDelivery'), value: mcFormatDate(src.fecha_entrega_estimada, locale) }] : []),
+                ...(src.subtotal != null ? [{ label: t('pedidos.subtotal'), value: mcFormatCurrency(src.subtotal, monedaCodigo(src), locale) }] : []),
+                ...(src.igv != null ? [{ label: t('pedidos.igv'), value: mcFormatCurrency(src.igv, monedaCodigo(src), locale) }] : []),
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-xs text-slate-500">{label}</span>
@@ -301,9 +314,9 @@ function PedidosInlineView({
                 </div>
               ))}
               <div className="flex items-center justify-between px-4 py-3 bg-[#13A0D8]/5">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Total</span>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{t('pedidos.total')}</span>
                 <span className="text-sm font-bold text-[#13A0D8]">
-                  {mcFormatCurrency(src.total, monedaCodigo(src))}
+                  {mcFormatCurrency(src.total, monedaCodigo(src), locale)}
                 </span>
               </div>
             </div>
@@ -314,7 +327,7 @@ function PedidosInlineView({
             <div className="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
               <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 border-b border-slate-100 dark:border-slate-700">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Productos ({items.length})
+                  {t('pedidos.productsTitle', { count: items.length })}
                 </p>
               </div>
               <ul className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -327,7 +340,7 @@ function PedidosInlineView({
                   const nombre =
                     it.producto?.nombre ??
                     it.descripcion ??
-                    `Ítem ${i + 1}`
+                    t('pedidos.itemFallback', { n: i + 1 })
                   const sku = it.producto?.sku ?? it.producto?.codigo ?? null
                   const qty = it.cantidad ?? 1
                   const precio = it.precio_unitario_cliente ?? it.precio_unitario ?? null
@@ -351,16 +364,16 @@ function PedidosInlineView({
                           {nombre}
                         </p>
                         {sku && (
-                          <p className="text-xs text-slate-400 mt-0.5">SKU: {sku}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{t('pedidos.sku')}: {sku}</p>
                         )}
                         <p className="text-xs text-slate-500 mt-0.5">
-                          Cant: {qty}
-                          {precio != null && ` · ${mcFormatCurrency(precio, monedaCodigo(src))} c/u`}
+                          {t('pedidos.qty', { qty })}
+                          {precio != null && ` · ${mcFormatCurrency(precio, monedaCodigo(src), locale)} c/u`}
                         </p>
                       </div>
                       {subtotal != null && (
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 shrink-0">
-                          {mcFormatCurrency(subtotal, monedaCodigo(src))}
+                          {mcFormatCurrency(subtotal, monedaCodigo(src), locale)}
                         </span>
                       )}
                     </li>
@@ -374,7 +387,7 @@ function PedidosInlineView({
           {asesor && (
             <div className="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
               <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 border-b border-slate-100 dark:border-slate-700">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Asesor de ventas</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('pedidos.salesAdvisor')}</p>
               </div>
               <div className="px-4 py-3 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#13A0D8]/10 flex items-center justify-center text-[#13A0D8] font-bold text-sm shrink-0">
@@ -405,13 +418,13 @@ function PedidosInlineView({
       {/* Header */}
       <header className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 shadow-sm">
         <Package className="h-5 w-5 text-[#13A0D8]" aria-hidden />
-        <p className="font-bold text-slate-800 dark:text-white flex-1">Mis Pedidos</p>
+        <p className="font-bold text-slate-800 dark:text-white flex-1">{t('pedidos.title')}</p>
         {!loading && (
           <button
             onClick={onRetry}
             className="p-1.5 rounded-lg text-slate-400 hover:text-[#13A0D8] hover:bg-slate-100 transition-colors"
-            title="Actualizar"
-            aria-label="Actualizar pedidos"
+            title={t('pedidos.refresh')}
+            aria-label={t('pedidos.refreshOrders')}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -431,7 +444,7 @@ function PedidosInlineView({
               onClick={onRetry}
               className="flex items-center gap-1.5 text-sm text-[#13A0D8] hover:underline"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Reintentar
+              <RefreshCw className="h-3.5 w-3.5" /> {t('pedidos.retry')}
             </button>
           </div>
         )}
@@ -440,9 +453,9 @@ function PedidosInlineView({
             <div className="w-12 h-12 rounded-2xl bg-[#13A0D8]/10 flex items-center justify-center">
               <ShoppingBag className="h-6 w-6 text-[#13A0D8]" aria-hidden />
             </div>
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Aún no tienes pedidos</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('pedidos.emptyTitle')}</p>
             <p className="text-xs text-slate-400 max-w-[220px]">
-              Escríbele a Sara para cotizar y generar tu primer pedido.
+              {t('pedidos.emptyHint')}
             </p>
           </div>
         )}
@@ -459,21 +472,21 @@ function PedidosInlineView({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-semibold text-slate-800 dark:text-white truncate group-hover:text-[#13A0D8] transition-colors">
-                      Pedido #{p.numero}
+                      {t('pedidos.orderNumber', { num: String(p.numero) })}
                     </span>
                     <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${estadoClass(codigo, ESTADO_PEDIDO)}`}>
                       {nombre}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>{mcFormatDate(p.fecha_creacion)}</span>
+                    <span>{mcFormatDate(p.fecha_creacion, locale)}</span>
                     <span className="font-semibold text-slate-600 dark:text-slate-300">
-                      {mcFormatCurrency(p.total, monedaCodigo(p))}
+                      {mcFormatCurrency(p.total, monedaCodigo(p), locale)}
                     </span>
                   </div>
                   <div className="flex items-center justify-end">
                     <span className="text-[10px] text-slate-400 group-hover:text-[#13A0D8] flex items-center gap-0.5 transition-colors">
-                      Ver detalle <ChevronRight className="h-3 w-3" />
+                      {t('pedidos.viewDetail')} <ChevronRight className="h-3 w-3" />
                     </span>
                   </div>
                 </li>
@@ -494,13 +507,16 @@ function CotizacionesInlineView({
   error,
   onRetry,
   token,
+  locale,
 }: {
   cotizaciones: CotizacionListItem[]
   loading: boolean
   error: string | null
   onRetry: () => void
   token: string | null
+  locale: string
 }) {
+  const t = useTranslations('chatSara')
   const [selected, setSelected] = useState<CotizacionListItem | null>(null)
   const [detalle, setDetalle] = useState<CotizacionDetalle | null>(null)
   const [detalleLoading, setDetalleLoading] = useState(false)
@@ -516,7 +532,7 @@ function CotizacionesInlineView({
       const res = await miCuentaService.getCotizacionDetalle(c.id, token)
       setDetalle(res.data)
     } catch {
-      setDetalleError('No se pudo cargar el detalle. Inténtalo de nuevo.')
+      setDetalleError(t('cotizaciones.detailError'))
     } finally {
       setDetalleLoading(false)
     }
@@ -543,13 +559,13 @@ function CotizacionesInlineView({
             type="button"
             onClick={() => { setSelected(null); setDetalle(null); setDetalleError(null) }}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none"
-            aria-label="Volver a cotizaciones"
+            aria-label={t('cotizaciones.backToList')}
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-slate-800 dark:text-white text-sm truncate">{src.numero}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(src.fecha_emision)}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(src.fecha_emision, locale)}</p>
           </div>
           <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${estadoClass(estadoCodigo, ESTADO_COTIZACION)}`}>
             {estadoNombre}
@@ -569,7 +585,7 @@ function CotizacionesInlineView({
                 onClick={() => openDetalle(selected)}
                 className="text-sm text-[#13A0D8] hover:underline flex items-center gap-1.5"
               >
-                <RefreshCw className="h-3.5 w-3.5" /> Reintentar
+                <RefreshCw className="h-3.5 w-3.5" /> {t('cotizaciones.retry')}
               </button>
             </div>
           )}
@@ -579,7 +595,7 @@ function CotizacionesInlineView({
               {/* Resumen financiero */}
               <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Resumen</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('cotizaciones.summary')}</span>
                   {pdfLink && (
                     <a
                       href={pdfLink}
@@ -587,33 +603,33 @@ function CotizacionesInlineView({
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 text-xs font-semibold text-[#13A0D8] hover:underline"
                     >
-                      <Download className="h-3.5 w-3.5" /> Descargar PDF
+                      <Download className="h-3.5 w-3.5" /> {t('cotizaciones.downloadPdf')}
                     </a>
                   )}
                 </div>
                 <div className="space-y-1.5 text-sm">
                   {src.subtotal != null && (
                     <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                      <span>Subtotal</span>
-                      <span>{mcFormatCurrency(src.subtotal, monedaCodigo(src))}</span>
+                      <span>{t('cotizaciones.subtotal')}</span>
+                      <span>{mcFormatCurrency(src.subtotal, monedaCodigo(src), locale)}</span>
                     </div>
                   )}
                   {src.igv != null && (
                     <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                      <span>IGV (18%)</span>
-                      <span>{mcFormatCurrency(src.igv, monedaCodigo(src))}</span>
+                      <span>{t('cotizaciones.igv')}</span>
+                      <span>{mcFormatCurrency(src.igv, monedaCodigo(src), locale)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-slate-800 dark:text-white pt-1.5 border-t border-slate-200 dark:border-slate-600 mt-1.5">
-                    <span>Total</span>
+                    <span>{t('cotizaciones.total')}</span>
                     <span className="text-[#13A0D8]">
-                      {monedaSimbolo(src)} {mcFormatCurrency(src.total, monedaCodigo(src)).replace(/[^0-9.,]/g, '')}
+                      {monedaSimbolo(src)} {mcFormatCurrency(src.total, monedaCodigo(src), locale).replace(/[^0-9.,]/g, '')}
                     </span>
                   </div>
                 </div>
                 {src.fecha_vencimiento && (
                   <p className="text-xs text-slate-400 mt-3">
-                    Válida hasta: <span className="font-medium">{mcFormatDate(src.fecha_vencimiento)}</span>
+                    {t('cotizaciones.validUntil')} <span className="font-medium">{mcFormatDate(src.fecha_vencimiento, locale)}</span>
                   </p>
                 )}
               </div>
@@ -622,7 +638,7 @@ function CotizacionesInlineView({
               {items.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                    Productos ({items.length})
+                    {t('cotizaciones.productsTitle', { count: items.length })}
                   </p>
                   <div className="space-y-2">
                     {items.map((item) => {
@@ -634,7 +650,7 @@ function CotizacionesInlineView({
                       const nombre =
                         item.producto?.nombre ??
                         item.descripcion ??
-                        'Producto'
+                        t('cotizaciones.productFallback')
                       const sku = item.producto?.sku ?? item.producto?.codigo ?? null
                       const qty = item.cantidad ?? 1
                       const precioUnit = item.precio_unitario_cliente ?? item.precio_unitario
@@ -663,14 +679,14 @@ function CotizacionesInlineView({
                             <p className="text-sm font-semibold text-slate-800 dark:text-white leading-snug line-clamp-2">
                               {nombre}
                             </p>
-                            {sku && <p className="text-xs text-slate-400 mt-0.5">SKU: {sku}</p>}
+                            {sku && <p className="text-xs text-slate-400 mt-0.5">{t('pedidos.sku')}: {sku}</p>}
                             <div className="flex items-center justify-between mt-1.5">
                               <span className="text-xs text-slate-500">
-                                {qty} × {mcFormatCurrency(precioUnit, monedaCodigo(src))}
+                                {qty} × {mcFormatCurrency(precioUnit, monedaCodigo(src), locale)}
                               </span>
                               {totalItem != null && (
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                  {mcFormatCurrency(totalItem, monedaCodigo(src))}
+                                  {mcFormatCurrency(totalItem, monedaCodigo(src), locale)}
                                 </span>
                               )}
                             </div>
@@ -685,7 +701,7 @@ function CotizacionesInlineView({
               {/* Asesor */}
               {asesor && (
                 <div className="bg-[#13A0D8]/5 rounded-2xl p-4 border border-[#13A0D8]/10">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tu asesor</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t('cotizaciones.yourAdvisor')}</p>
                   <p className="text-sm font-semibold text-slate-800 dark:text-white">
                     {asesor.nombre} {asesor.apellidos}
                   </p>
@@ -705,12 +721,12 @@ function CotizacionesInlineView({
     <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-900">
       <header className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 shadow-sm">
         <FileText className="h-5 w-5 text-[#13A0D8]" aria-hidden />
-        <p className="font-bold text-slate-800 dark:text-white flex-1">Mis Cotizaciones</p>
+        <p className="font-bold text-slate-800 dark:text-white flex-1">{t('cotizaciones.title')}</p>
         {!loading && (
           <button
             onClick={onRetry}
             className="p-1.5 rounded-lg text-slate-400 hover:text-[#13A0D8] hover:bg-slate-100 transition-colors"
-            title="Actualizar" aria-label="Actualizar cotizaciones"
+            title={t('cotizaciones.refresh')} aria-label={t('cotizaciones.refreshQuotes')}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -727,7 +743,7 @@ function CotizacionesInlineView({
           <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
             <p className="text-sm text-slate-500">{error}</p>
             <button onClick={onRetry} className="flex items-center gap-1.5 text-sm text-[#13A0D8] hover:underline">
-              <RefreshCw className="h-3.5 w-3.5" /> Reintentar
+              <RefreshCw className="h-3.5 w-3.5" /> {t('cotizaciones.retry')}
             </button>
           </div>
         )}
@@ -736,9 +752,9 @@ function CotizacionesInlineView({
             <div className="w-12 h-12 rounded-2xl bg-[#13A0D8]/10 flex items-center justify-center">
               <FileText className="h-6 w-6 text-[#13A0D8]" aria-hidden />
             </div>
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Aún no tienes cotizaciones</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('cotizaciones.emptyTitle')}</p>
             <p className="text-xs text-slate-400 max-w-[220px]">
-              Habla con Sara para solicitar una cotización personalizada.
+              {t('cotizaciones.emptyHint')}
             </p>
           </div>
         )}
@@ -760,7 +776,7 @@ function CotizacionesInlineView({
                         <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
                           {c.numero}
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(c.fecha_emision)}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(c.fecha_emision, locale)}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${estadoClass(estadoCodigo, ESTADO_COTIZACION)}`}>
@@ -771,10 +787,10 @@ function CotizacionesInlineView({
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
                       <span className="text-xs text-slate-400">
-                        {c.fecha_vencimiento ? `Vence: ${mcFormatDate(c.fecha_vencimiento)}` : 'Sin fecha de vencimiento'}
+                        {c.fecha_vencimiento ? t('cotizaciones.expiresOn', { date: mcFormatDate(c.fecha_vencimiento, locale) }) : t('cotizaciones.noExpiry')}
                       </span>
                       <span className="text-base font-extrabold text-[#13A0D8]">
-                        {c.moneda_cotizacion?.simbolo ?? 'S/'} {mcFormatCurrency(c.total, moneda).replace(/[^0-9.,]/g, '')}
+                        {c.moneda_cotizacion?.simbolo ?? 'S/'} {mcFormatCurrency(c.total, moneda, locale).replace(/[^0-9.,]/g, '')}
                       </span>
                     </div>
                   </button>
@@ -803,6 +819,7 @@ export function ChatSaraPageClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = useTranslations('chatSara')
   const { cliente, token, isLoggedIn, isLoading: authLoading, logout } = useClienteAuth()
   const { currency } = useCurrency()
   const [conversaciones, setConversaciones] = useState<SaraConversacionItem[]>([])
@@ -904,11 +921,11 @@ export function ChatSaraPageClient({
       const lista = res.data?.pedidos ?? []
       setPedidos(Array.isArray(lista) ? lista : [])
     } catch (e) {
-      setPedidosError(e instanceof Error ? e.message : 'No se pudieron cargar los pedidos.')
+      setPedidosError(e instanceof Error ? e.message : t('errors.loadPedidos'))
     } finally {
       setPedidosLoading(false)
     }
-  }, [cliente?.id, token])
+  }, [cliente?.id, token, t])
 
   const fetchCotizaciones = useCallback(async () => {
     if (!cliente?.id || !token) return
@@ -920,11 +937,11 @@ export function ChatSaraPageClient({
       const lista = res.data?.cotizacion ?? []
       setCotizaciones(Array.isArray(lista) ? lista : [])
     } catch (e) {
-      setCotizacionesError(e instanceof Error ? e.message : 'No se pudieron cargar las cotizaciones.')
+      setCotizacionesError(e instanceof Error ? e.message : t('errors.loadCotizaciones'))
     } finally {
       setCotizacionesLoading(false)
     }
-  }, [cliente?.id, token])
+  }, [cliente?.id, token, t])
 
   useEffect(() => {
     if (!isLoggedIn) return
@@ -945,11 +962,11 @@ export function ChatSaraPageClient({
       const res = await getSaraConversaciones(cliente.id)
       setConversaciones(res.data ?? [])
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Error al cargar conversaciones')
+      setError(e instanceof ApiError ? e.message : t('errors.loadConversations'))
     } finally {
       setLoadingList(false)
     }
-  }, [cliente?.id])
+  }, [cliente?.id, t])
 
   useEffect(() => {
     if (cliente?.id) loadConversaciones()
@@ -1047,7 +1064,7 @@ export function ChatSaraPageClient({
   const borrarHistorialDeSesion = useCallback(
     async (sessionId: string, e?: React.MouseEvent) => {
       e?.stopPropagation()
-      const confirmar = window.confirm('¿Borrar todo el historial de esta conversación?')
+      const confirmar = window.confirm(t('confirm.deleteHistory'))
       if (!confirmar) return
       try {
         await deleteSaraChatHistory(sessionId)
@@ -1057,10 +1074,10 @@ export function ChatSaraPageClient({
         }
         loadConversaciones()
       } catch {
-        setError('No se pudo borrar el historial. Inténtalo de nuevo.')
+        setError(t('errors.deleteHistory'))
       }
     },
-    [selectedSessionId, loadConversaciones]
+    [selectedSessionId, loadConversaciones, t]
   )
 
   const openShareModal = useCallback((sessionId: string, e?: React.MouseEvent) => {
@@ -1078,8 +1095,8 @@ export function ChatSaraPageClient({
   const handleStartRename = useCallback((c: SaraConversacionItem, e: React.MouseEvent) => {
     e.stopPropagation()
     setEditingSessionId(c.session_id)
-    setEditTitle(getConversacionTitle(c))
-  }, [])
+    setEditTitle(getConversacionTitle(c, locale, t))
+  }, [locale, t])
 
   const handleSaveRename = useCallback(async (sessionId: string) => {
     if (renameSavingRef.current) return
@@ -1095,14 +1112,14 @@ export function ChatSaraPageClient({
       setEditingSessionId(null)
       setEditTitle('')
     } catch {
-      setError('No se pudo guardar el nombre. Inténtalo de nuevo.')
+      setError(t('errors.saveTitle'))
       setEditingSessionId(null)
       setEditTitle('')
     } finally {
       setSavingTitle(null)
       renameSavingRef.current = false
     }
-  }, [editTitle, handleCancelRename])
+  }, [editTitle, handleCancelRename, t])
 
   const shareUrl = shareModalSessionId
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/${locale}/chat-sara/share/${encodeURIComponent(shareModalSessionId)}`
@@ -1115,24 +1132,23 @@ export function ChatSaraPageClient({
       setUrlCopied(true)
       setTimeout(() => setUrlCopied(false), 2000)
     } catch {
-      setError('No se pudo copiar el enlace.')
+      setError(t('errors.copyLink'))
     }
-  }, [shareUrl])
+  }, [shareUrl, t])
 
   const addImageFiles = useCallback((files: FileList | null) => {
     if (!files?.length) return
     setError(null)
-    const allowedTypesStr = 'JPEG, PNG o WebP'
     const toAdd: { file: File; ct: SaraChatAttachmentContentType }[] = []
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const ct = file.type as SaraChatAttachmentContentType
       if (!ALLOWED_IMAGE_TYPES_SET.has(ct)) {
-        setError(`Solo ${allowedTypesStr}, máximo ${MAX_IMAGES} y 5 MB cada una.`)
+        setError(t('errors.attachmentRules', { maxImages: MAX_IMAGES }))
         return
       }
       if (file.size > MAX_IMAGE_BYTES) {
-        setError('Cada imagen debe pesar como máximo 5 MB.')
+        setError(t('errors.imageMaxSize'))
         return
       }
       toAdd.push({ file, ct })
@@ -1140,7 +1156,7 @@ export function ChatSaraPageClient({
     const currentLen = attachments.length
     const slot = MAX_IMAGES - currentLen
     if (slot <= 0) {
-      setError(`Máximo ${MAX_IMAGES} imágenes por mensaje.`)
+      setError(t('errors.maxImages', { max: MAX_IMAGES }))
       return
     }
     const toProcess = toAdd.slice(0, slot)
@@ -1159,7 +1175,7 @@ export function ChatSaraPageClient({
       }
       reader.readAsDataURL(file)
     })
-  }, [attachments.length])
+  }, [attachments.length, t])
 
   const removeAttachment = useCallback((id: string) => {
     setAttachments((prev) => prev.filter((a) => a.id !== id))
@@ -1168,22 +1184,21 @@ export function ChatSaraPageClient({
   const addDocumentFiles = useCallback((files: FileList | null) => {
     if (!files?.length) return
     setError(null)
-    const allowedStr = 'PDF, Word (.docx) y Excel (.xlsx)'
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const ct = file.type as SaraChatDocumentContentType
       if (!ALLOWED_DOCUMENT_TYPES_SET.has(ct)) {
-        setError(`Solo ${allowedStr}, máximo ${MAX_DOCUMENTS} y 10 MB cada uno.`)
+        setError(t('errors.documentRules', { maxDocs: MAX_DOCUMENTS }))
         return
       }
       if (file.size > MAX_DOCUMENT_BYTES) {
-        setError('Cada documento debe pesar como máximo 10 MB.')
+        setError(t('errors.documentMaxSize'))
         return
       }
     }
     const slot = MAX_DOCUMENTS - documents.length
     if (slot <= 0) {
-      setError(`Máximo ${MAX_DOCUMENTS} documentos por mensaje.`)
+      setError(t('errors.maxDocuments', { max: MAX_DOCUMENTS }))
       return
     }
     const toProcess = Array.from(files).slice(0, slot)
@@ -1203,7 +1218,7 @@ export function ChatSaraPageClient({
       }
       reader.readAsDataURL(file)
     })
-  }, [documents.length])
+  }, [documents.length, t])
 
   const removeDocument = useCallback((id: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== id))
@@ -1212,7 +1227,7 @@ export function ChatSaraPageClient({
   const addFilesFromDrive = useCallback(async () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
     if (!clientId) {
-      setError('Google Drive no configurado (falta NEXT_PUBLIC_GOOGLE_CLIENT_ID).')
+      setError(t('errors.googleDrive'))
       return
     }
     setAttachMenuOpen(false)
@@ -1259,11 +1274,11 @@ export function ChatSaraPageClient({
       if (newAttachments.length) setAttachments((p) => [...p, ...newAttachments].slice(0, MAX_IMAGES))
       if (newDocuments.length) setDocuments((p) => [...p, ...newDocuments].slice(0, MAX_DOCUMENTS))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al usar Google Drive.')
+      setError(e instanceof Error ? e.message : t('errors.driveGeneric'))
     } finally {
       setDriveLoading(false)
     }
-  }, [])
+  }, [t])
 
   const sendMessage = useCallback(async () => {
     const text = normalizeOutgoingChatInput(input)
@@ -1277,8 +1292,8 @@ export function ChatSaraPageClient({
       documents.length > 0 ? documents.map((d) => ({ content_type: d.content_type, data: d.data })) : undefined
     const parts = []
     if (text) parts.push(text)
-    if (hasAttachments) parts.push(`[${attachments.length} imagen(es)]`)
-    if (hasDocuments) parts.push(`[${documents.length} documento(s)]`)
+    if (hasAttachments) parts.push(t('placeholders.imagesLine', { n: attachments.length }))
+    if (hasDocuments) parts.push(t('placeholders.documentsLine', { n: documents.length }))
     const userContent = parts.length ? parts.join('\n') : ''
     const previews = attachments.map((a) => a.preview)
 
@@ -1327,8 +1342,8 @@ export function ChatSaraPageClient({
     } catch (e) {
       const is422 = e instanceof ApiError && e.status === 422
       let msg = is422
-        ? 'Solo imágenes (JPEG/PNG/WebP, máx. 5 y 5 MB c/u) y documentos (PDF/Word/Excel, máx. 3 y 10 MB c/u).'
-        : (e instanceof ApiError ? e.message : 'Error al enviar. Inténtalo de nuevo.')
+        ? t('errors.send422')
+        : (e instanceof ApiError ? e.message : t('errors.sendGeneric'))
       if (isGatewayErrorBody(msg)) msg = CHAT_GATEWAY_ERROR_MESSAGE
       setError(msg)
       setMessages((prev) => [...prev, { role: 'assistant', content: msg }])
@@ -1336,13 +1351,13 @@ export function ChatSaraPageClient({
       setSending(false)
       scrollToBottom()
     }
-  }, [input, attachments, documents, sending, selectedSessionId, loadConversaciones, scrollToBottom, cliente?.id, updateUrlForSession])
+  }, [input, attachments, documents, sending, selectedSessionId, loadConversaciones, scrollToBottom, cliente?.id, updateUrlForSession, t, currency])
 
   /** Envía directamente un mensaje de categoría sin pasar por el input de texto. */
   const sendCategoryMessage = useCallback(async (cat: Categoria) => {
     if (sending) return
     // displayText: lo que ve el usuario en la burbuja
-    const displayText = `Muéstrame los productos de la categoría ${cat.nombre}`
+    const displayText = t('categoryPrompt', { name: cat.nombre })
     // apiText: lo que recibe el backend con el id para filtrar correctamente
     const apiText = `${displayText} [categoria_id:${cat.id}]`
     setError(null)
@@ -1381,8 +1396,8 @@ export function ChatSaraPageClient({
     } catch (e) {
       const is422 = e instanceof ApiError && e.status === 422
       let msg = is422
-        ? 'Solo imágenes (JPEG/PNG/WebP, máx. 5 y 5 MB c/u) y documentos (PDF/Word/Excel, máx. 3 y 10 MB c/u).'
-        : (e instanceof ApiError ? e.message : 'Error al enviar. Inténtalo de nuevo.')
+        ? t('errors.send422')
+        : (e instanceof ApiError ? e.message : t('errors.sendGeneric'))
       if (isGatewayErrorBody(msg)) msg = CHAT_GATEWAY_ERROR_MESSAGE
       setError(msg)
       setMessages((prev) => [...prev, { role: 'assistant', content: msg }])
@@ -1391,7 +1406,7 @@ export function ChatSaraPageClient({
       setActiveChipId(null)
       scrollToBottom()
     }
-  }, [sending, selectedSessionId, cliente?.id, loadConversaciones, scrollToBottom, updateUrlForSession])
+  }, [sending, selectedSessionId, cliente?.id, loadConversaciones, scrollToBottom, updateUrlForSession, t, currency])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1431,15 +1446,15 @@ export function ChatSaraPageClient({
           className={`hidden md:flex md:flex-col shrink-0 bg-[#171D4C] border-r border-white/5 py-3 z-10 transition-[width] duration-200 overflow-hidden ${
             navExpanded ? 'w-52' : 'w-14 items-center'
           }`}
-          aria-label="Secciones de mi cuenta"
+          aria-label={t('nav.sectionsAria')}
         >
           {/* Botón toggle expandir/contraer */}
           <div className={`flex mb-3 ${navExpanded ? 'justify-end pr-2' : 'justify-center'}`}>
             <button
               type="button"
               onClick={() => setNavExpanded((v) => !v)}
-              aria-label={navExpanded ? 'Contraer menú' : 'Expandir menú'}
-              title={navExpanded ? 'Contraer' : 'Expandir'}
+              aria-label={navExpanded ? t('nav.collapse') : t('nav.expand')}
+              title={navExpanded ? t('nav.collapseShort') : t('nav.expandShort')}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/50"
             >
               {navExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -1449,8 +1464,8 @@ export function ChatSaraPageClient({
           {/* Avatar → Mi Perfil */}
           <Link
             href={`/${locale}/cuenta`}
-            title={navExpanded ? undefined : 'Mi Perfil'}
-            aria-label="Ver mi perfil"
+            title={navExpanded ? undefined : t('nav.myProfile')}
+            aria-label={t('nav.viewProfileAria')}
             className={`flex items-center gap-3 transition-colors hover:bg-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/50 ${
               navExpanded ? 'w-full px-3 py-2' : 'w-10 h-10 justify-center'
             }`}
@@ -1461,9 +1476,9 @@ export function ChatSaraPageClient({
             {navExpanded && (
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white truncate leading-tight">
-                  {cliente?.nombre ?? 'Mi Perfil'}
+                  {cliente?.nombre ?? t('nav.myProfile')}
                 </p>
-                <p className="text-xs text-white/50 truncate leading-tight">Ver perfil</p>
+                <p className="text-xs text-white/50 truncate leading-tight">{t('nav.viewProfile')}</p>
               </div>
             )}
           </Link>
@@ -1474,10 +1489,10 @@ export function ChatSaraPageClient({
           {/* Items de navegación */}
           {(
             [
-              { section: 'chat', Icon: MessageSquare, label: 'Chat con Sara', sublabel: 'Asistente IA' },
-              { section: 'pedidos', Icon: Package, label: 'Mis Pedidos', sublabel: 'Estado y seguimiento' },
-              { section: 'cotizaciones', Icon: FileText, label: 'Mis Cotizaciones', sublabel: 'Descarga PDFs' },
-            ] as const
+              { section: 'chat' as const, Icon: MessageSquare, label: t('nav.chatSara'), sublabel: t('nav.chatSaraSub') },
+              { section: 'pedidos' as const, Icon: Package, label: t('nav.orders'), sublabel: t('nav.ordersSub') },
+              { section: 'cotizaciones' as const, Icon: FileText, label: t('nav.quotes'), sublabel: t('nav.quotesSub') },
+            ]
           ).map(({ section, Icon, label, sublabel }) => (
             <button
               key={section}
@@ -1511,8 +1526,8 @@ export function ChatSaraPageClient({
             <div className={`h-px bg-white/10 mb-2 ${navExpanded ? 'mx-3' : 'w-8 mx-auto'}`} />
             <button
               type="button"
-              aria-label="Cerrar sesión"
-              title={navExpanded ? undefined : 'Cerrar sesión'}
+              aria-label={t('nav.logoutAria')}
+              title={navExpanded ? undefined : t('nav.logout')}
               onClick={() => {
                 logout()
                 router.push(`/${locale}/login`)
@@ -1523,7 +1538,7 @@ export function ChatSaraPageClient({
             >
               <LogOut className="h-4 w-4 shrink-0" />
               {navExpanded && (
-                <span className="text-sm font-medium">Cerrar sesión</span>
+                <span className="text-sm font-medium">{t('nav.logout')}</span>
               )}
             </button>
           </div>
@@ -1550,30 +1565,30 @@ export function ChatSaraPageClient({
             type="button"
             onClick={() => setSidebarCollapsed((c) => !c)}
             className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 shrink-0"
-            aria-label={sidebarCollapsed ? 'Abrir menú' : 'Cerrar menú'}
-            title={sidebarCollapsed ? 'Abrir menú' : 'Cerrar menú'}
+            aria-label={sidebarCollapsed ? t('sidebar.openMenu') : t('sidebar.closeMenu')}
+            title={sidebarCollapsed ? t('sidebar.openMenu') : t('sidebar.closeMenu')}
           >
             <Menu className="h-5 w-5" />
           </button>
           <Link
             href={`/${locale}`}
             className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
-            aria-label="Volver"
-            title="Volver"
+            aria-label={t('header.back')}
+            title={t('header.back')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           {!sidebarCollapsed && (
             <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate flex-1 px-1">
-              Conversaciones
+              {t('sidebar.conversations')}
             </span>
           )}
           <button
             type="button"
             onClick={startNewConversation}
             className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#13A0D8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
-            title="Nueva conversación"
-            aria-label="Nueva conversación"
+            title={t('sidebar.newChat')}
+            aria-label={t('sidebar.newChat')}
           >
             <MessageSquarePlus className="h-5 w-5" />
           </button>
@@ -1583,17 +1598,17 @@ export function ChatSaraPageClient({
             !sidebarCollapsed && (
               <div className="mx-3 mt-3 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-4">
                 <p className="text-sm font-semibold leading-snug mb-1 text-slate-800 dark:text-white">
-                  Inicia sesión para empezar a guardar tus conversaciones
+                  {t('sidebar.loginPromptTitle')}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
-                  Una vez que hayas iniciado sesión, podrás acceder a tus conversaciones recientes aquí.
+                  {t('sidebar.loginPromptBody')}
                 </p>
                 <button
                   type="button"
                   onClick={() => openAuthModal()}
                   className="text-[#13A0D8] text-sm font-semibold hover:underline focus:outline-none"
                 >
-                  Iniciar sesión
+                  {t('sidebar.login')}
                 </button>
               </div>
             )
@@ -1607,8 +1622,8 @@ export function ChatSaraPageClient({
                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
                   <MessageSquarePlus className="h-5 w-5 text-slate-400" />
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Sin conversaciones</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">La conversación se crea al enviar el primer mensaje.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('sidebar.noConversations')}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t('sidebar.noConversationsHint')}</p>
               </div>
             )
           ) : (
@@ -1638,7 +1653,7 @@ export function ChatSaraPageClient({
                         disabled={savingTitle === c.session_id}
                         className="flex-1 min-w-0 text-sm font-medium text-slate-800 dark:text-white bg-transparent outline-none disabled:opacity-60 placeholder:text-slate-400"
                         maxLength={100}
-                        aria-label="Nombre de la conversación"
+                        aria-label={t('sidebar.renameInputAria')}
                       />
                       {savingTitle === c.session_id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400 shrink-0" />
@@ -1648,8 +1663,8 @@ export function ChatSaraPageClient({
                             type="button"
                             onMouseDown={(e) => { e.preventDefault(); handleSaveRename(c.session_id) }}
                             className="p-1 rounded-md text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 focus:outline-none shrink-0"
-                            title="Guardar nombre"
-                            aria-label="Guardar nombre"
+                            title={t('sidebar.saveName')}
+                            aria-label={t('sidebar.saveName')}
                           >
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -1657,8 +1672,8 @@ export function ChatSaraPageClient({
                             type="button"
                             onMouseDown={(e) => { e.preventDefault(); handleCancelRename() }}
                             className="p-1 rounded-md text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none shrink-0"
-                            title="Cancelar"
-                            aria-label="Cancelar edición"
+                            title={t('sidebar.cancel')}
+                            aria-label={t('sidebar.cancelAria')}
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -1691,15 +1706,15 @@ export function ChatSaraPageClient({
                       >
                         {sidebarCollapsed ? (
                           <span className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
-                            {getConversacionTitle(c).slice(0, 1).toUpperCase()}
+                            {getConversacionTitle(c, locale, t).slice(0, 1).toUpperCase()}
                           </span>
                         ) : (
                           <>
                             <span className="block truncate text-sm font-medium">
-                              {getConversacionTitle(c)}
+                              {getConversacionTitle(c, locale, t)}
                             </span>
                             <span className="block truncate text-xs text-slate-400 mt-0.5">
-                              {formatRelativeDate(c.updated_at)}
+                              {formatRelativeDate(c.updated_at, locale, t)}
                             </span>
                           </>
                         )}
@@ -1710,8 +1725,8 @@ export function ChatSaraPageClient({
                             type="button"
                             onClick={(e) => handleStartRename(c, e)}
                             className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
-                            title="Renombrar conversación"
-                            aria-label="Renombrar conversación"
+                            title={t('sidebar.rename')}
+                            aria-label={t('sidebar.rename')}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
@@ -1719,8 +1734,8 @@ export function ChatSaraPageClient({
                             type="button"
                             onClick={(e) => borrarHistorialDeSesion(c.session_id, e)}
                             className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
-                            title="Borrar historial"
-                            aria-label="Borrar historial"
+                            title={t('sidebar.deleteHistory')}
+                            aria-label={t('sidebar.deleteHistory')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1728,8 +1743,8 @@ export function ChatSaraPageClient({
                             type="button"
                             onClick={(e) => openShareModal(c.session_id, e)}
                             className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
-                            title="Compartir"
-                            aria-label="Compartir"
+                            title={t('sidebar.share')}
+                            aria-label={t('sidebar.share')}
                           >
                             <Share2 className="h-4 w-4" />
                           </button>
@@ -1769,6 +1784,7 @@ export function ChatSaraPageClient({
             error={cotizacionesError}
             onRetry={fetchCotizaciones}
             token={token ?? null}
+            locale={locale}
           />
         )}
 
@@ -1781,14 +1797,14 @@ export function ChatSaraPageClient({
           <button
             className="md:hidden -ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 transition-colors focus:outline-none"
             onClick={() => setMobileShowConversations(true)}
-            aria-label="Ver conversaciones"
+            aria-label={t('header.backConversations')}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="relative shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
             <Image
-              src="/sara-pose2.png"
-              alt="Sara Xora"
+              src={BRAND_LOGO}
+              alt={t('brand.alt')}
               fill
               className="object-cover object-top"
               unoptimized
@@ -1796,10 +1812,10 @@ export function ChatSaraPageClient({
             <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 z-10" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-slate-800 dark:text-white text-base truncate">{BRAND.name}</p>
+            <p className="font-bold text-slate-800 dark:text-white text-base truncate">{t('brand.name')}</p>
             <p className="text-xs text-emerald-500 font-medium flex items-center gap-1">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
-              En línea
+              {t('chat.online')}
             </p>
           </div>
         </header>
@@ -1886,8 +1902,8 @@ export function ChatSaraPageClient({
             <div className="flex flex-col items-center justify-center h-full px-6 py-8 gap-6">
               {/* Título */}
               <div className="text-center">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#13A0D8] mb-1">Asistente industrial IA</p>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Chatea con Sara Xora</h2>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#13A0D8] mb-1">{t('welcome.badge')}</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">{t('welcome.title')}</h2>
               </div>
 
               {/* Desktop: grid con Sara al centro, cards arriba/izquierda/derecha */}
@@ -1898,7 +1914,7 @@ export function ChatSaraPageClient({
                 {/* Card arriba (centro) */}
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-52">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">💬</span>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Historial de cotizaciones</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('welcome.cardQuotesHistory')}</p>
                 </div>
                 <div />
 
@@ -1906,18 +1922,18 @@ export function ChatSaraPageClient({
                 {/* Card izquierda */}
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-48 justify-end">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">⚡</span>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Cotizaciones rápidas</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('welcome.cardFastQuotes')}</p>
                 </div>
 
                 {/* Sara */}
                 <div className="w-52 h-64 overflow-hidden shrink-0 mx-4 drop-shadow-xl">
-                  <Image src="/Sara-señalando.png" alt="Sara Xora" width={208} height={256} className="w-full h-full object-contain object-bottom" unoptimized priority />
+                  <Image src="/Sara-señalando.png" alt={t('brand.alt')} width={208} height={256} className="w-full h-full object-contain object-bottom" unoptimized priority />
                 </div>
 
                 {/* Card derecha */}
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-48">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">🕐</span>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Disponible 24/7</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">{t('welcome.card247')}</p>
                 </div>
 
                 {/* Fila 3: botón centrado */}
@@ -1927,7 +1943,7 @@ export function ChatSaraPageClient({
                   onClick={() => openAuthModal()}
                   className="mt-2 w-52 py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
                 >
-                  Iniciar sesión / Registrarse
+                  {t('welcome.loginCta')}
                 </button>
                 <div />
               </div>
@@ -1935,12 +1951,12 @@ export function ChatSaraPageClient({
               {/* Mobile: Sara arriba, cards y botón apilados */}
               <div className="sm:hidden flex flex-col items-center gap-4 w-full max-w-xs">
                 <div className="h-52 drop-shadow-xl">
-                  <Image src="/Sara-señalando.png" alt="Sara Xora" width={176} height={208} className="h-full w-auto object-contain object-bottom" unoptimized priority />
+                  <Image src="/Sara-señalando.png" alt={t('brand.alt')} width={176} height={208} className="h-full w-auto object-contain object-bottom" unoptimized priority />
                 </div>
                 {[
-                  { icon: '⚡', title: 'Cotizaciones rápidas' },
-                  { icon: '💬', title: 'Historial de cotizaciones' },
-                  { icon: '🕐', title: 'Disponible 24/7' },
+                  { icon: '⚡', title: t('welcome.cardFastQuotes') },
+                  { icon: '💬', title: t('welcome.cardQuotesHistory') },
+                  { icon: '🕐', title: t('welcome.card247') },
                 ].map(({ icon, title }) => (
                   <div key={title} className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700 shadow-sm w-full">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#13A0D8]/10 text-[#13A0D8]">{icon}</span>
@@ -1952,7 +1968,7 @@ export function ChatSaraPageClient({
                   onClick={() => openAuthModal()}
                   className="w-full py-3 rounded-xl bg-[#13A0D8] text-white font-semibold text-sm hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 transition-colors shadow-sm"
                 >
-                  Iniciar sesión / Registrarse
+                  {t('welcome.loginCta')}
                 </button>
               </div>
             </div>
@@ -1961,7 +1977,7 @@ export function ChatSaraPageClient({
               <div className="h-56 sm:h-64 mb-5 drop-shadow-xl">
                 <Image
                   src="/Sara-señalando.png"
-                  alt="Sara Xora"
+                  alt={t('brand.alt')}
                   width={220}
                   height={256}
                   className="h-full w-auto object-contain object-bottom"
@@ -1969,15 +1985,15 @@ export function ChatSaraPageClient({
                   priority
                 />
               </div>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Hola, soy Sara</h2>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t('welcome.hello')}</h2>
               <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-5">
-                Tu asistente de INXORA. Pregúntame por productos, cotizaciones o envíos.
+                {t('welcome.intro')}
               </p>
               <p className="text-[#13A0D8] font-semibold text-sm">
-                Escribe tu consulta o lo que necesites cotizar.
+                {t('welcome.hintPrompt')}
               </p>
               <p className="text-slate-400 text-xs mt-1.5">
-                La conversación se crea al enviar tu primer mensaje.
+                {t('welcome.hintCreate')}
               </p>
             </div>
           ) : loadingChat ? (
@@ -1986,8 +2002,8 @@ export function ChatSaraPageClient({
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 min-h-[240px] text-center text-slate-500">
-              <p className="text-sm font-medium">No hay mensajes en esta conversación.</p>
-              <p className="text-xs mt-1">Escribe abajo para enviar tu primer mensaje.</p>
+              <p className="text-sm font-medium">{t('welcome.emptyThread')}</p>
+              <p className="text-xs mt-1">{t('welcome.emptyThreadHint')}</p>
             </div>
           ) : (
             <div className="space-y-6 max-w-3xl mx-auto">
@@ -2021,7 +2037,7 @@ export function ChatSaraPageClient({
                         {!msg.attachmentPreviews?.length && hasImagePlaceholder(msg.content) && (
                           <span className="inline-flex items-center gap-1.5 text-white/90 text-sm">
                             <ImageIcon className="w-4 h-4 shrink-0" aria-hidden />
-                            Imagen adjunta
+                            {t('chat.attachedImage')}
                           </span>
                         )}
                         {(stripImagePlaceholder(msg.content) || (!msg.attachmentPreviews?.length && !hasImagePlaceholder(msg.content))) && (
@@ -2038,8 +2054,8 @@ export function ChatSaraPageClient({
                       <>
                         <span className="block text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-1.5">
                           {msg.asesor_nombre?.trim()
-                            ? `${msg.asesor_nombre.trim()} (Asesor Inxora)`
-                            : 'Equipo Inxora'}
+                            ? t('chat.asesorLabel', { name: msg.asesor_nombre.trim() })
+                            : t('chat.teamInxora')}
                         </span>
                         <div className="text-sm prose prose-p:my-1 prose-p:leading-relaxed max-w-none">
                           <ReactMarkdown components={{ a: markdownLink, img: markdownImg }}>
@@ -2087,7 +2103,7 @@ export function ChatSaraPageClient({
             accept="image/jpeg,image/png,image/webp"
             multiple
             className="sr-only"
-            aria-label="Adjuntar imagen"
+            aria-label={t('chat.attachImageAria')}
             onChange={(e) => {
               addImageFiles(e.target.files)
               e.target.value = ''
@@ -2099,7 +2115,7 @@ export function ChatSaraPageClient({
             accept=".pdf,.docx,.xlsx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             multiple
             className="sr-only"
-            aria-label="Adjuntar documento"
+            aria-label={t('chat.attachDocAria')}
             onChange={(e) => {
               addDocumentFiles(e.target.files)
               e.target.value = ''
@@ -2112,7 +2128,7 @@ export function ChatSaraPageClient({
                   <img src={a.preview} alt="" className="w-full h-full object-cover" />
                   <button
                     type="button"
-                    aria-label="Quitar imagen"
+                    aria-label={t('chat.removeImage')}
                     className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
                     onClick={() => removeAttachment(a.id)}
                   >
@@ -2129,7 +2145,7 @@ export function ChatSaraPageClient({
                   <span className="flex-1 min-w-0 truncate" title={d.name}>{d.name}</span>
                   <button
                     type="button"
-                    aria-label="Quitar documento"
+                    aria-label={t('chat.removeDoc')}
                     className="p-1 rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 focus:outline-none"
                     onClick={() => removeDocument(d.id)}
                   >
@@ -2144,10 +2160,10 @@ export function ChatSaraPageClient({
               <button
                 type="button"
                 className="h-10 w-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-[#13A0D8] hover:border-[#13A0D8]/30 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors flex items-center justify-center disabled:opacity-50"
-                aria-label="Adjuntar"
+                aria-label={t('chat.attachAria')}
                 aria-expanded={attachMenuOpen}
                 aria-haspopup="true"
-                title="Adjuntar"
+                title={t('chat.attachTitle')}
                 disabled={sending || !isLoggedIn}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -2173,8 +2189,8 @@ export function ChatSaraPageClient({
                     }}
                   >
                     <ImagePlus className="h-5 w-5 text-slate-500 shrink-0" />
-                    <span className="flex-1 font-medium">Imagen</span>
-                    <span className="text-xs text-slate-400">máx. 5</span>
+                    <span className="flex-1 font-medium">{t('chat.attachImage')}</span>
+                    <span className="text-xs text-slate-400">{t('chat.attachImageMax')}</span>
                   </button>
                   <button
                     type="button"
@@ -2188,8 +2204,8 @@ export function ChatSaraPageClient({
                     }}
                   >
                     <FileText className="h-5 w-5 text-slate-500 shrink-0" />
-                    <span className="flex-1 font-medium">Documento</span>
-                    <span className="text-xs text-slate-400">PDF, Word, Excel</span>
+                    <span className="flex-1 font-medium">{t('chat.attachDoc')}</span>
+                    <span className="text-xs text-slate-400">{t('chat.attachDocTypes')}</span>
                   </button>
                   <button
                     type="button"
@@ -2202,13 +2218,13 @@ export function ChatSaraPageClient({
                     }}
                   >
                     <Cloud className="h-5 w-5 text-slate-500 shrink-0" />
-                    <span className="flex-1 font-medium">Google Drive</span>
+                    <span className="flex-1 font-medium">{t('chat.drive')}</span>
                   </button>
                 </div>
               )}
             </div>
             <textarea
-              placeholder={isLoggedIn ? 'Escribe un mensaje…' : 'Inicia sesión para escribir…'}
+              placeholder={isLoggedIn ? t('chat.placeholder') : t('chat.placeholderLogin')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -2221,8 +2237,8 @@ export function ChatSaraPageClient({
               onClick={sendMessage}
               disabled={sending || !isLoggedIn || (!input.trim() && attachments.length === 0 && documents.length === 0)}
               className="h-10 w-10 shrink-0 rounded-xl bg-[#13A0D8] text-white flex items-center justify-center hover:bg-[#0d7ba8] focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="Enviar"
-              title="Enviar"
+              aria-label={t('chat.send')}
+              title={t('chat.send')}
             >
               <Send className="h-5 w-5" />
             </button>
@@ -2246,19 +2262,19 @@ export function ChatSaraPageClient({
           >
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 id="share-modal-title" className="text-base sm:text-lg font-semibold text-slate-800 pr-2">
-                Compartir conversación
+                {t('share.title')}
               </h2>
               <button
                 type="button"
                 onClick={() => setShareModalSessionId(null)}
                 className="shrink-0 p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                aria-label="Cerrar"
+                aria-label={t('share.close')}
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <p className="text-sm text-slate-500 mb-3">
-              Cualquiera con el enlace podrá ver esta conversación (debe tener cuenta).
+              {t('share.body')}
             </p>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
               <input
@@ -2271,7 +2287,7 @@ export function ChatSaraPageClient({
                 onClick={copyShareUrl}
                 className="bg-[#13A0D8] hover:bg-[#0d7ba8] w-full sm:w-auto shrink-0 rounded-xl font-medium shadow-sm"
               >
-                {urlCopied ? 'Copiado' : 'Copiar enlace'}
+                {urlCopied ? t('share.copied') : t('share.copy')}
               </Button>
             </div>
           </div>
@@ -2283,10 +2299,10 @@ export function ChatSaraPageClient({
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#171D4C] flex items-stretch border-t border-white/10">
           {(
             [
-              { section: 'chat' as const, Icon: MessageSquare, label: 'Chat' },
-              { section: 'pedidos' as const, Icon: Package, label: 'Pedidos' },
-              { section: 'cotizaciones' as const, Icon: FileText, label: 'Cotizaciones' },
-            ] as const
+              { section: 'chat' as const, Icon: MessageSquare, label: t('mobile.chat') },
+              { section: 'pedidos' as const, Icon: Package, label: t('mobile.orders') },
+              { section: 'cotizaciones' as const, Icon: FileText, label: t('mobile.quotes') },
+            ]
           ).map(({ section, Icon, label }) => (
             <button
               key={section}

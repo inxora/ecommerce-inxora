@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Producto, Categoria } from '@/lib/supabase';
@@ -10,6 +10,7 @@ import { BannerSlot } from '@/components/banner/banner-slot';
 import { ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
 import { buildProductFullUrl, buildCategoryUrlFromObject } from '@/lib/product-url';
 import { ProductCard } from '@/components/catalog/product-card';
+import { useTranslations } from 'next-intl';
 
 const HERO_FALLBACK_IMAGE = '/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg'
 
@@ -75,6 +76,7 @@ function FeaturedProductsSlider({
   maxProducts = 20,
   rightBannerSlot,
 }: ProductSliderProps) {
+  const t = useTranslations('home')
   const sliderRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   // Duplicamos los productos para crear efecto infinito
@@ -200,7 +202,7 @@ function FeaturedProductsSlider({
             href={`/${locale}/catalogo`}
             className="inline-flex items-center gap-2 bg-inxora-dark-blue hover:bg-inxora-blue text-white font-semibold py-3 px-8 rounded-xl transition-colors shadow-lg hover:shadow-xl"
           >
-            Ver todos los productos
+            {t('sliders.viewAllProducts')}
             <ChevronRight className="w-5 h-5" />
           </Link>
         </div>
@@ -236,6 +238,7 @@ export default function HomeClient({
   bannersBetweenSections = [],
   bannersPreFooter = [],
 }: HomeClientProps) {
+  const t = useTranslations('home')
   const hasHeroBanners = bannersHero && bannersHero.length > 0
   const [seoOpen, setSeoOpen] = useState<Set<number>>(new Set())
   const [welcomeOpen, setWelcomeOpen] = useState(false)
@@ -250,6 +253,65 @@ export default function HomeClient({
       next.has(i) ? next.delete(i) : next.add(i)
       return next
     })
+
+  const seoAccordionItems = useMemo(
+    () => [
+      {
+        id: 'how',
+        title: t('seo.accordion.how.title'),
+        content: (
+          <>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+              {t('seo.accordion.how.p1')}
+            </p>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              {t('seo.accordion.how.p2')}
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'sara',
+        title: t('seo.accordion.sara.title'),
+        content: (
+          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            {t('seo.accordion.sara.body')}
+          </p>
+        ),
+      },
+      {
+        id: 'coverage',
+        title: t('seo.accordion.coverage.title'),
+        content: (
+          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            {t('seo.accordion.coverage.body')}
+          </p>
+        ),
+      },
+      {
+        id: 'financing',
+        title: t('seo.accordion.financing.title'),
+        content: (
+          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            {t('seo.accordion.financing.body')}
+          </p>
+        ),
+      },
+    ],
+    [t]
+  )
+
+  const benefitsStripItems = useMemo(
+    () => [
+      { id: 'quote', title: t('benefitsStrip.quote.title'), desc: t('benefitsStrip.quote.desc') },
+      { id: 'oc', title: t('benefitsStrip.oc.title'), desc: t('benefitsStrip.oc.desc') },
+      { id: 'dispatch', title: t('benefitsStrip.dispatch.title'), desc: t('benefitsStrip.dispatch.desc') },
+      { id: 'suppliers', title: t('benefitsStrip.suppliers.title'), desc: t('benefitsStrip.suppliers.desc') },
+      { id: 'pricing', title: t('benefitsStrip.pricing.title'), desc: t('benefitsStrip.pricing.desc') },
+      { id: 'support', title: t('benefitsStrip.support.title'), desc: t('benefitsStrip.support.desc') },
+    ],
+    [t]
+  )
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -268,8 +330,8 @@ export default function HomeClient({
             <div className="absolute inset-0 z-0">
               <Image
                 src={HERO_FALLBACK_IMAGE}
-                alt="Suministros Industriales INXORA - Herramientas y equipos industriales de alta calidad"
-                title="Suministros Industriales INXORA - Herramientas y equipos industriales de alta calidad"
+                alt={t('hero.heroImageAlt')}
+                title={t('hero.heroImageAlt')}
                 fill
                 priority
                 className="object-cover"
@@ -281,29 +343,29 @@ export default function HomeClient({
             <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl py-16 sm:py-20 lg:py-28 flex flex-col justify-center">
               <div className="text-white max-w-3xl">
                 <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-[#88D4E4] mb-3 sm:mb-4">
-                  INXORA · Plataforma Industrial B2B · Perú
+                  {t('hero.kicker')}
                 </p>
                 <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem]">
-                  La primera plataforma digital de{' '}
+                  {t('hero.titlePrefix')}{' '}
                   <span className="text-[#88D4E4] font-black drop-shadow-sm">
-                    despachos industriales
+                    {t('hero.titleHighlight')}
                   </span>{' '}
-                  en el Perú con{' '}
+                  {t('hero.titleSuffix')}{' '}
                   <span className="relative inline-block">
                     <span className="relative z-10 px-1.5 py-0.5 sm:px-2 rounded-md bg-gradient-to-r from-[#88D4E4] to-white/90 text-[#171D4C] font-black shadow-lg leading-none">
-                      IA
+                      {t('hero.aiBadge')}
                     </span>
                   </span>
                 </h1>
                 <p className="mt-4 sm:mt-5 lg:mt-6 text-base sm:text-lg leading-relaxed text-white/85 max-w-xl">
-                  Cotiza, compara y adquiere suministros industriales en minutos. Asesoría técnica 24/7 con Sara Xora, nuestra IA especializada.
+                  {t('hero.description')}
                 </p>
                 <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
                   <Link
                     href={`/${locale}/catalogo`}
                     className="inline-flex items-center gap-2 rounded-xl bg-white text-[#171D4C] hover:bg-white/90 px-6 py-3 md:px-8 md:py-3.5 text-sm sm:text-base font-bold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
                   >
-                    Explorar Productos
+                    {t('hero.exploreProducts')}
                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                   </Link>
                   <Link
@@ -313,7 +375,7 @@ export default function HomeClient({
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z" />
                     </svg>
-                    Cotización Industrial
+                    {t('hero.industrialQuotation')}
                   </Link>
                 </div>
               </div>
@@ -340,13 +402,13 @@ export default function HomeClient({
         <div className="w-full px-6 lg:px-8 xl:px-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-inxora-dark-blue dark:text-white">
-              Ocho líneas industriales, un solo proveedor
+              {t('categories.title')}
             </h2>
             <Link
               href={`/${locale}/catalogo`}
               className="inline-flex items-center gap-1 text-inxora-blue dark:text-[#88D4E4] font-semibold hover:underline"
             >
-              Ver catálogo completo
+              {t('categories.viewFullCatalog')}
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -382,7 +444,7 @@ export default function HomeClient({
               href={`/${locale}/catalogo`}
               className="inline-flex items-center gap-2 bg-inxora-dark-blue hover:bg-[#1A56DB] dark:bg-inxora-dark-blue dark:hover:bg-[#1A56DB] text-white font-semibold py-3 px-8 rounded-xl transition-colors shadow-lg"
             >
-              Ver catálogo completo
+              {t('categories.viewFullCatalog')}
             </Link>
           </div>
         </div>
@@ -405,9 +467,9 @@ export default function HomeClient({
       <FeaturedProductsSlider 
         products={featuredProducts} 
         locale={locale} 
-        title="Productos Destacados"
-        subtitle="Los favoritos de nuestros clientes"
-        badgeText="Destacado"
+        title={t('sliders.featuredTitle')}
+        subtitle={t('sliders.featuredSubtitle')}
+        badgeText={t('sliders.featuredBadge')}
         badgeColor="bg-inxora-blue"
         rightBannerSlot={
           bannersRightDestacados.length > 0 ? (
@@ -424,9 +486,9 @@ export default function HomeClient({
       <FeaturedProductsSlider 
         products={newProducts} 
         locale={locale} 
-        title="Nuevos Productos"
-        subtitle="Lo más reciente en nuestro catálogo"
-        badgeText="Nuevo"
+        title={t('sliders.newTitle')}
+        subtitle={t('sliders.newSubtitle')}
+        badgeText={t('sliders.newBadge')}
         badgeColor="bg-green-500"
         bgColor="bg-gray-50 dark:bg-slate-800"
         rightBannerSlot={
@@ -470,13 +532,13 @@ export default function HomeClient({
       <section className="bg-white dark:bg-slate-900 py-16 sm:py-20 lg:py-24 w-full">
         <div className="w-full px-6 lg:px-8 xl:px-12">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-inxora-dark-blue dark:text-white mb-6 sm:mb-8">
-            INXORA: Marketplace B2B de Suministros Industriales en Perú
+            {t('seo.mainTitle')}
           </h2>
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-            INXORA es el primer marketplace B2B especializado en suministros industriales del Perú, diseñado para conectar a empresas del sector industrial con proveedores verificados a nivel nacional e internacional. Nuestra plataforma tecnológica permite a compradores industriales cotizar, comparar y adquirir productos técnicos especializados en un solo lugar, eliminando la fragmentación y los tiempos muertos que caracterizan al proceso tradicional de abastecimiento industrial.
+            {t('seo.introP1')}
           </p>
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-10 sm:mb-12">
-            A diferencia de los marketplaces generalistas, INXORA está construido exclusivamente para el comprador técnico: jefes de compras, jefes de logística, ingenieros de mantenimiento y responsables de abastecimiento en empresas de agroindustria, manufactura, minería, energía y construcción. Entendemos que un error en la especificación técnica de un componente puede significar horas de parada de planta.
+            {t('seo.introP2')}
           </p>
 
           {/* Stats — fondo navy */}
@@ -484,61 +546,23 @@ export default function HomeClient({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6">
               <div className="text-center">
                 <p className="text-3xl sm:text-4xl font-bold text-[#88D4E4]">+80%</p>
-                <p className="text-sm sm:text-base text-white/90 mt-1">Tasa de recompra entre clientes industriales activos</p>
+                <p className="text-sm sm:text-base text-white/90 mt-1">{t('seo.stats.repurchase')}</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl sm:text-4xl font-bold text-[#88D4E4]">26+</p>
-                <p className="text-sm sm:text-base text-white/90 mt-1">Empresas industriales en cartera activa en Perú</p>
+                <p className="text-sm sm:text-base text-white/90 mt-1">{t('seo.stats.companies')}</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl sm:text-4xl font-bold text-[#88D4E4]">24/7</p>
-                <p className="text-sm sm:text-base text-white/90 mt-1">Atención continua con inteligencia artificial Sara Xora</p>
+                <p className="text-sm sm:text-base text-white/90 mt-1">{t('seo.stats.support')}</p>
               </div>
             </div>
           </div>
 
           {/* Acordeón SEO */}
           <div className="divide-y divide-gray-200 dark:divide-slate-700 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden">
-            {[
-              {
-                title: '¿Cómo funciona INXORA?',
-                content: (
-                  <>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                      El proceso de compra está diseñado para ser simple, rápido y trazable. El comprador ingresa su lista de requerimientos y recibe una cotización consolidada con precios finales en soles, incluyendo IGV y costo de envío. No es necesario contactar a múltiples proveedores: INXORA centraliza todo el proceso.
-                    </p>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      Una vez confirmada la orden de compra, gestionamos la adquisición directamente con los proveedores, coordinamos el despacho y mantenemos al comprador informado en tiempo real.
-                    </p>
-                  </>
-                ),
-              },
-              {
-                title: 'Sara Xora: IA al servicio del comprador industrial',
-                content: (
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    Sara Xora es nuestro asistente comercial con inteligencia artificial, entrenado específicamente en suministros industriales. Responde consultas técnicas, verifica disponibilidad y gestiona cotizaciones las 24 horas. Las consultas complejas se escalan automáticamente a ingenieros especializados.
-                  </p>
-                ),
-              },
-              {
-                title: 'Cobertura nacional y financiamiento',
-                content: (
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    INXORA abastece a empresas en los principales sectores productivos del Perú: agroindustria, manufactura, minería y energía. Realizamos despachos a Lima Metropolitana, Callao y todas las regiones con operadores logísticos verificados. Cada despacho incluye factura electrónica, guía de remisión y certificados de calidad cuando aplica.
-                  </p>
-                ),
-              },
-              {
-                title: 'Financiamiento para órdenes de compra',
-                content: (
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    Ofrecemos soluciones de financiamiento sobre órdenes confirmadas para personas naturales con negocio y empresas con RUC activo. A través de nuestro modelo de crowdlending, compradores calificados reciben sus materiales de inmediato y completan el pago cuando su operación genera el flujo necesario. Esta capacidad diferencia a INXORA de los distribuidores tradicionales, posicionándonos como socio estratégico de abastecimiento industrial.
-                  </p>
-                ),
-              },
-            ].map(({ title, content }, i) => (
-              <div key={title} className="bg-white dark:bg-slate-900">
+            {seoAccordionItems.map(({ id, title, content }, i) => (
+              <div key={id} className="bg-white dark:bg-slate-900">
                 <button
                   type="button"
                   onClick={() => toggleSeo(i)}
@@ -563,15 +587,8 @@ export default function HomeClient({
       <section className="bg-[#171D4C] py-8 sm:py-10">
         <div className="w-full px-6 lg:px-8 xl:px-12">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 lg:gap-4">
-            {[
-              { title: 'Cotización en minutos', desc: 'No en días. Lista completa al instante' },
-              { title: 'Financiamiento OC', desc: 'Crowdlending sobre orden confirmada' },
-              { title: 'Despacho nacional', desc: 'Lima, Callao y todo el Perú trazable' },
-              { title: 'Proveedores verificados', desc: 'Importadores y distribuidores homologados' },
-              { title: 'Precios transparentes', desc: 'Precio final en soles, IGV incluido' },
-              { title: 'Soporte técnico', desc: 'Ingenieros especializados disponibles' },
-            ].map(({ title, desc }) => (
-              <div key={title} className="text-center lg:text-left">
+            {benefitsStripItems.map(({ id, title, desc }) => (
+              <div key={id} className="text-center lg:text-left">
                 <h3 className="text-base sm:text-lg font-bold text-white">{title}</h3>
                 <p className="text-sm text-white/80 mt-1">{desc}</p>
               </div>
@@ -595,14 +612,14 @@ export default function HomeClient({
         <section className="py-20 sm:py-28 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 max-w-7xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-inxora-dark-blue dark:text-white sm:text-4xl">
-              Explora Nuestro Catálogo Completo
+              {t('preFooter.title')}
             </h2>
             <div className="mt-8">
               <Link
                 href={`/${locale}/catalogo`}
                 className="inline-block rounded-lg bg-inxora-blue hover:bg-inxora-blue/90 px-8 py-3 text-base font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105"
               >
-                Ver Todos los Productos
+                {t('preFooter.viewAllProducts')}
               </Link>
             </div>
           </div>
@@ -626,19 +643,19 @@ export default function HomeClient({
             <div className="relative bg-[#171D4C] px-6 pt-7 pb-16 sm:pb-24 text-white overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-[#171D4C] via-[#1A3A6B] to-[#13A0D8]/40" />
               <div className="relative z-10 pr-24 sm:pr-28">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#88D4E4] mb-2">Asistente Industrial IA · INXORA</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#88D4E4] mb-2">{t('welcome.kicker')}</p>
                 <h2 id="welcome-modal-title" className="text-lg sm:text-2xl font-extrabold leading-snug">
-                  Bienvenido a INXORA
+                  {t('welcome.title')}
                 </h2>
                 <p className="mt-2 text-xs sm:text-sm text-white/80 leading-relaxed">
-                  Le presentamos a <strong className="text-[#88D4E4]">Sara Xora</strong>, nuestra IA especializada en suministros industriales.
+                  {t('welcome.introPrefix')} <strong className="text-[#88D4E4]">Sara Xora</strong>, {t('welcome.introSuffix')}
                 </p>
               </div>
               {/* Imagen de Sara flotante */}
               <div className="absolute right-0 bottom-0 h-32 w-24 sm:h-40 sm:w-32 overflow-hidden pointer-events-none">
                 <Image
                   src="/sara-pose2.png"
-                  alt="Sara Xora"
+                  alt={t('welcome.saraImageAlt')}
                   fill
                   className="object-cover object-top"
                   unoptimized
@@ -650,7 +667,7 @@ export default function HomeClient({
                 type="button"
                 onClick={() => setWelcomeOpen(false)}
                 className="absolute top-4 right-4 z-20 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors focus:outline-none"
-                aria-label="Cerrar"
+                aria-label={t('welcome.close')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -658,23 +675,23 @@ export default function HomeClient({
 
             {/* Cuerpo: 3 beneficios */}
             <div className="px-6 pt-5 pb-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4">Por qué cotizar con Sara Xora</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4">{t('welcome.whyTitle')}</p>
               <ul className="space-y-3 mb-6">
                 {[
                   {
                     icon: '⚡',
-                    title: 'Cotizaciones rápidas para compras industriales',
-                    desc: 'Envíe su lista de requerimientos y reciba precios consolidados con IGV incluido al instante.',
+                    title: t('welcome.benefits.fastQuotesTitle'),
+                    desc: t('welcome.benefits.fastQuotesDesc'),
                   },
                   {
                     icon: '🔒',
-                    title: 'Red de proveedores industriales verificados',
-                    desc: 'Cada orden incluye factura electrónica, guía de remisión y certificados de calidad.',
+                    title: t('welcome.benefits.verifiedSuppliersTitle'),
+                    desc: t('welcome.benefits.verifiedSuppliersDesc'),
                   },
                   {
                     icon: '💳',
-                    title: 'Financiamiento para órdenes de compra',
-                    desc: 'Reciba sus materiales hoy y complete el pago cuando su operación genere el flujo necesario.',
+                    title: t('welcome.benefits.financingTitle'),
+                    desc: t('welcome.benefits.financingDesc'),
                   },
                 ].map(({ icon, title, desc }) => (
                   <li key={title} className="flex items-start gap-3">
@@ -692,14 +709,14 @@ export default function HomeClient({
                   onClick={() => setWelcomeOpen(false)}
                   className="flex-1 text-center py-3 rounded-xl bg-[#13A0D8] hover:bg-[#0d7ba8] text-white font-bold text-sm transition-colors shadow-sm"
                 >
-                  Cotizar con Sara Xora →
+                  {t('welcome.quoteWithSara')}
                 </Link>
                 <Link
                   href={`/${locale}/catalogo`}
                   onClick={() => setWelcomeOpen(false)}
                   className="flex-1 text-center py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                  Explorar primero
+                  {t('welcome.exploreFirst')}
                 </Link>
               </div>
             </div>

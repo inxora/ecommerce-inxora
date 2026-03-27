@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Truck, AlertCircle, Package, ChevronRight, Tag, ShieldCheck, Receipt } from 'lucide-react'
@@ -14,6 +15,7 @@ import { Product } from '@/lib/supabase'
 export function OrderSummary() {
   const pathname = usePathname()
   const locale = (pathname?.split('/')?.[1] || 'es')
+  const t = useTranslations('checkout')
   const { items, getTotalPrice } = useCart()
   const { currencySymbol } = useCurrency()
   const { shipping } = useCheckoutShipping()
@@ -51,11 +53,11 @@ export function OrderSummary() {
             <Receipt className="w-4 h-4 text-orange-500" />
           </div>
           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Resumen del pedido
+            {t('summaryCard.title')}
           </span>
         </div>
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
-          {itemCount} {itemCount === 1 ? 'ítem' : 'ítems'}
+          {t('summaryCard.itemCount', { count: itemCount })}
         </span>
       </div>
 
@@ -65,28 +67,28 @@ export function OrderSummary() {
       ── */}
       <div className="px-6 py-5 bg-gradient-to-br from-orange-500 to-amber-500">
         <p className="text-xs font-semibold text-orange-100 uppercase tracking-widest mb-1">
-          Total a pagar
+          {t('summaryCard.totalToPay')}
         </p>
         <p className="text-3xl font-bold text-white tracking-tight">
           {formatPrice(total)}
         </p>
         <div className="flex items-center gap-4 mt-3">
           <div className="flex flex-col text-orange-100 text-xs">
-            <span className="opacity-75">Productos</span>
+            <span className="opacity-75">{t('summaryCard.products')}</span>
             <span className="font-semibold text-white">{formatPrice(subtotalConIgv)}</span>
           </div>
           <div className="w-px h-8 bg-white/20" />
           <div className="flex flex-col text-orange-100 text-xs">
-            <span className="opacity-75">Envío</span>
+            <span className="opacity-75">{t('summaryCard.shipping')}</span>
             <span className="font-semibold text-white">
               {shippingCost === 0
-                ? (shipping.envioLabel === 'Recojo en tienda' ? 'Gratis' : shipping.envioLabel || '—')
+                ? (shipping.isPickup ? t('summaryCard.free') : shipping.envioLabel || '—')
                 : formatPrice(shippingCost)}
             </span>
           </div>
           <div className="ml-auto flex items-center gap-1.5 text-orange-100 text-[11px]">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Pago seguro</span>
+            <span>{t('summaryCard.securePayment')}</span>
           </div>
         </div>
       </div>
@@ -160,7 +162,7 @@ export function OrderSummary() {
                 </p>
                 {precio > 0 && item.quantity > 1 && (
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                    {formatPrice(precio)} c/u
+                    {formatPrice(precio)} {t('summaryCard.eachUnit')}
                   </p>
                 )}
               </div>
@@ -174,7 +176,7 @@ export function OrderSummary() {
 
         {/* Subtotal base (sin IGV) */}
         <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-500 dark:text-slate-400">Subtotal (sin IGV)</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">{t('summaryCard.subtotalWithoutTax')}</span>
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             {formatPrice(parseFloat(subtotalBase.toFixed(2)))}
           </span>
@@ -182,7 +184,7 @@ export function OrderSummary() {
 
         {/* IGV 18% */}
         <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-500 dark:text-slate-400">IGV (18%)</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">{t('summaryCard.igv')}</span>
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             {formatPrice(parseFloat(igv.toFixed(2)))}
           </span>
@@ -192,23 +194,23 @@ export function OrderSummary() {
         <div className="flex justify-between items-center">
           <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5" />
-            Envío
+            {t('summaryCard.shipping')}
           </span>
           <span className={[
             'text-sm font-semibold',
-            shippingCost === 0 && shipping.envioLabel === 'Recojo en tienda'
+            shippingCost === 0 && shipping.isPickup
               ? 'text-emerald-600 dark:text-emerald-400'
               : 'text-slate-800 dark:text-slate-200',
           ].join(' ')}>
             {shippingCost === 0
-              ? (shipping.envioLabel === 'Recojo en tienda' ? 'Gratis' : (shipping.envioLabel || 'Seleccione provincia'))
+              ? (shipping.isPickup ? t('summaryCard.free') : (shipping.envioLabel || t('summaryCard.selectProvince')))
               : formatPrice(shippingCost)}
           </span>
         </div>
 
         {/* Total */}
         <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between items-center">
-          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Total</span>
+          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{t('summaryCard.total')}</span>
           <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{formatPrice(total)}</span>
         </div>
       </div>
@@ -221,7 +223,7 @@ export function OrderSummary() {
         >
           <span className="flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5" />
-            Consulta costos y plazos de envío
+            {t('summaryCard.shippingCostsLink')}
           </span>
           <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         </Link>

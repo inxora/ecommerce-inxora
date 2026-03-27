@@ -9,6 +9,139 @@
     "privacy": "Privacidad",
     "shipping": "Envíos"
   },
+  "header": {
+    "language": {
+      "select": "Seleccionar idioma"
+    },
+    "search": {
+      "placeholder": "¿Qué estás buscando?"
+    },
+    "nav": {
+      "home": "Inicio",
+      "categories": "Categorías",
+      "about": "Nosotros",
+      "contact": "Contacto"
+    },
+    "mobile": {
+      "menu": "Menú",
+      "currency": "Moneda",
+      "language": "Idioma",
+      "navigation": "Navegación"
+    },
+    "profile": {
+      "welcome": "Bienvenido",
+      "account": "Cuenta",
+      "favorites": "Favoritos",
+      "myOrders": "Mis pedidos",
+      "logout": "Cerrar sesión",
+      "login": "Iniciar sesión",
+      "createAccount": "Crear cuenta"
+    }
+  },
+  "home": {
+    "hero": {
+      "kicker": "INXORA · Plataforma Industrial B2B · Perú",
+      "titlePrefix": "La primera plataforma digital de",
+      "titleHighlight": "despachos industriales",
+      "titleSuffix": "en el Perú con",
+      "aiBadge": "IA",
+      "description": "Cotiza, compara y adquiere suministros industriales en minutos. Asesoría técnica 24/7 con Sara Xora, nuestra IA especializada.",
+      "exploreProducts": "Explorar Productos",
+      "industrialQuotation": "Cotización Industrial",
+      "heroImageAlt": "Suministros Industriales INXORA - Herramientas y equipos industriales de alta calidad"
+    },
+    "categories": {
+      "title": "Ocho líneas industriales, un solo proveedor",
+      "viewFullCatalog": "Ver catálogo completo"
+    },
+    "sliders": {
+      "featuredTitle": "Productos Destacados",
+      "featuredSubtitle": "Los favoritos de nuestros clientes",
+      "featuredBadge": "Destacado",
+      "newTitle": "Nuevos Productos",
+      "newSubtitle": "Lo más reciente en nuestro catálogo",
+      "newBadge": "Nuevo",
+      "viewAllProducts": "Ver todos los productos"
+    },
+    "preFooter": {
+      "title": "Explora Nuestro Catálogo Completo",
+      "viewAllProducts": "Ver Todos los Productos"
+    },
+    "welcome": {
+      "kicker": "Asistente Industrial IA · INXORA",
+      "title": "Bienvenido a INXORA",
+      "introPrefix": "Le presentamos a",
+      "introSuffix": "nuestra IA especializada en suministros industriales.",
+      "close": "Cerrar",
+      "whyTitle": "Por qué cotizar con Sara Xora",
+      "quoteWithSara": "Cotizar con Sara Xora →",
+      "exploreFirst": "Explorar primero",
+      "benefits": {
+        "fastQuotesTitle": "Cotizaciones rápidas para compras industriales",
+        "fastQuotesDesc": "Envíe su lista de requerimientos y reciba precios consolidados con IGV incluido al instante.",
+        "verifiedSuppliersTitle": "Red de proveedores industriales verificados",
+        "verifiedSuppliersDesc": "Cada orden incluye factura electrónica, guía de remisión y certificados de calidad.",
+        "financingTitle": "Financiamiento para órdenes de compra",
+        "financingDesc": "Reciba sus materiales hoy y complete el pago cuando su operación genere el flujo necesario."
+      },
+      "saraImageAlt": "Sara Xora"
+    },
+    "seo": {
+      "mainTitle": "INXORA: Marketplace B2B de Suministros Industriales en Perú",
+      "introP1": "INXORA es el primer marketplace B2B especializado en suministros industriales del Perú, diseñado para conectar a empresas del sector industrial con proveedores verificados a nivel nacional e internacional. Nuestra plataforma tecnológica permite a compradores industriales cotizar, comparar y adquirir productos técnicos especializados en un solo lugar, eliminando la fragmentación y los tiempos muertos que caracterizan al proceso tradicional de abastecimiento industrial.",
+      "introP2": "A diferencia de los marketplaces generalistas, INXORA está construido exclusivamente para el comprador técnico: jefes de compras, jefes de logística, ingenieros de mantenimiento y responsables de abastecimiento en empresas de agroindustria, manufactura, minería, energía y construcción. Entendemos que un error en la especificación técnica de un componente puede significar horas de parada de planta.",
+      "stats": {
+        "repurchase": "Tasa de recompra entre clientes industriales activos",
+        "companies": "Empresas industriales en cartera activa en Perú",
+        "support": "Atención continua con inteligencia artificial Sara Xora"
+      },
+      "accordion": {
+        "how": {
+          "title": "¿Cómo funciona INXORA?",
+          "p1": "El proceso de compra está diseñado para ser simple, rápido y trazable. El comprador ingresa su lista de requerimientos y recibe una cotización consolidada con precios finales en soles, incluyendo IGV y costo de envío. No es necesario contactar a múltiples proveedores: INXORA centraliza todo el proceso.",
+          "p2": "Una vez confirmada la orden de compra, gestionamos la adquisición directamente con los proveedores, coordinamos el despacho y mantenemos al comprador informado en tiempo real."
+        },
+        "sara": {
+          "title": "Sara Xora: IA al servicio del comprador industrial",
+          "body": "Sara Xora es nuestro asistente comercial con inteligencia artificial, entrenado específicamente en suministros industriales. Responde consultas técnicas, verifica disponibilidad y gestiona cotizaciones las 24 horas. Las consultas complejas se escalan automáticamente a ingenieros especializados."
+        },
+        "coverage": {
+          "title": "Cobertura nacional y financiamiento",
+          "body": "INXORA abastece a empresas en los principales sectores productivos del Perú: agroindustria, manufactura, minería y energía. Realizamos despachos a Lima Metropolitana, Callao y todas las regiones con operadores logísticos verificados. Cada despacho incluye factura electrónica, guía de remisión y certificados de calidad cuando aplica."
+        },
+        "financing": {
+          "title": "Financiamiento para órdenes de compra",
+          "body": "Ofrecemos soluciones de financiamiento sobre órdenes confirmadas para personas naturales con negocio y empresas con RUC activo. A través de nuestro modelo de crowdlending, compradores calificados reciben sus materiales de inmediato y completan el pago cuando su operación genera el flujo necesario. Esta capacidad diferencia a INXORA de los distribuidores tradicionales, posicionándonos como socio estratégico de abastecimiento industrial."
+        }
+      }
+    },
+    "benefitsStrip": {
+      "quote": {
+        "title": "Cotización en minutos",
+        "desc": "No en días. Lista completa al instante"
+      },
+      "oc": {
+        "title": "Financiamiento OC",
+        "desc": "Crowdlending sobre orden confirmada"
+      },
+      "dispatch": {
+        "title": "Despacho nacional",
+        "desc": "Lima, Callao y todo el Perú trazable"
+      },
+      "suppliers": {
+        "title": "Proveedores verificados",
+        "desc": "Importadores y distribuidores homologados"
+      },
+      "pricing": {
+        "title": "Precios transparentes",
+        "desc": "Precio final en soles, IGV incluido"
+      },
+      "support": {
+        "title": "Soporte técnico",
+        "desc": "Ingenieros especializados disponibles"
+      }
+    }
+  },
   "common": {
     "search": "Buscar productos...",
     "filter": "Filtrar",
@@ -31,14 +164,21 @@
     "success": "Éxito"
   },
   "product": {
-    "specifications": "Especificaciones técnicas",
-    "applications": "Aplicaciones",
+    "addToCart": "Agregar al carrito",
+    "quantity": "Cantidad",
     "description": "Descripción",
-    "gallery": "Galería",
+    "specifications": "Especificaciones",
     "relatedProducts": "Productos relacionados",
-    "consultWhatsApp": "Consultar por WhatsApp",
-    "inStock": "En stock",
-    "outOfStock": "Agotado"
+    "features": {
+      "stock": "En stock",
+      "available": "Disponible",
+      "shipping": "Envío rápido",
+      "fast": "24-48 horas",
+      "warranty": "Garantía",
+      "guaranteed": "Garantizado"
+    },
+    "linkCopied": "Enlace copiado",
+    "linkCopiedDescription": "El enlace del producto ha sido copiado al portapapeles"
   },
   "cart": {
     "title": "Carrito de Compras",
@@ -70,7 +210,26 @@
       "cartCleared": "Carrito vaciado",
       "quantityUpdated": "Cantidad actualizada"
     },
-    "quantity": "Cantidad"
+    "quantity": "Cantidad",
+    "itemCount": "{count, plural, one {# producto} other {# productos}}",
+    "totalLabel": "Total:",
+    "clearShort": "Vaciar",
+    "blockingCheckout": "Corrige los productos con restricciones de compra antes de continuar al checkout.",
+    "blockingCheckoutPage": "Corrige los productos con pedido mínimo o compra mínima antes de continuar.",
+    "skuLabel": "SKU",
+    "page": {
+      "continueBrowsing": "Continuar comprando",
+      "subtitle": "Revisa tus productos antes de continuar",
+      "emptyBanner": "Carrito vacío",
+      "emptyPitch": "Agrega algunos productos increíbles para comenzar tu compra.",
+      "exploreProducts": "Explorar productos",
+      "consultPrice": "Consultar precio",
+      "lineTotal": "Total del producto:",
+      "shippingFree": "Gratis",
+      "proceedCheckout": "Proceder al checkout",
+      "noImage": "Sin imagen",
+      "unnamedProduct": "Producto sin nombre"
+    }
   },
   "checkout": {
     "title": "Finalizar Compra",
@@ -112,7 +271,9 @@
     },
     "terms": {
       "accept": "Acepto los",
-      "link": "términos y condiciones"
+      "link": "términos y condiciones",
+      "and": "y la",
+      "privacy": "política de privacidad"
     },
     "newsletter": "Suscribirme al boletín de noticias",
     "orderSummary": {
@@ -134,6 +295,171 @@
     "error": {
       "title": "Error al procesar el pedido",
       "description": "Hubo un problema al procesar tu pedido. Inténtalo de nuevo."
+    },
+    "meta": {
+      "title": "Checkout | Finalizar compra",
+      "description": "Completa tu información para finalizar la compra de forma segura."
+    },
+    "trustBar": {
+      "ssl": "Pago seguro SSL",
+      "protected": "Compra protegida",
+      "encrypted": "Datos encriptados",
+      "instant": "Confirmación inmediata"
+    },
+    "pageSubtitle": "Revisa tu pedido y completa los datos para confirmar",
+    "validation": {
+      "firstNameMin": "Nombre requerido",
+      "lastNameMin": "Apellido requerido",
+      "emailInvalid": "Email inválido",
+      "phoneMin": "Teléfono requerido",
+      "termsRequired": "Debe aceptar los términos",
+      "selectDepartamento": "Seleccione departamento/región",
+      "selectProvincia": "Seleccione provincia",
+      "selectTipoLugar": "Seleccione tipo de lugar de entrega",
+      "addressMin": "Dirección requerida (calle, número, referencia)",
+      "countryMin": "País requerido"
+    },
+    "copy": {
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyAria": "Copiar {label}"
+    },
+    "delivery": {
+      "shippingQuote": "Envío a consultar según destino",
+      "shippingBadge": "Envío:",
+      "limaCallao": "(Lima/Callao)"
+    },
+    "pickup": {
+      "label": "Recojo en tienda",
+      "noShipping": "Sin costo de envío"
+    },
+    "map": {
+      "geocodeError": "No se pudo ubicar en el mapa. Puedes arrastrar el marcador o indicar la dirección manualmente.",
+      "reverseError": "No se pudo obtener la dirección para esta ubicación.",
+      "loadingMap": "Cargando mapa...",
+      "loadingAria": "Cargando mapa",
+      "mapHint": "Puedes continuar indicando la dirección manualmente arriba.",
+      "retry": "Reintentar"
+    },
+    "emptyCartCheckout": {
+      "title": "Tu carrito está vacío",
+      "description": "Agrega productos antes de proceder al checkout.",
+      "cta": "Explorar productos"
+    },
+    "stepper": {
+      "dataDelivery": "Datos y entrega",
+      "payment": "Pago",
+      "confirm": "Confirmar"
+    },
+    "loginBanner": {
+      "title": "Inicia sesión para continuar",
+      "description": "Necesitas una cuenta para finalizar tu pedido y tener seguimiento del mismo.",
+      "login": "Iniciar sesión",
+      "register": "Crear cuenta"
+    },
+    "sectionPersonal": {
+      "title": "Información personal",
+      "subtitle": "Datos del contacto para el pedido"
+    },
+    "sectionDelivery": {
+      "title": "Entrega",
+      "subtitle": "¿Cómo quieres recibir tu pedido?"
+    },
+    "deliveryOption": {
+      "delivery": "Envío a domicilio",
+      "deliveryDesc": "Entrega en tu dirección",
+      "pickup": "Recojo en tienda",
+      "pickupDesc": "Sin costo de envío"
+    },
+    "form": {
+      "firstNamePlaceholder": "Tu nombre",
+      "lastNamePlaceholder": "Tu apellido",
+      "emailPlaceholder": "correo@empresa.com",
+      "phonePlaceholder": "+51 999 999 999",
+      "addressPlaceholder": "Av. Principal 123, Mz A Lt 5...",
+      "buscarMapa": "Buscar dirección en mapa (opcional)",
+      "buscarPlaceholder": "Escribe para buscar...",
+      "buscando": "Buscando…",
+      "ubicacionMapa": "Ubicación en mapa",
+      "arrastraMarcador": "Arrastra el marcador para ajustar la ubicación exacta.",
+      "departamento": "Departamento",
+      "provincia": "Provincia",
+      "distritoOpcional": "Distrito (opcional)",
+      "tipoLugar": "Tipo de lugar",
+      "cargando": "Cargando...",
+      "seleccionar": "Seleccionar",
+      "direccion": "Dirección",
+      "continuarPago": "Continuar con el pago",
+      "metodoPago": "Método de pago",
+      "metodoPagoSubtitle": "Selecciona cómo quieres pagar",
+      "tabTransfer": "Transferencia",
+      "tabYape": "Yape",
+      "tabCard": "Tarjeta",
+      "bcpTransferType": "Transferencia interbancaria",
+      "bcpInstructionsTitle": "Cómo pagar",
+      "bcpStep1": "Copia el número de cuenta o CCI según tu banco.",
+      "bcpStep2": "Realiza la transferencia desde tu app o banca en línea.",
+      "bcpStep3": "Envía el comprobante por WhatsApp o correo.",
+      "bcpStep4": "Tu pedido se confirmará en menos de 24 h hábiles.",
+      "accountNumber": "N° de cuenta",
+      "cci": "CCI",
+      "currencySoles": "Soles",
+      "currencyUsd": "Dólares",
+      "yapeScanQr": "Escanea el código QR",
+      "yapeStep1": "Abre tu app de Yape.",
+      "yapeStep2": "Toca \"Yapear con QR\" y escanea el código.",
+      "yapeStep3": "Ingresa el monto exacto de tu pedido.",
+      "yapeStep4": "Envíanos el comprobante por WhatsApp.",
+      "notesPlaceholder": "Notas opcionales: Dejar con el portero, llamar antes de llegar...",
+      "newsletterOptIn": "Quiero recibir ofertas y novedades por correo electrónico",
+      "cartRestrictionTitle": "Corrige estos productos antes de continuar",
+      "processing": "Procesando…",
+      "confirmOrderPay": "Confirmar pedido para pagar",
+      "confirmOrder": "Confirmar pedido",
+      "backToDetails": "← Volver a datos y entrega",
+      "cardPaymentTitle": "Pago con tarjeta",
+      "cardPaymentSubtitle": "Procesado de forma segura por Izipay",
+      "cardSslDisclaimer": "Tus datos de tarjeta son procesados directamente por Izipay con cifrado SSL 256 bits. INXORA no almacena datos de tarjeta.",
+      "changePaymentMethod": "← Cambiar método de pago"
+    },
+    "errors": {
+      "sessionExpired": "Sesión expirada",
+      "sessionExpiredDesc": "Tu sesión venció. Inicia sesión nuevamente.",
+      "paymentIncomplete": "Pago no completado",
+      "paymentIncompleteDesc": "El pago no pudo ser confirmado. Intente nuevamente.",
+      "paymentValidateError": "Error",
+      "paymentValidateDesc": "No se pudo validar el pago.",
+      "paymentErrorTitle": "Error de pago",
+      "loginRequired": "Debe iniciar sesión para realizar el pedido.",
+      "cartRestrictionsTitle": "Restricciones de compra",
+      "cartRestrictionsDesc": "Corrige los productos del carrito antes de continuar.",
+      "izipayFormError": "Error al cargar formulario de tarjeta",
+      "izipayFormErrorDesc": "No se pudo conectar con Izipay. Intenta de nuevo.",
+      "unavailableProducts": "Algunos productos ya no están disponibles.",
+      "serverError": "No pudimos crear el pedido. Intente más tarde."
+    },
+    "izipay": {
+      "incompleteResponse": "Respuesta de pago incompleta.",
+      "processError": "Error al procesar el pago.",
+      "sdkInitError": "El SDK de Izipay no se inicializó correctamente.",
+      "loadSdkError": "Error al cargar el SDK de Izipay.",
+      "loadingForm": "Cargando formulario de pago…",
+      "preparingForm": "Preparando formulario seguro…"
+    },
+    "summaryCard": {
+      "title": "Resumen del pedido",
+      "itemCount": "{count, plural, one {# ítem} other {# ítems}}",
+      "totalToPay": "Total a pagar",
+      "products": "Productos",
+      "shipping": "Envío",
+      "securePayment": "Pago seguro",
+      "subtotalWithoutTax": "Subtotal (sin IGV)",
+      "igv": "IGV (18%)",
+      "total": "Total",
+      "free": "Gratis",
+      "selectProvince": "Seleccione provincia",
+      "shippingCostsLink": "Consulta costos y plazos de envío",
+      "eachUnit": "c/u"
     }
   },
   "order": {
@@ -175,23 +501,6 @@
       "viewCatalog": "Ver Catálogo",
       "backHome": "Volver al Inicio"
     }
-  },
-  "product": {
-    "addToCart": "Agregar al carrito",
-    "quantity": "Cantidad",
-    "description": "Descripción",
-    "specifications": "Especificaciones",
-    "relatedProducts": "Productos relacionados",
-    "features": {
-      "stock": "En stock",
-      "available": "Disponible",
-      "shipping": "Envío rápido",
-      "fast": "24-48 horas",
-      "warranty": "Garantía",
-      "guaranteed": "Garantizado"
-    },
-    "linkCopied": "Enlace copiado",
-    "linkCopiedDescription": "El enlace del producto ha sido copiado al portapapeles"
   },
   "catalog": {
     "title": "Catálogo de Productos",
@@ -320,7 +629,288 @@
     "social": {
       "title": "Síguenos"
     },
-    "copyright": "© 2024 INXORA. Todos los derechos reservados.",
+    "tagline": "Tu socio estratégico en suministros industriales y equipos de seguridad.",
+    "address": "Av. Óscar R. Benavides 3046, Lima 15081, Perú",
+    "developedBy": "Desarrollado por",
+    "links": {
+      "about": "Nosotros",
+      "contact": "Contacto",
+      "faq": "FAQ",
+      "quotes": "Cotizaciones"
+    },
+    "catalogLinks": {
+      "catalog": "Catálogo",
+      "supplies": "Suministros",
+      "safety": "Seguridad",
+      "tools": "Herramientas"
+    },
+    "copyright": "© 2025 INXORA. Todos los derechos reservados.",
     "description": "Tu tienda de confianza para productos de calidad"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "description": "Ingresa con tu correo para continuar",
+      "email": "Correo electrónico",
+      "emailPlaceholder": "tu@correo.com",
+      "password": "Contraseña",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "submit": "Entrar",
+      "submitting": "Entrando...",
+      "noAccount": "¿No tienes cuenta?",
+      "registerLink": "Regístrate"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "description": "Regístrate para continuar con tu compra",
+      "tabNatural": "Persona Natural",
+      "tabCompany": "Empresa"
+    },
+    "natural": {
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "country": "País",
+      "countryPlaceholder": "Selecciona tu país",
+      "enterDoc": "Ingrese {label}",
+      "invalidDoc": "Formato de {label} inválido",
+      "email": "Correo electrónico",
+      "phoneOptional": "Teléfono (opcional)",
+      "phoneNumber": "Número",
+      "phoneInvalid": "Formato de teléfono inválido para {country}",
+      "countryFallback": "el país seleccionado",
+      "sector": "Rubro / Sector",
+      "sectorPlaceholder": "Selecciona tu rubro",
+      "password": "Contraseña",
+      "submit": "Registrarme",
+      "submitting": "Creando cuenta...",
+      "hasAccount": "¿Ya tienes cuenta?",
+      "loginLink": "Iniciar sesión",
+      "docFallback": "DNI / Documento"
+    },
+    "legal": {
+      "termsLead": "Acepto los",
+      "termsLink": "términos y condiciones",
+      "andThe": "y la",
+      "privacyLink": "política de privacidad",
+      "paragraph": "Conforme a la Ley N.° 29733, autorizas a INXORA al tratamiento de tus datos personales para fines comerciales, envío de cotizaciones y seguimiento de tus solicitudes. Puedes revisar nuestra",
+      "privacySuffix": "en tienda.inxora.com."
+    },
+    "empresa": {
+      "sectionCompany": "Datos de la empresa",
+      "sectionContact": "Contacto",
+      "country": "País",
+      "countryPlaceholder": "Seleccione el país",
+      "docFiscalFallback": "Documento fiscal / tributario",
+      "digits11": "11 dígitos",
+      "consultingSunat": "Consultando en SUNAT…",
+      "rucNotFound": "RUC no encontrado en SUNAT",
+      "rucInvalid": "RUC inválido o no encontrado en SUNAT",
+      "invalidDocFormat": "Formato de {label} inválido",
+      "razonSocial": "Razón Social",
+      "razonSocialPlaceholder": "Nombre o razón social de la empresa",
+      "rubro": "Rubro",
+      "rubroPlaceholder": "Seleccione el rubro de la empresa",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Mínimo 8 caracteres",
+      "confirmPassword": "Confirmar contraseña",
+      "pwMin": "Mínimo 8 caracteres",
+      "pwMismatch": "Las contraseñas no coinciden",
+      "nombres": "Nombres",
+      "apellidos": "Apellidos",
+      "correo": "Correo electrónico",
+      "telefono": "Teléfono",
+      "submit": "Registrar empresa",
+      "submitting": "Registrando empresa…",
+      "hasAccount": "¿Ya tiene cuenta?",
+      "loginLink": "Iniciar sesión",
+      "successTitle": "¡Registro exitoso!",
+      "successMessage": "Empresa {name} registrada exitosamente. Ya puede iniciar sesión con su RUC y contraseña.",
+      "goLogin": "Ir a iniciar sesión",
+      "errorRegister": "Error al registrar la empresa",
+      "errors": {
+        "nombresRequired": "Los nombres son requeridos",
+        "apellidosRequired": "Los apellidos son requeridos",
+        "correoInvalid": "Correo inválido",
+        "telefonoRequired": "El teléfono es requerido",
+        "telefonoInvalid": "Formato de teléfono inválido"
+      }
+    }
+  },
+  "chatSara": {
+    "meta": {
+      "title": "Chat con Sara | INXORA",
+      "description": "Conversaciones con Sara Xora, tu asistente virtual de INXORA.",
+      "shareTitle": "Conversación compartida | Chat Sara | INXORA",
+      "shareDescription": "Ver conversación compartida con Sara Xora, asistente virtual de INXORA."
+    },
+    "brand": {
+      "name": "SARA XORA",
+      "alt": "Sara Xora"
+    },
+    "typing": "Sara está escribiendo…",
+    "relative": {
+      "now": "Ahora",
+      "minutesAgo": "Hace {count} min",
+      "hoursAgo": "Hace {count} h",
+      "yesterday": "Ayer",
+      "daysAgo": "Hace {count} días"
+    },
+    "conversationFallback": "Conversación",
+    "pedidos": {
+      "title": "Mis Pedidos",
+      "detailError": "No se pudo cargar el detalle del pedido.",
+      "orderNumber": "Pedido #{num}",
+      "summary": "Resumen",
+      "date": "Fecha",
+      "estimatedDelivery": "Entrega estimada",
+      "subtotal": "Subtotal",
+      "igv": "IGV",
+      "total": "Total",
+      "productsTitle": "Productos ({count})",
+      "itemFallback": "Ítem {n}",
+      "qty": "Cant: {qty}",
+      "salesAdvisor": "Asesor de ventas",
+      "refresh": "Actualizar",
+      "refreshOrders": "Actualizar pedidos",
+      "retry": "Reintentar",
+      "emptyTitle": "Aún no tienes pedidos",
+      "emptyHint": "Escríbele a Sara para cotizar y generar tu primer pedido.",
+      "viewDetail": "Ver detalle",
+      "back": "Volver",
+      "sku": "SKU"
+    },
+    "cotizaciones": {
+      "title": "Mis Cotizaciones",
+      "detailError": "No se pudo cargar el detalle. Inténtalo de nuevo.",
+      "backToList": "Volver a cotizaciones",
+      "summary": "Resumen",
+      "downloadPdf": "Descargar PDF",
+      "subtotal": "Subtotal",
+      "igv": "IGV (18%)",
+      "total": "Total",
+      "validUntil": "Válida hasta:",
+      "productsTitle": "Productos ({count})",
+      "productFallback": "Producto",
+      "yourAdvisor": "Tu asesor",
+      "refresh": "Actualizar",
+      "refreshQuotes": "Actualizar cotizaciones",
+      "retry": "Reintentar",
+      "emptyTitle": "Aún no tienes cotizaciones",
+      "emptyHint": "Habla con Sara para solicitar una cotización personalizada.",
+      "expiresOn": "Vence: {date}",
+      "noExpiry": "Sin fecha de vencimiento"
+    },
+    "nav": {
+      "sectionsAria": "Secciones de mi cuenta",
+      "collapse": "Contraer menú",
+      "expand": "Expandir menú",
+      "collapseShort": "Contraer",
+      "expandShort": "Expandir",
+      "myProfile": "Mi Perfil",
+      "viewProfile": "Ver perfil",
+      "viewProfileAria": "Ver mi perfil",
+      "chatSara": "Chat con Sara",
+      "chatSaraSub": "Asistente IA",
+      "orders": "Mis Pedidos",
+      "ordersSub": "Estado y seguimiento",
+      "quotes": "Mis Cotizaciones",
+      "quotesSub": "Descarga PDFs",
+      "logout": "Cerrar sesión",
+      "logoutAria": "Cerrar sesión"
+    },
+    "sidebar": {
+      "openMenu": "Abrir menú",
+      "closeMenu": "Cerrar menú",
+      "conversations": "Conversaciones",
+      "newChat": "Nueva conversación",
+      "loginPromptTitle": "Inicia sesión para empezar a guardar tus conversaciones",
+      "loginPromptBody": "Una vez que hayas iniciado sesión, podrás acceder a tus conversaciones recientes aquí.",
+      "login": "Iniciar sesión",
+      "noConversations": "Sin conversaciones",
+      "noConversationsHint": "La conversación se crea al enviar el primer mensaje.",
+      "renameInputAria": "Nombre de la conversación",
+      "saveName": "Guardar nombre",
+      "cancelAria": "Cancelar edición",
+      "cancel": "Cancelar",
+      "rename": "Renombrar conversación",
+      "deleteHistory": "Borrar historial",
+      "share": "Compartir"
+    },
+    "errors": {
+      "loadPedidos": "No se pudieron cargar los pedidos.",
+      "loadCotizaciones": "No se pudieron cargar las cotizaciones.",
+      "loadConversations": "Error al cargar conversaciones",
+      "deleteHistory": "No se pudo borrar el historial. Inténtalo de nuevo.",
+      "saveTitle": "No se pudo guardar el nombre. Inténtalo de nuevo.",
+      "copyLink": "No se pudo copiar el enlace.",
+      "googleDrive": "Google Drive no configurado (falta NEXT_PUBLIC_GOOGLE_CLIENT_ID).",
+      "driveGeneric": "Error al usar Google Drive.",
+      "attachmentRules": "Solo JPEG, PNG o WebP, máximo {maxImages} y 5 MB cada una.",
+      "imageMaxSize": "Cada imagen debe pesar como máximo 5 MB.",
+      "maxImages": "Máximo {max} imágenes por mensaje.",
+      "documentRules": "Solo PDF, Word (.docx) y Excel (.xlsx), máximo {maxDocs} y 10 MB cada uno.",
+      "documentMaxSize": "Cada documento debe pesar como máximo 10 MB.",
+      "maxDocuments": "Máximo {max} documentos por mensaje.",
+      "send422": "Solo imágenes (JPEG/PNG/WebP, máx. 5 y 5 MB c/u) y documentos (PDF/Word/Excel, máx. 3 y 10 MB c/u).",
+      "sendGeneric": "Error al enviar. Inténtalo de nuevo."
+    },
+    "confirm": {
+      "deleteHistory": "¿Borrar todo el historial de esta conversación?"
+    },
+    "welcome": {
+      "badge": "Asistente industrial IA",
+      "title": "Chatea con Sara Xora",
+      "cardQuotesHistory": "Historial de cotizaciones",
+      "cardFastQuotes": "Cotizaciones rápidas",
+      "card247": "Disponible 24/7",
+      "loginCta": "Iniciar sesión / Registrarse",
+      "hello": "Hola, soy Sara",
+      "intro": "Tu asistente de INXORA. Pregúntame por productos, cotizaciones o envíos.",
+      "hintPrompt": "Escribe tu consulta o lo que necesites cotizar.",
+      "hintCreate": "La conversación se crea al enviar tu primer mensaje.",
+      "emptyThread": "No hay mensajes en esta conversación.",
+      "emptyThreadHint": "Escribe abajo para enviar tu primer mensaje."
+    },
+    "chat": {
+      "online": "En línea",
+      "attachedImage": "Imagen adjunta",
+      "asesorLabel": "{name} (Asesor Inxora)",
+      "teamInxora": "Equipo Inxora",
+      "placeholder": "Escribe un mensaje…",
+      "placeholderLogin": "Inicia sesión para escribir…",
+      "send": "Enviar",
+      "attachAria": "Adjuntar",
+      "attachTitle": "Adjuntar",
+      "attachImage": "Imagen",
+      "attachImageMax": "máx. 5",
+      "attachDoc": "Documento",
+      "attachDocTypes": "PDF, Word, Excel",
+      "drive": "Google Drive",
+      "removeImage": "Quitar imagen",
+      "removeDoc": "Quitar documento",
+      "attachImageAria": "Adjuntar imagen",
+      "attachDocAria": "Adjuntar documento"
+    },
+    "share": {
+      "title": "Compartir conversación",
+      "body": "Cualquiera con el enlace podrá ver esta conversación (debe tener cuenta).",
+      "copy": "Copiar enlace",
+      "copied": "Copiado",
+      "close": "Cerrar"
+    },
+    "mobile": {
+      "chat": "Chat",
+      "orders": "Pedidos",
+      "quotes": "Cotizaciones"
+    },
+    "header": {
+      "backConversations": "Ver conversaciones",
+      "back": "Volver"
+    },
+    "placeholders": {
+      "imagesLine": "[{n} imagen(es)]",
+      "documentsLine": "[{n} documento(s)]"
+    },
+    "categoryPrompt": "Muéstrame los productos de la categoría {name}"
   }
 }

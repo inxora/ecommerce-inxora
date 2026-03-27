@@ -12,26 +12,33 @@ import { Metadata } from 'next'
 import { CategoriesService } from '@/lib/services/categories.service'
 import { getBannersActivos } from '@/lib/services/banners.service'
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://tienda.inxora.com'),
-
-  alternates: {
-    canonical: '/es',
-    languages: {
-      es: '/es',
-      en: '/en',
-      pt: '/pt',
-      'x-default': '/es',
-    },
-  },
-
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
-
 const supportedLocales = ['es', 'en', 'pt']
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const validLocale = (locale && supportedLocales.includes(locale)) ? locale : 'es'
+
+  return {
+    metadataBase: new URL('https://tienda.inxora.com'),
+    alternates: {
+      canonical: `/${validLocale}`,
+      languages: {
+        es: '/es',
+        en: '/en',
+        pt: '/pt',
+        'x-default': '/es',
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  }
+}
 
 export default async function LocaleLayout({
   children,
@@ -114,7 +121,7 @@ export default async function LocaleLayout({
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: 'https://tienda.inxora.com/es/catalogo?buscar={search_term_string}',
+        urlTemplate: `https://tienda.inxora.com/${validLocale}/catalogo?buscar={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },

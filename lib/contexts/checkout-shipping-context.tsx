@@ -5,11 +5,14 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 export interface CheckoutShippingState {
   costoEnvio: number
   envioLabel: string
+  /** true cuando el usuario elige recojo en tienda (no comparar textos traducidos) */
+  isPickup?: boolean
 }
 
 const defaultState: CheckoutShippingState = {
   costoEnvio: 0,
   envioLabel: '',
+  isPickup: false,
 }
 
 type SetCheckoutShipping = (state: CheckoutShippingState) => void

@@ -33,35 +33,37 @@ import { Product } from '@/lib/supabase'
 
 const DEBOUNCE_MS = 350
 
-const checkoutSchema = z
-  .object({
-    firstName: z.string().min(2, 'Nombre requerido'),
-    lastName: z.string().min(2, 'Apellido requerido'),
-    email: z.string().email('Email inválido'),
-    phone: z.string().min(10, 'Teléfono requerido'),
-    tipo_entrega: z.enum(['DELIVERY', 'RECOJO']),
-    idCiudad: z.number().optional(),
-    idProvincia: z.number().optional(),
-    idDistrito: z.number().optional(),
-    idTipoLugarEntrega: z.number().optional(),
-    address: z.string().optional(),
-    country: z.string().optional(),
-    paymentMethod: z.enum(['transfer', 'yape', 'izipay']),
-    notes: z.string().optional(),
-    acceptTerms: z.boolean().refine(val => val === true, 'Debe aceptar los términos'),
-    newsletter: z.boolean().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.tipo_entrega === 'DELIVERY') {
-      if (!data.idCiudad || data.idCiudad < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Seleccione departamento/región', path: ['idCiudad'] })
-      if (!data.idProvincia || data.idProvincia < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Seleccione provincia', path: ['idProvincia'] })
-      if (!data.idTipoLugarEntrega || data.idTipoLugarEntrega < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Seleccione tipo de lugar de entrega', path: ['idTipoLugarEntrega'] })
-      if (!data.address || data.address.trim().length < 5) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Dirección requerida (calle, número, referencia)', path: ['address'] })
-      if (!data.country || data.country.trim().length < 2) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'País requerido', path: ['country'] })
-    }
-  })
+function buildCheckoutSchema(t: (key: string) => string) {
+  return z
+    .object({
+      firstName: z.string().min(2, t('validation.firstNameMin')),
+      lastName: z.string().min(2, t('validation.lastNameMin')),
+      email: z.string().email(t('validation.emailInvalid')),
+      phone: z.string().min(10, t('validation.phoneMin')),
+      tipo_entrega: z.enum(['DELIVERY', 'RECOJO']),
+      idCiudad: z.number().optional(),
+      idProvincia: z.number().optional(),
+      idDistrito: z.number().optional(),
+      idTipoLugarEntrega: z.number().optional(),
+      address: z.string().optional(),
+      country: z.string().optional(),
+      paymentMethod: z.enum(['transfer', 'yape', 'izipay']),
+      notes: z.string().optional(),
+      acceptTerms: z.boolean().refine((val) => val === true, t('validation.termsRequired')),
+      newsletter: z.boolean().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.tipo_entrega === 'DELIVERY') {
+        if (!data.idCiudad || data.idCiudad < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('validation.selectDepartamento'), path: ['idCiudad'] })
+        if (!data.idProvincia || data.idProvincia < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('validation.selectProvincia'), path: ['idProvincia'] })
+        if (!data.idTipoLugarEntrega || data.idTipoLugarEntrega < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('validation.selectTipoLugar'), path: ['idTipoLugarEntrega'] })
+        if (!data.address || data.address.trim().length < 5) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('validation.addressMin'), path: ['address'] })
+        if (!data.country || data.country.trim().length < 2) ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('validation.countryMin'), path: ['country'] })
+      }
+    })
+}
 
-type CheckoutFormData = z.infer<typeof checkoutSchema>
+type CheckoutFormData = z.infer<ReturnType<typeof buildCheckoutSchema>>
 
 const PAIS_DEFAULT = 'Perú'
 
@@ -193,6 +195,7 @@ const textareaCls = [
 /** Campo copiable con botón de copia al portapapeles */
 function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
+  const tc = useTranslations('checkout')
 
   const handleCopy = () => {
     navigator.clipboard.writeText(value).then(() => {
@@ -219,12 +222,12 @@ function CopyField({ label, value }: { label: string; value: string }) {
               ? 'bg-emerald-500 text-white'
               : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-700 dark:hover:text-emerald-400',
           ].join(' ')}
-          aria-label={`Copiar ${label}`}
+          aria-label={tc('copy.copyAria', { label })}
         >
           {copied ? (
-            <><CheckCircle className="w-3.5 h-3.5" /> Copiado</>
+            <><CheckCircle className="w-3.5 h-3.5" /> {tc('copy.copied')}</>
           ) : (
-            <><Copy className="w-3.5 h-3.5" /> Copiar</>
+            <><Copy className="w-3.5 h-3.5" /> {tc('copy.copy')}</>
           )}
         </button>
       </div>
@@ -237,7 +240,8 @@ function CopyField({ label, value }: { label: string; value: string }) {
 export function CheckoutForm() {
   const pathname = usePathname()
   const locale = (pathname?.split('/')?.[1] || 'es')
-  const t = useTranslations()
+  const t = useTranslations('checkout')
+  const checkoutSchema = useMemo(() => buildCheckoutSchema(t), [t])
   const router = useRouter()
   const { toast } = useToast()
   const { items, clearCart } = useCart()
@@ -472,7 +476,7 @@ export function CheckoutForm() {
       setMapLng(null)
       setErrorMap(null)
       setUbigeoConfirmado(null)
-      setCheckoutShipping({ costoEnvio: 0, envioLabel: 'Recojo en tienda' })
+      setCheckoutShipping({ costoEnvio: 0, envioLabel: '', isPickup: true })
       return
     }
     if ((!idTipoLugarEntrega || idTipoLugarEntrega < 1) && tiposLugarEntrega.length > 0) {
@@ -488,7 +492,7 @@ export function CheckoutForm() {
       setDistritos([])
       form.setValue('idProvincia', 0)
       form.setValue('idDistrito', undefined)
-      setCheckoutShipping({ costoEnvio: 0, envioLabel: '' })
+      setCheckoutShipping({ costoEnvio: 0, envioLabel: '', isPickup: false })
       return
     }
     let cancelled = false
@@ -503,7 +507,7 @@ export function CheckoutForm() {
           setDistritos([])
           form.setValue('idProvincia', 0)
           form.setValue('idDistrito', undefined)
-          setCheckoutShipping({ costoEnvio: 0, envioLabel: '' })
+          setCheckoutShipping({ costoEnvio: 0, envioLabel: '', isPickup: false })
         }
       }
     }).finally(() => setLoadingUbigeo((l) => ({ ...l, provincias: false })))
@@ -512,13 +516,13 @@ export function CheckoutForm() {
 
   useEffect(() => {
     if (tipoEntrega === 'RECOJO') {
-      setCheckoutShipping({ costoEnvio: 0, envioLabel: 'Recojo en tienda' })
+      setCheckoutShipping({ costoEnvio: 0, envioLabel: '', isPickup: true })
       return
     }
     if (!idProvincia || idProvincia < 1) {
       setDistritos([])
       form.setValue('idDistrito', undefined)
-      setCheckoutShipping({ costoEnvio: 0, envioLabel: '' })
+      setCheckoutShipping({ costoEnvio: 0, envioLabel: '', isPickup: false })
       return
     }
     let cancelled = false
@@ -534,10 +538,10 @@ export function CheckoutForm() {
     }).finally(() => setLoadingUbigeo((l) => ({ ...l, distritos: false })))
     const aplicaTarifaPlana = tarifaPlana?.provincia_ids?.includes(idProvincia) ?? false
     const costo = aplicaTarifaPlana ? (tarifaPlana?.costo_envio ?? 20) : 0
-    const label = aplicaTarifaPlana ? `S/ ${tarifaPlana?.costo_envio ?? 20}` : 'Envío a consultar según destino'
-    if (!cancelled) setCheckoutShipping({ costoEnvio: costo, envioLabel: label })
+    const label = aplicaTarifaPlana ? `S/ ${tarifaPlana?.costo_envio ?? 20}` : t('delivery.shippingQuote')
+    if (!cancelled) setCheckoutShipping({ costoEnvio: costo, envioLabel: label, isPickup: false })
     return () => { cancelled = true }
-  }, [idProvincia, tarifaPlana, form, setCheckoutShipping, tipoEntrega])
+  }, [idProvincia, tarifaPlana, form, setCheckoutShipping, tipoEntrega, t])
 
   const idDistrito = form.watch('idDistrito')
   const ciudadNombre = ciudades.find((c) => c.id === idCiudad)?.nombre ?? ''
@@ -563,10 +567,10 @@ export function CheckoutForm() {
           if (addr) setAddressFromMap(addr)
         }
       })
-      .catch(() => { if (!cancelled) setErrorMap('No se pudo ubicar en el mapa. Puedes arrastrar el marcador o indicar la dirección manualmente.') })
+      .catch(() => { if (!cancelled) setErrorMap(t('map.geocodeError')) })
       .finally(() => { if (!cancelled) setLoadingMap((m) => ({ ...m, geocode: false })) })
     return () => { cancelled = true }
-  }, [idCiudad, idProvincia, idDistrito, ciudadNombre, provinciaNombre, distritoNombre])
+  }, [idCiudad, idProvincia, idDistrito, ciudadNombre, provinciaNombre, distritoNombre, t])
 
   const handleMarkerMove = useCallback((lat: number, lng: number) => {
     lastReverseCoordsRef.current = { lat, lng }
@@ -583,10 +587,10 @@ export function CheckoutForm() {
       .catch(() => {
         if (lastReverseCoordsRef.current?.lat !== lat || lastReverseCoordsRef.current?.lng !== lng) return
         setAddressFromMap(null)
-        setErrorMap('No se pudo obtener la dirección para esta ubicación.')
+        setErrorMap(t('map.reverseError'))
       })
       .finally(() => setLoadingMap((m) => ({ ...m, reverse: false })))
-  }, [form, applyReverseGeocodeToDropdowns])
+  }, [form, applyReverseGeocodeToDropdowns, t])
 
   useEffect(() => {
     if (!autocompleteQuery.trim()) { setAutocompleteSuggestions([]); return }
@@ -607,12 +611,12 @@ export function CheckoutForm() {
   const handleAuthError = useCallback(() => {
     logout()
     toast({
-      title: 'Sesión expirada',
-      description: 'Tu sesión venció. Inicia sesión nuevamente.',
+      title: t('errors.sessionExpired'),
+      description: t('errors.sessionExpiredDesc'),
       variant: 'destructive',
     })
     setTimeout(() => openAuthModal(), 1500)
-  }, [logout, toast, router, locale])
+  }, [logout, toast, openAuthModal, t])
 
   // Reset pedido al cambiar de método de pago (no limpiar formToken: el widget permanece montado
   // con display:none para evitar que Krypton elimine callbacks y rompa el formulario al volver)
@@ -636,17 +640,17 @@ export function CheckoutForm() {
           if (res.data?.orderStatus === 'PAID') {
             clearCart()
             const numero = res.data?.orderId ?? String(pedidoIdIzipayRef.current ?? '')
-            toast({ title: t('checkout.success.title'), description: t('checkout.success.description', { orderId: numero }) })
+            toast({ title: t('success.title'), description: t('success.description', { orderId: numero }) })
             router.push(`/${locale}/pedido/${pedidoIdIzipayRef.current ?? ''}?numero=${encodeURIComponent(numero)}`)
           } else {
-            toast({ title: 'Pago no completado', description: 'El pago no pudo ser confirmado. Intente nuevamente.', variant: 'destructive' })
+            toast({ title: t('errors.paymentIncomplete'), description: t('errors.paymentIncompleteDesc'), variant: 'destructive' })
           }
         })
         .catch((err: unknown) => {
           if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
             handleAuthError()
           } else {
-            toast({ title: 'Error', description: 'No se pudo validar el pago.', variant: 'destructive' })
+            toast({ title: t('errors.paymentValidateError'), description: t('errors.paymentValidateDesc'), variant: 'destructive' })
           }
         })
     },
@@ -655,9 +659,9 @@ export function CheckoutForm() {
 
   const handleIzipayError = useCallback(
     (error: string) => {
-      toast({ title: 'Error de pago', description: error, variant: 'destructive' })
+      toast({ title: t('errors.paymentErrorTitle'), description: error, variant: 'destructive' })
     },
-    [toast]
+    [toast, t]
   )
 
   const handleSelectPlace = useCallback((placeId: string) => {
@@ -682,11 +686,11 @@ export function CheckoutForm() {
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!isLoggedIn || !cliente?.id || !token) {
-      toast({ title: t('checkout.error.title'), description: 'Debe iniciar sesión para realizar el pedido.', variant: 'destructive' })
+      toast({ title: t('error.title'), description: t('errors.loginRequired'), variant: 'destructive' })
       return
     }
     if (hasCartRestrictionErrors) {
-      toast({ title: 'Restricciones de compra', description: cartRestrictionErrors[0] ?? 'Corrige los productos del carrito antes de continuar.', variant: 'destructive' })
+      toast({ title: t('errors.cartRestrictionsTitle'), description: cartRestrictionErrors[0] ?? t('errors.cartRestrictionsDesc'), variant: 'destructive' })
       return
     }
     const isRecojo = data.tipo_entrega === 'RECOJO'
@@ -724,7 +728,7 @@ export function CheckoutForm() {
     try {
       const res = await pedidosService.crearPedido(body, token)
       if (!res.success || !res.data?.id) {
-        toast({ title: t('checkout.error.title'), description: t('checkout.error.description'), variant: 'destructive' })
+        toast({ title: t('error.title'), description: t('error.description'), variant: 'destructive' })
         return
       }
       const idPedido = res.data.id
@@ -746,8 +750,8 @@ export function CheckoutForm() {
             return
           }
           toast({
-            title: 'Error al cargar formulario de tarjeta',
-            description: 'No se pudo conectar con Izipay. Intenta de nuevo.',
+            title: t('errors.izipayFormError'),
+            description: t('errors.izipayFormErrorDesc'),
             variant: 'destructive',
           })
         } finally {
@@ -760,15 +764,15 @@ export function CheckoutForm() {
 
       clearCart()
       setCurrentStep(3)
-      toast({ title: t('checkout.success.title'), description: t('checkout.success.description', { orderId: numero }) })
+      toast({ title: t('success.title'), description: t('success.description', { orderId: numero }) })
       router.push(`/${locale}/pedido/${idPedido}?numero=${encodeURIComponent(numero)}`)
     } catch (error) {
       if (error instanceof ApiError) {
-        if (error.status === 400) { toast({ title: t('checkout.error.title'), description: error.detail?.message || 'Algunos productos ya no están disponibles.', variant: 'destructive' }); return }
+        if (error.status === 400) { toast({ title: t('error.title'), description: error.detail?.message || t('errors.unavailableProducts'), variant: 'destructive' }); return }
         if (error.status === 401 || error.status === 403) { handleAuthError(); return }
-        if (error.status >= 500) { toast({ title: t('checkout.error.title'), description: 'No pudimos crear el pedido. Intente más tarde.', variant: 'destructive' }); return }
+        if (error.status >= 500) { toast({ title: t('error.title'), description: t('errors.serverError'), variant: 'destructive' }); return }
       }
-      toast({ title: t('checkout.error.title'), description: t('checkout.error.description'), variant: 'destructive' })
+      toast({ title: t('error.title'), description: t('error.description'), variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
     }
@@ -783,15 +787,15 @@ export function CheckoutForm() {
           <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-5">
             <ShoppingBag className="w-7 h-7 text-slate-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Tu carrito está vacío</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">{t('emptyCartCheckout.title')}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-xs">
-            Agrega productos antes de proceder al checkout.
+            {t('emptyCartCheckout.description')}
           </p>
           <a
             href={`/${locale}/catalogo`}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors shadow-md shadow-orange-200 dark:shadow-orange-900/30"
           >
-            Explorar productos <ChevronRight className="w-4 h-4" />
+            {t('emptyCartCheckout.cta')} <ChevronRight className="w-4 h-4" />
           </a>
         </div>
       </div>
@@ -801,9 +805,9 @@ export function CheckoutForm() {
   // ── Stepper component ─────────────────────────────────────────────────────
   const StepperBar = () => {
     const steps = [
-      { n: 1, label: 'Datos y entrega' },
-      { n: 2, label: 'Pago' },
-      { n: 3, label: 'Confirmar' },
+      { n: 1, label: t('stepper.dataDelivery') },
+      { n: 2, label: t('stepper.payment') },
+      { n: 3, label: t('stepper.confirm') },
     ]
     return (
       <div className="flex items-center gap-0 mb-6">
@@ -847,10 +851,10 @@ export function CheckoutForm() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-0.5">
-                Inicia sesión para continuar
+                {t('loginBanner.title')}
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-300 mb-3 leading-relaxed">
-                Necesitas una cuenta para finalizar tu pedido y tener seguimiento del mismo.
+                {t('loginBanner.description')}
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -858,13 +862,13 @@ export function CheckoutForm() {
                   onClick={() => openAuthModal()}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-200 text-xs font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                 >
-                  Iniciar sesión
+                  {t('loginBanner.login')}
                 </button>
                 <Link
                   href={`/${locale}/registro?redirect=checkout`}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition-colors shadow-sm"
                 >
-                  Crear cuenta
+                  {t('loginBanner.register')}
                 </Link>
               </div>
             </div>
@@ -883,24 +887,24 @@ export function CheckoutForm() {
             <div className="flex flex-col gap-8 lg:gap-10">
               {/* ── Fila 1: Información personal (ancho completo) ─────────── */}
               <div className="min-w-0">
-                <SectionHeader step={1} icon={User} title="Información personal" subtitle="Datos del contacto para el pedido" />
+                <SectionHeader step={1} icon={User} title={t('sectionPersonal.title')} subtitle={t('sectionPersonal.subtitle')} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                  <Field label="Nombre" required error={form.formState.errors.firstName?.message}>
-                    <Input className={inputCls} placeholder="Tu nombre" {...form.register('firstName')} />
+                  <Field label={t('personalInfo.firstName')} required error={form.formState.errors.firstName?.message}>
+                    <Input className={inputCls} placeholder={t('form.firstNamePlaceholder')} {...form.register('firstName')} />
                   </Field>
-                  <Field label="Apellido" required error={form.formState.errors.lastName?.message}>
-                    <Input className={inputCls} placeholder="Tu apellido" {...form.register('lastName')} />
+                  <Field label={t('personalInfo.lastName')} required error={form.formState.errors.lastName?.message}>
+                    <Input className={inputCls} placeholder={t('form.lastNamePlaceholder')} {...form.register('lastName')} />
                   </Field>
-                  <Field label="Correo" required error={form.formState.errors.email?.message}>
+                  <Field label={t('personalInfo.email')} required error={form.formState.errors.email?.message}>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                      <Input className={inputCls + ' pl-9'} type="email" placeholder="correo@empresa.com" {...form.register('email')} />
+                      <Input className={inputCls + ' pl-9'} type="email" placeholder={t('form.emailPlaceholder')} {...form.register('email')} />
                     </div>
                   </Field>
-                  <Field label="Teléfono" required error={form.formState.errors.phone?.message}>
+                  <Field label={t('personalInfo.phone')} required error={form.formState.errors.phone?.message}>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                      <Input className={inputCls + ' pl-9'} type="tel" placeholder="+51 999 999 999" {...form.register('phone')} />
+                      <Input className={inputCls + ' pl-9'} type="tel" placeholder={t('form.phonePlaceholder')} {...form.register('phone')} />
                     </div>
                   </Field>
                 </div>
@@ -908,19 +912,19 @@ export function CheckoutForm() {
 
               {/* ── Fila 2: Entrega ─────────────────────────────────────────── */}
               <div className="min-w-0 pt-6 lg:pt-8 border-t border-slate-100 dark:border-slate-800">
-                <SectionHeader step={2} icon={Truck} title="Entrega" subtitle="¿Cómo quieres recibir tu pedido?" />
+                <SectionHeader step={2} icon={Truck} title={t('sectionDelivery.title')} subtitle={t('sectionDelivery.subtitle')} />
 
                 <RadioGroup
                   value={tipoEntrega}
                   onValueChange={(v) => {
                     form.setValue('tipo_entrega', v as 'DELIVERY' | 'RECOJO')
-                    if (v === 'RECOJO') setCheckoutShipping({ costoEnvio: 0, envioLabel: 'Recojo en tienda' })
+                    if (v === 'RECOJO') setCheckoutShipping({ costoEnvio: 0, envioLabel: '', isPickup: true })
                   }}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 mb-0"
                 >
                   {[
-                    { value: 'DELIVERY', icon: Truck, label: 'Envío a domicilio', desc: 'Entrega en tu dirección' },
-                    { value: 'RECOJO', icon: Store, label: 'Recojo en tienda', desc: 'Sin costo de envío' },
+                    { value: 'DELIVERY', icon: Truck, label: t('deliveryOption.delivery'), desc: t('deliveryOption.deliveryDesc') },
+                    { value: 'RECOJO', icon: Store, label: t('deliveryOption.pickup'), desc: t('deliveryOption.pickupDesc') },
                   ].map(({ value, icon: Icon, label, desc }) => {
                     const active = tipoEntrega === value
                     return (
@@ -957,56 +961,56 @@ export function CheckoutForm() {
                     {/* Columna: dirección y ubigeo */}
                     <div className="space-y-3 min-w-0 order-2 lg:order-1">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Field label="Departamento" required error={form.formState.errors.idCiudad?.message}>
+                        <Field label={t('form.departamento')} required error={form.formState.errors.idCiudad?.message}>
                           <select className={selectCls} value={form.watch('idCiudad') || ''} onChange={(e) => form.setValue('idCiudad', e.target.value ? Number(e.target.value) : 0)} disabled={loadingUbigeo.ciudades}>
-                            <option value="">{loadingUbigeo.ciudades ? 'Cargando...' : 'Seleccionar'}</option>
+                            <option value="">{loadingUbigeo.ciudades ? t('form.cargando') : t('form.seleccionar')}</option>
                             {ciudades.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                           </select>
                         </Field>
-                        <Field label="Provincia" required error={form.formState.errors.idProvincia?.message}>
+                        <Field label={t('form.provincia')} required error={form.formState.errors.idProvincia?.message}>
                           <select className={selectCls} value={form.watch('idProvincia') || ''} onChange={(e) => form.setValue('idProvincia', e.target.value ? Number(e.target.value) : 0)} disabled={!idCiudad || idCiudad < 1 || loadingUbigeo.provincias}>
-                            <option value="">{loadingUbigeo.provincias ? 'Cargando...' : 'Seleccionar'}</option>
+                            <option value="">{loadingUbigeo.provincias ? t('form.cargando') : t('form.seleccionar')}</option>
                             {provincias.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                           </select>
                         </Field>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Field label="Distrito (opcional)">
+                        <Field label={t('form.distritoOpcional')}>
                           <select className={selectCls} value={form.watch('idDistrito') ?? ''} onChange={(e) => form.setValue('idDistrito', e.target.value ? Number(e.target.value) : undefined)} disabled={!idProvincia || idProvincia < 1 || loadingUbigeo.distritos}>
-                            <option value="">{loadingUbigeo.distritos ? 'Cargando...' : 'Seleccionar'}</option>
+                            <option value="">{loadingUbigeo.distritos ? t('form.cargando') : t('form.seleccionar')}</option>
                             {distritos.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
                           </select>
                         </Field>
-                        <Field label="Tipo de lugar" required error={form.formState.errors.idTipoLugarEntrega?.message}>
+                        <Field label={t('form.tipoLugar')} required error={form.formState.errors.idTipoLugarEntrega?.message}>
                           <select className={selectCls} value={idTipoLugarEntrega ?? ''} onChange={(e) => form.setValue('idTipoLugarEntrega', e.target.value ? Number(e.target.value) : undefined, { shouldValidate: true })} disabled={loadingUbigeo.tiposLugarEntrega}>
-                            <option value="">{loadingUbigeo.tiposLugarEntrega ? 'Cargando...' : 'Seleccionar'}</option>
-                            {tiposLugarEntrega.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                            <option value="">{loadingUbigeo.tiposLugarEntrega ? t('form.cargando') : t('form.seleccionar')}</option>
+                            {tiposLugarEntrega.map((tipo) => <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>)}
                           </select>
                         </Field>
                       </div>
-                      <Field label="Dirección" required error={form.formState.errors.address?.message}>
+                      <Field label={t('form.direccion')} required error={form.formState.errors.address?.message}>
                         <div className="relative">
                           <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                          <textarea className={textareaCls + ' pl-9 min-h-[72px]'} placeholder="Av. Principal 123, Mz A Lt 5..." {...form.register('address')} />
+                          <textarea className={textareaCls + ' pl-9 min-h-[72px]'} placeholder={t('form.addressPlaceholder')} {...form.register('address')} />
                         </div>
                       </Field>
-                      <Field label="País" required error={form.formState.errors.country?.message}>
+                      <Field label={t('shipping.country')} required error={form.formState.errors.country?.message}>
                         <Input className={inputCls} {...form.register('country')} />
                       </Field>
                       {idProvincia >= 1 && (
                         <div className={['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium', tarifaPlana?.provincia_ids?.includes(idProvincia) ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 border border-emerald-200' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 border border-slate-200'].join(' ')}>
                           <Truck className="w-4 h-4 flex-shrink-0" />
-                          {tarifaPlana?.provincia_ids?.includes(idProvincia) ? <>Envío: <strong className="ml-1">S/ {tarifaPlana?.costo_envio ?? 20}</strong> <span className="text-xs font-normal opacity-70">(Lima/Callao)</span></> : 'Envío a consultar según destino'}
+                          {tarifaPlana?.provincia_ids?.includes(idProvincia) ? <>{t('delivery.shippingBadge')} <strong className="ml-1">S/ {tarifaPlana?.costo_envio ?? 20}</strong> <span className="text-xs font-normal opacity-70">{t('delivery.limaCallao')}</span></> : t('delivery.shippingQuote')}
                         </div>
                       )}
                     </div>
 
                     {/* Columna: mapa (arriba en móvil para ver ubicación sin tanto scroll) */}
                     <div className="flex flex-col gap-3 min-w-0 order-1 lg:order-2 lg:sticky lg:top-4">
-                      <Field label="Buscar dirección en mapa (opcional)">
+                      <Field label={t('form.buscarMapa')}>
                         <div className="relative">
-                          <Input className={inputCls + ' pr-20'} type="text" placeholder="Escribe para buscar..." value={autocompleteQuery} onChange={(e) => setAutocompleteQuery(e.target.value)} onBlur={() => setTimeout(() => setAutocompleteSuggestions([]), 200)} aria-autocomplete="list" aria-expanded={autocompleteSuggestions.length > 0} />
-                          {loadingAutocomplete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Buscando…</span>}
+                          <Input className={inputCls + ' pr-20'} type="text" placeholder={t('form.buscarPlaceholder')} value={autocompleteQuery} onChange={(e) => setAutocompleteQuery(e.target.value)} onBlur={() => setTimeout(() => setAutocompleteSuggestions([]), 200)} aria-autocomplete="list" aria-expanded={autocompleteSuggestions.length > 0} />
+                          {loadingAutocomplete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{t('form.buscando')}</span>}
                           {autocompleteSuggestions.length > 0 && (
                             <ul className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl max-h-48 overflow-auto divide-y divide-slate-100 dark:divide-slate-800">
                               {autocompleteSuggestions.map((s) => (
@@ -1019,12 +1023,12 @@ export function CheckoutForm() {
                         </div>
                       </Field>
                       <div className="space-y-1.5">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ubicación en mapa</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('form.ubicacionMapa')}</p>
                         {(() => { const addrDisplay = toAddressString(addressFromMap); return addrDisplay ? <p className="text-xs text-slate-500 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />{addrDisplay}</p> : null })()}
                         <div className="rounded-xl overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700">
-                          <DeliveryAddressMap lat={mapLat} lng={mapLng} onMarkerMove={handleMarkerMove} center={mapLat != null && mapLng != null ? undefined : { lat: -12.046374, lng: -77.042793 }} zoom={14} loading={loadingMap.geocode} error={errorMap} onErrorRetry={() => setErrorMap(null)} height={280} />
+                          <DeliveryAddressMap lat={mapLat} lng={mapLng} onMarkerMove={handleMarkerMove} center={mapLat != null && mapLng != null ? undefined : { lat: -12.046374, lng: -77.042793 }} zoom={14} loading={loadingMap.geocode} error={errorMap} onErrorRetry={() => setErrorMap(null)} height={280} loadingText={t('map.loadingMap')} ariaLabelLoading={t('map.loadingAria')} errorHint={t('map.mapHint')} retryLabel={t('map.retry')} />
                         </div>
-                        <p className="text-xs text-slate-400">Arrastra el marcador para ajustar la ubicación exacta.</p>
+                        <p className="text-xs text-slate-400">{t('form.arrastraMarcador')}</p>
                       </div>
                     </div>
                   </div>
@@ -1033,8 +1037,8 @@ export function CheckoutForm() {
                 {tipoEntrega === 'RECOJO' && (
                   <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/30 py-12 px-4">
                     <Store className="w-12 h-12 mb-3 text-orange-400" />
-                    <p className="font-medium text-slate-700 dark:text-slate-200 text-sm">Recojo en tienda</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sin costo de envío</p>
+                    <p className="font-medium text-slate-700 dark:text-slate-200 text-sm">{t('pickup.label')}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('pickup.noShipping')}</p>
                   </div>
                 )}
               </div>
@@ -1050,7 +1054,7 @@ export function CheckoutForm() {
             }}
             className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 bg-orange-500 hover:bg-orange-600 text-white transition-all"
           >
-            Continuar con el pago <ChevronRight className="w-4 h-4" />
+            {t('form.continuarPago')} <ChevronRight className="w-4 h-4" />
           </button>
         </>
       )}
@@ -1060,14 +1064,14 @@ export function CheckoutForm() {
         <>
           {/* ── 3. Payment ───────────────────────────────────────────────────── */}
           <FormSection>
-            <SectionHeader step={3} icon={CreditCard} title="Método de pago" subtitle="Selecciona cómo quieres pagar" />
+            <SectionHeader step={3} icon={CreditCard} title={t('payment.title')} subtitle={t('form.metodoPagoSubtitle')} />
 
             {/* Tabs de métodos de pago — compactos para evitar scroll */}
             <div className="flex gap-2 mb-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
               {([
-                { value: 'transfer', icon: Building2, label: 'Transferencia', color: 'emerald' },
-                { value: 'yape', icon: QrCode, label: 'Yape', color: 'purple' },
-                { value: 'izipay', icon: CreditCard, label: 'Tarjeta', color: 'blue' },
+                { value: 'transfer', icon: Building2, label: t('form.tabTransfer'), color: 'emerald' },
+                { value: 'yape', icon: QrCode, label: t('form.tabYape'), color: 'purple' },
+                { value: 'izipay', icon: CreditCard, label: t('form.tabCard'), color: 'blue' },
               ] as const).map(({ value, icon: Icon, label, color }) => {
                 const active = form.watch('paymentMethod') === value
                 const activeClr: Record<string, string> = { emerald: 'text-emerald-700 dark:text-emerald-300', purple: 'text-purple-700 dark:text-purple-300', blue: 'text-blue-700 dark:text-blue-300' }
@@ -1097,7 +1101,7 @@ export function CheckoutForm() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white leading-tight">Banco de Crédito del Perú</p>
-                      <p className="text-xs text-emerald-100">Transferencia interbancaria</p>
+                      <p className="text-xs text-emerald-100">{t('form.bcpTransferType')}</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold text-white bg-white/20 px-2.5 py-1 rounded-full">BCP</span>
@@ -1108,19 +1112,17 @@ export function CheckoutForm() {
                   {[
                     {
                       flag: '🇵🇪',
-                      currency: 'Soles',
                       code: 'PEN',
                       account: '192-7293189-0-73',
                       cci: '002-192-007293189073-34',
                     },
                     {
                       flag: '🇺🇸',
-                      currency: 'Dólares',
                       code: 'USD',
                       account: '1917331690183',
                       cci: '00219100733169018351',
                     },
-                  ].map(({ flag, currency, code, account, cci }) => (
+                  ].map(({ flag, code, account, cci }) => (
                     <div
                       key={code}
                       className="bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/50 overflow-hidden"
@@ -1129,7 +1131,7 @@ export function CheckoutForm() {
                       <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-b border-emerald-100 dark:border-emerald-900/50">
                         <div className="flex items-center gap-2">
                           <span className="text-base">{flag}</span>
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{currency}</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{code === 'PEN' ? t('form.currencySoles') : t('form.currencyUsd')}</span>
                         </div>
                         <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
                           {code}
@@ -1138,8 +1140,8 @@ export function CheckoutForm() {
 
                       {/* Account fields */}
                       <div className="p-3.5 space-y-3">
-                        <CopyField label="N° de cuenta" value={account} />
-                        <CopyField label="CCI" value={cci} />
+                        <CopyField label={t('form.accountNumber')} value={account} />
+                        <CopyField label={t('form.cci')} value={cci} />
                       </div>
                     </div>
                   ))}
@@ -1148,14 +1150,14 @@ export function CheckoutForm() {
                 {/* Instructions */}
                 <div className="px-5 py-4 bg-white dark:bg-slate-900 border-t border-emerald-100 dark:border-emerald-900/50">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-3">
-                    Cómo pagar
+                    {t('form.bcpInstructionsTitle')}
                   </p>
                   <ol className="space-y-2">
                     {[
-                      'Copia el número de cuenta o CCI según tu banco.',
-                      'Realiza la transferencia desde tu app o banca en línea.',
-                      'Envía el comprobante por WhatsApp o correo.',
-                      'Tu pedido se confirmará en menos de 24 h hábiles.',
+                      t('form.bcpStep1'),
+                      t('form.bcpStep2'),
+                      t('form.bcpStep3'),
+                      t('form.bcpStep4'),
                     ].map((step, i) => (
                       <li key={i} className="flex items-start gap-2.5">
                         <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1180,8 +1182,8 @@ export function CheckoutForm() {
                       <QrCode className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white leading-tight">{t('checkout.payment.yape')}</p>
-                      <p className="text-xs text-purple-200">Escanea el código QR</p>
+                      <p className="text-sm font-bold text-white leading-tight">{t('payment.yape')}</p>
+                      <p className="text-xs text-purple-200">{t('form.yapeScanQr')}</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold text-white bg-white/20 px-2.5 py-1 rounded-full">QR</span>
@@ -1209,14 +1211,14 @@ export function CheckoutForm() {
                   {/* Steps */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-3">
-                      {t('checkout.payment.yapeInstructions')}
+                      {t('payment.yapeInstructions')}
                     </p>
                     <ol className="space-y-2.5">
                       {[
-                        'Abre tu app de Yape.',
-                        'Toca "Yapear con QR" y escanea el código.',
-                        'Ingresa el monto exacto de tu pedido.',
-                        'Envíanos el comprobante por WhatsApp.',
+                        t('form.yapeStep1'),
+                        t('form.yapeStep2'),
+                        t('form.yapeStep3'),
+                        t('form.yapeStep4'),
                       ].map((step, i) => (
                         <li key={i} className="flex items-start gap-2.5">
                           <span className="w-5 h-5 rounded-full bg-purple-200 dark:bg-purple-800 text-purple-700 dark:text-purple-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1228,7 +1230,7 @@ export function CheckoutForm() {
                     </ol>
                     <p className="text-xs text-purple-600 dark:text-purple-400 mt-3 flex items-center gap-1.5">
                       <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                      {t('checkout.payment.yapeScan')}
+                      {t('payment.yapeScan')}
                     </p>
                   </div>
                 </div>
@@ -1243,17 +1245,17 @@ export function CheckoutForm() {
             <div className="space-y-3">
               <textarea
                 className={textareaCls + ' min-h-[52px]'}
-                placeholder="Notas opcionales: Dejar con el portero, llamar antes de llegar..."
+                placeholder={t('form.notesPlaceholder')}
                 {...form.register('notes')}
               />
               <div className="flex flex-col gap-2 pt-1">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <Checkbox id="acceptTerms" checked={form.watch('acceptTerms')} onCheckedChange={(c) => form.setValue('acceptTerms', c as boolean)} className="flex-shrink-0" />
                   <span className="text-xs text-slate-700 dark:text-slate-300">
-                    Acepto los{' '}
-                    <Link href={`/${locale}/terminos`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">términos y condiciones</Link>
-                    {' '}y la{' '}
-                    <Link href={`/${locale}/privacidad`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">política de privacidad</Link>
+                    {t('terms.accept')}{' '}
+                    <Link href={`/${locale}/terminos`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">{t('terms.link')}</Link>
+                    {' '}{t('terms.and')}{' '}
+                    <Link href={`/${locale}/privacidad`} className="text-orange-600 dark:text-orange-400 hover:underline font-medium">{t('terms.privacy')}</Link>
                   </span>
                 </label>
                 {form.formState.errors.acceptTerms && (
@@ -1261,7 +1263,7 @@ export function CheckoutForm() {
                 )}
                 <label className="flex items-center gap-3 cursor-pointer">
                   <Checkbox id="newsletter" checked={form.watch('newsletter')} onCheckedChange={(c) => form.setValue('newsletter', c as boolean)} className="flex-shrink-0" />
-                  <span className="text-xs text-slate-600 dark:text-slate-400">Quiero recibir ofertas y novedades por correo electrónico</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">{t('form.newsletterOptIn')}</span>
                 </label>
               </div>
             </div>
@@ -1272,7 +1274,7 @@ export function CheckoutForm() {
             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                <p className="text-sm font-semibold text-red-800 dark:text-red-200">Corrige estos productos antes de continuar</p>
+                <p className="text-sm font-semibold text-red-800 dark:text-red-200">{t('form.cartRestrictionTitle')}</p>
               </div>
               <ul className="space-y-1 pl-6">
                 {cartRestrictionErrors.map((err) => (
@@ -1299,18 +1301,18 @@ export function CheckoutForm() {
         {isSubmitting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Procesando…
+            {t('form.processing')}
           </>
         ) : paymentMethod === 'izipay' && !pedidoCreadoId ? (
           <>
             <Lock className="w-4 h-4" />
-            Confirmar pedido para pagar
+            {t('form.confirmOrderPay')}
             <ChevronRight className="w-4 h-4" />
           </>
         ) : (
           <>
             <Lock className="w-4 h-4" />
-            Confirmar pedido
+            {t('form.confirmOrder')}
             <ChevronRight className="w-4 h-4" />
           </>
         )}
@@ -1324,7 +1326,7 @@ export function CheckoutForm() {
           onClick={() => setCurrentStep(1)}
           className="w-full py-3 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
         >
-          ← Volver a datos y entrega
+          {t('form.backToDetails')}
         </button>
       )}
 
@@ -1338,8 +1340,8 @@ export function CheckoutForm() {
                   <CreditCard className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white">Pago con tarjeta</p>
-                  <p className="text-xs text-blue-200">Procesado de forma segura por Izipay</p>
+                  <p className="text-sm font-bold text-white">{t('form.cardPaymentTitle')}</p>
+                  <p className="text-xs text-blue-200">{t('form.cardPaymentSubtitle')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
@@ -1360,7 +1362,7 @@ export function CheckoutForm() {
             <div className="px-5 py-3 bg-white dark:bg-slate-900 border-t border-blue-100 dark:border-blue-900/50 flex items-center gap-2">
               <Lock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Tus datos de tarjeta son procesados directamente por Izipay con cifrado SSL 256 bits. INXORA no almacena datos de tarjeta.
+                {t('form.cardSslDisclaimer')}
               </p>
             </div>
           </div>
@@ -1369,7 +1371,7 @@ export function CheckoutForm() {
             onClick={() => { setCurrentStep(2); setPedidoCreadoId(null); pedidoIdIzipayRef.current = null }}
             className="w-full py-3 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
           >
-            ← Cambiar método de pago
+            {t('form.changePaymentMethod')}
           </button>
         </div>
       )}

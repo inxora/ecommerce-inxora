@@ -8,6 +8,7 @@ import { getCondicionPrecioVenta, getMinimoPedido, validateCartItem } from '@/li
 import { useCart } from '@/lib/hooks/use-cart'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { ProductImage } from '@/components/ui/product-image'
 import { Separator } from '@/components/ui/separator'
 import { formatPriceWithThousands } from '@/lib/utils'
@@ -23,6 +24,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
   const params = useParams()
   const router = useRouter()
   const locale = (params?.locale as string) || 'es'
+  const t = useTranslations('cart')
   const [isOpen, setIsOpen] = useState(false)
 
   const total = getTotalPrice()
@@ -57,10 +59,10 @@ export function CartDrawer({ children }: CartDrawerProps) {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Carrito de Compras
+            {t('title')}
             {itemsCount > 0 && (
               <span className="text-sm text-muted-foreground">
-                ({itemsCount} {itemsCount === 1 ? 'producto' : 'productos'})
+                ({t('itemCount', { count: itemsCount })})
               </span>
             )}
           </SheetTitle>
@@ -71,9 +73,9 @@ export function CartDrawer({ children }: CartDrawerProps) {
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <ShoppingCart className="h-16 w-16 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Tu carrito está vacío</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('empty.title')}</h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Agrega productos para comenzar tu compra
+              {t('empty.description')}
             </p>
             <Button
               onClick={() => {
@@ -82,7 +84,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
               }}
               className="bg-inxora-blue hover:bg-inxora-blue/90"
             >
-              Ir al Catálogo
+              {t('empty.action')}
             </Button>
           </div>
         ) : (
@@ -119,7 +121,9 @@ export function CartDrawer({ children }: CartDrawerProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm line-clamp-2 mb-1">{p.nombre}</h4>
-                      <p className="text-xs text-muted-foreground mb-2">SKU: {skuDisplay}</p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {t('skuLabel')}: {skuDisplay}
+                      </p>
                       {conditionText && (
                         <p className="text-xs text-amber-700 dark:text-amber-300 mb-2">{conditionText}</p>
                       )}
@@ -182,7 +186,7 @@ export function CartDrawer({ children }: CartDrawerProps) {
             <SheetFooter className="flex-col space-y-4">
               <div className="space-y-2 w-full">
                 <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total:</span>
+                  <span>{t('totalLabel')}</span>
                   <span className="text-inxora-blue">{formatPrice(total)}</span>
                 </div>
               </div>
@@ -194,19 +198,19 @@ export function CartDrawer({ children }: CartDrawerProps) {
                   className="w-full"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Vaciar
+                  {t('clearShort')}
                 </Button>
                 <Button
                   onClick={handleCheckout}
                   className="w-full bg-inxora-blue hover:bg-inxora-blue/90"
                   disabled={hasBlockingIssues}
                 >
-                  Finalizar Compra
+                  {t('actions.checkout')}
                 </Button>
               </div>
               {hasBlockingIssues && (
                 <p className="text-sm text-red-700 dark:text-red-300">
-                  Corrige los productos con restricciones de compra antes de continuar al checkout.
+                  {t('blockingCheckout')}
                 </p>
               )}
             </SheetFooter>

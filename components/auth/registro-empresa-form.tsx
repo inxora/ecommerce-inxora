@@ -26,6 +26,7 @@ import {
   Phone,
   User,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,26 +69,6 @@ const newUid = () => `ctc-${++_uidCounter}`
 
 function makeContacto(): ContactoForm {
   return { uid: newUid(), nombres: '', apellidos: '', correo: '', telefono: '', touched: {} }
-}
-
-function getContactoErrors(c: ContactoForm, phoneRegex?: RegExp | null, phonePrefix?: string): Record<string, string> {
-  const telefono = c.telefono.trim()
-  const telefonoNormalized = normalizePhoneForSubmit(telefono, phonePrefix)
-  return {
-    nombres: c.nombres.trim() ? '' : 'Los nombres son requeridos',
-    apellidos: c.apellidos.trim() ? '' : 'Los apellidos son requeridos',
-    correo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.correo) ? '' : 'Correo inválido',
-    telefono:
-      !telefono
-        ? 'El teléfono es requerido'
-        : phoneRegex && !phoneRegex.test(telefonoNormalized)
-          ? 'Formato de teléfono inválido'
-          : '',
-  }
-}
-
-function isContactoValid(c: ContactoForm, phoneRegex?: RegExp | null, phonePrefix?: string): boolean {
-  return Object.values(getContactoErrors(c, phoneRegex, phonePrefix)).every((v) => !v)
 }
 
 function extractPaises(payload: unknown): Pais[] {
@@ -139,6 +120,7 @@ function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): stri
 export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSuccess }: RegistroEmpresaFormProps) {
   const router = useRouter()
   const { login } = useClienteAuth()
+  const t = useTranslations('auth')
 
   // — RUC —
   const [ruc, setRuc] = useState('')
@@ -200,10 +182,34 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
       selectedPais.codigo === 'PE' ||
       selectedPais.iso_code_2 === 'PE' ||
       selectedPais.nombre.toLowerCase().includes('peru'))
-  const docEmpresaLabel = selectedPais?.nombre_doc_empresa?.trim() || (isPeruSelected ? 'RUC' : 'Documento fiscal / tributario')
+  const docEmpresaLabel = selectedPais?.nombre_doc_empresa?.trim() || (isPeruSelected ? 'RUC' : t('empresa.docFiscalFallback'))
   const docEmpresaRegex = toRegex(selectedPais?.patron_doc_empresa)
   const phonePrefix = selectedPais?.prefijo_telefonico?.trim() || ''
   const phoneRegex = toRegex(selectedPais?.patron_telefono)
+
+  const getContactoErrors = useCallback(
+    (c: ContactoForm): Record<string, string> => {
+      const tel = c.telefono.trim()
+      const telefonoNormalized = normalizePhoneForSubmit(tel, phonePrefix)
+      return {
+        nombres: c.nombres.trim() ? '' : t('empresa.errors.nombresRequired'),
+        apellidos: c.apellidos.trim() ? '' : t('empresa.errors.apellidosRequired'),
+        correo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.correo) ? '' : t('empresa.errors.correoInvalid'),
+        telefono:
+          !tel
+            ? t('empresa.errors.telefonoRequired')
+            : phoneRegex && !phoneRegex.test(telefonoNormalized)
+              ? t('empresa.errors.telefonoInvalid')
+              : '',
+      }
+    },
+    [t, phoneRegex, phonePrefix],
+  )
+
+  const isContactoValid = useCallback(
+    (c: ContactoForm) => Object.values(getContactoErrors(c)).every((v) => !v),
+    [getContactoErrors],
+  )
 
   // — Password —
   const [password, setPassword] = useState('')
@@ -249,19 +255,19 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
           setRucStatus('valid')
         } else {
           setRucStatus('invalid')
-          setRucError('RUC no encontrado en SUNAT')
+          setRucError(t('empresa.rucNotFound'))
         }
       })
       .catch((e) => {
         if (latestRucRef.current !== queried) return
         setRucStatus('invalid')
-        setRucError(e instanceof ApiError ? e.message : 'RUC inválido o no encontrado en SUNAT')
+        setRucError(e instanceof ApiError ? e.message : t('empresa.rucInvalid'))
       })
-  }, [ruc, isPeruSelected])
+  }, [ruc, isPeruSelected, t])
 
   // — Password errors —
-  const pwError  = pwTouched && password.length > 0 && password.length < 8 ? 'Mínimo 8 caracteres' : ''
-  const cpError  = cpTouched && confirmPw !== password ? 'Las contraseñas no coinciden' : ''
+  const pwError  = pwTouched && password.length > 0 && password.length < 8 ? t('empresa.pwMin') : ''
+  const cpError  = cpTouched && confirmPw !== password ? t('empresa.pwMismatch') : ''
 
   // — Contacts helpers —
   const updateContacto = useCallback(
@@ -287,7 +293,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     idRubro !== '' &&
     password.length >= 8 &&
     password === confirmPw &&
-    contactos.every((c) => isContactoValid(c, phoneRegex, phonePrefix)) &&
+    contactos.every((c) => isContactoValid(c)) &&
     aceptaTerminos
 
   const buildNombreCompleto = (c: ContactoForm) => `${c.nombres.trim()} ${c.apellidos.trim()}`.trim()
@@ -347,7 +353,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
           router.push(redirectTo ?? '/')
         }
       } else {
-        setSubmitError(res.message || 'Error al registrar la empresa')
+        setSubmitError(res.message || t('empresa.errorRegister'))
       }
     } catch (e) {
       if (e instanceof ApiError) {
@@ -355,7 +361,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         const msg = typeof detail === 'string' ? detail : detail?.message ?? e.message
         setSubmitError(msg)
       } else {
-        setSubmitError(e instanceof Error ? e.message : 'Error al registrar la empresa')
+        setSubmitError(e instanceof Error ? e.message : t('empresa.errorRegister'))
       }
       setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
     } finally {
@@ -370,18 +376,16 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         <div className="flex justify-center">
           <CheckCircle2 className="h-16 w-16 text-green-500" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">¡Registro exitoso!</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('empresa.successTitle')}</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-          Empresa{' '}
-          <strong className="text-gray-800 dark:text-gray-200">{successRazonSocial}</strong>{' '}
-          registrada exitosamente. Ya puede iniciar sesión con su RUC y contraseña.
+          {t('empresa.successMessage', { name: successRazonSocial })}
         </p>
         {!onSuccess && (
           <Button
             onClick={() => router.push(`/${locale}/login?redirect=${encodeURIComponent(redirectParam ?? '/')}`)}
             className="w-full"
           >
-            Ir a iniciar sesión
+            {t('empresa.goLogin')}
           </Button>
         )}
       </div>
@@ -393,11 +397,11 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* ══ Sección 1: Datos de la empresa ══════════════════════════════════ */}
       <div className="space-y-4">
-        <SectionHeader icon={<Building2 className="h-4 w-4" />} title="Datos de la empresa" />
+        <SectionHeader icon={<Building2 className="h-4 w-4" />} title={t('empresa.sectionCompany')} />
 
         {/* País */}
         <div className="space-y-1.5">
-          <Label htmlFor="pais-empresa">País</Label>
+          <Label htmlFor="pais-empresa">{t('empresa.country')}</Label>
           <Select
             value={idPais === '' ? '' : String(idPais)}
             onValueChange={(v) => {
@@ -412,7 +416,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
             }}
           >
             <SelectTrigger id="pais-empresa">
-              <SelectValue placeholder="Seleccione el país" />
+              <SelectValue placeholder={t('empresa.countryPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {paises.map((p) => (
@@ -441,7 +445,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                     rucStatus === 'valid'   && 'border-green-500 focus-visible:ring-green-500',
                     rucStatus === 'invalid' && 'border-red-500   focus-visible:ring-red-500',
                   )}
-                  placeholder="11 dígitos"
+                  placeholder={t('empresa.digits11')}
                   maxLength={11}
                   inputMode="numeric"
                 />
@@ -460,28 +464,28 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                   value={documentoEmpresa}
                   onChange={(e) => setDocumentoEmpresa(e.target.value)}
                   className="pl-10"
-                  placeholder={`Ingrese ${docEmpresaLabel}`}
+                  placeholder={t('natural.enterDoc', { label: docEmpresaLabel })}
                 />
               </>
             )}
           </div>
           {isPeruSelected && rucStatus === 'consulting' && (
-            <p className="text-xs text-blue-600 dark:text-blue-400">Consultando en SUNAT…</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400">{t('empresa.consultingSunat')}</p>
           )}
           {isPeruSelected && rucError && <p className="text-xs text-red-600 dark:text-red-400">{rucError}</p>}
           {!isPeruSelected && documentoEmpresa.trim().length > 0 && docEmpresaRegex && !docEmpresaRegex.test(documentoEmpresa.trim()) && (
-            <p className="text-xs text-red-600 dark:text-red-400">Formato de {docEmpresaLabel} inválido</p>
+            <p className="text-xs text-red-600 dark:text-red-400">{t('natural.invalidDoc', { label: docEmpresaLabel })}</p>
           )}
         </div>
 
         {/* Razón Social — en Perú se auto-rellena por SUNAT, fuera de Perú es manual */}
         <div className="space-y-1.5">
-          <Label htmlFor="razon-social">Razón Social</Label>
+          <Label htmlFor="razon-social">{t('empresa.razonSocial')}</Label>
           <Input
             id="razon-social"
             value={razonSocial}
             onChange={(e) => setRazonSocial(e.target.value)}
-            placeholder="Nombre o razón social de la empresa"
+            placeholder={t('empresa.razonSocialPlaceholder')}
             className={cn(
               rucStatus === 'valid' && razonSocial &&
                 'border-green-300 dark:border-green-700',
@@ -491,13 +495,13 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
 
         {/* Rubro */}
         <div className="space-y-1.5">
-          <Label htmlFor="rubro-empresa">Rubro</Label>
+          <Label htmlFor="rubro-empresa">{t('empresa.rubro')}</Label>
           <Select
             value={idRubro === '' ? '' : String(idRubro)}
             onValueChange={(v) => setIdRubro(Number(v))}
           >
             <SelectTrigger id="rubro-empresa">
-              <SelectValue placeholder="Seleccione el rubro de la empresa" />
+              <SelectValue placeholder={t('empresa.rubroPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {rubros.map((r) => (
@@ -511,7 +515,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="pw-empresa">Contraseña</Label>
+            <Label htmlFor="pw-empresa">{t('empresa.password')}</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -521,14 +525,14 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setPwTouched(true)}
                 className={cn('pl-10', pwError && 'border-red-500 focus-visible:ring-red-500')}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('empresa.passwordPlaceholder')}
               />
             </div>
             {pwError && <p className="text-xs text-red-600 dark:text-red-400">{pwError}</p>}
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cpw-empresa">Confirmar contraseña</Label>
+            <Label htmlFor="cpw-empresa">{t('empresa.confirmPassword')}</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -547,11 +551,11 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
 
       {/* ══ Sección 2: Contacto ═════════════════════════════════════════════ */}
       <div className="space-y-4">
-        <SectionHeader icon={<User className="h-4 w-4" />} title="Contacto" />
+        <SectionHeader icon={<User className="h-4 w-4" />} title={t('empresa.sectionContact')} />
 
         {contactos.map((contacto) => {
-          const errs = getContactoErrors(contacto, phoneRegex, phonePrefix)
-          const t = contacto.touched
+          const errs = getContactoErrors(contacto)
+          const touched = contacto.touched
 
           return (
             <div
@@ -563,8 +567,8 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FieldWrapper
                     id={`nombres-${contacto.uid}`}
-                    label="Nombres"
-                    error={t.nombres ? errs.nombres : ''}
+                    label={t('empresa.nombres')}
+                    error={touched.nombres ? errs.nombres : ''}
                   >
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
@@ -575,16 +579,16 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                         onBlur={() => touchContactoField(contacto.uid, 'nombres')}
                         className={cn(
                           'pl-9 h-9 text-sm',
-                          t.nombres && errs.nombres && 'border-red-500 focus-visible:ring-red-500',
+                          touched.nombres && errs.nombres && 'border-red-500 focus-visible:ring-red-500',
                         )}
-                        placeholder="Nombres"
+                        placeholder={t('empresa.nombres')}
                       />
                     </div>
                   </FieldWrapper>
                   <FieldWrapper
                     id={`apellidos-${contacto.uid}`}
-                    label="Apellidos"
-                    error={t.apellidos ? errs.apellidos : ''}
+                    label={t('empresa.apellidos')}
+                    error={touched.apellidos ? errs.apellidos : ''}
                   >
                     <Input
                       id={`apellidos-${contacto.uid}`}
@@ -593,9 +597,9 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                       onBlur={() => touchContactoField(contacto.uid, 'apellidos')}
                       className={cn(
                         'h-9 text-sm',
-                        t.apellidos && errs.apellidos && 'border-red-500 focus-visible:ring-red-500',
+                        touched.apellidos && errs.apellidos && 'border-red-500 focus-visible:ring-red-500',
                       )}
-                      placeholder="Apellidos"
+                      placeholder={t('empresa.apellidos')}
                     />
                   </FieldWrapper>
                 </div>
@@ -603,8 +607,8 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                 {/* Correo */}
                 <FieldWrapper
                   id={`correo-${contacto.uid}`}
-                  label="Correo electrónico"
-                  error={t.correo ? errs.correo : ''}
+                  label={t('empresa.correo')}
+                  error={touched.correo ? errs.correo : ''}
                 >
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
@@ -616,7 +620,7 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                       onBlur={() => touchContactoField(contacto.uid, 'correo')}
                       className={cn(
                         'pl-9 h-9 text-sm',
-                        t.correo && errs.correo && 'border-red-500 focus-visible:ring-red-500',
+                        touched.correo && errs.correo && 'border-red-500 focus-visible:ring-red-500',
                       )}
                     />
                   </div>
@@ -625,8 +629,8 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                 {/* Teléfono */}
                 <FieldWrapper
                   id={`telefono-${contacto.uid}`}
-                  label="Teléfono"
-                  error={t.telefono ? errs.telefono : ''}
+                  label={t('empresa.telefono')}
+                  error={touched.telefono ? errs.telefono : ''}
                 >
                   <div className="flex">
                     {phonePrefix && (
@@ -646,9 +650,9 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
                         onBlur={() => touchContactoField(contacto.uid, 'telefono')}
                         className={cn(
                           `${phonePrefix ? 'rounded-l-none pl-3' : 'pl-9'} h-9 text-sm`,
-                          t.telefono && errs.telefono && 'border-red-500 focus-visible:ring-red-500',
+                          touched.telefono && errs.telefono && 'border-red-500 focus-visible:ring-red-500',
                         )}
-                        placeholder={phonePrefix ? 'Número' : undefined}
+                        placeholder={phonePrefix ? t('natural.phoneNumber') : undefined}
                       />
                     </div>
                   </div>
@@ -671,36 +675,34 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-blue-600"
           />
           <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
-            Acepto los{' '}
+            {t('legal.termsLead')}{' '}
             <Link
               href={`/${locale}/terminos`}
               target="_blank"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
-              términos y condiciones
+              {t('legal.termsLink')}
             </Link>
-            {' '}y la{' '}
+            {' '}{t('legal.andThe')}{' '}
             <Link
               href={`/${locale}/privacidad`}
               target="_blank"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
-              política de privacidad
+              {t('legal.privacyLink')}
             </Link>
           </span>
         </label>
         <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-7">
-          Conforme a la Ley N.° 29733, autorizas a INXORA al tratamiento de tus datos personales
-          para fines comerciales, envío de cotizaciones y seguimiento de tus solicitudes.
-          Puedes revisar nuestra{' '}
+          {t('legal.paragraph')}{' '}
           <Link
             href="https://tienda.inxora.com/privacidad"
             target="_blank"
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
-            política de privacidad
+            {t('legal.privacyLink')}
           </Link>
-          {' '}en tienda.inxora.com.
+          {' '}{t('legal.privacySuffix')}
         </p>
       </div>
 
@@ -719,21 +721,21 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         {submitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Registrando empresa…
+            {t('empresa.submitting')}
           </>
         ) : (
-          'Registrar empresa'
+          t('empresa.submit')
         )}
       </Button>
 
       {!onSuccess && (
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          ¿Ya tiene cuenta?{' '}
+          {t('empresa.hasAccount')}{' '}
           <Link
             href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam ?? '/')}`}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
-            Iniciar sesión
+            {t('empresa.loginLink')}
           </Link>
         </p>
       )}

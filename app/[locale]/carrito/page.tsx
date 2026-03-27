@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 // Nota: metadata no funciona en Client Components, pero esta página no necesita SEO (noindex)
 import { ProductImage } from '@/components/ui/product-image'
@@ -12,6 +13,7 @@ import { formatPrice } from '@/lib/utils'
 import { Product } from '@/lib/supabase'
 
 export default function CartPage({ params }: { params: { locale: string } }) {
+  const t = useTranslations('cart')
   const { items, updateQuantity, removeItem, getTotalPrice, getItemsCount, updateTrigger } = useCart()
   
   // Forzar re-render cuando cambie el carrito
@@ -35,12 +37,12 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                 className="inline-flex items-center px-4 py-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Continuar Comprando
+                {t('page.continueBrowsing')}
               </Link>
               
               <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
                 <Package className="h-5 w-5" />
-                <span className="text-sm font-medium">{itemCount} {itemCount === 1 ? 'producto' : 'productos'}</span>
+                <span className="text-sm font-medium">{t('itemCount', { count: itemCount })}</span>
               </div>
             </div>
             
@@ -50,10 +52,10 @@ export default function CartPage({ params }: { params: { locale: string } }) {
               </div>
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  Carrito de Compras
+                  {t('title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  Revisa tus productos antes de continuar
+                  {t('page.subtitle')}
                 </p>
               </div>
             </div>
@@ -65,7 +67,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
               <div className="flex items-center space-x-3">
                 <ShoppingCart className="h-8 w-8 text-white" />
-                <h3 className="text-2xl font-bold text-white">Carrito vacío</h3>
+                <h3 className="text-2xl font-bold text-white">{t('page.emptyBanner')}</h3>
               </div>
             </div>
             <div className="p-12">
@@ -74,17 +76,17 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                   <ShoppingCart className="h-12 w-12 text-gray-500 dark:text-gray-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Tu carrito está vacío
+                  {t('empty.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg leading-relaxed max-w-md mx-auto">
-                  Agrega algunos productos increíbles para comenzar tu compra.
+                  {t('page.emptyPitch')}
                 </p>
                 <Link
                   href={`/${params.locale}/catalogo`}
                   className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                 >
                   <Package className="h-5 w-5 mr-2" />
-                  Explorar Productos
+                  {t('page.exploreProducts')}
                 </Link>
               </div>
             </div>
@@ -98,6 +100,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                 const conditionText = getCondicionPrecioVenta(item.product as Product)
                 const issues = validateCartItem(item.product as Product, item.quantity)
                 const hasIssues = issues.length > 0
+                const displayName = item.product.nombre || t('page.unnamedProduct')
                 return (
                 <div key={item.product.sku} className={`bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${hasIssues ? 'border border-red-200 dark:border-red-900/50' : ''}`}>
                   <div className="p-6">
@@ -107,15 +110,15 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                         {item.product.imagen_principal_url && item.product.imagen_principal_url.trim() !== '' ? (
                           <ProductImage
                             src={item.product.imagen_principal_url}
-                            alt={item.product.nombre || 'Producto sin nombre'}
-                            title={item.product.nombre || 'Producto sin nombre'}
+                            alt={displayName}
+                            title={displayName}
                             fill
                             className="object-cover"
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center p-2">
-                            <p className="text-gray-600 dark:text-gray-300 text-xs text-center line-clamp-3 font-medium" aria-label={item.product.nombre || 'Producto sin imagen'}>
-                              {item.product.nombre || 'Sin imagen'}
+                            <p className="text-gray-600 dark:text-gray-300 text-xs text-center line-clamp-3 font-medium" aria-label={displayName}>
+                              {item.product.nombre || t('page.noImage')}
                             </p>
                           </div>
                         )}
@@ -124,10 +127,10 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                          {item.product.nombre}
+                          {item.product.nombre || t('page.unnamedProduct')}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                          SKU: {item.product.sku_producto || item.product.sku}
+                          {t('skuLabel')}: {item.product.sku_producto || item.product.sku}
                         </p>
                         {conditionText && (
                           <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
@@ -149,7 +152,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                             <span className="text-xl font-bold">
                               {item.product.precio_venta 
                                 ? formatPrice(item.product.precio_venta)
-                                : 'Consultar precio'
+                                : t('page.consultPrice')
                               }
                             </span>
                           </div>
@@ -157,6 +160,8 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                           {/* Quantity Controls */}
                           <div className="flex items-center space-x-3">
                             <button
+                              type="button"
+                              aria-label={t('item.decrease')}
                               onClick={() => updateQuantity(item.product.sku, item.quantity - 1)}
                               disabled={item.quantity <= minimoPedido}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
@@ -167,6 +172,8 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                               {item.quantity}
                             </span>
                             <button
+                              type="button"
+                              aria-label={t('item.increase')}
                               onClick={() => updateQuantity(item.product.sku, item.quantity + 1)}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors duration-200"
                             >
@@ -182,6 +189,8 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                           <Heart className="w-5 h-5" />
                         </button>
                         <button
+                          type="button"
+                          aria-label={t('item.remove')}
                           onClick={() => removeItem(item.product.sku)}
                           className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
@@ -193,11 +202,11 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                     {/* Item Total */}
                     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Total del producto:</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{t('page.lineTotal')}</span>
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
                           {item.product.precio_venta 
                             ? formatPrice(item.product.precio_venta * item.quantity)
-                            : 'Consultar precio'
+                            : t('page.consultPrice')
                           }
                         </span>
                       </div>
@@ -211,27 +220,27 @@ export default function CartPage({ params }: { params: { locale: string } }) {
             <div className="lg:col-span-1">
               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl sticky top-8">
                 <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-t-2xl">
-                  <h3 className="text-xl font-bold text-white">Resumen del Pedido</h3>
+                  <h3 className="text-xl font-bold text-white">{t('summary.title')}</h3>
                 </div>
                 
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('summary.subtotal')}:</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {formatPrice(subtotal)}
                     </span>
                   </div>
                   
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-600 dark:text-gray-400">Envío:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('summary.shipping')}:</span>
                     <span className="font-semibold text-green-600 dark:text-green-400">
-                      Gratis
+                      {t('page.shippingFree')}
                     </span>
                   </div>
                   
                   <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">{t('totalLabel')}</span>
                       <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                         {formatPrice(subtotal)}
                       </span>
@@ -244,11 +253,11 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                       aria-disabled={hasBlockingIssues}
                       className={`w-full inline-flex items-center justify-center px-6 py-4 text-white font-bold rounded-xl shadow-lg transition-all duration-200 ${hasBlockingIssues ? 'pointer-events-none cursor-not-allowed bg-gray-400 shadow-none' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl transform hover:scale-105'}`}
                     >
-                      Proceder al Checkout
+                      {t('page.proceedCheckout')}
                     </Link>
                     {hasBlockingIssues && (
                       <p className="text-sm text-red-700 dark:text-red-300">
-                        Corrige los productos con pedido mínimo o compra mínima antes de continuar.
+                        {t('blockingCheckoutPage')}
                       </p>
                     )}
                     
@@ -256,7 +265,7 @@ export default function CartPage({ params }: { params: { locale: string } }) {
                       href={`/${params.locale}/catalogo`}
                       className="w-full inline-flex items-center justify-center px-6 py-3 border-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold rounded-xl transition-all duration-200"
                     >
-                      Seguir Comprando
+                      {t('actions.continueShopping')}
                     </Link>
                   </div>
                 </div>

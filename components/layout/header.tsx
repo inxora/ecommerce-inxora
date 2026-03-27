@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, ShoppingCart, Menu, Heart, User, MessageCircle, LogOut, ChevronDown, Settings, Package, Check } from 'lucide-react'
+import { Search, ShoppingCart, Menu, Heart, User, MessageCircle, LogOut, ChevronDown, Settings, Package, Check, Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -21,6 +21,7 @@ import { getCountryCode } from '@/lib/constants/currencies'
 import { CurrencyFlag } from '@/components/ui/currency-flag'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CategoriesSidebar } from '@/components/layout/categories-sidebar'
@@ -37,6 +38,22 @@ interface HeaderProps {
   locale?: string
 }
 
+const LOCALE_OPTIONS = [
+  { code: 'es', label: 'Español' },
+  { code: 'pt', label: 'Português' },
+  { code: 'en', label: 'English' },
+] as const
+
+function buildPathForLocale(pathname: string, targetLocale: string): string {
+  const parts = pathname.split('/').filter(Boolean)
+  if (parts.length === 0) return `/${targetLocale}`
+  if (['es', 'en', 'pt'].includes(parts[0]!)) {
+    parts[0] = targetLocale
+    return `/${parts.join('/')}`
+  }
+  return `/${targetLocale}/${parts.join('/')}`
+}
+
 export function Header({ categories = [], bannersHeaderStrip = [], locale: localeProp }: HeaderProps) {
   const { isLoggedIn, cliente, logout } = useClienteAuth()
   const { openAuthModal } = useAuthModal()
@@ -50,6 +67,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname() || '/es'
   const locale = localeProp ?? (pathname.split('/')[1] || 'es') ?? 'es'
+  const t = useTranslations('header')
 
   const itemsCount = getItemsCount()
   const favoritesCount = getFavoritesCount()
@@ -66,6 +84,13 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
       setMobileSearchOpen(false)
       window.location.href = `/${locale}/buscar?q=${encodeURIComponent(searchQuery.trim())}`
     }
+  }
+
+  const handleLocaleChange = (nextLocale: string) => {
+    if (!nextLocale || nextLocale === locale) return
+    const nextPath = buildPathForLocale(pathname, nextLocale)
+    document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=31536000; samesite=lax`
+    router.push(nextPath)
   }
 
   const cleanName = (value?: string | null): string =>
@@ -117,7 +142,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
             >
               <Settings className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              Cuenta
+              {t('profile.account')}
             </Link>
           </DropdownMenuItem>
 
@@ -127,7 +152,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
             >
               <Heart className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              Favoritos
+              {t('profile.favorites')}
               {favoritesCount > 0 && (
                 <span className="ml-auto min-w-[20px] h-5 px-1 rounded-full bg-amber-400 text-[#171D4C] text-[10px] font-bold flex items-center justify-center">
                   {favoritesCount}
@@ -142,7 +167,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
             >
               <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              Mis pedidos
+              {t('profile.myOrders')}
             </Link>
           </DropdownMenuItem>
 
@@ -153,7 +178,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 cursor-pointer focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
-            Cerrar sesión
+            {t('profile.logout')}
           </DropdownMenuItem>
         </>
       ) : (
@@ -163,14 +188,14 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
           >
             <User className="h-4 w-4 text-slate-400 flex-shrink-0" />
-            Iniciar sesión
+            {t('profile.login')}
           </DropdownMenuItem>
 
           <DropdownMenuItem
             onSelect={() => openAuthModal({ initialMode: 'register' })}
             className="flex items-center gap-2.5 px-3 py-2 text-sm font-semibold cursor-pointer text-[#171D4C] dark:text-amber-300 focus:bg-amber-50 dark:focus:bg-amber-950/20"
           >
-            Crear cuenta
+            {t('profile.createAccount')}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -181,7 +206,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
             >
               <Heart className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              Favoritos
+              {t('profile.favorites')}
             </Link>
           </DropdownMenuItem>
         </>
@@ -221,13 +246,13 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             {/* Sheet content del menú hamburguesa */}
             <SheetContent side="left" className="w-full sm:max-w-sm bg-white dark:bg-slate-900 text-foreground p-0 flex flex-col min-h-0 h-full">
               <SheetHeader className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
-                <SheetTitle className="text-left text-base font-semibold">Menú</SheetTitle>
+                <SheetTitle className="text-left text-base font-semibold">{t('mobile.menu')}</SheetTitle>
               </SheetHeader>
               <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
 
                 {/* Moneda */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Moneda</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t('mobile.currency')}</p>
                   <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
                     <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
                       <SelectValue>
@@ -252,27 +277,43 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t('mobile.language')}</p>
+                  <Select value={locale} onValueChange={handleLocaleChange}>
+                    <SelectTrigger className="w-full h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="p-1.5">
+                      {LOCALE_OPTIONS.map((option) => (
+                        <SelectItemIndicatorRight key={option.code} value={option.code} className="py-2.5 rounded-md text-sm">
+                          {option.label}
+                        </SelectItemIndicatorRight>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Navegación */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Navegación</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t('mobile.navigation')}</p>
                   <nav className="flex flex-col gap-0.5">
                     <Link href={`/${locale}`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                      Inicio
+                      {t('nav.home')}
                     </Link>
                     <CategoriesSidebar
                       locale={locale}
                       categories={categories}
                       trigger={
                         <button type="button" className="flex items-center w-full text-left py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                          Categorías
+                          {t('nav.categories')}
                         </button>
                       }
                     />
                     <Link href={`/${locale}/nosotros`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                      Nosotros
+                      {t('nav.about')}
                     </Link>
                     <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
-                      Contacto
+                      {t('nav.contact')}
                     </Link>
                   </nav>
                 </div>
@@ -285,7 +326,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                         <User className="w-4 h-4 text-white" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs text-slate-400">Bienvenido</p>
+                        <p className="text-xs text-slate-400">{t('profile.welcome')}</p>
                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                           {nombreMenu}
                         </p>
@@ -297,7 +338,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                       className="flex items-center gap-2.5 w-full text-left py-2.5 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-medium text-red-600 dark:text-red-400 transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
-                      Cerrar sesión
+                      {t('profile.logout')}
                     </button>
                   </div>
                 )}
@@ -331,7 +372,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                     aria-label="Ver categorías"
                   >
                     <Menu className="h-4 w-4 flex-shrink-0" />
-                    <span>Categorías</span>
+                    <span>{t('nav.categories')}</span>
                     <ChevronDown className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />
                   </button>
                 }
@@ -349,7 +390,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                 <Input
                   type="search"
                   name="q"
-                  placeholder="¿Qué estás buscando?"
+                  placeholder={t('search.placeholder')}
                   className={cn(
                     'flex-1 min-w-0 h-10 pl-4 pr-3 rounded-l-lg rounded-r-none border-0',
                     'bg-white/10 text-white placeholder:text-white/50 text-sm',
@@ -424,6 +465,35 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                         {m.simbolo} <span className="text-muted-foreground text-xs ml-1">{m.codigo}</span>
                       </span>
                       {m.codigo === currency && <Check className="h-3.5 w-3.5 ml-auto shrink-0 text-[#171D4C]" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'hidden sm:flex items-center gap-1.5 h-9 px-2.5 w-auto rounded-lg outline-none',
+                      'bg-white/10 hover:bg-white/20 border-0',
+                      'text-white transition-colors'
+                    )}
+                    aria-label={t('language.select')}
+                  >
+                    <Languages className="h-4 w-4 shrink-0" />
+                    <span className="text-xs font-medium uppercase">{locale}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={8} className="min-w-[170px] p-1.5">
+                  {LOCALE_OPTIONS.map((option) => (
+                    <DropdownMenuItem
+                      key={option.code}
+                      onSelect={() => handleLocaleChange(option.code)}
+                      className="flex items-center gap-3 py-2 px-2.5 cursor-pointer rounded-md text-sm"
+                    >
+                      <span className="flex-1 text-left">{option.label}</span>
+                      {option.code === locale && <Check className="h-3.5 w-3.5 ml-auto shrink-0 text-[#171D4C]" />}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -511,7 +581,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
             <Input
               type="search"
               name="q"
-              placeholder="¿Qué estás buscando?"
+              placeholder={t('search.placeholder')}
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

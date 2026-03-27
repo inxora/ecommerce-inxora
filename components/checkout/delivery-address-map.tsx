@@ -17,6 +17,10 @@ export interface DeliveryAddressMapProps {
   error?: string | null
   errorHint?: string
   onErrorRetry?: () => void
+  /** Texto mostrado mientras carga el mapa (i18n desde el padre) */
+  loadingText?: string
+  ariaLabelLoading?: string
+  retryLabel?: string
   height?: number
   className?: string
 }
@@ -50,6 +54,9 @@ export function DeliveryAddressMap(props: DeliveryAddressMapProps) {
     loading = false,
     error = null,
     errorHint,
+    loadingText = 'Cargando mapa...',
+    ariaLabelLoading = 'Cargando mapa',
+    retryLabel = 'Reintentar',
     height = MIN_HEIGHT,
     className = '',
   } = props
@@ -60,10 +67,10 @@ export function DeliveryAddressMap(props: DeliveryAddressMapProps) {
         className={`rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-700 animate-pulse ${className}`}
         style={{ minHeight: height }}
         aria-busy="true"
-        aria-label="Cargando mapa"
+        aria-label={ariaLabelLoading}
       >
         <div className="w-full flex items-center justify-center" style={{ minHeight: height }}>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">Cargando mapa...</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">{loadingText}</span>
         </div>
       </div>
     )
@@ -78,14 +85,14 @@ export function DeliveryAddressMap(props: DeliveryAddressMapProps) {
       >
         <p className="text-amber-800 dark:text-amber-200 text-sm">{error}</p>
         <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
-          {errorHint ?? 'Puedes continuar indicando la dirección manualmente arriba.'}
+          {errorHint}
           {props.onErrorRetry && (
             <button
               type="button"
               onClick={props.onErrorRetry}
               className="ml-1 underline font-medium hover:no-underline focus:outline-none focus:ring-2 focus:ring-amber-500 rounded"
             >
-              Reintentar
+              {retryLabel}
             </button>
           )}
         </p>

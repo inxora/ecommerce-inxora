@@ -1,16 +1,29 @@
 import { Suspense } from 'react'
+import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { CheckoutForm } from '@/components/checkout/checkout-form'
 import { OrderSummary } from '@/components/checkout/order-summary'
 import { CheckoutShippingProvider } from '@/lib/contexts/checkout-shipping-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Shield, Lock, BadgeCheck, Zap } from 'lucide-react'
 
-export const metadata = {
-  title: 'Checkout | Finalizar compra',
-  description: 'Completa tu información para finalizar la compra de forma segura.',
+interface CheckoutPageProps {
+  params: { locale: string }
 }
 
-export default async function CheckoutPage() {
+export async function generateMetadata({ params }: CheckoutPageProps): Promise<Metadata> {
+  const { locale } = params
+  const t = await getTranslations({ locale, namespace: 'checkout' })
+  return {
+    title: t('meta.title'),
+    description: t('meta.description'),
+  }
+}
+
+export default async function CheckoutPage({ params }: CheckoutPageProps) {
+  const { locale } = params
+  const t = await getTranslations({ locale, namespace: 'checkout' })
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
 
@@ -18,10 +31,10 @@ export default async function CheckoutPage() {
       <div className="w-full bg-slate-900 dark:bg-black border-b border-slate-800">
         <div className="w-full px-4 h-9 flex items-center justify-center gap-6">
           {[
-            { icon: Lock,       label: 'Pago seguro SSL' },
-            { icon: Shield,     label: 'Compra protegida' },
-            { icon: BadgeCheck, label: 'Datos encriptados' },
-            { icon: Zap,        label: 'Confirmación inmediata' },
+            { icon: Lock,       label: t('trustBar.ssl') },
+            { icon: Shield,     label: t('trustBar.protected') },
+            { icon: BadgeCheck, label: t('trustBar.encrypted') },
+            { icon: Zap,        label: t('trustBar.instant') },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-1.5 text-slate-400">
               <Icon className="w-3 h-3 text-orange-400" />
@@ -37,10 +50,10 @@ export default async function CheckoutPage() {
         {/* ── Page header ──────────────────────────────────────────────────── */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Finalizar compra
+            {t('title')}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Revisa tu pedido y completa los datos para confirmar
+            {t('pageSubtitle')}
           </p>
         </div>
 

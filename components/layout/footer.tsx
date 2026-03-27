@@ -20,10 +20,10 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
 
   const footerLinks = {
     company: [
-      { name: 'Nosotros', href: `/${locale}/nosotros` },
-      { name: 'Contacto', href: `/${locale}/contacto` },
-      { name: 'FAQ', href: `/${locale}/faq` },
-      { name: 'Cotizaciones', href: `/${locale}/cotizaciones` },
+      { name: t('links.about'), href: `/${locale}/nosotros` },
+      { name: t('links.contact'), href: `/${locale}/contacto` },
+      { name: t('links.faq'), href: `/${locale}/faq` },
+      { name: t('links.quotes'), href: `/${locale}/cotizaciones` },
     ],
     enlacesUtiles: [
       { name: t('avisoLegal'), href: `/${locale}/terminos` },
@@ -34,10 +34,10 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
       { name: t('legal.returns'), href: `/${locale}/devoluciones` },
     ],
     categories: [
-      { name: 'Catálogo', href: `/${locale}/catalogo` },
-      { name: 'Suministros', href: `/${locale}/catalogo?categoria=suministros-industriales` },
-      { name: 'Seguridad', href: `/${locale}/catalogo?categoria=equipos-seguridad` },
-      { name: 'Herramientas', href: `/${locale}/catalogo?categoria=herramientas` },
+      { name: t('catalogLinks.catalog'), href: `/${locale}/catalogo` },
+      { name: t('catalogLinks.supplies'), href: `/${locale}/catalogo?categoria=suministros-industriales` },
+      { name: t('catalogLinks.safety'), href: `/${locale}/catalogo?categoria=equipos-seguridad` },
+      { name: t('catalogLinks.tools'), href: `/${locale}/catalogo?categoria=herramientas` },
     ]
   }
 
@@ -84,13 +84,13 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
             </div>
             
             <p className="text-sm text-blue-100 leading-relaxed">
-              Tu socio estratégico en suministros industriales y equipos de seguridad.
+              {t('tagline')}
             </p>
             
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <MapPin className="h-3 w-3 text-inxora-cyan" />
-                <span className="text-xs text-blue-100">Av. Óscar R. Benavides 3046, Lima 15081, Perú</span>
+                <span className="text-xs text-blue-100">{t('address')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-3 w-3 text-inxora-cyan" />
@@ -123,7 +123,7 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
           {/* Company Links */}
           <div className="space-y-3">
             <h3 className="font-medium text-white mb-3 relative">
-              Empresa
+              {t('company.title')}
               <div className="absolute -bottom-1 left-0 w-6 h-0.5 bg-gradient-to-r from-inxora-cyan to-inxora-pink rounded-full" />
             </h3>
             <ul className="space-y-2">
@@ -143,7 +143,7 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
           {/* Categories */}
           <div className="space-y-3">
             <h3 className="font-medium text-white mb-3 relative">
-              Categorías
+              {t('categories.title')}
               <div className="absolute -bottom-1 left-0 w-6 h-0.5 bg-gradient-to-r from-inxora-cyan to-inxora-pink rounded-full" />
             </h3>
             <ul className="space-y-2">
@@ -200,10 +200,10 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
         {/* Bottom Bar */}
         <div className="mt-6 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="text-xs text-blue-200 text-center md:text-left">
-            © 2025 INXORA. Todos los derechos reservados.
+            {t('copyright')}
           </p>
           <p className="text-xs text-blue-200/70 text-center md:text-right">
-            Desarrollado por{' '}
+            {t('developedBy')}{' '}
             <a
               href="https://inxora.com"
               target="_blank"

@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select'
 import { Building2, FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-react'
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
+import { useTranslations } from 'next-intl'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
 type Pais = {
@@ -88,6 +89,7 @@ function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): stri
 export function AuthModal() {
   const params = useParams()
   const locale = (params?.locale as string) ?? 'es'
+  const t = useTranslations('auth')
   const { isOpen, options, closeAuthModal } = useAuthModal()
   const { login, register, error, clearError } = useClienteAuth()
 
@@ -175,7 +177,7 @@ export function AuthModal() {
   }, [isOpen, mode])
 
   const selectedPais = id_pais === '' ? null : paises.find((p) => p.id === id_pais) ?? null
-  const docPersonalLabel = selectedPais?.nombre_doc_personal?.trim() || 'DNI / Documento'
+  const docPersonalLabel = selectedPais?.nombre_doc_personal?.trim() || t('natural.docFallback')
   const docPersonalRegex = toRegex(selectedPais?.patron_doc_personal)
   const phonePrefix = selectedPais?.prefijo_telefonico?.trim() || ''
   const phoneRegex = toRegex(selectedPais?.patron_telefono)
@@ -251,10 +253,10 @@ export function AuthModal() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <LogIn className="h-5 w-5" />
-                Iniciar sesión
+                {t('login.title')}
               </DialogTitle>
               <DialogDescription>
-                Ingresa con tu correo para continuar
+                {t('login.description')}
               </DialogDescription>
             </DialogHeader>
 
@@ -266,13 +268,13 @@ export function AuthModal() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="auth-correo">Correo electrónico</Label>
+                <Label htmlFor="auth-correo">{t('login.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="auth-correo"
                     type="email"
-                    placeholder="tu@correo.com"
+                    placeholder={t('login.emailPlaceholder')}
                     value={correo}
                     onChange={(e) => setCorreo(e.target.value)}
                     className="pl-10"
@@ -284,13 +286,13 @@ export function AuthModal() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="auth-password">Contraseña</Label>
+                  <Label htmlFor="auth-password">{t('login.password')}</Label>
                   <Link
                     href={`/${locale}/forgot-password`}
                     onClick={() => closeAuthModal()}
                     className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                   >
-                    ¿Olvidaste tu contraseña?
+                    {t('login.forgotPassword')}
                   </Link>
                 </div>
                 <div className="relative">
@@ -307,17 +309,17 @@ export function AuthModal() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Entrando...' : 'Entrar'}
+                {loading ? t('login.submitting') : t('login.submit')}
               </Button>
 
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-                ¿No tienes cuenta?{' '}
+                {t('login.noAccount')}{' '}
                 <button
                   type="button"
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   onClick={() => switchMode('register')}
                 >
-                  Regístrate
+                  {t('login.registerLink')}
                 </button>
               </p>
             </form>
@@ -327,10 +329,10 @@ export function AuthModal() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
                 {tipoRegistro === 'natural' ? <User className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
-                Crear cuenta
+                {t('register.title')}
               </DialogTitle>
               <DialogDescription>
-                Regístrate para continuar con tu compra
+                {t('register.description')}
               </DialogDescription>
             </DialogHeader>
 
@@ -346,7 +348,7 @@ export function AuthModal() {
                 ].join(' ')}
               >
                 <User className="h-4 w-4 shrink-0" />
-                Persona Natural
+                {t('register.tabNatural')}
               </button>
               <button
                 type="button"
@@ -359,7 +361,7 @@ export function AuthModal() {
                 ].join(' ')}
               >
                 <Building2 className="h-4 w-4 shrink-0" />
-                Empresa
+                {t('register.tabCompany')}
               </button>
             </div>
 
@@ -384,7 +386,7 @@ export function AuthModal() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="auth-nombre">Nombre</Label>
+                  <Label htmlFor="auth-nombre">{t('natural.firstName')}</Label>
                   <Input
                     id="auth-nombre"
                     value={nombre}
@@ -393,7 +395,7 @@ export function AuthModal() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="auth-apellidos">Apellidos</Label>
+                  <Label htmlFor="auth-apellidos">{t('natural.lastName')}</Label>
                   <Input
                     id="auth-apellidos"
                     value={apellidos}
@@ -404,7 +406,7 @@ export function AuthModal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auth-pais">País</Label>
+                <Label htmlFor="auth-pais">{t('natural.country')}</Label>
                 <Select
                   value={id_pais === '' ? undefined : String(id_pais)}
                   onValueChange={(v) => {
@@ -414,7 +416,7 @@ export function AuthModal() {
                   required
                 >
                   <SelectTrigger id="auth-pais" className="w-full">
-                    <SelectValue placeholder="Selecciona tu país" />
+                    <SelectValue placeholder={t('natural.countryPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {paises.map((p) => (
@@ -435,20 +437,20 @@ export function AuthModal() {
                     value={documento_personal}
                     onChange={(e) => setDocumentoPersonal(e.target.value)}
                     className="pl-10"
-                    placeholder={`Ingrese ${docPersonalLabel}`}
+                    placeholder={t('natural.enterDoc', { label: docPersonalLabel })}
                     minLength={selectedPais?.id === 1 ? 8 : undefined}
                     required
                   />
                 </div>
                 {docPersonalRegex && documento_personal.trim() && !docPersonalRegex.test(documento_personal.trim()) && (
                   <p className="text-xs text-red-600 dark:text-red-400">
-                    Formato de {docPersonalLabel} inválido
+                    {t('natural.invalidDoc', { label: docPersonalLabel })}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auth-reg-correo">Correo electrónico</Label>
+                <Label htmlFor="auth-reg-correo">{t('natural.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -463,7 +465,7 @@ export function AuthModal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auth-telefono">Teléfono (opcional)</Label>
+                <Label htmlFor="auth-telefono">{t('natural.phoneOptional')}</Label>
                 <div className="flex">
                   {phonePrefix && (
                     <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-600 dark:border-gray-600 dark:bg-slate-800 dark:text-gray-300">
@@ -478,26 +480,26 @@ export function AuthModal() {
                       value={telefono}
                       onChange={(e) => setTelefono(e.target.value.replace(/[^\d]/g, ''))}
                       className={phonePrefix ? 'rounded-l-none pl-3' : 'pl-10'}
-                      placeholder={phonePrefix ? 'Número' : undefined}
+                      placeholder={phonePrefix ? t('natural.phoneNumber') : undefined}
                     />
                   </div>
                 </div>
                 {phoneRegex && telefono.trim() && !phoneRegex.test(normalizePhoneForSubmit(telefono, phonePrefix)) && (
                   <p className="text-xs text-red-600 dark:text-red-400">
-                    Formato de teléfono inválido para {selectedPais?.nombre ?? 'el país seleccionado'}
+                    {t('natural.phoneInvalid', { country: selectedPais?.nombre ?? t('natural.countryFallback') })}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auth-rubro">Rubro / Sector</Label>
+                <Label htmlFor="auth-rubro">{t('natural.sector')}</Label>
                 <Select
                   value={id_rubro === '' ? undefined : String(id_rubro)}
                   onValueChange={(v) => setIdRubro(v === '' ? '' : Number(v))}
                   required
                 >
                   <SelectTrigger id="auth-rubro" className="w-full">
-                    <SelectValue placeholder="Selecciona tu rubro" />
+                    <SelectValue placeholder={t('natural.sectorPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {rubros.map((r) => (
@@ -510,7 +512,7 @@ export function AuthModal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auth-reg-password">Contraseña</Label>
+                <Label htmlFor="auth-reg-password">{t('natural.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -536,54 +538,52 @@ export function AuthModal() {
                     required
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
-                    Acepto los{' '}
+                    {t('legal.termsLead')}{' '}
                     <Link
                       href={`/${locale}/terminos`}
                       target="_blank"
                       className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      términos y condiciones
+                      {t('legal.termsLink')}
                     </Link>
-                    {' '}y la{' '}
+                    {' '}{t('legal.andThe')}{' '}
                     <Link
                       href={`/${locale}/privacidad`}
                       target="_blank"
                       className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      política de privacidad
+                      {t('legal.privacyLink')}
                     </Link>
                   </span>
                 </label>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed pl-7">
-                  Conforme a la Ley N.° 29733, autorizas a INXORA al tratamiento de tus datos personales
-                  para fines comerciales, envío de cotizaciones y seguimiento de tus solicitudes.
-                  Puedes revisar nuestra{' '}
+                  {t('legal.paragraph')}{' '}
                   <Link
                     href="https://tienda.inxora.com/privacidad"
                     target="_blank"
                     className="text-blue-600 dark:text-blue-400 hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    política de privacidad
+                    {t('legal.privacyLink')}
                   </Link>
-                  {' '}en tienda.inxora.com.
+                  {' '}{t('legal.privacySuffix')}
                 </p>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading || !aceptaTerminos}>
-                {loading ? 'Creando cuenta...' : 'Registrarme'}
+                {loading ? t('natural.submitting') : t('natural.submit')}
               </Button>
 
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-                ¿Ya tienes cuenta?{' '}
+                {t('natural.hasAccount')}{' '}
                 <button
                   type="button"
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   onClick={() => switchMode('login')}
                 >
-                  Iniciar sesión
+                  {t('natural.loginLink')}
                 </button>
               </p>
             </form>

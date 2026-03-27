@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Loader2, CreditCard } from 'lucide-react'
 
 declare global {
@@ -47,6 +48,7 @@ export function IzipayWidget({
   onPaymentError,
   loading = false,
 }: IzipayWidgetProps) {
+  const t = useTranslations('checkout.izipay')
   const containerRef = useRef<HTMLDivElement>(null)
   const isMountedRef = useRef(true)
 
@@ -134,16 +136,16 @@ export function IzipayWidget({
       if (krAnswer && krHash) {
         invokeSuccess(krAnswer, krHash)
       } else {
-        invokeError('Respuesta de pago incompleta.')
+        invokeError(t('incompleteResponse'))
       }
       return false
     })
 
     KR.onError((err) => {
-      invokeError(err?.errorMessage ?? 'Error al procesar el pago.')
+      invokeError(err?.errorMessage ?? t('processError'))
     })
     return true
-  }, [invokeSuccess, invokeError])
+  }, [invokeSuccess, invokeError, t])
 
   // ── 3. Cargar JS del SDK dinámicamente con useEffect ─────────────────────────
   useEffect(() => {
@@ -200,7 +202,7 @@ export function IzipayWidget({
         const id = setTimeout(() => waitForKRAndRegister(attempts + 1), 100)
         timeoutIds.push(id)
       } else {
-        invokeError('El SDK de Izipay no se inicializó correctamente.')
+        invokeError(t('sdkInitError'))
       }
     }
 
@@ -249,7 +251,7 @@ export function IzipayWidget({
           const id = setTimeout(() => waitForKR(attempts + 1), 100)
           timeoutIds.push(id)
         } else {
-          invokeError('El SDK de Izipay no se inicializó correctamente.')
+          invokeError(t('sdkInitError'))
         }
       }
 
@@ -258,7 +260,7 @@ export function IzipayWidget({
     }
 
     script.onerror = () => {
-      invokeError('Error al cargar el SDK de Izipay.')
+      invokeError(t('loadSdkError'))
     }
 
     document.head.appendChild(script)
@@ -266,7 +268,7 @@ export function IzipayWidget({
     return () => {
       timeoutIds.forEach((id) => clearTimeout(id))
     }
-  }, [publicKey, formToken, registerKREvents])
+  }, [publicKey, formToken, registerKREvents, invokeError, t])
 
   // ── 4. Asignar kr-form-token al contenedor cuando esté disponible ─────────
   useEffect(() => {
@@ -290,14 +292,14 @@ export function IzipayWidget({
           <div className="flex flex-col items-center gap-3 py-4">
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" aria-hidden />
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Cargando formulario de pago…
+              {t('loadingForm')}
             </p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <CreditCard className="w-8 h-8 text-blue-400" aria-hidden />
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Preparando formulario seguro…
+              {t('preparingForm')}
             </p>
           </div>
         )}
