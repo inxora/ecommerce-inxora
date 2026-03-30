@@ -63,7 +63,7 @@ export const CategoriesService = {
       const cacheOptions = { next: { revalidate: 1800 } }
       
       // Usar apiClient directamente para poder agregar timeout
-      const response = await apiClient<ArbolNavegacionResponse>('/api/test/ecommerce/arbol-navegacion', {
+      const response = await apiClient<ArbolNavegacionResponse>('/api/ecommerce/arbol-navegacion', {
         method: 'GET',
         ...cacheOptions,
       })

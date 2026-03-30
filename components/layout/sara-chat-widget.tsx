@@ -3,7 +3,7 @@
 /**
  * Widget de Chat Sara Xora (INXORA).
  * Abre el minichat en overlay. Para enviar mensajes el usuario debe estar registrado.
- * Solo 2 widgets flotantes: WhatsApp y Sara (logo LOGO-03.png).
+ * Widget flotante Sara (logo LOGO-03.png). WhatsApp flotante desactivado en layout.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'

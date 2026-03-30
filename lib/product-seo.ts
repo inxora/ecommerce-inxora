@@ -187,7 +187,7 @@ export function buildProductUrl(
 
 /**
  * Genera la URL canónica del producto (con dominio completo)
- * Optimizada para trabajar con productos del endpoint externo (/api/test/productos/ecommerce)
+ * Optimizada para trabajar con productos del endpoint externo (/api/productos/ecommerce)
  * 
  * Prioridad:
  * 1. Construye la URL usando la estructura canónica: categoria/subcategoria/marca/seo-slug
