@@ -216,7 +216,8 @@
   
   /* Ocultar botón WhatsApp cuando el chat de Sara está abierto */
   body.chat-open #whatsapp-float-btn,
-  body:has(#chat-container.open) #whatsapp-float-btn {
+  body:has(#chat-container.open) #whatsapp-float-btn,
+  body.sara-mini-chat-open #whatsapp-float-btn {
     display: none !important;
   }
 

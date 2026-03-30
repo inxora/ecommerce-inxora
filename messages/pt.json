@@ -33,6 +33,7 @@
       "account": "Conta",
       "favorites": "Favoritos",
       "myOrders": "Meus pedidos",
+      "myQuotes": "Minhas cotações",
       "logout": "Sair",
       "login": "Entrar",
       "createAccount": "Criar conta"
@@ -748,7 +749,11 @@
       "title": "Chat com Sara | INXORA",
       "description": "Conversas com Sara Xora, sua assistente virtual da INXORA.",
       "shareTitle": "Conversa compartilhada | Chat Sara | INXORA",
-      "shareDescription": "Ver conversa compartilhada com Sara Xora, assistente virtual da INXORA."
+      "shareDescription": "Ver conversa compartilhada com Sara Xora, assistente virtual da INXORA.",
+      "ordersPageTitle": "Meus pedidos | Chat com Sara | INXORA",
+      "ordersPageDescription": "Veja o status e o acompanhamento dos seus pedidos na sua conta Sara Xora.",
+      "quotesPageTitle": "Minhas cotações | Chat com Sara | INXORA",
+      "quotesPageDescription": "Veja e baixe suas cotações na sua conta Sara Xora."
     },
     "brand": {
       "name": "SARA XORA",

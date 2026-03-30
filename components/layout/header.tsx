@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, ShoppingCart, Menu, Heart, User, MessageCircle, LogOut, ChevronDown, Settings, Package, Check, Languages } from 'lucide-react'
+import { Search, ShoppingCart, Menu, Heart, User, LogOut, ChevronDown, Settings, Package, FileText, Check, Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -29,6 +29,7 @@ import { CategoriaNavegacion } from '@/lib/services/categories.service'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import { cn } from '@/lib/utils'
+import { getChatSaraCotizacionesPath, getChatSaraPedidosPath } from '@/lib/i18n/chat-sara-routes'
 import { BannerSlot } from '@/components/banner/banner-slot'
 import type { Banner } from '@/lib/types'
 
@@ -163,11 +164,21 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
 
           <DropdownMenuItem asChild>
             <Link
-              href={`/${locale}/cuenta/pedidos`}
+              href={getChatSaraPedidosPath(locale)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
             >
               <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
               {t('profile.myOrders')}
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link
+              href={getChatSaraCotizacionesPath(locale)}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
+            >
+              <FileText className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              {t('profile.myQuotes')}
             </Link>
           </DropdownMenuItem>
 
@@ -422,20 +433,6 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
               >
                 <Search className="h-4 w-4" />
               </button>
-
-              {/* Chat con Sara */}
-              <Link
-                href={`/${locale}/cuenta/chat-sara`}
-                className={cn(
-                  'flex items-center gap-1.5 h-9 px-2.5 rounded-lg',
-                  'bg-white/10 hover:bg-white/20 border-0',
-                  'text-white text-xs font-medium transition-colors whitespace-nowrap'
-                )}
-                title="Chat con Sara"
-              >
-                <MessageCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                <span className="hidden lg:inline">Sara</span>
-              </Link>
 
               {/* Moneda compacta — solo sm+ */}
               <DropdownMenu modal={false}>

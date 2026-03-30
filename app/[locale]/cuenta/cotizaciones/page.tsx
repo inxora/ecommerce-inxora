@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { miCuentaService, type CotizacionListItem } from '@/lib/services/mi-cuenta.service'
+import { getChatSaraCotizacionesPath } from '@/lib/i18n/chat-sara-routes'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
@@ -225,7 +226,7 @@ export default function CotizacionesPage() {
             <p className="text-gray-500 text-sm mb-8 max-w-xs mx-auto">
               ¡Habla con Sara para solicitar una cotización personalizada para tu empresa!
             </p>
-            <Link href={`/${locale}/cuenta/chat-sara`}>
+            <Link href={getChatSaraCotizacionesPath(locale)}>
               <Button className="gap-2 bg-inxora-blue hover:bg-inxora-blue/90 text-white">
                 <MessageCircle className="w-4 h-4" />
                 Chatear con Sara

@@ -2,11 +2,10 @@
 
 /**
  * Widget de Chat Sara Xora (INXORA).
- * Redirige a la página de chat con Sara. Para usar el chat el usuario debe estar registrado.
+ * Abre el minichat en overlay. Para enviar mensajes el usuario debe estar registrado.
  * Solo 2 widgets flotantes: WhatsApp y Sara (logo LOGO-03.png).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
 import { MessageSquarePlus, ImagePlus, X, FileText, Paperclip, Cloud, Image as ImageIcon } from 'lucide-react'
@@ -119,9 +118,6 @@ const markdownComponents = {
 }
 
 export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
-  const router = useRouter()
-  const pathname = usePathname() ?? ''
-  const locale = pathname.split('/')[1] ?? 'es'
   const { cliente } = useClienteAuth()
   const { currency } = useCurrency()
   const [open, setOpen] = useState(false)
@@ -151,6 +147,14 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
   useEffect(() => {
     onOpenChange?.(open)
   }, [open, onOpenChange])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const cls = 'sara-mini-chat-open'
+    if (open) document.body.classList.add(cls)
+    else document.body.classList.remove(cls)
+    return () => document.body.classList.remove(cls)
+  }, [open])
 
   // Rehidratar mensajes al montar: primero desde backend (si hay session_id), sino desde sessionStorage
   useEffect(() => {
@@ -562,7 +566,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           border-radius: 16px;
           box-shadow: 0 8px 32px rgba(0,0,0,0.15);
           border: 1px solid rgba(0,0,0,0.1);
-          z-index: 998999;
+          z-index: 1000002;
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -1024,9 +1028,9 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
 
       <button
         type="button"
-        className="sara-bubble"
-        aria-label="Ir al chat con Sara Xora (requiere registrarse)"
-        onClick={() => router.push(`/${locale}/cuenta/chat-sara`)}
+        className={`sara-bubble${open ? ' hidden' : ''}`}
+        aria-label="Abrir chat con Sara Xora (requiere registrarse)"
+        onClick={() => setOpen(true)}
       >
         <Image src={BRAND.logo} alt="SARA XORA - Asistente virtual de INXORA" width={48} height={48} unoptimized />
       </button>

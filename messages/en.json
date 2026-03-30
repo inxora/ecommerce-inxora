@@ -34,6 +34,7 @@
       "account": "Account",
       "favorites": "Favorites",
       "myOrders": "My orders",
+      "myQuotes": "My quotes",
       "logout": "Log out",
       "login": "Log in",
       "createAccount": "Create account"
@@ -795,7 +796,11 @@
       "title": "Chat with Sara | INXORA",
       "description": "Conversations with Sara Xora, your INXORA virtual assistant.",
       "shareTitle": "Shared conversation | Chat with Sara | INXORA",
-      "shareDescription": "View a conversation shared with Sara Xora, INXORA's virtual assistant."
+      "shareDescription": "View a conversation shared with Sara Xora, INXORA's virtual assistant.",
+      "ordersPageTitle": "My orders | Chat with Sara | INXORA",
+      "ordersPageDescription": "View your order status and tracking in your Sara Xora account.",
+      "quotesPageTitle": "My quotes | Chat with Sara | INXORA",
+      "quotesPageDescription": "View and download your quotes from your Sara Xora account."
     },
     "brand": {
       "name": "SARA XORA",

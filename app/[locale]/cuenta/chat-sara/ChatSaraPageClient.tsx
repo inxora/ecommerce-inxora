@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
@@ -41,6 +41,12 @@ import {
   type CotizacionDetalle,
   type CotizacionItemDetalle,
 } from '@/lib/services/mi-cuenta.service'
+import {
+  getChatSaraBasePath,
+  getChatSaraHrefForSection,
+  getChatSaraSectionFromPathname,
+  type ChatSaraSection,
+} from '@/lib/i18n/chat-sara-routes'
 
 type Message = {
   role: 'user' | 'assistant' | 'asesor'
@@ -818,6 +824,7 @@ export function ChatSaraPageClient({
   categorias?: Categoria[]
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = useTranslations('chatSara')
   const { cliente, token, isLoggedIn, isLoading: authLoading, logout } = useClienteAuth()
@@ -849,9 +856,12 @@ export function ChatSaraPageClient({
   // En mobile: muestra el panel de conversaciones (true) o el chat (false)
   const [mobileShowConversations, setMobileShowConversations] = useState(!selectedSessionId)
 
-  // ── Nav de cuenta: sección activa y expansión ──
+  // ── Nav de cuenta: sección activa (URL) y expansión ──
   const [navExpanded, setNavExpanded] = useState(false)
-  const [activeSection, setActiveSection] = useState<'chat' | 'pedidos' | 'cotizaciones'>('chat')
+  const activeSection: ChatSaraSection = useMemo(
+    () => getChatSaraSectionFromPathname(pathname),
+    [pathname]
+  )
   const [pedidos, setPedidos] = useState<PedidoListItem[]>([])
   const [pedidosLoading, setPedidosLoading] = useState(false)
   const [pedidosError, setPedidosError] = useState<string | null>(null)
@@ -972,23 +982,24 @@ export function ChatSaraPageClient({
     if (cliente?.id) loadConversaciones()
   }, [cliente?.id, loadConversaciones])
 
-  // Leer session_id desde la URL al cargar (para que al recargar se mantenga el chat seleccionado)
+  // Sincronizar session_id con la URL solo en la ruta de chat (no en /pedidos ni /cotizaciones)
   useEffect(() => {
+    if (getChatSaraSectionFromPathname(pathname) !== 'chat') return
+
     if (initialSessionId) {
       setSelectedSessionId(initialSessionId)
       setLoadKey((k) => k + 1)
       return
     }
-    const sessionFromUrl = searchParams?.get('session')
-    if (sessionFromUrl && sessionFromUrl.trim()) {
-      setSelectedSessionId(sessionFromUrl.trim())
-      setLoadKey((k) => k + 1)
-    }
-  }, [initialSessionId, searchParams])
+    const raw = searchParams?.get('session')
+    const nextId = raw && raw.trim() ? raw.trim() : null
+    setSelectedSessionId(nextId)
+    setLoadKey((k) => k + 1)
+  }, [initialSessionId, searchParams, pathname])
 
   const updateUrlForSession = useCallback(
     (sessionId: string | null) => {
-      const path = `/${locale}/cuenta/chat-sara`
+      const path = getChatSaraBasePath(locale)
       const href = sessionId ? `${path}?session=${encodeURIComponent(sessionId)}` : path
       router.replace(href, { scroll: false })
     },
@@ -996,6 +1007,7 @@ export function ChatSaraPageClient({
   )
 
   useEffect(() => {
+    if (activeSection !== 'chat') return
     if (!selectedSessionId) {
       setMessages([])
       setIsAsesorRespondiendo(false)
@@ -1019,9 +1031,10 @@ export function ChatSaraPageClient({
         setIsAsesorRespondiendo(false)
       })
       .finally(() => setLoadingChat(false))
-  }, [selectedSessionId, loadKey, scrollToBottom, normalizeMessages])
+  }, [activeSection, selectedSessionId, loadKey, scrollToBottom, normalizeMessages])
 
   useEffect(() => {
+    if (activeSection !== 'chat') return
     if (!selectedSessionId || !isAsesorRespondiendo) return
 
     let cancelled = false
@@ -1044,7 +1057,7 @@ export function ChatSaraPageClient({
       cancelled = true
       window.clearInterval(intervalId)
     }
-  }, [selectedSessionId, isAsesorRespondiendo, normalizeMessages])
+  }, [activeSection, selectedSessionId, isAsesorRespondiendo, normalizeMessages])
 
   const isNearBottom = useCallback((threshold = 120) => {
     const el = listRef.current
@@ -1494,13 +1507,12 @@ export function ChatSaraPageClient({
               { section: 'cotizaciones' as const, Icon: FileText, label: t('nav.quotes'), sublabel: t('nav.quotesSub') },
             ]
           ).map(({ section, Icon, label, sublabel }) => (
-            <button
+            <Link
               key={section}
-              type="button"
+              href={getChatSaraHrefForSection(locale, section)}
               aria-label={label}
               aria-current={activeSection === section ? 'page' : undefined}
               title={navExpanded ? undefined : label}
-              onClick={() => setActiveSection(section)}
               className={`flex items-center gap-3 transition-colors rounded-xl focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/50 ${
                 navExpanded ? 'w-full px-3 py-2.5' : 'w-10 h-10 justify-center'
               } ${
@@ -1518,7 +1530,7 @@ export function ChatSaraPageClient({
                   </p>
                 </div>
               )}
-            </button>
+            </Link>
           ))}
 
           {/* Cerrar sesión — anclado al fondo para eliminar espacio vacío */}
@@ -2304,11 +2316,10 @@ export function ChatSaraPageClient({
               { section: 'cotizaciones' as const, Icon: FileText, label: t('mobile.quotes') },
             ]
           ).map(({ section, Icon, label }) => (
-            <button
+            <Link
               key={section}
-              type="button"
+              href={getChatSaraHrefForSection(locale, section)}
               onClick={() => {
-                setActiveSection(section)
                 if (section === 'chat') setMobileShowConversations(true)
               }}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors focus:outline-none ${
@@ -2317,7 +2328,7 @@ export function ChatSaraPageClient({
             >
               <Icon className="h-5 w-5" />
               <span>{label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       )}

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { miCuentaService, type PedidoListItem } from '@/lib/services/mi-cuenta.service'
+import { getChatSaraPedidosPath } from '@/lib/i18n/chat-sara-routes'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
@@ -205,7 +206,7 @@ export default function PedidosPage() {
             <p className="text-gray-500 text-sm mb-8 max-w-xs mx-auto">
               ¡Empieza chateando con Sara para descubrir los mejores productos para ti!
             </p>
-            <Link href={`/${locale}/cuenta/chat-sara`}>
+            <Link href={getChatSaraPedidosPath(locale)}>
               <Button className="gap-2 bg-inxora-blue hover:bg-inxora-blue/90 text-white">
                 <MessageCircle className="w-4 h-4" />
                 Chatear con Sara
