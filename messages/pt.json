@@ -179,7 +179,9 @@
       "guaranteed": "Garantido"
     },
     "linkCopied": "Link copiado",
-    "linkCopiedDescription": "O link do produto foi copiado para a área de transferência"
+    "linkCopiedDescription": "O link do produto foi copiado para a área de transferência",
+    "consultWhatsApp": "Consultar no WhatsApp",
+    "consultWhatsAppShort": "WhatsApp"
   },
   "cart": {
     "title": "Carrinho de Compras",
@@ -758,6 +760,11 @@
     "brand": {
       "name": "SARA XORA",
       "alt": "Sara Xora"
+    },
+    "widget": {
+      "bubbleTooltip": "Precisa de ajuda? Abra o chat e envie sua pergunta para a Sara.",
+      "bubbleAria": "Abrir chat com Sara Xora (entre para enviar mensagens)",
+      "headerAvatarAlt": "Sara Xora"
     },
     "typing": "Sara esta digitando…",
     "relative": {

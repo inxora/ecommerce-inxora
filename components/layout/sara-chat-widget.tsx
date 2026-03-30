@@ -3,9 +3,10 @@
 /**
  * Widget de Chat Sara Xora (INXORA).
  * Abre el minichat en overlay. Para enviar mensajes el usuario debe estar registrado.
- * Widget flotante Sara (logo LOGO-03.png). WhatsApp flotante desactivado en layout.
+ * Widget flotante Sara (avatar sara-pose2). WhatsApp flotante desactivado en layout.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import ReactMarkdown from 'react-markdown'
 import Image from 'next/image'
 import { MessageSquarePlus, ImagePlus, X, FileText, Paperclip, Cloud, Image as ImageIcon } from 'lucide-react'
@@ -34,8 +35,9 @@ type Message = {
   attachmentPreviews?: string[]
 }
 
+const AVATAR_SRC = '/sara-pose2.png'
+
 const BRAND = {
-  logo: '/LOGO-03.png',
   name: 'INXORA',
   /** Estado vacío: CTA para el primer mensaje. No se crea conversación en backend hasta que el usuario envíe. */
   welcomeText: '¡Hola! Soy **SARA XORA**, tu asistente virtual.',
@@ -118,6 +120,8 @@ const markdownComponents = {
 }
 
 export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
+  const t = useTranslations('chatSara')
+  const bubbleTooltipId = useId()
   const { cliente } = useClienteAuth()
   const { currency } = useCurrency()
   const [open, setOpen] = useState(false)
@@ -493,10 +497,50 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
   return (
     <>
       <style jsx>{`
-        .sara-bubble {
+        .sara-bubble-anchor {
           position: fixed;
           bottom: 20px;
           right: 20px;
+          z-index: 999000;
+          display: flex;
+          flex-direction: row;
+          align-items: flex-end;
+          gap: 12px;
+          max-width: calc(100vw - 24px);
+        }
+        .sara-bubble-tooltip {
+          display: none;
+          max-width: min(220px, calc(100vw - 120px));
+          padding: 10px 14px;
+          background: #fff;
+          color: #1e293b;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+          border: 1px solid rgba(0,0,0,0.06);
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.35;
+          pointer-events: none;
+          animation: saraTooltipNudge 4s ease-in-out infinite;
+        }
+        @media (prefers-color-scheme: dark) {
+          .sara-bubble-tooltip {
+            background: #1e293b;
+            color: #f1f5f9;
+            border-color: rgba(255,255,255,0.08);
+          }
+        }
+        @media (min-width: 640px) {
+          .sara-bubble-tooltip {
+            display: block;
+          }
+        }
+        @keyframes saraTooltipNudge {
+          0%, 100% { transform: translateX(0); opacity: 1; }
+          50% { transform: translateX(3px); opacity: 0.92; }
+        }
+        .sara-bubble {
+          flex-shrink: 0;
           width: 64px;
           height: 64px;
           border-radius: 50%;
@@ -504,10 +548,10 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           border: 3px solid ${STYLE.primaryColor};
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
           cursor: pointer;
-          z-index: 999000;
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           animation: saraBubbleBounce 2.5s infinite ease-in-out;
         }
@@ -519,9 +563,10 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           display: none !important;
         }
         .sara-bubble :global(img) {
-          width: 48px;
-          height: 48px;
-          object-fit: contain;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top center;
         }
         @keyframes saraBubbleBounce {
           0%, 100% { transform: translateY(0); }
@@ -537,21 +582,16 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
             width: 80px;
             height: 80px;
           }
-          .sara-bubble :global(img) {
-            width: 56px;
-            height: 56px;
-          }
         }
         @media (max-width: 767px) {
-          .sara-bubble {
+          .sara-bubble-anchor {
             bottom: 15px;
             right: 15px;
+            gap: 8px;
+          }
+          .sara-bubble {
             width: 50px;
             height: 50px;
-          }
-          .sara-bubble :global(img) {
-            width: 32px;
-            height: 32px;
           }
         }
 
@@ -616,7 +656,8 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          object-fit: contain;
+          object-fit: cover;
+          object-position: top center;
         }
         .sara-brand-header span {
           font-size: 18px;
@@ -1026,19 +1067,33 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
         }
       `}</style>
 
-      <button
-        type="button"
-        className={`sara-bubble${open ? ' hidden' : ''}`}
-        aria-label="Abrir chat con Sara Xora (requiere registrarse)"
-        onClick={() => setOpen(true)}
-      >
-        <Image src={BRAND.logo} alt="SARA XORA - Asistente virtual de INXORA" width={48} height={48} unoptimized />
-      </button>
+      <div className="sara-bubble-anchor">
+        {!open && (
+          <span id={bubbleTooltipId} className="sara-bubble-tooltip" role="tooltip">
+            {t('widget.bubbleTooltip')}
+          </span>
+        )}
+        <button
+          type="button"
+          className={`sara-bubble${open ? ' hidden' : ''}`}
+          aria-label={t('widget.bubbleAria')}
+          aria-describedby={!open ? bubbleTooltipId : undefined}
+          onClick={() => setOpen(true)}
+        >
+          <Image
+            src={AVATAR_SRC}
+            alt={t('widget.headerAvatarAlt')}
+            width={56}
+            height={56}
+            unoptimized
+          />
+        </button>
+      </div>
 
       {open && (
         <div className="sara-panel" role="dialog" aria-label="Chat Sara Xora">
           <div className="sara-brand-header">
-            <Image src={BRAND.logo} alt={BRAND.name} width={40} height={40} unoptimized />
+            <Image src={AVATAR_SRC} alt={t('widget.headerAvatarAlt')} width={40} height={40} unoptimized />
             <span>{BRAND.name}</span>
             <button
               type="button"
