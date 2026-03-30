@@ -38,7 +38,7 @@ type Message = {
 const AVATAR_SRC = '/sara-pose2.png'
 
 const BRAND = {
-  name: 'INXORA',
+  name: 'Sara Xora',
   /** Estado vacío: CTA para el primer mensaje. No se crea conversación en backend hasta que el usuario envíe. */
   welcomeText: '¡Hola! Soy **SARA XORA**, tu asistente virtual.',
   emptyStateCta: 'Escribe tu consulta o lo que necesites cotizar.',
