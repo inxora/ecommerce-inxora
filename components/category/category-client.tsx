@@ -490,6 +490,11 @@ export function CategoryClient({
               categoryDescription={category.descripcion}
               currentCategoryId={category.id}
               onFiltersChange={updateURL}
+              whatsappListingLabel={
+                subcategoria
+                  ? `${subcategoria.nombre} · ${category.nombre}`
+                  : category.nombre
+              }
             />
           </div>
         </div>

@@ -580,6 +580,11 @@
       "previous": "Previous",
       "next": "Next"
     },
+    "whatsappCategory": {
+      "cta": "Consult on WhatsApp",
+      "ctaShort": "WhatsApp",
+      "message": "Hello Sara Xora, I need advice on products in {label}."
+    },
     "noResults": {
       "title": "No products found",
       "description": "Try adjusting your filters or search terms"

@@ -544,6 +544,11 @@
       "previous": "Anterior",
       "next": "Próximo"
     },
+    "whatsappCategory": {
+      "cta": "Consultar no WhatsApp",
+      "ctaShort": "WhatsApp",
+      "message": "Olá Sara Xora, preciso de orientação sobre produtos em {label}."
+    },
     "noResults": {
       "title": "Nenhum produto encontrado",
       "description": "Tente ajustar os filtros ou termos de busca"

@@ -237,26 +237,26 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
     }
-    // Asegurar que la categorÃ­a sigue activa
+    // Asegurar que la categoría sigue activa
     if (hoveredCategory) {
       setHoveredCategory(hoveredCategory)
     }
   }
 
   const handleBrandsPanelLeave = () => {
-    // No cerrar si se estÃ¡ haciendo clic
+    // No cerrar si se está haciendo clic
     if (isClicking) {
       return
     }
     
     setIsMouseOverBrandsPanel(false)
-    // Cerrar el panel cuando el mouse sale completamente del Ã¡rea del panel
+    // Cerrar el panel cuando el mouse sale completamente del área del panel
     // Pero dar mÃ¡s tiempo para permitir clics
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
     }
     hoverTimeoutRef.current = setTimeout(() => {
-      // Verificar que el mouse realmente saliÃ³ y no estÃ¡ volviendo, y que no se estÃ¡ haciendo clic
+      // Verificar que el mouse realmente salió y no está volviendo, y que no se está haciendo clic
       if (!isMouseOverBrandsPanel && !isClicking) {
         setHoveredCategory(null)
       }
@@ -472,9 +472,9 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
               </SheetDescription>
             </SheetHeader>
 
-            {/* SecciÃ³n de CategorÃ­as */}
+            {/* Sección de Categorías */}
             <div className="flex-1 overflow-y-auto">
-              {/* Lista de categorÃ­as con scroll */}
+              {/* Lista de categorías con scroll */}
               <div className="px-4 py-4">
                   {loadingCategories ? (
                     <div className="px-4 py-12 text-center">
@@ -525,20 +525,20 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                             key={category.id}
                             className={cn(
                               "relative",
-                              isActive && "z-10" // Asegurar que la categorÃ­a activa estÃ© por encima
+                              isActive && "z-10" // Asegurar que la categoría activa esté por encima
                             )}
                             onMouseEnter={() => {
                               handleCategoryHover(category.id)
-                              setIsMouseOverBrandsPanel(false) // Reset cuando se entra a una categorÃ­a
+                              setIsMouseOverBrandsPanel(false) // Reset cuando se entra a una categoría
                             }}
                             onMouseLeave={(e) => {
-                              // Si la categorÃ­a estÃ¡ activa y el panel estÃ¡ visible, NO cerrar
+                              // Si la categoría está activa y el panel está visible, NO cerrar
                               // El panel se cerrarÃ¡ solo cuando el mouse salga del panel mismo
                               if (isActive && hoveredCategory) {
                                 // No hacer nada, dejar que el panel maneje su propio cierre
                                 return
                               }
-                              // Solo cerrar si la categorÃ­a no estÃ¡ activa
+                              // Solo cerrar si la categoría no está activa
                               handleCategoryLeave()
                             }}
                           >
@@ -620,7 +620,7 @@ export function CategoriesSidebar({ locale, trigger, categories: serverCategorie
                   ) : (
                     <div className="px-4 py-12 text-center">
                       <div className="text-sm text-muted-foreground">
-                        <p>No hay categorÃ­as disponibles</p>
+                        <p>No hay categorías disponibles</p>
                       </div>
                     </div>
                   )}
