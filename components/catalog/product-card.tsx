@@ -84,15 +84,10 @@ export function ProductCard({ product, badgeText, badgeColor }: ProductCardProps
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     // Pasar producto con precio_venta para que el carrito muestre precio correcto
     const precioParaCarrito = precio > 0 ? precio : (product.precio_mostrar ? parseFloat(String(product.precio_mostrar)) : 0)
     addItem({ ...product, precio_venta: precioParaCarrito }, 1)
-
-    toast({
-      title: 'Producto agregado',
-      description: `${product.nombre} se agregó al carrito`,
-    })
   }
 
   const handleToggleFavorite = (e: React.MouseEvent) => {

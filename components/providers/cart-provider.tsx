@@ -74,31 +74,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => { isUpdatingFromEvent.current = false }, 100)
       }
     }
-    const handleCartUpdated = () => {
-      const saved = cartUtils.getCart()
-      setCart({
-        items: (saved.items || []).map((item: { sku: number; nombre: string; precio_venta: number; cantidad: number; imagen?: string; slug?: string; sku_producto?: string; condicion_precio_venta?: string | null; proveedor_principal?: Product['proveedor_principal'] }) => ({
-          product: {
-            sku: item.sku,
-            nombre: item.nombre,
-            precio_venta: item.precio_venta,
-            imagen_principal_url: item.imagen || '',
-            seo_slug: item.slug || '',
-            sku_producto: item.sku_producto,
-            condicion_precio_venta: item.condicion_precio_venta,
-            proveedor_principal: item.proveedor_principal,
-          },
-          quantity: item.cantidad,
-          selectedSize: undefined,
-        })),
-      })
-      setUpdateTrigger((t) => t + 1)
-    }
     window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('cart-updated', handleCartUpdated)
     return () => {
       window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('cart-updated', handleCartUpdated)
     }
   }, [loadCart])
 
@@ -156,9 +134,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const idx = prev.items.findIndex((i) => i.product.sku === product.sku && i.selectedSize === selectedSize)
       let newItems
       if (idx >= 0) {
-        newItems = [...prev.items]
-        newItems[idx].quantity += quantity
-        newItems[idx].product = { ...newItems[idx].product, ...cartProduct }
+        newItems = prev.items.map((item, i) =>
+          i === idx
+            ? { ...item, quantity: item.quantity + quantity, product: { ...item.product, ...cartProduct } }
+            : item
+        )
       } else {
         newItems = [...prev.items, { product: cartProduct, quantity, selectedSize }]
       }

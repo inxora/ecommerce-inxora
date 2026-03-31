@@ -16,7 +16,7 @@ const SheetClose = DialogPrimitive.Close
 const SheetPortal = DialogPrimitive.Portal
 
 const sheetVariants = cva(
-  "fixed z-[55] flex flex-col min-h-0 gap-4 bg-background px-4 pt-4 sm:px-6 sm:pt-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  "fixed z-[55] flex flex-col min-h-0 gap-4 bg-background px-4 pt-4 sm:px-6 sm:pt-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300",
   {
     variants: {
       side: {
@@ -44,7 +44,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, disablePointerEvents, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       disablePointerEvents && "pointer-events-none",
       className
     )}
