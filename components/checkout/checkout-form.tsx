@@ -694,6 +694,30 @@ export function CheckoutForm() {
       toast({ title: t('errors.cartRestrictionsTitle'), description: cartRestrictionErrors[0] ?? t('errors.cartRestrictionsDesc'), variant: 'destructive' })
       return
     }
+
+    // Si el usuario volvió del paso 3 con un pedido ya creado, reusar ese pedido
+    // en lugar de crear uno nuevo para evitar pedidos huérfanos en la BD.
+    if (data.paymentMethod === 'izipay' && pedidoCreadoId) {
+      setIsSubmitting(true)
+      setIzipayLoading(true)
+      try {
+        const tokenRes = await pagosService.crearTokenIzipay(pedidoCreadoId, token)
+        setIzipayFormToken(tokenRes.data.formToken)
+        setIzipayPublicKey(tokenRes.data.publicKey)
+        setCurrentStep(3)
+      } catch (err: unknown) {
+        if (err instanceof ApiError && err.status === 401) {
+          handleAuthError()
+          return
+        }
+        toast({ title: t('errors.izipayFormError'), description: t('errors.izipayFormErrorDesc'), variant: 'destructive' })
+      } finally {
+        setIzipayLoading(false)
+        setIsSubmitting(false)
+      }
+      return
+    }
+
     const isRecojo = data.tipo_entrega === 'RECOJO'
     const body: CreatePedidoBody = {
       id_cliente: cliente.id,
@@ -1369,7 +1393,13 @@ export function CheckoutForm() {
           </div>
           <button
             type="button"
-            onClick={() => { setCurrentStep(2); setPedidoCreadoId(null); pedidoIdIzipayRef.current = null }}
+            onClick={() => {
+              setCurrentStep(2)
+              setPedidoCreadoId(null)
+              pedidoIdIzipayRef.current = null
+              setIzipayFormToken(null)
+              setIzipayPublicKey(null)
+            }}
             className="w-full py-3 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
           >
             {t('form.changePaymentMethod')}

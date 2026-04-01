@@ -33,24 +33,30 @@ export function OrderContent({
 
   if (!order && numeroFromQuery) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-lg text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
-          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
-        </div>
-        <h1 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
-          {t('order.confirmation.title')}
-        </h1>
-        <p className="text-muted-foreground mb-2">{t('order.confirmation.description')}</p>
-        <p className="text-sm text-muted-foreground mb-6">
-          {t('order.confirmation.orderId')}: <span className="font-mono font-medium">{numeroFromQuery}</span>
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button asChild>
-            <Link href={`/${locale}/catalogo`}>{t('order.actions.continueShopping')}</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href={`/${locale}/cuenta`}>Ir a mi cuenta</Link>
-          </Button>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-md w-full text-center">
+
+          {/* Icono confirmado */}
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
+            <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
+            {t('order.confirmation.title')}
+          </h1>
+          <p className="text-muted-foreground mb-2">{t('order.confirmation.description')}</p>
+          <p className="text-sm text-muted-foreground mb-8">
+            {t('order.confirmation.orderId')}: <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{numeroFromQuery}</span>
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild>
+              <Link href={`/${locale}/catalogo`}>{t('order.actions.continueShopping')}</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/${locale}/cuenta`}>Ir a mi cuenta</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
