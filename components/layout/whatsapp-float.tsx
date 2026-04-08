@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { createWhatsAppUrl } from '@/lib/utils'
 import { getWhatsAppPageContext } from '@/lib/whatsapp-page-context'
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51946885531'
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51913087207'
 
 function trackWhatsAppClick(pageType: string) {
   if (typeof window !== 'undefined' && window.dataLayer) {

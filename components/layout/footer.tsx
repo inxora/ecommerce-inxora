@@ -95,7 +95,7 @@ export function Footer({ bannersFooterStrip = [], locale: localeProp }: FooterPr
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-3 w-3 text-inxora-cyan" />
-                <span className="text-xs text-blue-100">+51 946 885 531</span>
+                <span className="text-xs text-blue-100">+51 913 087 207</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-3 w-3 text-inxora-cyan" />

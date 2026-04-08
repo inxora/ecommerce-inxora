@@ -116,7 +116,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
     }
   }, [product?.nombre])
 
-  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51946885531'
+  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51913087207'
   const skuDisplay = product.sku_producto || product.sku || ''
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tienda.inxora.com'
   const productUrl = `${baseUrl}${buildProductUrl(product, locale)}`

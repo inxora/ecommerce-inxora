@@ -58,7 +58,7 @@ export default function ContactoPage({ params }: { params: { locale: string } })
             </p>
             <div className="mt-4 space-y-2 text-gray-700 dark:text-gray-300">
               <p><strong>Dirección:</strong> Av. Óscar R. Benavides 3046, Lima 15081, Perú</p>
-              <p><strong>Teléfono:</strong> +51 946 885 531</p>
+              <p><strong>Teléfono:</strong> +51 913 087 207</p>
               <p><strong>Email:</strong> contacto@inxora.com</p>
               <p><strong>WhatsApp:</strong> Atención inmediata</p>
             </div>

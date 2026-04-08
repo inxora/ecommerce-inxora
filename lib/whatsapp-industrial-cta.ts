@@ -1,7 +1,7 @@
 import { createWhatsAppUrl } from '@/lib/utils'
 
 export const WHATSAPP_DEFAULT_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51946885531'
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '51913087207'
 
 /**
  * Texto inicial del mensaje de WhatsApp para todos los CTAs de «Cotización industrial»

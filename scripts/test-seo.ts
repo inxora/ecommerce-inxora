@@ -28,7 +28,7 @@ const productoEjemplo: Producto = {
   imagen_principal_url: 'https://keeussaqlshdsegerqob.supabase.co/storage/v1/object/public/productos-images/INXHERR353/herramientas-maniobra-gato-hidraulico-tipo-carretilla-3-toneladas-bahco-bh13000-.webp',
   galeria_imagenes_urls: [],
   seo_title: 'Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000',
-  seo_description: '✅ En INXORA encuentras mas productos como Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000 🌐Visita nuestra web contáctanos📞 +51 946 885 531.',
+  seo_description: '✅ En INXORA encuentras mas productos como Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000 🌐Visita nuestra web contáctanos📞 +51 913 087 207.',
   seo_keywords: 'Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000',
   seo_slug: 'gato-hidraulico-tipo-carretilla-3-toneladas-bahco-bh-13000',
   meta_robots: 'index,follow',

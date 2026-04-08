@@ -149,8 +149,8 @@ export default function EnviosPage({ params }: { params: { locale: string } }) {
                   </p>
                   <p className="text-white/90 mt-3 leading-relaxed">
                     Solicita cotización personalizada a{' '}
-                    <a href="tel:+51946885531" className="font-bold text-white underline hover:text-blue-100 transition-colors">
-                      +51 946 885 531
+                    <a href="tel:+51913087207" className="font-bold text-white underline hover:text-blue-100 transition-colors">
+                      +51 913 087 207
                     </a>{' '}
                     o{' '}
                     <a href="mailto:jhuamani@inxora.com" className="font-bold text-white underline hover:text-blue-100 transition-colors">
