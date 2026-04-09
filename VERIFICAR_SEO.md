@@ -35,7 +35,7 @@ Este script te mostrará:
    - `<title>` - Debe tener formato: `[Nombre] | [Marca] | Inxora Perú`
    - `<meta name="description">` - No debe empezar con "✅ En INXORA..."
    - `<meta name="keywords">` - Debe incluir marca, categoría, SKU, etc.
-   - `<link rel="canonical">` - Debe apuntar a `tienda.inxora.com` (NO `app.inxora.com`)
+   - `<link rel="canonical">` - Debe apuntar a `tienda.inxora.com` (NO `app.inxora.com` ni `api.inxora.com`)
    - `<script type="application/ld+json">` - Debe tener el schema de Product
 
 #### Opción B: Herramientas de Desarrollo
@@ -149,7 +149,7 @@ curl -s "http://localhost:3000/es/producto/herramientas-maniobra/bahco/gato-hidr
 - [ ] Menciona "Inxora Perú"
 
 ### URL Canónica
-- [ ] Usa dominio: `tienda.inxora.com` (NO `app.inxora.com`)
+- [ ] Usa dominio: `tienda.inxora.com` (NO `app.inxora.com` ni `api.inxora.com`)
 - [ ] Formato: `/{locale}/producto/{categoria}/{marca}/{slug}`
 - [ ] Todos los segmentos en minúsculas
 - [ ] Sin espacios ni caracteres especiales
@@ -179,7 +179,7 @@ curl -s "http://localhost:3000/es/producto/herramientas-maniobra/bahco/gato-hidr
 - Verifica que la función `cleanSeoDescription` se esté llamando
 - Revisa que el producto tenga `seo_description`
 
-### La URL canónica apunta a `app.inxora.com`
+### La URL canónica apunta a `app.inxora.com` o `api.inxora.com`
 - Verifica que NO estés usando `product.canonical_url` directamente
 - Asegúrate de usar `generateCanonicalUrl()`
 

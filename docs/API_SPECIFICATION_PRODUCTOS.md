@@ -330,17 +330,17 @@ GET /api/test/productos/ecommerce?id_subcategoria=12&limit=24&cursor=eyJpZCI6MTA
 
 ### Verificar que funcione el filtro por subcategoría:
 ```bash
-curl "https://app.inxora.com/api/test/productos/ecommerce?id_subcategoria=12&limit=5"
+curl "https://api.inxora.com/api/test/productos/ecommerce?id_subcategoria=12&limit=5"
 ```
 
 ### Verificar que funcione el filtro combinado:
 ```bash
-curl "https://app.inxora.com/api/test/productos/ecommerce?id_subcategoria=12&id_marca=15&limit=5"
+curl "https://api.inxora.com/api/test/productos/ecommerce?id_subcategoria=12&id_marca=15&limit=5"
 ```
 
 ### Verificar que funcione el filtro por categoría:
 ```bash
-curl "https://app.inxora.com/api/test/productos/ecommerce?categoria_id=3&limit=5"
+curl "https://api.inxora.com/api/test/productos/ecommerce?categoria_id=3&limit=5"
 ```
 
 ---

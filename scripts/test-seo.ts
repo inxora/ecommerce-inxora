@@ -32,7 +32,7 @@ const productoEjemplo: Producto = {
   seo_keywords: 'Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000',
   seo_slug: 'gato-hidraulico-tipo-carretilla-3-toneladas-bahco-bh-13000',
   meta_robots: 'index,follow',
-  canonical_url: 'https://app.inxora.com/es/producto/herramientas-maniobra/bahco/Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000',
+  canonical_url: 'https://api.inxora.com/es/producto/herramientas-maniobra/bahco/Gato Hidráulico Tipo Carretilla 3 Toneladas BAHCO BH13000',
   structured_data: null,
   seo_score: 80,
   seo_optimizado: true,
@@ -156,7 +156,7 @@ console.log('\n🔗 5. URL CANÓNICA:')
 console.log('-'.repeat(80))
 console.log(`URL generada: ${seoData.canonicalUrl}`)
 console.log(`✅ ${seoData.canonicalUrl.includes('tienda.inxora.com') ? '✓' : '✗'} Usa dominio correcto (tienda.inxora.com)`)
-console.log(`✅ ${!seoData.canonicalUrl.includes('app.inxora.com') ? '✓' : '✗'} NO usa dominio de admin`)
+console.log(`✅ ${!/\b(app|api)\.inxora\.com\b/.test(seoData.canonicalUrl) ? '✓' : '✗'} NO usa dominio de admin/API`)
 console.log(`✅ ${seoData.canonicalUrl.includes('herramientas-maniobra') ? '✓' : '✗'} Incluye categoría`)
 console.log(`✅ ${seoData.canonicalUrl.includes('bahco') ? '✓' : '✗'} Incluye marca`)
 

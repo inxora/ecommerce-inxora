@@ -18,7 +18,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'app.inxora.com',
+        hostname: 'api.inxora.com',
       },
       {
         protocol: 'https',

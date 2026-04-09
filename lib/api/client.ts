@@ -2,7 +2,7 @@
 const getApiBaseUrl = () => {
   const configured = process.env.NEXT_PUBLIC_API_URL ?? ''
   if (configured) return configured
-  return typeof window !== 'undefined' ? '' : 'https://app.inxora.com'
+  return typeof window !== 'undefined' ? '' : 'https://api.inxora.com'
 }
 
 interface ApiOptions extends Omit<RequestInit, 'next'> {

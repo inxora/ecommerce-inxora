@@ -26,7 +26,7 @@ Obtiene los banners activos y vigentes para mostrar en la tienda.
 
 | Parámetro | Valor |
 |-----------|-------|
-| **URL base** | `https://app.inxora.com/api/banners/public` |
+| **URL base** | `https://api.inxora.com/api/banners/public` |
 | **Query opcional** | `posicion_slug` — Filtrar por slot: `home-hero`, `home-middle`, etc. |
 
 **Ejemplos:**

@@ -1,6 +1,6 @@
 /**
  * Servicio para el chatbot Sara Xora (IA alterna).
- * Consume POST https://app.inxora.com/api/chat (o proxy /api/chat).
+ * Consume POST https://api.inxora.com/api/chat (o proxy /api/chat).
  * No mezclar con el widget de chat.js existente.
  */
 import { apiClient, ApiError } from '@/lib/api/client'
