@@ -729,7 +729,7 @@
       "telefono": "Teléfono",
       "submit": "Registrar empresa",
       "submitting": "Registrando empresa…",
-      "hasAccount": "¿Ya tiene cuenta?",
+      "hasAccount": "¿Ya tienes cuenta?",
       "loginLink": "Iniciar sesión",
       "successTitle": "¡Registro exitoso!",
       "successMessage": "Empresa {name} registrada exitosamente. Ya puede iniciar sesión con su RUC y contraseña.",

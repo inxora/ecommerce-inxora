@@ -1557,7 +1557,8 @@ export function ChatSaraPageClient({
         </nav>
       )}
 
-      {/* ── Historial de conversaciones (solo visible en sección chat) ── */}
+      {/* ── Historial de conversaciones (solo con sesión; sin panel vacío / aviso redundante para invitados) ── */}
+      {isLoggedIn && (
       <aside
         className={`flex-col flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 overflow-hidden ${
           activeSection !== 'chat'
@@ -1606,25 +1607,7 @@ export function ChatSaraPageClient({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto py-2 bg-white dark:bg-slate-900">
-          {!isLoggedIn ? (
-            !sidebarCollapsed && (
-              <div className="mx-3 mt-3 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-4">
-                <p className="text-sm font-semibold leading-snug mb-1 text-slate-800 dark:text-white">
-                  {t('sidebar.loginPromptTitle')}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
-                  {t('sidebar.loginPromptBody')}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => openAuthModal()}
-                  className="text-[#13A0D8] text-sm font-semibold hover:underline focus:outline-none"
-                >
-                  {t('sidebar.login')}
-                </button>
-              </div>
-            )
-          ) : loadingList ? (
+          {loadingList ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-slate-300" aria-hidden />
             </div>
@@ -1770,10 +1753,11 @@ export function ChatSaraPageClient({
           )}
         </div>
       </aside>
+      )}
 
       {/* ── Área principal (chat / pedidos / cotizaciones) ── */}
       <main className={`flex-col min-h-0 overflow-hidden bg-white dark:bg-slate-900 ${
-        activeSection === 'chat' && mobileShowConversations ? 'hidden md:flex md:flex-1' : 'flex flex-1'
+        activeSection === 'chat' && mobileShowConversations && isLoggedIn ? 'hidden md:flex md:flex-1' : 'flex flex-1'
       }`}>
 
         {/* Vista: Mis Pedidos */}
@@ -1805,14 +1789,16 @@ export function ChatSaraPageClient({
 
         {/* Header */}
         <header className="shrink-0 flex items-center gap-3 px-4 py-3 md:gap-4 md:px-5 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          {/* Botón volver a conversaciones (solo mobile) */}
-          <button
-            className="md:hidden -ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 transition-colors focus:outline-none"
-            onClick={() => setMobileShowConversations(true)}
-            aria-label={t('header.backConversations')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+          {/* Botón volver a conversaciones (solo mobile, con sesión e historial lateral) */}
+          {isLoggedIn && (
+            <button
+              className="md:hidden -ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 transition-colors focus:outline-none"
+              onClick={() => setMobileShowConversations(true)}
+              aria-label={t('header.backConversations')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
           <div className="relative shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
             <Image
               src={BRAND_LOGO}

@@ -38,6 +38,8 @@ interface RegistroEmpresaFormProps {
   redirectParam?: string
   /** Callback para cuando se usa dentro de un modal (reemplaza el router.push). */
   onSuccess?: () => void
+  /** En modal: muestra «¿Ya tienes cuenta?» y cambia a login sin salir del diálogo. */
+  onSwitchToLogin?: () => void
 }
 
 type RucStatus = 'idle' | 'consulting' | 'valid' | 'invalid'
@@ -118,7 +120,7 @@ function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): stri
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSuccess }: RegistroEmpresaFormProps) {
+export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSuccess, onSwitchToLogin }: RegistroEmpresaFormProps) {
   const router = useRouter()
   const { login } = useClienteAuth()
   const t = useTranslations('auth')
@@ -729,15 +731,25 @@ export function RegistroEmpresaForm({ locale, redirectTo, redirectParam, onSucce
         )}
       </Button>
 
-      {!onSuccess && (
+      {(!onSuccess || onSwitchToLogin) && (
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           {t('empresa.hasAccount')}{' '}
-          <Link
-            href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam ?? '/')}`}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            {t('empresa.loginLink')}
-          </Link>
+          {onSwitchToLogin ? (
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              {t('empresa.loginLink')}
+            </button>
+          ) : (
+            <Link
+              href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam ?? '/')}`}
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              {t('empresa.loginLink')}
+            </Link>
+          )}
         </p>
       )}
     </form>

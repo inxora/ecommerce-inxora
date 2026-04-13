@@ -27,6 +27,7 @@ import { Building2, FileText, Lock, LogIn, Mail, Phone, User } from 'lucide-reac
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 import { useTranslations } from 'next-intl'
 import { legalPageHref, legalPageAbsoluteTienda } from '@/lib/i18n/legal-routes'
+import { cn } from '@/lib/utils'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
 type Pais = {
@@ -243,11 +244,14 @@ export function AuthModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
-        className={`transition-all duration-300 ${
+        className={cn(
+          'transition-all duration-300',
           mode === 'register' && tipoRegistro !== 'natural'
             ? 'max-w-[min(32rem,calc(100vw-2rem))]'
-            : 'max-w-[min(28rem,calc(100vw-2rem))]'
-        }`}
+            : 'max-w-[min(28rem,calc(100vw-2rem))]',
+          mode === 'register' &&
+            'pt-6 sm:pt-6 pb-6 sm:pb-6 max-sm:pt-[max(1.5rem,env(safe-area-inset-top,0px))] max-sm:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]',
+        )}
       >
         {mode === 'login' ? (
           <>
@@ -340,19 +344,6 @@ export function AuthModal() {
             <div className="flex gap-2 mt-1">
               <button
                 type="button"
-                onClick={() => { clearError(); setTipoRegistro('natural') }}
-                className={[
-                  'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
-                  tipoRegistro === 'natural'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500',
-                ].join(' ')}
-              >
-                <User className="h-4 w-4 shrink-0" />
-                {t('register.tabNatural')}
-              </button>
-              <button
-                type="button"
                 onClick={() => { clearError(); setTipoRegistro('empresa') }}
                 className={[
                   'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
@@ -364,6 +355,19 @@ export function AuthModal() {
                 <Building2 className="h-4 w-4 shrink-0" />
                 {t('register.tabCompany')}
               </button>
+              <button
+                type="button"
+                onClick={() => { clearError(); setTipoRegistro('natural') }}
+                className={[
+                  'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all',
+                  tipoRegistro === 'natural'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500',
+                ].join(' ')}
+              >
+                <User className="h-4 w-4 shrink-0" />
+                {t('register.tabNatural')}
+              </button>
             </div>
 
             {/* ── Empresa (default) ── */}
@@ -373,6 +377,10 @@ export function AuthModal() {
                   key={`empresa-form-${formEpoch}`}
                   locale={locale}
                   onSuccess={handleSuccess}
+                  onSwitchToLogin={() => {
+                    clearError()
+                    setMode('login')
+                  }}
                 />
               </div>
             ) : (

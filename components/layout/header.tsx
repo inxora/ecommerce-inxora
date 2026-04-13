@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, ShoppingCart, Menu, Heart, User, LogOut, ChevronDown, Settings, Package, FileText, Check, Languages } from 'lucide-react'
+import { Search, ShoppingCart, Menu, Heart, User, LogOut, ChevronDown, Settings, Package, FileText, Check, Languages, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CartDrawer } from '@/components/cart/cart-drawer'
@@ -29,7 +29,7 @@ import { CategoriaNavegacion } from '@/lib/services/categories.service'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import { cn } from '@/lib/utils'
-import { getChatSaraCotizacionesPath, getChatSaraPedidosPath } from '@/lib/i18n/chat-sara-routes'
+import { getChatSaraBasePath, getChatSaraCotizacionesPath, getChatSaraPedidosPath } from '@/lib/i18n/chat-sara-routes'
 import { BannerSlot } from '@/components/banner/banner-slot'
 import type { Banner } from '@/lib/types'
 
@@ -69,6 +69,7 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
   const pathname = usePathname() || '/es'
   const locale = localeProp ?? (pathname.split('/')[1] || 'es') ?? 'es'
   const t = useTranslations('header')
+  const tChatSara = useTranslations('chatSara')
 
   const itemsCount = getItemsCount()
   const favoritesCount = getFavoritesCount()
@@ -159,6 +160,16 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                   {favoritesCount}
                 </span>
               )}
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link
+              href={getChatSaraBasePath(locale)}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer"
+            >
+              <MessageSquare className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              {tChatSara('nav.chatSara')}
             </Link>
           </DropdownMenuItem>
 
@@ -325,6 +336,14 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                     </Link>
                     <Link href={`/${locale}/contacto`} onClick={() => setMenuOpen(false)} className="flex items-center py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors">
                       {t('nav.contact')}
+                    </Link>
+                    <Link
+                      href={getChatSaraBasePath(locale)}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors"
+                    >
+                      <MessageSquare className="h-4 w-4 text-[#13A0D8] shrink-0" aria-hidden />
+                      {tChatSara('nav.chatSara')}
                     </Link>
                   </nav>
                 </div>
@@ -495,6 +514,20 @@ export function Header({ categories = [], bannersHeaderStrip = [], locale: local
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <Link
+                href={getChatSaraBasePath(locale)}
+                className={cn(
+                  'flex items-center justify-center h-9 w-9 rounded-lg text-white border-0 transition-colors shrink-0',
+                  pathname.includes('/cuenta/chat-sara')
+                    ? 'bg-[#13A0D8] ring-1 ring-white/30'
+                    : 'bg-white/10 hover:bg-white/20'
+                )}
+                aria-label={tChatSara('nav.chatSara')}
+                title={tChatSara('nav.chatSara')}
+              >
+                <MessageSquare className="h-4 w-4" aria-hidden />
+              </Link>
 
               {/* Carrito */}
               <CartDrawer>
