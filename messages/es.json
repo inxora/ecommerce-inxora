@@ -851,7 +851,9 @@
       "cancel": "Cancelar",
       "rename": "Renombrar conversación",
       "deleteHistory": "Borrar historial",
-      "share": "Compartir"
+      "share": "Compartir",
+      "previewYou": "Tú",
+      "previewSara": "Sara"
     },
     "errors": {
       "loadPedidos": "No se pudieron cargar los pedidos.",

@@ -3,10 +3,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ClienteInfo } from '@/lib/api/cliente-api'
 import { clienteApi } from '@/lib/api/cliente-api'
+import { refreshClienteTokens } from '@/lib/api/cliente-refresh'
 import { ApiError } from '@/lib/api/client'
-
-const TOKEN_KEY = 'inxora_cliente_token'
-const DATA_KEY = 'inxora_cliente_data'
+import {
+  clearClienteSession,
+  getClienteAccessToken,
+  readClienteSession,
+  setClienteSession,
+} from '@/lib/auth/cliente-tokens'
 
 function isTokenExpired(token: string): boolean {
   try {
@@ -20,38 +24,14 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
-function getStored(): { token: string; cliente: ClienteInfo } | null {
-  if (typeof window === 'undefined') return null
-  const token = localStorage.getItem(TOKEN_KEY)
-  const data = localStorage.getItem(DATA_KEY)
-  if (!token || !data) return null
-  try {
-    const cliente = JSON.parse(data) as ClienteInfo
-    return { token, cliente }
-  } catch {
-    return null
-  }
-}
-
-function setStored(token: string, cliente: ClienteInfo) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(TOKEN_KEY, token)
-  localStorage.setItem(DATA_KEY, JSON.stringify(cliente))
-}
-
-function clearStored() {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(DATA_KEY)
-}
-
 type ClienteAuthContextValue = {
   token: string | null
   cliente: ClienteInfo | null
   isLoggedIn: boolean
   isLoading: boolean
   login: (correo: string, password: string) => Promise<void>
-  logout: () => void
+  /** Llama al API de logout, luego limpia storage local (access + refresh + datos). */
+  logout: () => Promise<void>
   register: (payload: {
     nombre: string
     apellidos: string
@@ -76,21 +56,54 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadStored = useCallback(() => {
-    const stored = getStored()
-    if (stored) {
-      if (isTokenExpired(stored.token)) {
-        clearStored()
-        setToken(null)
-        setCliente(null)
-      } else {
-        setToken(stored.token)
-        setCliente(stored.cliente)
+  const logout = useCallback(async () => {
+    const access = getClienteAccessToken()?.trim() || token?.trim()
+    if (access) {
+      try {
+        await clienteApi.logout(access)
+      } catch {
+        /* Aun así limpiar sesión local */
       }
-    } else {
+    }
+    clearClienteSession()
+    setToken(null)
+    setCliente(null)
+    setError(null)
+  }, [token])
+
+  const loadStored = useCallback(async () => {
+    const stored = readClienteSession()
+    if (!stored) {
       setToken(null)
       setCliente(null)
+      setIsLoading(false)
+      return
     }
+
+    if (!isTokenExpired(stored.token)) {
+      setToken(stored.token)
+      setCliente(stored.cliente)
+      setIsLoading(false)
+      return
+    }
+
+    // Access expirado: intentar renovar con refresh_token (silencioso)
+    if (stored.refreshToken) {
+      const ok = await refreshClienteTokens()
+      if (ok) {
+        const after = readClienteSession()
+        if (after) {
+          setToken(after.token)
+          setCliente(after.cliente)
+          setIsLoading(false)
+          return
+        }
+      }
+    }
+
+    clearClienteSession()
+    setToken(null)
+    setCliente(null)
     setIsLoading(false)
   }, [])
 
@@ -98,12 +111,37 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
     loadStored()
   }, [loadStored])
 
+  useEffect(() => {
+    const onTokensRefreshed = (e: Event) => {
+      const t = (e as CustomEvent<{ token?: string }>).detail?.token
+      if (t) setToken(t)
+    }
+    const onSessionEnded = () => {
+      setToken(null)
+      setCliente(null)
+      setError(null)
+      if (typeof window === 'undefined') return
+      const path = window.location.pathname
+      if (/\/cuenta\b/.test(path)) {
+        const seg = path.split('/').filter(Boolean)[0]
+        const loc = ['es', 'en', 'pt'].includes(seg) ? seg : 'es'
+        window.location.assign(`/${loc}/login`)
+      }
+    }
+    window.addEventListener('inxora-cliente-tokens-refreshed', onTokensRefreshed)
+    window.addEventListener('inxora-cliente-session-ended', onSessionEnded)
+    return () => {
+      window.removeEventListener('inxora-cliente-tokens-refreshed', onTokensRefreshed)
+      window.removeEventListener('inxora-cliente-session-ended', onSessionEnded)
+    }
+  }, [])
+
   const login = useCallback(async (correo: string, password: string) => {
     setError(null)
     try {
       const res = await clienteApi.login({ correo: correo.trim().toLowerCase(), password })
       if (!res.token || !res.cliente) throw new Error('Respuesta inválida')
-      setStored(res.token, res.cliente)
+      setClienteSession(res.token, res.refresh_token ?? null, res.cliente)
       setToken(res.token)
       setCliente(res.cliente)
     } catch (e) {
@@ -111,13 +149,6 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
       setError(msg)
       throw e
     }
-  }, [])
-
-  const logout = useCallback(() => {
-    clearStored()
-    setToken(null)
-    setCliente(null)
-    setError(null)
   }, [])
 
   const register = useCallback(async (payload: {
@@ -144,7 +175,6 @@ export function ClienteAuthProvider({ children }: { children: React.ReactNode })
         id_rubro: payload.id_rubro,
         acepta_terminos: payload.acepta_terminos,
       })
-      // Auto-login tras registro
       await login(payload.correo, payload.password)
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Error al registrarse'

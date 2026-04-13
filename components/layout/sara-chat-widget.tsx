@@ -122,7 +122,7 @@ const markdownComponents = {
 export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
   const t = useTranslations('chatSara')
   const bubbleTooltipId = useId()
-  const { cliente } = useClienteAuth()
+  const { cliente, token } = useClienteAuth()
   const { currency } = useCurrency()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -165,7 +165,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     if (typeof window === 'undefined') return
     const sessionId = sessionStorage.getItem(CHAT_SESSION_STORAGE_KEY)
     if (sessionId) {
-      getSaraConversation(sessionId)
+      getSaraConversation(sessionId, token)
         .then((res) => {
           const msgs = res?.data?.mensajes
           if (Array.isArray(msgs) && msgs.length > 0) {
@@ -204,7 +204,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
         // ignorar datos corruptos
       }
     }
-  }, [])
+  }, [token])
 
   // Persistir mensajes en sessionStorage cuando cambien (solo escribir; no borrar aquí para no pisar la carga inicial)
   useEffect(() => {
@@ -225,7 +225,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     if (!sessionId) return
     const POLL_INTERVAL_MS = 7000
     const interval = setInterval(() => {
-      getSaraConversation(sessionId)
+      getSaraConversation(sessionId, token)
         .then((res) => {
           const msgs = res?.data?.mensajes
           if (Array.isArray(msgs) && msgs.length > 0) {
@@ -239,7 +239,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
         .catch(() => {})
     }, POLL_INTERVAL_MS)
     return () => clearInterval(interval)
-  }, [open, getStoredSessionId])
+  }, [open, getStoredSessionId, token])
 
   const startNewConversation = useCallback(async () => {
     const sessionId = getStoredSessionId()
@@ -248,7 +248,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
       const confirmar = window.confirm('¿Borrar todo el historial del chat? Podrás seguir chateando con la misma conversación.')
       if (!confirmar) return
       try {
-        await deleteSaraChatHistory(sessionId)
+        await deleteSaraChatHistory(sessionId, token)
       } catch {
         setError('No se pudo borrar el historial. Inténtalo de nuevo.')
         return
@@ -261,7 +261,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
     setMessages([])
     setError(null)
     inputRef.current?.focus()
-  }, [messages.length])
+  }, [messages.length, token])
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -457,7 +457,8 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
         cliente?.id,
         apiAttachments,
         apiDocuments,
-        currency
+        currency,
+        token
       )
       if (res.session_id && typeof window !== 'undefined') {
         sessionStorage.setItem(CHAT_SESSION_STORAGE_KEY, res.session_id)
@@ -483,7 +484,7 @@ export function SaraChatWidget({ onOpenChange }: { onOpenChange?: (open: boolean
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, attachments, documents, loading, getStoredSessionId, scrollToBottom, cliente?.id])
+  }, [input, attachments, documents, loading, getStoredSessionId, scrollToBottom, cliente?.id, token, currency])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

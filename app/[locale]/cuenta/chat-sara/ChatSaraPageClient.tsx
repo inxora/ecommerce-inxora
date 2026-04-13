@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
-import { MessageSquarePlus, ArrowLeft, Loader2, Trash2, ImagePlus, X, Share2, FileText, Paperclip, Cloud, Image as ImageIcon, Send, Menu, Package, UserCircle2, MessageSquare, RefreshCw, Download, ShoppingBag, ChevronRight, ChevronLeft, LogOut, Pencil, Check } from 'lucide-react'
+import { MessageSquarePlus, ArrowLeft, Loader2, Trash2, ImagePlus, X, Share2, FileText, Paperclip, Cloud, Image as ImageIcon, Send, Package, UserCircle2, MessageSquare, RefreshCw, Download, ShoppingBag, ChevronRight, ChevronLeft, LogOut, Pencil, Check } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import {
@@ -117,6 +117,16 @@ function stripImagePlaceholder(content: string): string {
     .trim()
 }
 
+/** Evita burbujas sin texto: el API a veces envía mensajes assistant/asesor con content vacío o solo espacios. */
+function messageHasRenderableContent(msg: Message): boolean {
+  if (msg.role === 'user') {
+    if (msg.attachmentPreviews && msg.attachmentPreviews.length > 0) return true
+    if (hasImagePlaceholder(msg.content)) return true
+    return stripImagePlaceholder(msg.content).trim().length > 0
+  }
+  return msg.content.trim().length > 0
+}
+
 type ChatSaraT = (key: string, values?: Record<string, string | number | Date>) => string
 
 function formatRelativeDate(s: string | null, locale: string, t: ChatSaraT): string {
@@ -139,6 +149,48 @@ function formatRelativeDate(s: string | null, locale: string, t: ChatSaraT): str
   }
 }
 
+/** Fecha corta del último movimiento (misma línea que el relativo a la derecha). */
+function formatShortChatDate(iso: string | null, locale: string): string {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleDateString(localeToBcp47(locale), { day: '2-digit', month: 'short' })
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Texto relativo para la columna derecha del listado (evita duplicar la fecha larga).
+ * Solo si hace menos de 7 días; si no, cadena vacía (la fecha corta va a la izquierda).
+ */
+function formatSidebarRelativeRight(iso: string | null, locale: string, t: ChatSaraT): string {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    const diffMs = Date.now() - d.getTime()
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffDays >= 7) return ''
+    return formatRelativeDate(iso, locale, t)
+  } catch {
+    return ''
+  }
+}
+
+type UltimoPreviewParts = { body: string; rol: 'user' | 'assistant' | null }
+
+/** Vista previa del último mensaje (texto limpio + rol). El recorte visual va con `line-clamp-2` en la lista. */
+function getUltimoMensajePreviewParts(c: SaraConversacionItem): UltimoPreviewParts | null {
+  const raw = (c.ultimo_mensaje ?? c.primer_mensaje ?? '').trim()
+  if (!raw) return null
+  const cleaned = stripImagePlaceholder(raw).replace(/\n/g, ' ').replace(/[ \t]+/g, ' ').trim()
+  if (!cleaned) return null
+  const body = cleaned
+  const rolRaw = c.ultimo_mensaje_rol
+  const rol: 'user' | 'assistant' | null =
+    rolRaw === 'user' || rolRaw === 'assistant' ? rolRaw : null
+  return { body, rol }
+}
+
 /** Devuelve el texto a mostrar como título de una conversación. */
 function getConversacionTitle(c: SaraConversacionItem, locale: string, t: ChatSaraT): string {
   if (c.titulo?.trim()) return c.titulo.trim()
@@ -148,7 +200,7 @@ function getConversacionTitle(c: SaraConversacionItem, locale: string, t: ChatSa
   }
   if (c.lead_json?.razon_social) return c.lead_json.razon_social
   if (c.lead_json?.nombre_contacto) return c.lead_json.nombre_contacto
-  if (c.created_at) return formatRelativeDate(c.created_at, locale, t)
+  /** No usar fecha de creación aquí: choca con la fecha de última actividad (`updated_at`) en la lista. */
   return t('conversationFallback')
 }
 
@@ -852,7 +904,6 @@ export function ChatSaraPageClient({
   const categorias = categoriasProp
   const [activeChipId, setActiveChipId] = useState<number | null>(null)
   const [driveLoading, setDriveLoading] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   // En mobile: muestra el panel de conversaciones (true) o el chat (false)
   const [mobileShowConversations, setMobileShowConversations] = useState(!selectedSessionId)
 
@@ -871,6 +922,7 @@ export function ChatSaraPageClient({
 
   const { openAuthModal } = useAuthModal()
   const listRef = useRef<HTMLDivElement>(null)
+  const chatInputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const fileInputDocRef = useRef<HTMLInputElement>(null)
   const attachMenuRef = useRef<HTMLDivElement>(null)
@@ -913,7 +965,13 @@ export function ChatSaraPageClient({
         content: m.content,
         asesor_nombre: typeof m.asesor_nombre === 'string' ? m.asesor_nombre : undefined,
       }))
+      .filter(messageHasRenderableContent)
   }, [])
+
+  const visibleChatMessages = useMemo(
+    () => messages.filter(messageHasRenderableContent),
+    [messages]
+  )
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -969,14 +1027,14 @@ export function ChatSaraPageClient({
     setLoadingList(true)
     setError(null)
     try {
-      const res = await getSaraConversaciones(cliente.id)
+      const res = await getSaraConversaciones(cliente.id, undefined, token)
       setConversaciones(res.data ?? [])
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t('errors.loadConversations'))
     } finally {
       setLoadingList(false)
     }
-  }, [cliente?.id, t])
+  }, [cliente?.id, token, t])
 
   useEffect(() => {
     if (cliente?.id) loadConversaciones()
@@ -1020,7 +1078,7 @@ export function ChatSaraPageClient({
     }
     setLoadingChat(true)
     setError(null)
-    getSaraConversation(selectedSessionId)
+    getSaraConversation(selectedSessionId, token)
       .then((res) => {
         setMessages(normalizeMessages(res?.data?.mensajes))
         setIsAsesorRespondiendo(res?.data?.estado === 'asesor_respondiendo')
@@ -1031,7 +1089,7 @@ export function ChatSaraPageClient({
         setIsAsesorRespondiendo(false)
       })
       .finally(() => setLoadingChat(false))
-  }, [activeSection, selectedSessionId, loadKey, scrollToBottom, normalizeMessages])
+  }, [activeSection, selectedSessionId, loadKey, scrollToBottom, normalizeMessages, token])
 
   useEffect(() => {
     if (activeSection !== 'chat') return
@@ -1040,7 +1098,7 @@ export function ChatSaraPageClient({
     let cancelled = false
     const intervalId = window.setInterval(async () => {
       try {
-        const res = await getSaraConversation(selectedSessionId)
+        const res = await getSaraConversation(selectedSessionId, token)
         if (cancelled) return
         setMessages((prev) => {
           const next = normalizeMessages(res?.data?.mensajes)
@@ -1057,7 +1115,7 @@ export function ChatSaraPageClient({
       cancelled = true
       window.clearInterval(intervalId)
     }
-  }, [activeSection, selectedSessionId, isAsesorRespondiendo, normalizeMessages])
+  }, [activeSection, selectedSessionId, isAsesorRespondiendo, normalizeMessages, token])
 
   const isNearBottom = useCallback((threshold = 120) => {
     const el = listRef.current
@@ -1080,7 +1138,7 @@ export function ChatSaraPageClient({
       const confirmar = window.confirm(t('confirm.deleteHistory'))
       if (!confirmar) return
       try {
-        await deleteSaraChatHistory(sessionId)
+        await deleteSaraChatHistory(sessionId, token)
         if (selectedSessionId === sessionId) {
           setMessages([])
           setError(null)
@@ -1090,7 +1148,7 @@ export function ChatSaraPageClient({
         setError(t('errors.deleteHistory'))
       }
     },
-    [selectedSessionId, loadConversaciones, t]
+    [selectedSessionId, loadConversaciones, t, token]
   )
 
   const openShareModal = useCallback((sessionId: string, e?: React.MouseEvent) => {
@@ -1118,7 +1176,7 @@ export function ChatSaraPageClient({
     renameSavingRef.current = true
     setSavingTitle(sessionId)
     try {
-      await renameSaraConversacion(sessionId, title)
+      await renameSaraConversacion(sessionId, title, token)
       setConversaciones((prev) =>
         prev.map((c) => (c.session_id === sessionId ? { ...c, titulo: title } : c))
       )
@@ -1132,7 +1190,7 @@ export function ChatSaraPageClient({
       setSavingTitle(null)
       renameSavingRef.current = false
     }
-  }, [editTitle, handleCancelRename, t])
+  }, [editTitle, handleCancelRename, t, token])
 
   const shareUrl = shareModalSessionId
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/${locale}/chat-sara/share/${encodeURIComponent(shareModalSessionId)}`
@@ -1324,10 +1382,26 @@ export function ChatSaraPageClient({
         cliente?.id,
         apiAttachments,
         apiDocuments,
-        currency
+        currency,
+        token
       )
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
+      if (res.response?.trim()) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
+      }
       if (res.session_id) {
+        const isoNow = new Date().toISOString()
+        setConversaciones((prev) =>
+          prev.map((row) =>
+            row.session_id === res.session_id
+              ? {
+                  ...row,
+                  updated_at: isoNow,
+                  ultimo_mensaje: res.response?.trim() || row.ultimo_mensaje,
+                  ultimo_mensaje_rol: 'assistant',
+                }
+              : row
+          )
+        )
         skipLoadMessagesRef.current = true
         setSelectedSessionId(res.session_id)
         updateUrlForSession(res.session_id)
@@ -1345,6 +1419,9 @@ export function ChatSaraPageClient({
                 lead_json: null,
                 created_at: now,
                 updated_at: now,
+                ultimo_mensaje: res.response?.trim() || undefined,
+                ultimo_mensaje_rol: 'assistant',
+                primer_mensaje: userContent || text || undefined,
               } as SaraConversacionItem,
               ...prev,
             ]
@@ -1363,8 +1440,9 @@ export function ChatSaraPageClient({
     } finally {
       setSending(false)
       scrollToBottom()
+      window.setTimeout(() => chatInputRef.current?.focus(), 0)
     }
-  }, [input, attachments, documents, sending, selectedSessionId, loadConversaciones, scrollToBottom, cliente?.id, updateUrlForSession, t, currency])
+  }, [input, attachments, documents, sending, selectedSessionId, loadConversaciones, scrollToBottom, cliente?.id, updateUrlForSession, t, currency, token])
 
   /** Envía directamente un mensaje de categoría sin pasar por el input de texto. */
   const sendCategoryMessage = useCallback(async (cat: Categoria) => {
@@ -1379,9 +1457,24 @@ export function ChatSaraPageClient({
     setActiveChipId(cat.id)
     scrollToBottom()
     try {
-      const res = await sendSaraChatMessage(apiText, selectedSessionId ?? undefined, cliente?.id, undefined, undefined, currency)
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
+      const res = await sendSaraChatMessage(apiText, selectedSessionId ?? undefined, cliente?.id, undefined, undefined, currency, token)
+      if (res.response?.trim()) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
+      }
       if (res.session_id) {
+        const isoNow = new Date().toISOString()
+        setConversaciones((prev) =>
+          prev.map((row) =>
+            row.session_id === res.session_id
+              ? {
+                  ...row,
+                  updated_at: isoNow,
+                  ultimo_mensaje: res.response?.trim() || row.ultimo_mensaje,
+                  ultimo_mensaje_rol: 'assistant',
+                }
+              : row
+          )
+        )
         skipLoadMessagesRef.current = true
         setSelectedSessionId(res.session_id)
         updateUrlForSession(res.session_id)
@@ -1399,6 +1492,9 @@ export function ChatSaraPageClient({
                 lead_json: null,
                 created_at: now,
                 updated_at: now,
+                ultimo_mensaje: res.response?.trim() || undefined,
+                ultimo_mensaje_rol: 'assistant',
+                primer_mensaje: displayText,
               } as SaraConversacionItem,
               ...prev,
             ]
@@ -1418,8 +1514,9 @@ export function ChatSaraPageClient({
       setSending(false)
       setActiveChipId(null)
       scrollToBottom()
+      window.setTimeout(() => chatInputRef.current?.focus(), 0)
     }
-  }, [sending, selectedSessionId, cliente?.id, loadConversaciones, scrollToBottom, updateUrlForSession, t, currency])
+  }, [sending, selectedSessionId, cliente?.id, loadConversaciones, scrollToBottom, updateUrlForSession, t, currency, token])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1566,36 +1663,13 @@ export function ChatSaraPageClient({
             : mobileShowConversations
               ? 'flex w-full md:w-auto md:transition-[width] md:duration-200'
               : 'hidden md:flex md:transition-[width] md:duration-200'
-        } ${activeSection === 'chat' ? (sidebarCollapsed ? 'md:w-14' : 'md:w-72') : ''}`}
+        } ${activeSection === 'chat' ? 'md:w-72' : ''}`}
       >
-        {/* Barra superior */}
-        <div
-          className={`flex border-b border-slate-100 dark:border-slate-800 ${
-            sidebarCollapsed ? 'flex-col items-center gap-0.5 py-2' : 'items-center gap-1 p-2 min-h-[52px]'
-          }`}
-        >
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed((c) => !c)}
-            className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 shrink-0"
-            aria-label={sidebarCollapsed ? t('sidebar.openMenu') : t('sidebar.closeMenu')}
-            title={sidebarCollapsed ? t('sidebar.openMenu') : t('sidebar.closeMenu')}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <Link
-            href={`/${locale}`}
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30 transition-colors shrink-0"
-            aria-label={t('header.back')}
-            title={t('header.back')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          {!sidebarCollapsed && (
-            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate flex-1 px-1">
-              {t('sidebar.conversations')}
-            </span>
-          )}
+        {/* Barra superior: título + nueva conversación (sin menú ni volver al inicio) */}
+        <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 p-2 min-h-[52px]">
+          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate flex-1 min-w-0 px-1">
+            {t('sidebar.conversations')}
+          </span>
           <button
             type="button"
             onClick={startNewConversation}
@@ -1612,7 +1686,6 @@ export function ChatSaraPageClient({
               <Loader2 className="h-6 w-6 animate-spin text-slate-300" aria-hidden />
             </div>
           ) : conversaciones.length === 0 ? (
-            !sidebarCollapsed && (
               <div className="text-center py-8 px-3">
                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
                   <MessageSquarePlus className="h-5 w-5 text-slate-400" />
@@ -1620,7 +1693,6 @@ export function ChatSaraPageClient({
                 <p className="text-sm text-slate-500 dark:text-slate-400">{t('sidebar.noConversations')}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t('sidebar.noConversationsHint')}</p>
               </div>
-            )
           ) : (
             <ul className="space-y-0.5 px-2">
               {conversaciones.map((c) => (
@@ -1678,7 +1750,7 @@ export function ChatSaraPageClient({
                   ) : (
                     /* ── Vista normal ── */
                     <div
-                      className={`group relative flex items-center gap-2 rounded-xl transition-colors ${
+                      className={`group relative rounded-xl transition-colors ${
                         selectedSessionId === c.session_id
                           ? 'bg-[#13A0D8]/10 text-[#13A0D8]'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
@@ -1692,34 +1764,63 @@ export function ChatSaraPageClient({
                           updateUrlForSession(c.session_id)
                           setMobileShowConversations(false)
                         }}
-                        onDoubleClick={(e) => {
-                          if (!sidebarCollapsed) handleStartRename(c, e)
-                        }}
-                        className={`flex-1 min-w-0 text-left py-2.5 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13A0D8]/30 ${
-                          sidebarCollapsed ? 'px-2 flex justify-center' : 'px-3'
-                        }`}
+                        onDoubleClick={(e) => handleStartRename(c, e)}
+                        className="w-full min-w-0 text-left py-2.5 pl-3 pr-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13A0D8]/30"
                       >
-                        {sidebarCollapsed ? (
-                          <span className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
-                            {getConversacionTitle(c, locale, t).slice(0, 1).toUpperCase()}
-                          </span>
-                        ) : (
-                          <>
-                            <span className="block truncate text-sm font-medium">
-                              {getConversacionTitle(c, locale, t)}
-                            </span>
-                            <span className="block truncate text-xs text-slate-400 mt-0.5">
-                              {formatRelativeDate(c.updated_at, locale, t)}
-                            </span>
-                          </>
-                        )}
+                        {(() => {
+                          const relativeRight = formatSidebarRelativeRight(c.updated_at, locale, t)
+                          const shortDate = formatShortChatDate(c.updated_at, locale)
+                          const previewParts = getUltimoMensajePreviewParts(c)
+                          const previewTitle =
+                            previewParts &&
+                            `${previewParts.rol === 'user' ? `${t('sidebar.previewYou')}: ` : previewParts.rol === 'assistant' ? `${t('sidebar.previewSara')}: ` : ''}${previewParts.body}`
+                          return (
+                            <>
+                              {/* Fila 1: título + tiempo relativo pegado a la derecha del ítem (reserva espacio al hover por acciones) */}
+                              <div className="flex items-start justify-between gap-2 min-w-0 w-full pr-0 transition-[padding] duration-150 group-hover:pr-[5.25rem] group-focus-within:pr-[5.25rem]">
+                                <span className="truncate text-sm font-medium text-left min-w-0 flex-1">
+                                  {getConversacionTitle(c, locale, t)}
+                                </span>
+                                {relativeRight ? (
+                                  <span className="text-slate-400 dark:text-slate-500 shrink-0 text-xs tabular-nums leading-snug pt-0.5 text-right ml-2">
+                                    {relativeRight}
+                                  </span>
+                                ) : null}
+                              </div>
+                              {/* Fila 2: solo si hace ≥7 días (no hay relativo); evita duplicar con "Hace X min" + misma fecha */}
+                              {!relativeRight && shortDate ? (
+                                <span className="block text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">
+                                  {shortDate}
+                                </span>
+                              ) : null}
+                              {previewParts ? (
+                                <span
+                                  className="block line-clamp-2 break-words text-xs text-slate-400 dark:text-slate-500 mt-0.5 text-left leading-snug"
+                                  title={previewTitle ?? undefined}
+                                >
+                                  {previewParts.rol === 'user' ? (
+                                    <span className="font-semibold text-slate-500 dark:text-slate-400">
+                                      {t('sidebar.previewYou')}:{' '}
+                                    </span>
+                                  ) : previewParts.rol === 'assistant' ? (
+                                    <span className="font-semibold text-[#13A0D8]">
+                                      {t('sidebar.previewSara')}:{' '}
+                                    </span>
+                                  ) : null}
+                                  <span className="font-normal">{previewParts.body}</span>
+                                </span>
+                              ) : null}
+                            </>
+                          )
+                        })()}
                       </button>
-                      {!sidebarCollapsed && (
-                        <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className="absolute right-1 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-slate-200/90 bg-white/95 px-0.5 py-0.5 shadow-sm backdrop-blur-sm dark:border-slate-600 dark:bg-slate-800/95 opacity-0 pointer-events-none invisible transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:visible group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible"
+                      >
                           <button
                             type="button"
                             onClick={(e) => handleStartRename(c, e)}
-                            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
+                            className="p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13A0D8]/40"
                             title={t('sidebar.rename')}
                             aria-label={t('sidebar.rename')}
                           >
@@ -1728,7 +1829,7 @@ export function ChatSaraPageClient({
                           <button
                             type="button"
                             onClick={(e) => borrarHistorialDeSesion(c.session_id, e)}
-                            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
+                            className="p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13A0D8]/40"
                             title={t('sidebar.deleteHistory')}
                             aria-label={t('sidebar.deleteHistory')}
                           >
@@ -1737,14 +1838,13 @@ export function ChatSaraPageClient({
                           <button
                             type="button"
                             onClick={(e) => openShareModal(c.session_id, e)}
-                            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none"
+                            className="p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13A0D8]/40"
                             title={t('sidebar.share')}
                             aria-label={t('sidebar.share')}
                           >
                             <Share2 className="h-4 w-4" />
                           </button>
                         </div>
-                      )}
                     </div>
                   )}
                 </li>
@@ -1789,16 +1889,6 @@ export function ChatSaraPageClient({
 
         {/* Header */}
         <header className="shrink-0 flex items-center gap-3 px-4 py-3 md:gap-4 md:px-5 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          {/* Botón volver a conversaciones (solo mobile, con sesión e historial lateral) */}
-          {isLoggedIn && (
-            <button
-              className="md:hidden -ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 transition-colors focus:outline-none"
-              onClick={() => setMobileShowConversations(true)}
-              aria-label={t('header.backConversations')}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-          )}
           <div className="relative shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
             <Image
               src={BRAND_LOGO}
@@ -1820,7 +1910,7 @@ export function ChatSaraPageClient({
 
         {/* ── Categorías (debajo del header, estilo grid circular) ── */}
         {isLoggedIn && categorias.length > 0 && (
-          <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-3 py-3 sm:px-5 sm:py-4">
+          <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 py-3 sm:px-5 sm:py-4">
             {/*
               Mobile:  scroll horizontal, items de tamaño fijo
               Desktop: grid que se expande para llenar el ancho completo (auto-fit)
@@ -1890,10 +1980,10 @@ export function ChatSaraPageClient({
           </div>
         )}
 
-        {/* Mensajes */}
+        {/* Mensajes: padding uniforme; burbujas a ancho completo del contenedor */}
         <div
           ref={listRef}
-          className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900"
+          className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900 p-4 sm:p-5"
         >
           {!isLoggedIn ? (
             /* ── Pantalla de bienvenida (no autenticado) ── */
@@ -1998,25 +2088,25 @@ export function ChatSaraPageClient({
             <div className="flex justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-slate-300" aria-hidden />
             </div>
-          ) : messages.length === 0 ? (
+          ) : visibleChatMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 min-h-[240px] text-center text-slate-500">
               <p className="text-sm font-medium">{t('welcome.emptyThread')}</p>
               <p className="text-xs mt-1">{t('welcome.emptyThreadHint')}</p>
             </div>
           ) : (
-            <div className="space-y-6 max-w-3xl mx-auto">
-              {messages.map((msg, i) => (
+            <div className="w-full space-y-4">
+              {visibleChatMessages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
+                    className={`inline-block w-max max-w-[min(100%,42rem)] rounded-2xl px-4 py-3 text-left shadow-sm break-words [overflow-wrap:anywhere] ${
                       msg.role === 'user'
-                        ? 'bg-[#13A0D8] text-white rounded-br-md'
+                        ? 'ml-auto bg-[#13A0D8] text-white rounded-br-md'
                         : msg.role === 'asesor'
                           ? 'bg-emerald-50/90 text-emerald-900 rounded-bl-md border border-emerald-100'
-                          : error && msg.role === 'assistant' && i === messages.length - 1
+                          : error && msg.role === 'assistant' && i === visibleChatMessages.length - 1
                             ? 'bg-red-50 text-red-800 rounded-bl-md border border-red-100'
                             : 'bg-white text-slate-800 rounded-bl-md border border-slate-100 shadow-sm'
                     }`}
@@ -2074,8 +2164,8 @@ export function ChatSaraPageClient({
             </div>
           )}
           {sending && (
-            <div className="flex justify-start mt-4 max-w-3xl mx-auto">
-              <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
+            <div className="flex justify-start w-full mt-2">
+              <div className="inline-block w-fit bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
                 <span className="inline-flex gap-1 text-slate-400 text-sm">
                   <span className="w-2 h-2 rounded-full bg-slate-300 animate-bounce [animation-delay:0ms]" />
                   <span className="w-2 h-2 rounded-full bg-slate-300 animate-bounce [animation-delay:150ms]" />
@@ -2088,13 +2178,13 @@ export function ChatSaraPageClient({
 
         {/* Error inline: suave */}
         {error && (
-          <div className="shrink-0 mx-4 mb-2 px-4 py-2.5 bg-red-50/90 border border-red-100 text-red-700 text-sm rounded-xl" role="alert">
+          <div className="shrink-0 px-4 sm:px-5 mb-2 py-2.5 bg-red-50/90 border border-red-100 text-red-700 text-sm rounded-xl" role="alert">
             {error}
           </div>
         )}
 
-        {/* Input fijo: pill, sombra sutil, adjuntos compactos */}
-        <div className={`shrink-0 p-4 pt-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 ${!isLoggedIn ? 'pointer-events-none select-none opacity-40' : ''}`}>
+        {/* Input: mismo inset horizontal que el área de mensajes */}
+        <div className={`shrink-0 px-4 sm:px-5 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 ${!isLoggedIn ? 'pointer-events-none select-none opacity-40' : ''}`}>
           <input
             ref={fileInputRef}
             type="file"
@@ -2222,6 +2312,7 @@ export function ChatSaraPageClient({
               )}
             </div>
             <textarea
+              ref={chatInputRef}
               placeholder={isLoggedIn ? t('chat.placeholder') : t('chat.placeholderLogin')}
               value={input}
               onChange={(e) => setInput(e.target.value)}

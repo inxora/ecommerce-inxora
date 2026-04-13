@@ -1,3 +1,6 @@
+import { getClienteAccessToken, getClienteRefreshToken, isClienteTokenExpired } from '@/lib/auth/cliente-tokens'
+import { refreshClienteTokens } from '@/lib/api/cliente-refresh'
+
 // En cliente: '' = proxy (app/api/[...path]) evita CORS. En servidor (SSR): fetch() requiere URL absoluta.
 const getApiBaseUrl = () => {
   const configured = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -10,6 +13,8 @@ interface ApiOptions extends Omit<RequestInit, 'next'> {
   next?: { revalidate?: number | false } | { cache?: RequestCache }
   /** Timeout en milisegundos (por defecto 10000). Para registro/login usar 30000. */
   timeout?: number
+  /** Ante 401, no llamar a POST /auth/cliente/refresh (p. ej. logout: evita renovar tokens al cerrar sesión). */
+  skipClienteRefreshOn401?: boolean
 }
 
 export class ApiError extends Error {
@@ -33,7 +38,7 @@ export async function apiClient<T>(
   endpoint: string,
   options?: ApiOptions
 ): Promise<T> {
-  const { params, next, timeout = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options || {}
+  const { params, next, timeout = DEFAULT_TIMEOUT_MS, skipClienteRefreshOn401, ...fetchOptions } = options || {}
 
   const baseUrl = getApiBaseUrl()
   let url = `${baseUrl}${endpoint}`
@@ -75,6 +80,24 @@ export async function apiClient<T>(
       headers['Content-Type'] = 'application/json'
     }
     
+    // Refresh proactivo: si el access token está expirado, refrescar ANTES de enviar.
+    // Algunos endpoints (ej. chat Sara) devuelven 200 en lugar de 401 para tokens expirados,
+    // por lo que el retry reactivo post-401 nunca se dispararía.
+    if (
+      typeof window !== 'undefined' &&
+      !skipClienteRefreshOn401 &&
+      !endpoint.includes('/auth/cliente/refresh')
+    ) {
+      const at = getClienteAccessToken()
+      if (at && isClienteTokenExpired(at) && getClienteRefreshToken()) {
+        await refreshClienteTokens()
+        const fresh = getClienteAccessToken()
+        if (fresh) {
+          ;(headers as Record<string, string>).Authorization = `Bearer ${fresh}`
+        }
+      }
+    }
+
     // Crear un AbortController para timeout configurable
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -95,8 +118,45 @@ export async function apiClient<T>(
       }
       
       response = await fetch(url, fetchConfig as RequestInit)
-      
-      clearTimeout(timeoutId) // Limpiar timeout si la petición se completa
+      clearTimeout(timeoutId)
+
+      // 401: access token expirado → renovar con refresh_token y reintentar una sola vez (solo en el navegador)
+      if (
+        response.status === 401 &&
+        typeof window !== 'undefined' &&
+        !skipClienteRefreshOn401 &&
+        !endpoint.includes('/auth/cliente/refresh') &&
+        getClienteRefreshToken()
+      ) {
+        const refreshed = await refreshClienteTokens()
+        if (refreshed) {
+          const access = getClienteAccessToken()
+          const retryHeaders: HeadersInit = {
+            Accept: 'application/json',
+            ...fetchOptions?.headers,
+          }
+          if (access) {
+            ;(retryHeaders as Record<string, string>).Authorization = `Bearer ${access}`
+          }
+          if ((method === 'POST' || method === 'PUT' || method === 'PATCH') && hasBody) {
+            ;(retryHeaders as Record<string, string>)['Content-Type'] = 'application/json'
+          }
+          const controller2 = new AbortController()
+          const timeoutId2 = setTimeout(() => controller2.abort(), timeout)
+          try {
+            const fetchConfig2: RequestInit & { next?: { revalidate?: number | false } | { cache?: RequestCache } } = {
+              ...fetchOptions,
+              headers: retryHeaders,
+              signal: controller2.signal,
+              credentials: 'omit',
+            }
+            if (next) fetchConfig2.next = next
+            response = await fetch(url, fetchConfig2 as RequestInit)
+          } finally {
+            clearTimeout(timeoutId2)
+          }
+        }
+      }
     } catch (fetchError) {
       clearTimeout(timeoutId) // Limpiar timeout en caso de error
       

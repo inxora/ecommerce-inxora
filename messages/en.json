@@ -905,7 +905,9 @@
       "cancel": "Cancel",
       "rename": "Rename conversation",
       "deleteHistory": "Delete history",
-      "share": "Share"
+      "share": "Share",
+      "previewYou": "You",
+      "previewSara": "Sara"
     },
     "errors": {
       "loadPedidos": "Could not load orders.",

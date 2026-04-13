@@ -3,10 +3,22 @@
  * Consume POST https://api.inxora.com/api/chat (o proxy /api/chat).
  * No mezclar con el widget de chat.js existente.
  */
+import { getClienteAccessToken } from '@/lib/auth/cliente-tokens'
 import { apiClient, ApiError } from '@/lib/api/client'
 
 const CHAT_BASE = '/api/chat'
 const CHAT_TIMEOUT_MS = 90000
+
+/**
+ * El backend usa el JWT para cotizaciones y vínculo de sesión; no basta con id_cliente en el body.
+ * Prioriza siempre `localStorage` sobre el argumento: tras refresh, el estado React puede ir un tick detrás
+ * y enviar un access token ya expirado si solo usáramos el `token` del hook.
+ */
+function bearerHeaders(token?: string | null): { headers?: Record<string, string> } {
+  const t = getClienteAccessToken()?.trim() || token?.trim() || ''
+  if (!t) return {}
+  return { headers: { Authorization: `Bearer ${t}` } }
+}
 
 /** Adjunto de imagen para el chat (máx. 5 por mensaje, 5 MB cada una). */
 export type SaraChatAttachmentContentType = 'image/jpeg' | 'image/png' | 'image/webp'
@@ -73,11 +85,12 @@ export interface SaraConversacionResponse {
  * Obtiene una conversación por session_id (incluye mensajes para rehidratar el chat).
  */
 export async function getSaraConversation(
-  sessionId: string
+  sessionId: string,
+  authToken?: string | null
 ): Promise<SaraConversacionResponse> {
   return apiClient<SaraConversacionResponse>(
     `${CHAT_BASE}/sesion/${encodeURIComponent(sessionId)}`,
-    { method: 'GET', timeout: 15000 }
+    { method: 'GET', timeout: 15000, ...bearerHeaders(authToken) }
   )
 }
 
@@ -93,11 +106,12 @@ export interface SaraDeleteHistorialResponse {
  * El mismo session_id sigue válido; el siguiente mensaje será como conversación nueva.
  */
 export async function deleteSaraChatHistory(
-  sessionId: string
+  sessionId: string,
+  authToken?: string | null
 ): Promise<SaraDeleteHistorialResponse> {
   return apiClient<SaraDeleteHistorialResponse>(
     `${CHAT_BASE}/sesion/${encodeURIComponent(sessionId)}/historial`,
-    { method: 'DELETE', timeout: 10000 }
+    { method: 'DELETE', timeout: 10000, ...bearerHeaders(authToken) }
   )
 }
 
@@ -115,6 +129,10 @@ export interface SaraConversacionItem {
   titulo?: string | null
   /** Texto del primer mensaje del usuario (para usar como título de fallback) */
   primer_mensaje?: string | null
+  /** Último mensaje del hilo (lista lateral) */
+  ultimo_mensaje?: string | null
+  /** Quién envió el último mensaje (vista previa: Tú / Sara) */
+  ultimo_mensaje_rol?: 'user' | 'assistant' | null
 }
 
 /** Response de GET /api/chat/conversaciones?id_cliente=... */
@@ -129,14 +147,15 @@ export interface SaraConversacionesListResponse {
  */
 export async function getSaraConversaciones(
   idCliente: number,
-  params?: { limit?: number; offset?: number }
+  params?: { limit?: number; offset?: number },
+  authToken?: string | null
 ): Promise<SaraConversacionesListResponse> {
   const search = new URLSearchParams({ id_cliente: String(idCliente) })
   if (params?.limit != null) search.set('limit', String(params.limit))
   if (params?.offset != null) search.set('offset', String(params.offset))
   return apiClient<SaraConversacionesListResponse>(
     `${CHAT_BASE}/conversaciones?${search.toString()}`,
-    { method: 'GET', timeout: 15000 }
+    { method: 'GET', timeout: 15000, ...bearerHeaders(authToken) }
   )
 }
 
@@ -153,7 +172,8 @@ export async function sendSaraChatMessage(
   idCliente?: number,
   attachments?: SaraChatAttachment[],
   documents?: SaraChatDocument[],
-  monedaUsuario?: string
+  monedaUsuario?: string,
+  authToken?: string | null
 ): Promise<SaraChatResponse> {
   const body: SaraChatRequest = {
     user_message: userMessage,
@@ -167,6 +187,7 @@ export async function sendSaraChatMessage(
     method: 'POST',
     body: JSON.stringify(body),
     timeout: CHAT_TIMEOUT_MS,
+    ...bearerHeaders(authToken),
   })
 }
 
@@ -196,7 +217,8 @@ export function isGatewayErrorBody(text: string): boolean {
  */
 export async function renameSaraConversacion(
   sessionId: string,
-  titulo: string
+  titulo: string,
+  authToken?: string | null
 ): Promise<{ success: boolean; message?: string }> {
   return apiClient<{ success: boolean; message?: string }>(
     `${CHAT_BASE}/sesion/${encodeURIComponent(sessionId)}/titulo`,
@@ -204,6 +226,7 @@ export async function renameSaraConversacion(
       method: 'PATCH',
       body: JSON.stringify({ titulo }),
       timeout: 10000,
+      ...bearerHeaders(authToken),
     }
   )
 }

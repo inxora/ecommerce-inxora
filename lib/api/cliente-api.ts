@@ -1,6 +1,7 @@
 import { apiClient, ApiError } from '@/lib/api/client'
 
 const BASE = '/api/clientes'
+const AUTH_CLIENTE_BASE = '/api/auth/cliente'
 
 export interface ClienteInfo {
   id: number
@@ -66,6 +67,8 @@ export interface RegistroEmpresaV2Payload {
 export interface LoginResponse {
   success: boolean
   token: string
+  /** Rotación en cada refresh; guardar junto al access token. */
+  refresh_token?: string
   cliente: ClienteInfo
   message: string
 }
@@ -173,5 +176,18 @@ export const clienteApi = {
       timeout: 30000,
     })
     return res
+  },
+
+  /**
+   * Cierra sesión en servidor: invalida tokens anteriores (ultimo_logout en BD).
+   * Requiere Bearer; no dispara refresh ante 401 para no renovar sesión al cerrar.
+   */
+  async logout(accessToken: string): Promise<{ success?: boolean; message?: string }> {
+    return apiClient<{ success?: boolean; message?: string }>(`${AUTH_CLIENTE_BASE}/logout`, {
+      method: 'POST',
+      timeout: 15000,
+      skipClienteRefreshOn401: true,
+      headers: { Authorization: `Bearer ${accessToken.trim()}` },
+    })
   },
 }
