@@ -133,12 +133,22 @@ export interface CotizacionesListResponse {
 export interface CotizacionItemDetalle {
   id: number
   descripcion?: string | null
+  /** Nombre del producto tal como viene en la API (/api/cotizaciones/:id) */
+  producto_nombre?: string | null
+  descripcion_personalizada?: string | null
   cantidad?: number | null
+  unidad?: string | null
   precio_unitario?: string | number | null
+  /** Precio unitario final aplicado al cliente */
+  precio_unitario_final?: string | number | null
   precio_unitario_cliente?: string | number | null
   total?: string | number | null
   subtotal?: string | number | null
   descuento?: string | number | null
+  /** SKU numérico o código de producto */
+  sku?: number | string | null
+  marca?: string | null
+  proveedor?: string | null
   producto?: {
     id?: number | null
     nombre?: string | null
@@ -153,12 +163,15 @@ export interface CotizacionItemDetalle {
 }
 
 export interface CotizacionDetalle extends CotizacionListItem {
+  /** Campo real de la API: /api/cotizaciones/:id → data.cotizacion_detalle */
+  cotizacion_detalle?: CotizacionItemDetalle[] | null
   items?: CotizacionItemDetalle[] | null
   lineas?: CotizacionItemDetalle[] | null
   lineas_cotizacion?: CotizacionItemDetalle[] | null
   observaciones?: string | null
   telefono_contacto?: string | null
-  asesor_ventas?: {
+  /** Puede ser string ("Sara IA") u objeto con nombre/apellidos */
+  asesor_ventas?: string | {
     nombre: string
     apellidos: string
     correo?: string | null

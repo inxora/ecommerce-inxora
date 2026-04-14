@@ -12,6 +12,7 @@ import { buildProductFullUrl, buildCategoryUrlFromObject } from '@/lib/product-u
 import { ProductCard } from '@/components/catalog/product-card';
 import { useTranslations } from 'next-intl'
 import { getIndustrialQuotationWhatsAppUrl } from '@/lib/whatsapp-industrial-cta'
+import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 
 const HERO_FALLBACK_IMAGE = '/suministros_industriales_inxora_ecommerce_2025_front_1_web.jpg'
 
@@ -243,6 +244,7 @@ export default function HomeClient({
   const hasHeroBanners = bannersHero && bannersHero.length > 0
   const [seoOpen, setSeoOpen] = useState<Set<number>>(new Set())
   const [welcomeOpen, setWelcomeOpen] = useState(false)
+  const { openAuthModal } = useAuthModal()
 
   useEffect(() => {
     const t = setTimeout(() => setWelcomeOpen(true), 800)
@@ -719,13 +721,12 @@ export default function HomeClient({
                   </svg>
                   {t('welcome.quoteWithSara')}
                 </a>
-                <Link
-                  href={`/${locale}/catalogo`}
-                  onClick={() => setWelcomeOpen(false)}
+                <button
+                  onClick={() => { setWelcomeOpen(false); openAuthModal() }}
                   className="flex-1 text-center py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   {t('welcome.exploreFirst')}
-                </Link>
+                </button>
               </div>
             </div>
           </div>

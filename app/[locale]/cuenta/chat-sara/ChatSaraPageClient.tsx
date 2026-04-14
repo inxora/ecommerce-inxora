@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
-import { MessageSquarePlus, ArrowLeft, Loader2, Trash2, ImagePlus, X, Share2, FileText, Paperclip, Cloud, Image as ImageIcon, Send, Package, UserCircle2, MessageSquare, RefreshCw, Download, ShoppingBag, ChevronRight, ChevronLeft, LogOut, Pencil, Check } from 'lucide-react'
+import { MessageSquarePlus, ArrowLeft, Loader2, Trash2, ImagePlus, X, Share2, FileText, Paperclip, Cloud, Image as ImageIcon, Send, Package, UserCircle2, MessageSquare, RefreshCw, Download, ShoppingBag, ChevronRight, ChevronDown, ChevronLeft, LogOut, Pencil, Check } from 'lucide-react'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { useCurrency } from '@/lib/hooks/use-currency'
 import {
@@ -575,206 +575,35 @@ function CotizacionesInlineView({
   locale: string
 }) {
   const t = useTranslations('chatSara')
-  const [selected, setSelected] = useState<CotizacionListItem | null>(null)
-  const [detalle, setDetalle] = useState<CotizacionDetalle | null>(null)
-  const [detalleLoading, setDetalleLoading] = useState(false)
-  const [detalleError, setDetalleError] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [detalleMap, setDetalleMap] = useState<Record<number, CotizacionDetalle>>({})
+  const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set())
+  const [errorIds, setErrorIds] = useState<Record<number, string>>({})
 
-  const openDetalle = async (c: CotizacionListItem) => {
-    setSelected(c)
-    setDetalle(null)
-    setDetalleError(null)
+  const fetchDetalle = useCallback(async (c: CotizacionListItem) => {
     if (!token) return
-    setDetalleLoading(true)
+    setLoadingIds((prev) => new Set(prev).add(c.id))
+    setErrorIds((prev) => { const n = { ...prev }; delete n[c.id]; return n })
     try {
       const res = await miCuentaService.getCotizacionDetalle(c.id, token)
-      setDetalle(res.data)
+      setDetalleMap((prev) => ({ ...prev, [c.id]: res.data }))
     } catch {
-      setDetalleError(t('cotizaciones.detailError'))
+      setErrorIds((prev) => ({ ...prev, [c.id]: t('cotizaciones.detailError') }))
     } finally {
-      setDetalleLoading(false)
+      setLoadingIds((prev) => { const s = new Set(prev); s.delete(c.id); return s })
     }
+  }, [token, t])
+
+  const toggleRow = (c: CotizacionListItem) => {
+    if (expandedId === c.id) { setExpandedId(null); return }
+    setExpandedId(c.id)
+    if (c.id in detalleMap || loadingIds.has(c.id)) return
+    fetchDetalle(c)
   }
 
-  const monedaSimbolo = (c: CotizacionListItem) => c.moneda_cotizacion?.simbolo ?? 'S/'
-  const monedaCodigo  = (c: CotizacionListItem) => c.moneda_cotizacion?.codigo ?? 'PEN'
+  const monedaSimbolo = (c: CotizacionListItem | CotizacionDetalle) => c.moneda_cotizacion?.simbolo ?? 'S/'
+  const monedaCodigo  = (c: CotizacionListItem | CotizacionDetalle) => c.moneda_cotizacion?.codigo ?? 'PEN'
 
-  // ── Vista detalle ────────────────────────────────────────────────────────────
-  if (selected) {
-    const src = detalle ?? selected
-    const items: CotizacionItemDetalle[] =
-      detalle?.items ?? detalle?.lineas ?? detalle?.lineas_cotizacion ?? []
-    const pdfLink = detalle?.pdf_url ?? detalle?.url_descarga ?? detalle?.url_pdf ?? null
-    const estadoCodigo = typeof src.estado === 'object' ? src.estado.codigo : String(src.estado)
-    const estadoNombre = typeof src.estado === 'object' ? src.estado.nombre : estadoStr(String(src.estado))
-    const asesor = detalle?.asesor_ventas ?? (selected as CotizacionDetalle).asesor_ventas ?? null
-
-    return (
-      <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-900">
-        {/* Header detalle */}
-        <header className="shrink-0 flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 shadow-sm">
-          <button
-            type="button"
-            onClick={() => { setSelected(null); setDetalle(null); setDetalleError(null) }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none"
-            aria-label={t('cotizaciones.backToList')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-slate-800 dark:text-white text-sm truncate">{src.numero}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(src.fecha_emision, locale)}</p>
-          </div>
-          <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${estadoClass(estadoCodigo, ESTADO_COTIZACION)}`}>
-            {estadoNombre}
-          </span>
-        </header>
-
-        <div className="flex-1 overflow-y-auto">
-          {detalleLoading && (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-7 w-7 animate-spin text-slate-300" />
-            </div>
-          )}
-          {detalleError && (
-            <div className="flex flex-col items-center py-10 gap-3 text-center px-4">
-              <p className="text-sm text-slate-500">{detalleError}</p>
-              <button
-                onClick={() => openDetalle(selected)}
-                className="text-sm text-[#13A0D8] hover:underline flex items-center gap-1.5"
-              >
-                <RefreshCw className="h-3.5 w-3.5" /> {t('cotizaciones.retry')}
-              </button>
-            </div>
-          )}
-          {!detalleLoading && !detalleError && (
-            <div className="px-4 py-4 space-y-4 max-w-2xl mx-auto">
-
-              {/* Resumen financiero */}
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('cotizaciones.summary')}</span>
-                  {pdfLink && (
-                    <a
-                      href={pdfLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs font-semibold text-[#13A0D8] hover:underline"
-                    >
-                      <Download className="h-3.5 w-3.5" /> {t('cotizaciones.downloadPdf')}
-                    </a>
-                  )}
-                </div>
-                <div className="space-y-1.5 text-sm">
-                  {src.subtotal != null && (
-                    <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                      <span>{t('cotizaciones.subtotal')}</span>
-                      <span>{mcFormatCurrency(src.subtotal, monedaCodigo(src), locale)}</span>
-                    </div>
-                  )}
-                  {src.igv != null && (
-                    <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                      <span>{t('cotizaciones.igv')}</span>
-                      <span>{mcFormatCurrency(src.igv, monedaCodigo(src), locale)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-bold text-slate-800 dark:text-white pt-1.5 border-t border-slate-200 dark:border-slate-600 mt-1.5">
-                    <span>{t('cotizaciones.total')}</span>
-                    <span className="text-[#13A0D8]">
-                      {monedaSimbolo(src)} {mcFormatCurrency(src.total, monedaCodigo(src), locale).replace(/[^0-9.,]/g, '')}
-                    </span>
-                  </div>
-                </div>
-                {src.fecha_vencimiento && (
-                  <p className="text-xs text-slate-400 mt-3">
-                    {t('cotizaciones.validUntil')} <span className="font-medium">{mcFormatDate(src.fecha_vencimiento, locale)}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Productos */}
-              {items.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                    {t('cotizaciones.productsTitle', { count: items.length })}
-                  </p>
-                  <div className="space-y-2">
-                    {items.map((item) => {
-                      const imgSrc =
-                        item.producto?.imagen_url ??
-                        item.producto?.imagen_principal ??
-                        item.imagen_url ??
-                        null
-                      const nombre =
-                        item.producto?.nombre ??
-                        item.descripcion ??
-                        t('cotizaciones.productFallback')
-                      const sku = item.producto?.sku ?? item.producto?.codigo ?? null
-                      const qty = item.cantidad ?? 1
-                      const precioUnit = item.precio_unitario_cliente ?? item.precio_unitario
-                      const totalItem = item.total ?? item.subtotal
-
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-3 shadow-sm"
-                        >
-                          <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 flex items-center justify-center">
-                            {imgSrc ? (
-                              <Image
-                                src={imgSrc}
-                                alt={nombre}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-contain"
-                                unoptimized
-                              />
-                            ) : (
-                              <span className="text-2xl opacity-40">📦</span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white leading-snug line-clamp-2">
-                              {nombre}
-                            </p>
-                            {sku && <p className="text-xs text-slate-400 mt-0.5">{t('pedidos.sku')}: {sku}</p>}
-                            <div className="flex items-center justify-between mt-1.5">
-                              <span className="text-xs text-slate-500">
-                                {qty} × {mcFormatCurrency(precioUnit, monedaCodigo(src), locale)}
-                              </span>
-                              {totalItem != null && (
-                                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                  {mcFormatCurrency(totalItem, monedaCodigo(src), locale)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Asesor */}
-              {asesor && (
-                <div className="bg-[#13A0D8]/5 rounded-2xl p-4 border border-[#13A0D8]/10">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t('cotizaciones.yourAdvisor')}</p>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                    {asesor.nombre} {asesor.apellidos}
-                  </p>
-                  {asesor.correo && <p className="text-xs text-slate-500 mt-0.5">{asesor.correo}</p>}
-                  {asesor.telefono_directo && <p className="text-xs text-slate-500 mt-0.5">{asesor.telefono_directo}</p>}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Vista lista ──────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-900">
       <header className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 shadow-sm">
@@ -811,47 +640,161 @@ function CotizacionesInlineView({
               <FileText className="h-6 w-6 text-[#13A0D8]" aria-hidden />
             </div>
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('cotizaciones.emptyTitle')}</p>
-            <p className="text-xs text-slate-400 max-w-[220px]">
-              {t('cotizaciones.emptyHint')}
-            </p>
+            <p className="text-xs text-slate-400 max-w-[220px]">{t('cotizaciones.emptyHint')}</p>
           </div>
         )}
+
         {!loading && !error && cotizaciones.length > 0 && (
-          <ul className="space-y-2 max-w-2xl mx-auto">
+          <ul className="space-y-2">
             {cotizaciones.map((c) => {
               const estadoCodigo = typeof c.estado === 'object' ? c.estado.codigo : String(c.estado)
               const estadoNombre = typeof c.estado === 'object' ? c.estado.nombre : estadoStr(String(c.estado))
               const moneda = c.moneda_cotizacion?.codigo ?? 'PEN'
+              const isExpanded = expandedId === c.id
+              const detalle = detalleMap[c.id]
+              const isDetailLoading = loadingIds.has(c.id)
+              const detailError = errorIds[c.id]
+
+              // Resuelve el array de ítems considerando los distintos nombres de campo que puede usar la API
+              const items: CotizacionItemDetalle[] =
+                detalle?.cotizacion_detalle ??
+                detalle?.items ??
+                detalle?.lineas ??
+                detalle?.lineas_cotizacion ??
+                []
+
               return (
                 <li key={c.id}>
-                  <button
-                    type="button"
-                    onClick={() => openDetalle(c)}
-                    className="w-full text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-[#13A0D8]/30 transition-all p-4 group"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
-                          {c.numero}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(c.fecha_emision, locale)}</p>
+                  <div className={`rounded-2xl border overflow-hidden shadow-sm transition-all ${
+                    isExpanded
+                      ? 'border-[#13A0D8]/40 shadow-md'
+                      : 'border-slate-100 dark:border-slate-700'
+                  }`}>
+                    {/* ── Fila cabecera clickeable ── */}
+                    <button
+                      type="button"
+                      onClick={() => toggleRow(c)}
+                      className="w-full text-left bg-white dark:bg-slate-800 p-4 group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{c.numero}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{mcFormatDate(c.fecha_emision, locale)}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${estadoClass(estadoCodigo, ESTADO_COTIZACION)}`}>
+                            {estadoNombre}
+                          </span>
+                          <ChevronDown className={`h-4 w-4 transition-all ${
+                            isExpanded
+                              ? 'rotate-180 text-[#13A0D8]'
+                              : 'text-slate-300 group-hover:text-[#13A0D8]'
+                          }`} />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${estadoClass(estadoCodigo, ESTADO_COTIZACION)}`}>
-                          {estadoNombre}
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                        <span className="text-xs text-slate-400">
+                          {c.fecha_vencimiento
+                            ? t('cotizaciones.expiresOn', { date: mcFormatDate(c.fecha_vencimiento, locale) })
+                            : t('cotizaciones.noExpiry')}
                         </span>
-                        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-[#13A0D8] transition-colors" />
+                        <span className="text-base font-extrabold text-[#13A0D8]">
+                          {c.moneda_cotizacion?.simbolo ?? 'S/'}{' '}
+                          {mcFormatCurrency(c.total, moneda, locale).replace(/[^0-9.,]/g, '')}
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                      <span className="text-xs text-slate-400">
-                        {c.fecha_vencimiento ? t('cotizaciones.expiresOn', { date: mcFormatDate(c.fecha_vencimiento, locale) }) : t('cotizaciones.noExpiry')}
-                      </span>
-                      <span className="text-base font-extrabold text-[#13A0D8]">
-                        {c.moneda_cotizacion?.simbolo ?? 'S/'} {mcFormatCurrency(c.total, moneda, locale).replace(/[^0-9.,]/g, '')}
-                      </span>
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* ── Panel expandido (accordion) ── */}
+                    {isExpanded && (
+                      <div className="border-t border-slate-100 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                        {isDetailLoading && (
+                          <div className="flex justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+                          </div>
+                        )}
+                        {detailError && (
+                          <div className="flex flex-col items-center py-6 gap-2 text-center px-4">
+                            <p className="text-sm text-slate-500">{detailError}</p>
+                            <button
+                              onClick={() => fetchDetalle(c)}
+                              className="text-xs text-[#13A0D8] hover:underline flex items-center gap-1"
+                            >
+                              <RefreshCw className="h-3 w-3" /> {t('cotizaciones.retry')}
+                            </button>
+                          </div>
+                        )}
+                        {!isDetailLoading && !detailError && detalle && (
+                          <div className="p-4 space-y-3">
+                            {/* Productos */}
+                            {items.length > 0 && (
+                              <div className="space-y-2">
+                                {items.map((item, idx) => {
+                                  const nombre =
+                                    item.producto_nombre ??
+                                    item.descripcion_personalizada ??
+                                    item.producto?.nombre ??
+                                    item.descripcion ??
+                                    t('cotizaciones.productFallback')
+                                  const qty = item.cantidad ?? 1
+                                  const unidad = item.unidad ?? 'UND'
+                                  const unitPrice =
+                                    item.precio_unitario_final ??
+                                    item.precio_unitario_cliente ??
+                                    item.precio_unitario
+                                  const itemTotal = item.subtotal ?? item.total
+
+                                  return (
+                                    <div
+                                      key={item.id ?? idx}
+                                      className="flex items-start justify-between gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 px-4 py-3"
+                                    >
+                                      <p className="text-sm text-slate-700 dark:text-slate-200 leading-snug flex-1 min-w-0">
+                                        {nombre}
+                                      </p>
+                                      <div className="shrink-0 text-right">
+                                        <p className="text-xs text-slate-400">
+                                          {qty} {unidad} × {mcFormatCurrency(unitPrice, monedaCodigo(detalle), locale)}
+                                        </p>
+                                        {itemTotal != null && (
+                                          <p className="text-sm font-bold text-slate-800 dark:text-white mt-0.5">
+                                            {mcFormatCurrency(itemTotal, monedaCodigo(detalle), locale)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+
+                            {/* Totales */}
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 px-4 py-3 space-y-2">
+                              {detalle.subtotal != null && (
+                                <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400">
+                                  <span>{t('cotizaciones.subtotal')}</span>
+                                  <span>{mcFormatCurrency(detalle.subtotal, monedaCodigo(detalle), locale)}</span>
+                                </div>
+                              )}
+                              {detalle.igv != null && (
+                                <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400">
+                                  <span>{t('cotizaciones.igv')}</span>
+                                  <span>{mcFormatCurrency(detalle.igv, monedaCodigo(detalle), locale)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between font-bold text-slate-800 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-700">
+                                <span>{t('cotizaciones.total')}</span>
+                                <span className="text-[#13A0D8]">
+                                  {monedaSimbolo(detalle)}{' '}
+                                  {mcFormatCurrency(detalle.total, monedaCodigo(detalle), locale).replace(/[^0-9.,]/g, '')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </li>
               )
             })}
