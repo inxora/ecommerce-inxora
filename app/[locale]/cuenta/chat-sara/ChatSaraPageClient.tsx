@@ -744,11 +744,27 @@ function CotizacionesInlineView({
                                     item.precio_unitario
                                   const itemTotal = item.subtotal ?? item.total
 
+                                  const imgSrc = item.imagen_url ?? item.producto?.imagen_url ?? item.producto?.imagen_principal ?? null
+
                                   return (
                                     <div
                                       key={item.id ?? idx}
-                                      className="flex items-start justify-between gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 px-4 py-3"
+                                      className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 px-4 py-3"
                                     >
+                                      {/* Imagen del producto */}
+                                      {imgSrc ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                          src={imgSrc}
+                                          alt={nombre}
+                                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain shrink-0 bg-slate-100 dark:bg-slate-700 border border-slate-100 dark:border-slate-600"
+                                        />
+                                      ) : (
+                                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-slate-100 dark:bg-slate-700 shrink-0 flex items-center justify-center border border-slate-100 dark:border-slate-600">
+                                          <Package className="h-6 w-6 sm:h-7 sm:w-7 text-slate-300" aria-hidden />
+                                        </div>
+                                      )}
+
                                       <p className="text-sm text-slate-700 dark:text-slate-200 leading-snug flex-1 min-w-0">
                                         {nombre}
                                       </p>
