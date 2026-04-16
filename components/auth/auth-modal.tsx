@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import { useClienteAuth } from '@/lib/contexts/cliente-auth-context'
 import { useAuthModal } from '@/lib/contexts/auth-modal-context'
 import { apiClient } from '@/lib/api/client'
@@ -90,6 +90,8 @@ function normalizePhoneForSubmit(rawValue: string, prefix?: string | null): stri
 
 export function AuthModal() {
   const params = useParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const locale = (params?.locale as string) ?? 'es'
   const t = useTranslations('auth')
   const { isOpen, options, closeAuthModal } = useAuthModal()
@@ -189,7 +191,13 @@ export function AuthModal() {
 
   const handleSuccess = () => {
     closeAuthModal()
-    options.onSuccess?.()
+    if (options.onSuccess) {
+      options.onSuccess()
+      return
+    }
+    const path = pathname ?? ''
+    if (path.includes('/checkout')) return
+    router.push(`/${locale}/cuenta/chat-sara`)
   }
 
   const handleOpenChange = (open: boolean) => {

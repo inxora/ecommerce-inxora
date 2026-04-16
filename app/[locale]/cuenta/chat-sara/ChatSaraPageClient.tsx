@@ -868,8 +868,8 @@ export function ChatSaraPageClient({
   const categorias = categoriasProp
   const [activeChipId, setActiveChipId] = useState<number | null>(null)
   const [driveLoading, setDriveLoading] = useState(false)
-  // En mobile: muestra el panel de conversaciones (true) o el chat (false)
-  const [mobileShowConversations, setMobileShowConversations] = useState(!selectedSessionId)
+  // En mobile: panel de conversaciones (true) vs chat (false). Por defecto el chat a la vista (desktop: historial + chat como en diseño).
+  const [mobileShowConversations, setMobileShowConversations] = useState(false)
 
   // ── Nav de cuenta: sección activa (URL) y expansión ──
   const [navExpanded, setNavExpanded] = useState(false)
@@ -1631,9 +1631,21 @@ export function ChatSaraPageClient({
       >
         {/* Barra superior: título + nueva conversación (sin menú ni volver al inicio) */}
         <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 p-2 min-h-[52px]">
-          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate flex-1 min-w-0 px-1">
-            {t('sidebar.conversations')}
-          </span>
+          <div className="flex min-w-0 flex-1 items-center gap-1 px-1">
+            {mobileShowConversations && (
+              <button
+                type="button"
+                className="md:hidden shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30"
+                onClick={() => setMobileShowConversations(false)}
+                aria-label={t('header.back')}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
+            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate min-w-0">
+              {t('sidebar.conversations')}
+            </span>
+          </div>
           <button
             type="button"
             onClick={startNewConversation}
@@ -1853,6 +1865,16 @@ export function ChatSaraPageClient({
 
         {/* Header */}
         <header className="shrink-0 flex items-center gap-3 px-4 py-3 md:gap-4 md:px-5 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          {isLoggedIn && activeSection === 'chat' && !mobileShowConversations && (
+            <button
+              type="button"
+              className="md:hidden shrink-0 -ml-1 rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#13A0D8]/30"
+              onClick={() => setMobileShowConversations(true)}
+              aria-label={t('header.backConversations')}
+            >
+              <MessageSquare className="h-5 w-5" />
+            </button>
+          )}
           <div className="relative shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden ring-2 ring-[#13A0D8]/40">
             <Image
               src={BRAND_LOGO}
@@ -2361,7 +2383,7 @@ export function ChatSaraPageClient({
               key={section}
               href={getChatSaraHrefForSection(locale, section)}
               onClick={() => {
-                if (section === 'chat') setMobileShowConversations(true)
+                if (section === 'chat') setMobileShowConversations(false)
               }}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors focus:outline-none ${
                 activeSection === section ? 'text-[#13A0D8]' : 'text-white/50 hover:text-white/80'

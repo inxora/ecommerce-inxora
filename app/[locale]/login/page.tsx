@@ -9,24 +9,21 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Mail, Lock, LogIn } from 'lucide-react'
+import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect'
 
 export default function LoginPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  const redirectParam = searchParams?.get('redirect') || '/'
+  const redirectParam = searchParams?.get('redirect')
   const locale = (params?.locale as string) ?? 'es'
   const { login, error, clearError, isLoggedIn } = useClienteAuth()
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
-  /** URL de destino tras login: path absoluto, 'checkout' → página de checkout, '/' → inicio */
-  const redirectTo = redirectParam.startsWith('/')
-    ? redirectParam
-    : redirectParam === 'checkout'
-      ? `/${locale}/checkout`
-      : `/${locale}`
+  const redirectTo = resolvePostLoginRedirect(locale, redirectParam)
+  const redirectParamForLinks = redirectParam ?? ''
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -117,7 +114,7 @@ export default function LoginPage() {
             </Button>
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               ¿No tienes cuenta?{' '}
-              <Link href={`/${locale}/registro?redirect=${encodeURIComponent(redirectParam)}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <Link href={`/${locale}/registro?redirect=${encodeURIComponent(redirectParamForLinks)}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Regístrate
               </Link>
             </p>

@@ -19,6 +19,7 @@ import {
 import { Building2, User, Mail, Lock, Phone, FileText } from 'lucide-react'
 import { RegistroEmpresaForm } from '@/components/auth/registro-empresa-form'
 import { legalPageHref, legalPageAbsoluteTienda } from '@/lib/i18n/legal-routes'
+import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect'
 
 type Rubro = { id: number; nombre: string; activo?: boolean }
 type Pais = {
@@ -82,13 +83,10 @@ export default function RegistroPage() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
-  const redirectParam = searchParams?.get('redirect') || '/'
+  const redirectParam = searchParams?.get('redirect')
   const locale = (params?.locale as string) ?? 'es'
-  const redirectTo = redirectParam.startsWith('/')
-    ? redirectParam
-    : redirectParam === 'checkout'
-      ? `/${locale}/checkout`
-      : `/${locale}`
+  const redirectTo = resolvePostLoginRedirect(locale, redirectParam)
+  const redirectParamForLinks = redirectParam ?? ''
 
   const [tipoCliente, setTipoCliente] = useState<TipoCliente>('natural')
 
@@ -236,7 +234,7 @@ export default function RegistroPage() {
             <RegistroEmpresaForm
               locale={locale}
               redirectTo={redirectTo}
-              redirectParam={redirectParam}
+              redirectParam={redirectParamForLinks}
             />
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -431,7 +429,7 @@ export default function RegistroPage() {
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                 ¿Ya tienes cuenta?{' '}
                 <Link
-                  href={`/${locale}/login?redirect=${encodeURIComponent(redirectParam)}`}
+                  href={`/${locale}/login?redirect=${encodeURIComponent(redirectParamForLinks)}`}
                   className="text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   Iniciar sesión
