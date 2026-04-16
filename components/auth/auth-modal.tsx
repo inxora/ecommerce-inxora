@@ -141,10 +141,13 @@ export function AuthModal() {
     // Evita quedar "pegado" en fallback (solo Perú) si la primera petición falló.
     if (!isOpen || mode !== 'register') return
 
-    apiClient<{ success?: boolean; data?: Rubro[] }>('/api/rubros/?limit=200')
+    apiClient<{ success?: boolean; data?: { rubros?: Rubro[] } | Rubro[] }>('/api/rubros/?limit=200')
       .then((res) => {
-        const list = Array.isArray((res as { data?: Rubro[] }).data)
-          ? (res as { data: Rubro[] }).data
+        const raw = (res as { data?: { rubros?: Rubro[] } | Rubro[] }).data
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as { rubros?: Rubro[] })?.rubros)
+          ? (raw as { rubros: Rubro[] }).rubros
           : []
         const active = list.filter((r) => r.activo !== false)
         setRubros(active)
