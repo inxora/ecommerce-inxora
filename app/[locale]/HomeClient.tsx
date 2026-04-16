@@ -20,11 +20,12 @@ const HERO_FALLBACK_IMAGE = '/suministros_industriales_inxora_ecommerce_2025_fro
 /** Primera entrada al home en esta pestaña/sesión: al cerrar el modal se guarda en sessionStorage (nueva pestaña = vuelve a mostrarse una vez). */
 const WELCOME_MODAL_STORAGE_KEY = 'inxora_welcome_modal_seen'
 
+/** Hosts donde aplica el modal (producción suele ser tienda.inxora.com, no solo tienda.inxora). */
 function isWelcomeModalHost(hostname: string): boolean {
-  if (hostname === 'tienda.inxora' || hostname === 'www.tienda.inxora') return true
-  // Desarrollo: misma regla de “primera vez” que en producción
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return true
-  return false
+  const h = hostname.toLowerCase()
+  if (h === 'localhost' || h === '127.0.0.1') return true
+  // tienda.inxora | www.tienda.inxora | tienda.inxora.com | www.tienda.inxora.com
+  return /^(?:www\.)?tienda\.inxora(?:\.com)?$/.test(h)
 }
 
 interface HomeClientProps {
@@ -270,11 +271,14 @@ export default function HomeClient({
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!isWelcomeModalHost(window.location.hostname)) return
+    let alreadySeen = false
     try {
-      if (sessionStorage.getItem(WELCOME_MODAL_STORAGE_KEY) === '1') return
+      alreadySeen = sessionStorage.getItem(WELCOME_MODAL_STORAGE_KEY) === '1'
     } catch {
-      return
+      // Storage bloqueado (p. ej. modo estricto): tratamos como no visto para poder mostrar el modal
+      alreadySeen = false
     }
+    if (alreadySeen) return
     const timer = setTimeout(() => setWelcomeOpen(true), 800)
     return () => clearTimeout(timer)
   }, [])
