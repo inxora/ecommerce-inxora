@@ -1,6 +1,8 @@
 /**
- * Servicio para el chatbot Sara Xora (IA alterna).
- * Consume POST https://api.inxora.com/api/chat (o proxy /api/chat).
+ * Servicio para el chatbot Sara Xora (IA alterna) — mismo entorno que la cotización en tienda:
+ * POST /api/chat/ con `Authorization: Bearer` (cliente). El backend genera la cotización en ese flujo
+ * (p. ej. delegando en POST /api/ecommerce/cotizaciones/sara). No es un CRM aparte.
+ * Proxy: app/api/[...path] → mismo origen que el resto del API.
  * No mezclar con el widget de chat.js existente.
  */
 import { getClienteAccessToken } from '@/lib/auth/cliente-tokens'

@@ -185,6 +185,30 @@ export interface CotizacionDetalleResponse {
   data: CotizacionDetalle
 }
 
+/**
+ * Cuerpo de POST /api/ecommerce/cotizaciones/sara: mismo contrato que el CRM
+ * `CotizacionCreate` (id_moneda_cotizacion, subtotal, igv, total, detalles[], …).
+ * Uso típico: mismo JWT y sesión que el chat de Sara en `/cuenta/chat-sara` (tienda), no otra app.
+ * El backend toma el cliente solo del JWT; campos como `id_cliente` son opcionales/compatibilidad.
+ * @see OpenAPI /docs del backend para el esquema completo.
+ */
+export type CotizacionCreatePayload = Record<string, unknown>
+
+/** `data` típica al crear cotización vía ecommerce (flujo Sara / tienda) */
+export interface CotizacionSaraCreateResponseData {
+  cotizacion_id?: number
+  numero?: string
+  message?: string
+  [key: string]: unknown
+}
+
+export interface CotizacionSaraCreateResponse {
+  success: boolean
+  message?: string
+  data?: CotizacionSaraCreateResponseData | null
+  [key: string]: unknown
+}
+
 // ─── Servicio ─────────────────────────────────────────────────────────────────
 
 export const miCuentaService = {
@@ -206,6 +230,23 @@ export const miCuentaService = {
     return apiClient<CotizacionDetalleResponse>(`/api/cotizaciones/${cotizacionId}`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 15000,
+    })
+  },
+
+  /**
+   * POST `/api/ecommerce/cotizaciones/sara` — cotización en el **mismo entorno** que Sara (tienda + chat con JWT).
+   * Llámalo solo si el flujo del front debe crear el borrador explícito; el chat suele hacerlo ya por detrás con el mismo token.
+   * Requiere JWT de cliente (`Authorization: Bearer`). `id_asesor_ventas` lo fija el servidor.
+   */
+  async createCotizacionSara(
+    body: CotizacionCreatePayload,
+    token: string
+  ): Promise<CotizacionSaraCreateResponse> {
+    return apiClient<CotizacionSaraCreateResponse>('/api/ecommerce/cotizaciones/sara', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { Authorization: `Bearer ${token.trim()}` },
+      timeout: 60000,
     })
   },
 

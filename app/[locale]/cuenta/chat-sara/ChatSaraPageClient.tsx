@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * Cuenta → Chat con Sara: conversación y cotización en el mismo contexto (JWT cliente).
+ * Mensajes: `sendSaraChatMessage` → /api/chat/. Listado/detalle de cotizaciones: sección "Mis cotizaciones" aquí (`miCuentaService`).
+ * Creación explícita vía API: `miCuentaService.createCotizacionSara` (mismo token), si el producto lo requiere.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
